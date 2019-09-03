@@ -1,0 +1,38 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Logger.cpp">
+      <Filter>Tools</Filter>
+    </ClCompile>
+    <ClCompile Include="App.cpp" />
+    <ClCompile Include="Device.cpp" />
+    <ClCompile Include="DeviceManager.cpp" />
+    <ClCompile Include="Instance.cpp" />
+    <ClCompile Include="Window.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Tools">
+      <UniqueIdentifier>{42a9b108-e563-45e3-a037-561726a7b862}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Shaders">
+      <UniqueIdentifier>{ddb54073-da90-49af-b2d4-3e30f0abb329}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Logger.h">
+      <Filter>Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="App.h" />
+    <ClInclude Include="Device.h" />
+    <ClInclude Include="DeviceManager.h" />
+    <ClInclude Include="Assert.h">
+      <Filter>Tools</Filter>
+    </ClInclude>
+    <ClInclude Include="Instance.h" />
+    <ClInclude Include="Window.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".clang-format" />
+  </ItemGroup>
+</Project>
