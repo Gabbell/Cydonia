@@ -4,24 +4,33 @@
 
 #include <vector>
 
+// ================================================================================================
+// Forwards
+// ================================================================================================
 namespace cyd
 {
-// Forwards
 class Instance;
+class Device;
+}
 
+// ================================================================================================
 // Definition
+// ================================================================================================
+namespace cyd
+{
 class DeviceManager
 {
   public:
-   DeviceManager( const Instance* instance );
+   explicit DeviceManager( const Instance* instance );
    ~DeviceManager();
 
   private:
    bool _checkDevice( const vk::PhysicalDevice& physDevice );
 
-   std::vector<Device> _devices;
+   // Devices used for operations
+   std::vector<std::unique_ptr<Device>> _devices;
 
    // Instance used to create the device manager
    const Instance* _attachedInstance = nullptr;
 };
-}  // namespace cyd
+}

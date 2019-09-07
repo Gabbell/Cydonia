@@ -1,12 +1,12 @@
 #include "Instance.h"
 
 #include "Assert.h"
+#include "Window.h"
 
-#ifdef _WIN32
-#include <Windows.h>
-#endif
+#include <vulkan/vulkan.hpp>
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_vulkan.h>
 
 static VkBool32 errorCallback(
@@ -26,6 +26,10 @@ static VkBool32 errorCallback(
    // Severity colors
    switch( messageSeverity )
    {
+      case VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT:
+         // Cyan for verbose
+         fprintf( stderr, "\x1B[96mValidation Layers-> \033[0m" );
+         break;
       case VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT:
          // Yellow for warnings
          fprintf( stderr, "\x1B[93mValidation Layers-> \033[0m" );
@@ -35,24 +39,30 @@ static VkBool32 errorCallback(
          fprintf( stderr, "\x1B[91mValidation Layers-> \033[0m" );
          break;
       default:
-         // Cyan for everything else
-         fprintf( stderr, "\x1B[96mValidation Layers-> \033[0m" );
+         // White for everything else
+         fprintf( stderr, "\x1B[37mValidation Layers-> \033[0m" );
          break;
    }
 
    // Print actual message
    fprintf( stderr, "%s\n", pCallbackdata->pMessage );
 
+   // If the severity is error, we want to assert immediately
+   if( messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT )
+   {
+      CYDASSERT( !"Fix validation layers" );
+   }
+
    return VK_FALSE;
 }
 
-cyd::Instance::Instance()
+cyd::Instance::Instance( const Window* window )
 {
-   _createVKInstance();
+   _createVKInstance( window );
    _createDebugMessenger();
 }
 
-void cyd::Instance::_createVKInstance()
+void cyd::Instance::_createVKInstance( const Window* window )
 {
    // General application info
    vk::ApplicationInfo appInfo = vk::ApplicationInfo()
@@ -69,16 +79,20 @@ void cyd::Instance::_createVKInstance()
    CYDASSERT( _checkValidationLayerSupport( _layers ) );
 
    // Get necessary extensions
-   _populateExtensions();
-   CYDASSERT( _checkExtensionSupport( _extensions ) );
+   std::vector<const char*> extensions;
+   if( window )
+   {
+      extensions = window->getExtensions();
+      CYDASSERT( _checkExtensionSupport( extensions ) );
+   }
 
    // Instance create info
    vk::InstanceCreateInfo instInfo =
        vk::InstanceCreateInfo()
            .setFlags( vk::InstanceCreateFlags() )
            .setPApplicationInfo( &appInfo )
-           .setEnabledExtensionCount( static_cast<uint32_t>( _extensions.size() ) )
-           .setPpEnabledExtensionNames( _extensions.data() )
+           .setEnabledExtensionCount( static_cast<uint32_t>( extensions.size() ) )
+           .setPpEnabledExtensionNames( extensions.data() )
            .setEnabledLayerCount( static_cast<uint32_t>( _layers.size() ) )
            .setPpEnabledLayerNames( _layers.data() );
 
@@ -93,10 +107,10 @@ void cyd::Instance::_createVKInstance()
    CYDASSERT(
        instanceResult.result == vk::Result::eSuccess &&
        "Instance: Vulkan instance creation failed" );
-   _vkInstance = instanceResult.value;
+   _vkInstance = std::make_unique<vk::Instance>( std::move( instanceResult.value ) );
 
-   // Create dynamic loader
-   _dld = vk::DispatchLoaderDynamic( _vkInstance );
+   // Creating dispatch loader dynamic
+   _dld = std::make_unique<vk::DispatchLoaderDynamic>( *_vkInstance );
 }
 
 void cyd::Instance::_createDebugMessenger()
@@ -105,32 +119,21 @@ void cyd::Instance::_createDebugMessenger()
    // Create debug messenger
    vk::DebugUtilsMessengerCreateInfoEXT debugInfo;
    _populateDebugInfo( debugInfo );
-   auto debugResult = _vkInstance.createDebugUtilsMessengerEXT( debugInfo, nullptr, _dld );
+
+   auto debugResult = _vkInstance->createDebugUtilsMessengerEXT( debugInfo, nullptr, *_dld );
+
    CYDASSERT(
        debugResult.result == vk::Result::eSuccess &&
        "cyd::Instance:: Debug utils messenger creation failed" );
-   _debugMessenger = debugResult.value;
-#endif
-}
-
-void cyd::Instance::_populateExtensions()
-{
-   SDL_Window* dummy = SDL_CreateWindow(
-       "", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 0, 0, SDL_WINDOW_VULKAN );
-
-   uint32_t extensionsCount = 0;
-   CYDASSERT( SDL_Vulkan_GetInstanceExtensions( dummy, &extensionsCount, nullptr ) );
-
-   _extensions.reserve( extensionsCount );
-   CYDASSERT( SDL_Vulkan_GetInstanceExtensions( dummy, &extensionsCount, _extensions.data() ) );
-
-#if _DEBUG
-   _extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
+   _debugMessenger = std::make_unique<vk::DebugUtilsMessengerEXT>( std::move( debugResult.value ) );
 #endif
 }
 
 void cyd::Instance::_populateDebugInfo( vk::DebugUtilsMessengerCreateInfoEXT& debugInfo )
 {
+   debugInfo.operator VkDebugUtilsMessengerCreateInfoEXT&().sType =
+       VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+
    // Filling up debug info
    debugInfo.setFlags( vk::DebugUtilsMessengerCreateFlagsEXT() )
        .setMessageSeverity(
@@ -199,8 +202,8 @@ bool cyd::Instance::_checkExtensionSupport( const std::vector<const char*>& desi
 cyd::Instance::~Instance()
 {
 #ifdef _DEBUG
-   _vkInstance.destroyDebugUtilsMessengerEXT( _debugMessenger, nullptr, _dld );
+   _vkInstance->destroyDebugUtilsMessengerEXT( *_debugMessenger, nullptr, *_dld );
 #endif
 
-   _vkInstance.destroy();
+   _vkInstance->destroy();
 }

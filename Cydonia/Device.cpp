@@ -3,51 +3,38 @@
 #include "Assert.h"
 #include "Instance.h"
 
-cyd::Device::Device( const cyd::Instance* instance, const vk::PhysicalDevice& physDevice )
-    : _attachedInstance( instance ), _physDevice( std::move( physDevice ) )
+#include <vulkan/vulkan.hpp>
+
+cyd::Device::Device( const cyd::Instance* instance, const vk::PhysicalDevice&& physDevice )
+    : _attachedInstance( instance ),
+      _physDevice( std::make_unique<vk::PhysicalDevice>( physDevice ) )
 {
    _createLogicalDevice();
-   _createQueues();
-}
-
-std::optional<uint32_t> cyd::Device::_pickQueue( vk::QueueFlagBits desiredType )
-{
-   for( uint32_t i = 0; i < _queueFamilies.size(); ++i )
-   {
-      // If we find a queue family that match the type we want and it is not being used, use
-      if( ( desiredType & _queueFamilies[i].queueFlags ) == desiredType && !_queueFamilyUsed[i] )
-      {
-         _queueFamilyUsed[i] = true;
-         return i;
-      }
-   }
-
-   // The desired type was not found in the queue families, return no value
-   return std::nullopt;
+   _fetchQueues();
 }
 
 void cyd::Device::_createLogicalDevice()
 {
    // Populating queue families
-   _queueFamilies = _physDevice.getQueueFamilyProperties();
-   _queueFamilyUsed.resize( _queueFamilies.size() );
+   std::vector<vk::QueueFamilyProperties> queueFamilies = _physDevice->getQueueFamilyProperties();
+   _queueFamilyUsed.resize( queueFamilies.size() );
 
-   // TODO More dynamic queue creation
-   const float priorities = 1.0f;
    std::vector<vk::DeviceQueueCreateInfo> queueInfos;
 
-   // Graphics queue
-   const std::optional<uint32_t> graphicsIdx = _pickQueue( vk::QueueFlagBits::eGraphics );
+   // Picking and potentially adding qraphics queues
+   const std::optional<uint32_t> graphicsIdx =
+       _pickQueueFamily( vk::QueueFlagBits::eGraphics, queueFamilies );
    if( graphicsIdx.has_value() )
    {
-      queueInfos.emplace_back( vk::DeviceQueueCreateFlags(), graphicsIdx.value(), 1, &priorities );
+      _addQueues( graphicsIdx.value(), queueFamilies, queueInfos );
    }
 
    // Separate transfer queue because why not
-   const std::optional<uint32_t> transferIdx = _pickQueue( vk::QueueFlagBits::eTransfer );
+   const std::optional<uint32_t> transferIdx =
+       _pickQueueFamily( vk::QueueFlagBits::eTransfer, queueFamilies );
    if( transferIdx.has_value() )
    {
-      queueInfos.emplace_back( vk::DeviceQueueCreateFlags(), transferIdx.value(), 1, &priorities );
+      _addQueues( transferIdx.value(), queueFamilies, queueInfos );
    }
 
    // Create logical device
@@ -62,14 +49,79 @@ void cyd::Device::_createLogicalDevice()
            .setPpEnabledLayerNames( layers.data() )
            .setEnabledExtensionCount( 0 )
            .setPpEnabledExtensionNames( nullptr )
-           .setPEnabledFeatures( &_physDevice.getFeatures() );
+           .setPEnabledFeatures( &_physDevice->getFeatures() );
 
-   auto result = _physDevice.createDevice( deviceInfo, nullptr, _attachedInstance->getDLD() );
+   auto result = _physDevice->createDevice( deviceInfo, nullptr );
    CYDASSERT(
        result.result == vk::Result::eSuccess && "VEDevice: Could not create logical device" );
-   _vkDevice = result.value;
+   _vkDevice = std::make_unique<vk::Device>( std::move( result.value ) );
 }
 
-void cyd::Device::_createQueues() {}
+std::optional<uint32_t> cyd::Device::_pickQueueFamily(
+    const vk::QueueFlagBits desiredType,
+    const std::vector<vk::QueueFamilyProperties>& queueFamilies )
+{
+   for( uint32_t i = 0; i < queueFamilies.size(); ++i )
+   {
+      // If we find a queue family that match the type we want and it is not being used, use
+      if( ( desiredType & queueFamilies[i].queueFlags ) == desiredType && !_queueFamilyUsed[i] )
+      {
+         _queueFamilyUsed[i] = true;
+         return i;
+      }
+   }
 
-cyd::Device::~Device() { _vkDevice.destroy(); }
+   // The desired type was not found in the queue families, return no value
+   return std::nullopt;
+}
+
+void cyd::Device::_addQueues(
+    uint32_t famIndex,
+    const std::vector<vk::QueueFamilyProperties>& queueFamilies,
+    std::vector<vk::DeviceQueueCreateInfo>& queueInfos )
+{
+   // TODO More dynamic queue creation
+   const float priorities = 1.0f;
+
+   // TODO Just use 1 queue for now
+   const uint32_t numQueues  = 1;
+   const uint32_t actualType = static_cast<uint32_t>( queueFamilies[famIndex].queueFlags );
+
+   for( uint32_t i = 0; i < numQueues; ++i )
+   {
+      Queue queue;
+      queue.familyIndex = famIndex;
+      queue.index       = i;
+      queue.type        = actualType;
+
+      _queues.push_back( std::move( queue ) );
+
+      // Adding pointers to the previously added queue into the specific queue type vectors
+      if( actualType & static_cast<uint32_t>( vk::QueueFlagBits::eGraphics ) )
+      {
+         _graphicsQueues.push_back( &_queues.back() );
+      }
+      if( actualType & static_cast<uint32_t>( vk::QueueFlagBits::eCompute ) )
+      {
+         _computeQueues.push_back( &_queues.back() );
+      }
+      if( actualType & static_cast<uint32_t>( vk::QueueFlagBits::eTransfer ) )
+      {
+         _transferQueues.push_back( &_queues.back() );
+      }
+   }
+
+   // Add queue(s) to the queue infos to later be create with the logical device
+   queueInfos.emplace_back( vk::DeviceQueueCreateFlags(), famIndex, numQueues, &priorities );
+}
+
+void cyd::Device::_fetchQueues()
+{
+   for( auto& queue : _queues )
+   {
+      queue.vkQueue =
+          std::make_unique<vk::Queue>( _vkDevice->getQueue( queue.familyIndex, queue.index ) );
+   }
+}
+
+cyd::Device::~Device() { _vkDevice->destroy(); }

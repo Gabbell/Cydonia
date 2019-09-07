@@ -2,30 +2,35 @@
 
 #include "Assert.h"
 #include "Instance.h"
+#include "Device.h"
 
 #include <vulkan/vulkan.hpp>
 
 cyd::DeviceManager::DeviceManager( const Instance* instance ) : _attachedInstance( instance )
 {
-   const vk::Instance& vkInstance       = _attachedInstance->getVKInstance();
-   const vk::DispatchLoaderDynamic& dld = _attachedInstance->getDLD();
-
-   auto result = vkInstance.enumeratePhysicalDevices( dld );
-   CYDASSERT(
-       result.result == vk::Result::eSuccess &&
-       "DeviceManager: Could not enumerate physical devices" );
-
-   std::vector<vk::PhysicalDevice> physDevices = result.value;
-   CYDASSERT( !physDevices.empty() && "DeviceManager: No devices supporting Vulkan" );
-
-   // TODO Add support for multiple devices
-   for( const auto& physDevice : physDevices )
+   CYDASSERT( _attachedInstance && "DeviceManager: Can't create device manager without instance" );
+   if( _attachedInstance )
    {
-      if( _checkDevice( physDevice ) )
+      const vk::Instance& vkInstance = _attachedInstance->getVKInstance();
+
+      auto result = vkInstance.enumeratePhysicalDevices();
+      CYDASSERT(
+          result.result == vk::Result::eSuccess &&
+          "DeviceManager: Could not enumerate physical devices" );
+
+      std::vector<vk::PhysicalDevice> physDevices = result.value;
+      CYDASSERT( !physDevices.empty() && "DeviceManager: No devices supporting Vulkan" );
+
+      // TODO Add support for multiple devices
+      for( const auto& physDevice : physDevices )
       {
-         // Found suitable device, add it to the currently managed devices
-         _devices.emplace_back( _attachedInstance, physDevice );
-         break;
+         if( _checkDevice( physDevice ) )
+         {
+            // Found suitable device, add it to the currently managed devices
+            _devices.emplace_back(
+                std::make_unique<Device>( _attachedInstance, std::move( physDevice ) ) );
+            break;
+         }
       }
    }
 }

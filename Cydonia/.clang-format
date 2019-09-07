@@ -16,5 +16,5 @@
    "SortIncludes": "false",
    "SpaceBeforeParens": "Never",
    "AlignConsecutiveAssignments": "true",
-   "FixNamespaceComments" : "true"
+   "FixNamespaceComments" : "false"
 }

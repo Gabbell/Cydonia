@@ -1,13 +1,3 @@
-// Enable the WSI extensions
-#if defined( __linux__ )
-#define VK_USE_PLATFORM_XLIB_KHR
-#elif defined( _WIN32 )
-#define VK_USE_PLATFORM_WIN32_KHR
-#endif
-
-// Tell SDL not to mess with main()
-#define SDL_MAIN_HANDLED
-
 #include "App.h"
 
 #include "Instance.h"
@@ -18,11 +8,17 @@
 
 cyd::App::App( uint32_t width, uint32_t height, const std::string& title ) : _running( true )
 {
-   // Creating instance
-   _instance = std::make_unique<Instance>();
-
    // Creating window
-   _window = std::make_unique<Window>( width, height, title, _instance.get() );
+   _window = std::make_unique<Window>( width, height, title );
+
+   // We need the window to fetch the required extensions when creating the instance
+   _instance = std::make_unique<Instance>( _window.get() );
+
+   // We need the instance to create the surface which is per window
+   _window->createSurface( _instance.get() );
+
+   // We need the surface to create the swapchain
+   //_swapchain = std::make_unique<Swapchain>(_window.get());
 
    // Creating device manager
    _deviceManager = std::make_unique<DeviceManager>( _instance.get() );

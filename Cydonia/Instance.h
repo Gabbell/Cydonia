@@ -1,40 +1,53 @@
 #pragma once
 
-#include <vulkan/vulkan.hpp>
+#include <vector>
+#include <memory>
+
+// ================================================================================================
+// Forwards
+// ================================================================================================
+namespace vk
+{
+class Instance;
+class SurfaceKHR;
+class DispatchLoaderDynamic;
+class DebugUtilsMessengerEXT;
+struct DebugUtilsMessengerCreateInfoEXT;
+}
 
 namespace cyd
 {
+class Window;
+}
+
+// ================================================================================================
 // Definition
+// ================================================================================================
+namespace cyd
+{
 class Instance
 {
   public:
-   Instance();
+   Instance( const Window* window );
    ~Instance();
 
-   const vk::Instance& getVKInstance() const noexcept { return _vkInstance; }
-   const vk::DispatchLoaderDynamic& getDLD() const noexcept { return _dld; }
+   const vk::Instance& getVKInstance() const { return *_vkInstance; }
 
    const std::vector<const char*>& getLayers() const { return _layers; }
 
   private:
-   // Functions
-   void _createVKInstance();
+   void _createVKInstance( const Window* window );
    void _createDebugMessenger();
 
-   void _populateExtensions();
    void _populateDebugInfo( vk::DebugUtilsMessengerCreateInfoEXT& debugInfo );
 
    bool _checkValidationLayerSupport( const std::vector<const char*>& desiredLayers );
    bool _checkExtensionSupport( const std::vector<const char*>& desiredExtensions );
 
-   // Members
    std::vector<const char*> _layers;
-   std::vector<const char*> _extensions;
 
-   // TODO Figure out what exactly this does
-   vk::DispatchLoaderDynamic _dld;
-
-   vk::Instance _vkInstance;
-   vk::DebugUtilsMessengerEXT _debugMessenger;
+   std::unique_ptr<vk::Instance> _vkInstance;
+   std::unique_ptr<vk::DispatchLoaderDynamic> _dld;
+   std::unique_ptr<vk::DebugUtilsMessengerEXT> _debugMessenger;
 };
-}  // namespace cyd
+}
