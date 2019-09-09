@@ -4,7 +4,7 @@
 // Available only in debug
 
 #if defined( _DEBUG )
-#define CYDASSERT( EXPR )                                                        \
+#define CYDASSERT( EXPR )                                                       \
    if( !( EXPR ) )                                                              \
    {                                                                            \
       fprintf(                                                                  \
@@ -17,8 +17,8 @@
    }
 #else
 #define CYDASSERT( EXPR ) \
-   do                    \
-   {                     \
-      sizeof( EXPR );    \
+   do                     \
+   {                      \
+      sizeof( EXPR );     \
    } while( 0 );
 #endif

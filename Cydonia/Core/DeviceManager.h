@@ -1,41 +1,40 @@
 #pragma once
 
-#include <cstdint>
-#include <string>
+#include "Common/Common.h"
+
 #include <memory>
+#include <vector>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
+FWDHANDLE( VkPhysicalDevice );
+
 namespace cyd
 {
-class Window;
 class Instance;
-class DeviceManager;
-}
+class Device;
+class Window;
+}  // namespace cyd
 
 // ================================================================================================
 // Definition
 // ================================================================================================
 namespace cyd
 {
-class App
+class DeviceManager
 {
   public:
-   App( uint32_t width, uint32_t height, const std::string& title );
-   App( const App& other )     = delete;
-   App( App&& other ) noexcept = delete;
-   App& operator=( const App& other ) = delete;
-   App& operator=( App&& other ) noexcept = delete;
-   ~App();
-
-   void startLoop();
+   explicit DeviceManager( const Instance* instance );
+   ~DeviceManager();
 
   private:
-   std::unique_ptr<Instance> _instance;
-   std::unique_ptr<Window> _window;
-   std::unique_ptr<DeviceManager> _deviceManager;
+   bool _checkDevice( const VkPhysicalDevice& physDevice );
 
-   bool _running;
+   // Devices used for operations
+   std::vector<std::unique_ptr<Device>> _devices;
+
+   // Instance used to create the device manager
+   const Instance* _attachedInstance = nullptr;
 };
 }
