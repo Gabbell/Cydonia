@@ -1,4 +1,6 @@
-#include "App.h"
+#include "Core/App.h"
+
+#include <cstdint>
 
 static constexpr uint32_t width  = 1280;
 static constexpr uint32_t height = 720;

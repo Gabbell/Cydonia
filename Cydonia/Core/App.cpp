@@ -1,8 +1,8 @@
 #include "App.h"
 
-#include "Instance.h"
-#include "Window.h"
-#include "DeviceManager.h"
+#include "Core/Instance.h"
+#include "Core/Window.h"
+#include "Core/DeviceManager.h"
 
 #include <SDL2/SDL.h>
 
@@ -11,17 +11,16 @@ cyd::App::App( uint32_t width, uint32_t height, const std::string& title ) : _ru
    // Creating window
    _window = std::make_unique<Window>( width, height, title );
 
+   // Creating VK instance
    // We need the window to fetch the required extensions when creating the instance
    _instance = std::make_unique<Instance>( _window.get() );
 
-   // We need the instance to create the surface which is per window
-   _window->createSurface( _instance.get() );
+   // Creating device manager
+   // We need the window to fetch presentation support using the surface
+   _deviceManager = std::make_unique<DeviceManager>( _instance.get() );
 
    // We need the surface to create the swapchain
    //_swapchain = std::make_unique<Swapchain>(_window.get());
-
-   // Creating device manager
-   _deviceManager = std::make_unique<DeviceManager>( _instance.get() );
 }
 
 void cyd::App::startLoop()

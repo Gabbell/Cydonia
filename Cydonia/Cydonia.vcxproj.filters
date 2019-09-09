@@ -2,14 +2,27 @@
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Logger.cpp">
+    <ClCompile Include="Core\App.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Device.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\DeviceManager.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Instance.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Window.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Tools\Logger.cpp">
       <Filter>Tools</Filter>
     </ClCompile>
-    <ClCompile Include="App.cpp" />
-    <ClCompile Include="Device.cpp" />
-    <ClCompile Include="DeviceManager.cpp" />
-    <ClCompile Include="Instance.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="Core\Swapchain.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Tools">
@@ -18,19 +31,41 @@
     <Filter Include="Shaders">
       <UniqueIdentifier>{ddb54073-da90-49af-b2d4-3e30f0abb329}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core">
+      <UniqueIdentifier>{e5e070a0-3db5-4772-8c54-fba5bcfcc677}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{6c936d64-6cba-4d4a-9af5-fcc60fd73383}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Logger.h">
+    <ClInclude Include="Core\App.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Device.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\DeviceManager.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Instance.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Window.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Tools\Logger.h">
       <Filter>Tools</Filter>
     </ClInclude>
-    <ClInclude Include="App.h" />
-    <ClInclude Include="Device.h" />
-    <ClInclude Include="DeviceManager.h" />
-    <ClInclude Include="Assert.h">
-      <Filter>Tools</Filter>
+    <ClInclude Include="Common\Assert.h">
+      <Filter>Common</Filter>
     </ClInclude>
-    <ClInclude Include="Instance.h" />
-    <ClInclude Include="Window.h" />
+    <ClInclude Include="Common\Common.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Swapchain.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

@@ -88,7 +88,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -107,7 +107,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -128,7 +128,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -151,7 +151,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
@@ -166,22 +166,25 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="App.cpp" />
-    <ClCompile Include="Device.cpp" />
-    <ClCompile Include="DeviceManager.cpp" />
-    <ClCompile Include="Instance.cpp" />
-    <ClCompile Include="Logger.cpp" />
-    <ClCompile Include="Window.cpp" />
+    <ClCompile Include="Core\App.cpp" />
+    <ClCompile Include="Core\Device.cpp" />
+    <ClCompile Include="Core\DeviceManager.cpp" />
+    <ClCompile Include="Core\Instance.cpp" />
+    <ClCompile Include="Core\Swapchain.cpp" />
+    <ClCompile Include="Core\Window.cpp" />
+    <ClCompile Include="Tools\Logger.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="App.h" />
-    <ClInclude Include="Assert.h" />
-    <ClInclude Include="Device.h" />
-    <ClInclude Include="DeviceManager.h" />
-    <ClInclude Include="Instance.h" />
-    <ClInclude Include="Logger.h" />
-    <ClInclude Include="Window.h" />
+    <ClInclude Include="Common\Assert.h" />
+    <ClInclude Include="Common\Common.h" />
+    <ClInclude Include="Core\App.h" />
+    <ClInclude Include="Core\Device.h" />
+    <ClInclude Include="Core\DeviceManager.h" />
+    <ClInclude Include="Core\Instance.h" />
+    <ClInclude Include="Core\Swapchain.h" />
+    <ClInclude Include="Core\Window.h" />
+    <ClInclude Include="Tools\Logger.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
