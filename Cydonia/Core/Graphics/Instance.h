@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Common/Common.h"
+#include <Core/Common/Common.h>
 
 #include <vector>
 
@@ -8,13 +8,13 @@
 // Forwards
 // ================================================================================================
 FWDHANDLE( VkInstance );
-FWDHANDLE( VkSurfaceKHR );
 FWDHANDLE( VkDebugUtilsMessengerEXT );
 struct VkDebugUtilsMessengerCreateInfoEXT;
 
 namespace cyd
 {
 class Window;
+class DeviceManager;
 }
 
 // ================================================================================================
@@ -25,26 +25,27 @@ namespace cyd
 class Instance
 {
   public:
-   Instance( const Window* window );
+   Instance( const Window& window );
    ~Instance();
 
-   const std::vector<const char*>& getLayers() const { return _layers; }
-   const VkInstance getVKInstance() const { return _vkInstance; }
-   const VkSurfaceKHR getSurface() const noexcept { return _vkSurface; }
+   const VkInstance& getVKInstance() const { return _vkInstance; }
+   const std::vector<const char*> getLayers() const { return _layers; }
 
   private:
-   void _createVKInstance( const Window* window );
-   void _createVKSurface( const Window* window );
+   // =============================================================================================
+   // Private Functions
+   // =============================================================================================
+   void _createVKInstance();
    void _createDebugMessenger();
 
-   void _populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debugInfo );
-
-   bool _checkValidationLayerSupport( const std::vector<const char*>& desiredLayers );
-
+   // =============================================================================================
+   // Private Variables
+   // =============================================================================================
    std::vector<const char*> _layers;
 
+   const Window& _window;
+
    VkInstance _vkInstance                   = nullptr;
-   VkSurfaceKHR _vkSurface                  = nullptr;
    VkDebugUtilsMessengerEXT _debugMessenger = nullptr;
 };
 }

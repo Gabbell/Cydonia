@@ -166,25 +166,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Core\App.cpp" />
-    <ClCompile Include="Core\Device.cpp" />
-    <ClCompile Include="Core\DeviceManager.cpp" />
-    <ClCompile Include="Core\Instance.cpp" />
-    <ClCompile Include="Core\Swapchain.cpp" />
-    <ClCompile Include="Core\Window.cpp" />
-    <ClCompile Include="Tools\Logger.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Core\Application.cpp" />
+    <ClCompile Include="Core\Graphics\Device.cpp" />
+    <ClCompile Include="Core\Graphics\DeviceManager.cpp" />
+    <ClCompile Include="Core\Graphics\Instance.cpp" />
+    <ClCompile Include="Core\Graphics\Surface.cpp" />
+    <ClCompile Include="Core\Graphics\Swapchain.cpp" />
+    <ClCompile Include="Core\Utilities\Logger.cpp" />
+    <ClCompile Include="Core\Window\Window.cpp" />
+    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Common\Assert.h" />
-    <ClInclude Include="Common\Common.h" />
-    <ClInclude Include="Core\App.h" />
-    <ClInclude Include="Core\Device.h" />
-    <ClInclude Include="Core\DeviceManager.h" />
-    <ClInclude Include="Core\Instance.h" />
-    <ClInclude Include="Core\Swapchain.h" />
-    <ClInclude Include="Core\Window.h" />
-    <ClInclude Include="Tools\Logger.h" />
+    <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\Common\Assert.h" />
+    <ClInclude Include="Core\Common\Common.h" />
+    <ClInclude Include="Core\Common\Vulkan.h" />
+    <ClInclude Include="Core\Graphics\CommonTypes.h" />
+    <ClInclude Include="Core\Graphics\Device.h" />
+    <ClInclude Include="Core\Graphics\DeviceManager.h" />
+    <ClInclude Include="Core\Graphics\Instance.h" />
+    <ClInclude Include="Core\Graphics\Surface.h" />
+    <ClInclude Include="Core\Graphics\Swapchain.h" />
+    <ClInclude Include="Core\Utilities\Logger.h" />
+    <ClInclude Include="Core\Window\Window.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

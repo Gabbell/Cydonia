@@ -1,15 +1,16 @@
-#include "Instance.h"
+#include <Core/Graphics/Instance.h>
 
-#include "Common/Assert.h"
-#include "Core/Window.h"
+#include <Core/Common/Assert.h>
+#include <Core/Common/Vulkan.h>
 
-#include <vulkan/vulkan.h>
+#include <Core/Window/Window.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_syswm.h>
-#include <SDL2/SDL_vulkan.h>
+#ifdef _WIN32
+#include <Windows.h>
+#endif
 
 #include <algorithm>
+#include <set>
 
 static VkBool32 errorCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
@@ -89,89 +90,32 @@ void destroyDebugUtilsMessengerEXT(
    }
 }
 
-cyd::Instance::Instance( const Window* window )
+cyd::Instance::Instance( const Window& window ) : _window( window )
 {
-   _createVKInstance( window );
-   _createVKSurface( window );
+   _createVKInstance();
    _createDebugMessenger();
 }
 
-void cyd::Instance::_createVKInstance( const Window* window )
+static bool checkValidationLayerSupport( const std::vector<const char*>& desiredLayers )
 {
-   // General application info
-   VkApplicationInfo appInfo  = {};
-   appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-   appInfo.pNext              = nullptr;
-   appInfo.pApplicationName   = "Cydonia";
-   appInfo.applicationVersion = 1;
-   appInfo.pEngineName        = "VK";
-   appInfo.engineVersion      = 1;
-   appInfo.apiVersion         = VK_API_VERSION_1_1;
+   uint32_t layerCount;
+   vkEnumerateInstanceLayerProperties( &layerCount, nullptr );
 
-   // Use validation layers if this is a debug build
-#if defined( _DEBUG )
-   _layers.push_back( "VK_LAYER_LUNARG_standard_validation" );
-   CYDASSERT( _checkValidationLayerSupport( _layers ) );
-#endif
+   std::vector<VkLayerProperties> supportedLayers( layerCount );
+   VkResult result = vkEnumerateInstanceLayerProperties( &layerCount, supportedLayers.data() );
 
-   // Get necessary extensions
-   std::vector<const char*> extensions;
-   if( window )
+   CYDASSERT( result == VK_SUCCESS && "Instance: Could not enumerate instance layer properties" );
+
+   std::set<std::string> requiredLayers( desiredLayers.begin(), desiredLayers.end() );
+   for( const auto& layer : supportedLayers )
    {
-      extensions = window->getExtensions();
-   }
-   else
-   {
-      CYDASSERT( window && "Instance: creating instance without any extensions" );
+      requiredLayers.erase( layer.layerName );
    }
 
-   // Instance create info
-   VkInstanceCreateInfo instInfo    = {};
-   instInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-   instInfo.flags                   = 0;
-   instInfo.pApplicationInfo        = &appInfo;
-   instInfo.enabledLayerCount       = static_cast<uint32_t>( _layers.size() );
-   instInfo.ppEnabledLayerNames     = _layers.data();
-   instInfo.enabledExtensionCount   = static_cast<uint32_t>( extensions.size() );
-   instInfo.ppEnabledExtensionNames = extensions.data();
-
-   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
-#ifdef _DEBUG
-   _populateDebugInfo( debugInfo );
-   instInfo.pNext = &debugInfo;
-#endif
-
-   // Attempting to create an instance
-   VkResult instanceResult = vkCreateInstance( &instInfo, nullptr, &_vkInstance );
-   CYDASSERT( instanceResult == VK_SUCCESS && "Instance: Vulkan instance creation failed" );
+   return requiredLayers.empty();
 }
 
-void cyd::Instance::_createVKSurface( const Window* window )
-{
-   // Creating surface
-   if( window && ( SDL_Vulkan_CreateSurface( window->getWindow(), _vkInstance, &_vkSurface ) == 0 ) )
-   {
-      const char* error = SDL_GetError();
-      CYDASSERT( !error );
-   }
-}
-
-void cyd::Instance::_createDebugMessenger()
-{
-#ifdef _DEBUG
-   // Create debug messenger
-   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
-   _populateDebugInfo( debugInfo );
-
-   VkResult debugResult =
-       createDebugUtilsMessengerEXT( _vkInstance, &debugInfo, nullptr, &_debugMessenger );
-
-   CYDASSERT(
-       debugResult == VK_SUCCESS && "cyd::Instance:: Debug utils messenger creation failed" );
-#endif
-}
-
-void cyd::Instance::_populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debugInfo )
+static void populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debugInfo )
 {
    // Filling up debug info
    debugInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -187,30 +131,60 @@ void cyd::Instance::_populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debu
    debugInfo.pUserData       = nullptr;
 }
 
-bool cyd::Instance::_checkValidationLayerSupport( const std::vector<const char*>& desiredLayers )
+void cyd::Instance::_createVKInstance()
 {
-   uint32_t layerCount;
-   vkEnumerateInstanceLayerProperties( &layerCount, nullptr );
+   // General application info
+   VkApplicationInfo appInfo  = {};
+   appInfo.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+   appInfo.pNext              = nullptr;
+   appInfo.pApplicationName   = "Cydonia";
+   appInfo.applicationVersion = 1;
+   appInfo.pEngineName        = "VK";
+   appInfo.engineVersion      = 1;
+   appInfo.apiVersion         = VK_API_VERSION_1_1;
 
-   std::vector<VkLayerProperties> supportedLayers( layerCount );
-   VkResult result = vkEnumerateInstanceLayerProperties( &layerCount, supportedLayers.data() );
+   // Use validation layers if this is a debug build
+#if defined( _DEBUG )
+   _layers.push_back( "VK_LAYER_LUNARG_standard_validation" );
+   CYDASSERT( checkValidationLayerSupport( _layers ) );
+#endif
 
-   CYDASSERT( result == VK_SUCCESS && "Instance: Could not enumerate instance layer properties" );
+   const std::vector<const char*>& extensions = _window.getExtensionsFromSDL();
 
-   bool found = true;
-   for( const char* layerName : desiredLayers )
-   {
-      auto it = std::find_if(
-          supportedLayers.begin(), supportedLayers.end(), [&]( const VkLayerProperties& layer ) {
-             return strcmp( layerName, layer.layerName ) == 0;
-          } );
-      if( it == supportedLayers.end() )
-      {
-         found = false;
-         break;
-      }
-   }
-   return found;
+   // Instance create info
+   VkInstanceCreateInfo instInfo    = {};
+   instInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+   instInfo.flags                   = 0;
+   instInfo.pApplicationInfo        = &appInfo;
+   instInfo.enabledLayerCount       = static_cast<uint32_t>( _layers.size() );
+   instInfo.ppEnabledLayerNames     = _layers.data();
+   instInfo.enabledExtensionCount   = static_cast<uint32_t>( extensions.size() );
+   instInfo.ppEnabledExtensionNames = extensions.data();
+
+   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
+#ifdef _DEBUG
+   populateDebugInfo( debugInfo );
+   instInfo.pNext = &debugInfo;
+#endif
+
+   // Attempting to create an instance
+   VkResult instanceResult = vkCreateInstance( &instInfo, nullptr, &_vkInstance );
+   CYDASSERT( instanceResult == VK_SUCCESS && "Instance: Vulkan instance creation failed" );
+}
+
+void cyd::Instance::_createDebugMessenger()
+{
+#ifdef _DEBUG
+   // Create debug messenger
+   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
+   populateDebugInfo( debugInfo );
+
+   VkResult debugResult =
+       createDebugUtilsMessengerEXT( _vkInstance, &debugInfo, nullptr, &_debugMessenger );
+
+   CYDASSERT(
+       debugResult == VK_SUCCESS && "cyd::Instance:: Debug utils messenger creation failed" );
+#endif
 }
 
 cyd::Instance::~Instance()
@@ -218,6 +192,5 @@ cyd::Instance::~Instance()
 #ifdef _DEBUG
    destroyDebugUtilsMessengerEXT( _vkInstance, _debugMessenger, nullptr );
 #endif
-   vkDestroySurfaceKHR( _vkInstance, _vkSurface, nullptr );
    vkDestroyInstance( _vkInstance, nullptr );
 }

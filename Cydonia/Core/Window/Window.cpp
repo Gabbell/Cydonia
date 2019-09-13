@@ -1,11 +1,10 @@
 // Tell SDL not to mess with main()
 #define SDL_MAIN_HANDLED
 
-#include "Window.h"
+#include <Core/Window/Window.h>
 
-#include "Common/Assert.h"
-
-#include <vulkan/vulkan.h>
+#include <Core/Common/Assert.h>
+#include <Core/Common/Vulkan.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
@@ -18,8 +17,9 @@ static void handleSDLError()
 }
 
 cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
-    : _width( width ), _height( height )
 {
+   _extent = {width, height};
+
    if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) handleSDLError();
 
    // Creating SDL_Window
@@ -27,8 +27,8 @@ cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
        title.c_str(),
        SDL_WINDOWPOS_CENTERED,
        SDL_WINDOWPOS_CENTERED,
-       _width,
-       _height,
+       _extent.width,
+       _extent.height,
        SDL_WINDOW_VULKAN );
    CYDASSERT( _sdlWindow && "Could not create SDL window" );
 

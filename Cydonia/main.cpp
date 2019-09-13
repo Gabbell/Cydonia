@@ -1,19 +1,16 @@
-#include "Core/App.h"
-
-#include <cstdint>
+#include <Core/Application.h>
 
 static constexpr uint32_t width  = 1280;
 static constexpr uint32_t height = 720;
+static constexpr char title[]    = "It's not delivery, it's garbagio!";
 
 int main()
 {
    {
-      cyd::App app( width, height, "It's not delivery, it's garbagio!" );
+      cyd::Application app( width, height, title );
       app.startLoop();
    }
 
-   // Dirty stuff to make sure we destroy properly and look at potential validation layer errors
+   // To see validation layer errors after destruction
    system( "pause" );
-
-   return 0;
 }

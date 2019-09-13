@@ -1,40 +1,35 @@
 #pragma once
 
-#include "Common/Common.h"
-
-#include <memory>
-#include <vector>
+#include <Core/Common/Common.h>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkPhysicalDevice );
+FWDHANDLE( VkSurfaceKHR );
 
 namespace cyd
 {
-class Instance;
-class Device;
 class Window;
-}  // namespace cyd
+class Instance;
+}
 
 // ================================================================================================
 // Definition
 // ================================================================================================
 namespace cyd
 {
-class DeviceManager
+class Surface
 {
   public:
-   explicit DeviceManager( const Instance* instance );
-   ~DeviceManager();
+   Surface( const Instance& instance, const Window& window );
+   ~Surface();
+
+   const VkSurfaceKHR& getVKSurface() const { return _vkSurface; }
 
   private:
-   bool _checkDevice( const VkPhysicalDevice& physDevice );
+   const Window& _window;
+   const Instance& _instance;
 
-   // Devices used for operations
-   std::vector<std::unique_ptr<Device>> _devices;
-
-   // Instance used to create the device manager
-   const Instance* _attachedInstance = nullptr;
+   VkSurfaceKHR _vkSurface = nullptr;
 };
 }
