@@ -7,6 +7,8 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
+#include <Core/Graphics/CommonTypes.h>
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -28,8 +30,9 @@ class Window
    Window( uint32_t width, uint32_t height, const std::string& title );
    ~Window();
 
-   SDL_Window* getWindow() const noexcept { return _sdlWindow; }
-   std::vector<const char*> getExtensions() const noexcept { return _extensions; };
+   const Extent& getExtent() const noexcept { return _extent; }
+   SDL_Window* getSDLWindow() const noexcept { return _sdlWindow; }
+   std::vector<const char*> getExtensionsFromSDL() const noexcept { return _extensions; };
 
   private:
    const std::string _title = "Default Title";
@@ -39,7 +42,7 @@ class Window
    // Window is the owner of this SDL_Window
    SDL_Window* _sdlWindow = nullptr;
 
-   uint32_t _width  = 0;
-   uint32_t _height = 0;
+   // Dimensions
+   Extent _extent = {0, 0};
 };
 }
