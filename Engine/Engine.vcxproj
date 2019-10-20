@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <!-- Copyright (c) 2015-2019 LunarG, Inc. -->
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
@@ -24,7 +24,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>VulkanCppWindowedProgram1</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Cydonia</ProjectName>
+    <ProjectName>Engine</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -167,11 +167,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Core\Application.cpp" />
+    <ClCompile Include="Core\Graphics\CommandBuffer.cpp" />
+    <ClCompile Include="Core\Graphics\CommandPool.cpp" />
     <ClCompile Include="Core\Graphics\Device.cpp" />
-    <ClCompile Include="Core\Graphics\DeviceManager.cpp" />
+    <ClCompile Include="Core\Graphics\DeviceHerder.cpp" />
     <ClCompile Include="Core\Graphics\Instance.cpp" />
+    <ClCompile Include="Core\Graphics\PipelineStash.cpp" />
+    <ClCompile Include="Core\Graphics\RenderPassStash.cpp" />
+    <ClCompile Include="Core\Graphics\Shader.cpp" />
+    <ClCompile Include="Core\Graphics\ShaderStash.cpp" />
     <ClCompile Include="Core\Graphics\Surface.cpp" />
     <ClCompile Include="Core\Graphics\Swapchain.cpp" />
+    <ClCompile Include="Core\Graphics\Types.cpp" />
     <ClCompile Include="Core\Utilities\Logger.cpp" />
     <ClCompile Include="Core\Window\Window.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -179,12 +186,18 @@
   <ItemGroup>
     <ClInclude Include="Core\Application.h" />
     <ClInclude Include="Core\Common\Assert.h" />
-    <ClInclude Include="Core\Common\Common.h" />
+    <ClInclude Include="Core\Common\Include.h" />
     <ClInclude Include="Core\Common\Vulkan.h" />
-    <ClInclude Include="Core\Graphics\CommonTypes.h" />
+    <ClInclude Include="Core\Graphics\CommandBuffer.h" />
+    <ClInclude Include="Core\Graphics\CommandPool.h" />
+    <ClInclude Include="Core\Graphics\DeviceHerder.h" />
+    <ClInclude Include="Core\Graphics\Types.h" />
     <ClInclude Include="Core\Graphics\Device.h" />
-    <ClInclude Include="Core\Graphics\DeviceManager.h" />
     <ClInclude Include="Core\Graphics\Instance.h" />
+    <ClInclude Include="Core\Graphics\PipelineStash.h" />
+    <ClInclude Include="Core\Graphics\RenderPassStash.h" />
+    <ClInclude Include="Core\Graphics\Shader.h" />
+    <ClInclude Include="Core\Graphics\ShaderStash.h" />
     <ClInclude Include="Core\Graphics\Surface.h" />
     <ClInclude Include="Core\Graphics\Swapchain.h" />
     <ClInclude Include="Core\Utilities\Logger.h" />

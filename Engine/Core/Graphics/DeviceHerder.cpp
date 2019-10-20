@@ -1,4 +1,4 @@
-#include <Core/Graphics/DeviceManager.h>
+#include <Core/Graphics/DeviceHerder.h>
 
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
@@ -11,7 +11,7 @@
 
 #include <set>
 
-cyd::DeviceManager::DeviceManager(
+cyd::DeviceHerder::DeviceHerder(
     const Instance& instance,
     const Window& window,
     const Surface& surface )
@@ -27,9 +27,9 @@ cyd::DeviceManager::DeviceManager(
    VkResult result = vkEnumeratePhysicalDevices(
        instance.getVKInstance(), &physicalDeviceCount, physicalDevices.data() );
 
-   CYDASSERT( result == VK_SUCCESS && "DeviceManager: Could not enumerate physical devices" );
+   CYDASSERT( result == VK_SUCCESS && "DeviceHerder: Could not enumerate physical devices" );
 
-   CYDASSERT( !physicalDevices.empty() && "DeviceManager: No devices supporting Vulkan" );
+   CYDASSERT( !physicalDevices.empty() && "DeviceHerder: No devices supporting Vulkan" );
 
    // TODO Add support for multiple devices
    for( const auto& physDevice : physicalDevices )
@@ -38,22 +38,13 @@ cyd::DeviceManager::DeviceManager(
       {
          // Found suitable device, add it to the currently managed devices
          _devices.emplace_back(
-             std::make_unique<Device>( instance, surface, physDevice, _extensions ) );
-
-         // Creating main swapchain
-         // TODO Not assume that the first device will support presentation when creating the main
-         // swapchain
-         if( _devices.size() == 1 && _devices[0]->supportsPresentation() )
-         {
-            _mainSwapchain = _devices[0]->createSwapchain( _window.getExtent() );
-         }
-
+             std::make_unique<Device>( _instance, _window, _surface, physDevice, _extensions ) );
          break;
       }
    }
 }
 
-bool cyd::DeviceManager::_checkDevice( const Surface& surface, const VkPhysicalDevice& physDevice )
+bool cyd::DeviceHerder::_checkDevice( const Surface& surface, const VkPhysicalDevice& physDevice )
 {
    VkPhysicalDeviceProperties properties = {};
    vkGetPhysicalDeviceProperties( physDevice, &properties );
@@ -105,7 +96,7 @@ bool cyd::DeviceManager::_checkDevice( const Surface& surface, const VkPhysicalD
       // Device will be added to the device manager, dump some info
       fprintf(
           stdout,
-          "DeviceManager: adding device to manager\n\tDevice Name: %s\n\tAPI Version: "
+          "DeviceHerder: adding device to manager\n\tDevice Name: %s\n\tAPI Version: "
           "%u.%u.%u\n",
           properties.deviceName,
           VK_VERSION_MAJOR( properties.apiVersion ),
@@ -116,7 +107,7 @@ bool cyd::DeviceManager::_checkDevice( const Surface& surface, const VkPhysicalD
    return isChosen;
 }
 
-bool cyd::DeviceManager::_checkDeviceExtensionSupport( const VkPhysicalDevice& physDevice )
+bool cyd::DeviceHerder::_checkDeviceExtensionSupport( const VkPhysicalDevice& physDevice )
 {
    uint32_t extensionCount;
    vkEnumerateDeviceExtensionProperties( physDevice, nullptr, &extensionCount, nullptr );
@@ -134,4 +125,9 @@ bool cyd::DeviceManager::_checkDeviceExtensionSupport( const VkPhysicalDevice& p
    return requiredExtensions.empty();
 }
 
-cyd::DeviceManager::~DeviceManager() {}
+const cyd::Swapchain* cyd::DeviceHerder::getMainSwapchain()
+{
+   return _devices[0]->getSwapchain();
+}
+
+cyd::DeviceHerder::~DeviceHerder() {}

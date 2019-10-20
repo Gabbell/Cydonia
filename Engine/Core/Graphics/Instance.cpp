@@ -5,6 +5,9 @@
 
 #include <Core/Window/Window.h>
 
+#include <Core/Graphics/Device.h>
+#include <Core/Graphics/Surface.h>
+
 #ifdef _WIN32
 #include <Windows.h>
 #endif
@@ -161,8 +164,8 @@ void cyd::Instance::_createVKInstance()
    instInfo.enabledExtensionCount   = static_cast<uint32_t>( extensions.size() );
    instInfo.ppEnabledExtensionNames = extensions.data();
 
-   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
 #ifdef _DEBUG
+   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
    populateDebugInfo( debugInfo );
    instInfo.pNext = &debugInfo;
 #endif
@@ -189,6 +192,7 @@ void cyd::Instance::_createDebugMessenger()
 
 cyd::Instance::~Instance()
 {
+
 #ifdef _DEBUG
    destroyDebugUtilsMessengerEXT( _vkInstance, _debugMessenger, nullptr );
 #endif
