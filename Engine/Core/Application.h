@@ -11,8 +11,8 @@ namespace cyd
 {
 class Window;
 class Instance;
-class DeviceManager;
 class Surface;
+class DeviceHerder;
 }
 
 // ================================================================================================
@@ -33,16 +33,16 @@ class Application
    void startLoop();
 
   protected:
-   virtual void preLoop();    // Executed before the application enters the main loop
-   virtual void tick();       // Executed as fast as possible
-   virtual void drawFrame();  // Used to draw one frame
-   virtual void postLoop();   // Executed when the application comes out of the main loop
+   virtual void preLoop();                 // Executed before the application enters the main loop
+   virtual void tick( double deltaTime );  // Executed as fast as possible
+   virtual void drawFrame( double deltaTime );  // Used to draw one frame
+   virtual void postLoop();  // Executed when the application comes out of the main loop
 
   private:
-   std::unique_ptr<Window> _window     = nullptr;
-   std::unique_ptr<Instance> _instance = nullptr;
-   std::unique_ptr<Surface> _surface   = nullptr;
-   std::unique_ptr<DeviceManager> _dm  = nullptr;
+   std::unique_ptr<Window> _window;
+   std::unique_ptr<Instance> _instance;
+   std::unique_ptr<Surface> _surface;
+   std::unique_ptr<DeviceHerder> _dh;
 
    bool _running;
 };

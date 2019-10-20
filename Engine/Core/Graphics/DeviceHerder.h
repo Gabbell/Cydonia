@@ -1,20 +1,22 @@
 #pragma once
 
-#include <Core/Common/Common.h>
+#include <Core/Common/Include.h>
 
+#include <memory>
 #include <vector>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkInstance );
-FWDHANDLE( VkDebugUtilsMessengerEXT );
-struct VkDebugUtilsMessengerCreateInfoEXT;
+FWDHANDLE( VkPhysicalDevice );
 
 namespace cyd
 {
+class Instance;
 class Window;
-class DeviceManager;
+class Surface;
+class Device;
+class Swapchain;
 }
 
 // ================================================================================================
@@ -22,30 +24,35 @@ class DeviceManager;
 // ================================================================================================
 namespace cyd
 {
-class Instance
+class DeviceHerder
 {
   public:
-   Instance( const Window& window );
-   ~Instance();
+   explicit DeviceHerder(
+       const Instance& instance,
+       const Window& window,
+       const Surface& surface );
+   ~DeviceHerder();
 
-   const VkInstance& getVKInstance() const { return _vkInstance; }
-   const std::vector<const char*> getLayers() const { return _layers; }
+   // Main device is always the first one for now
+   Device* getMainDevice() const { return _devices[0].get(); }
+   const Swapchain* getMainSwapchain();
 
   private:
    // =============================================================================================
    // Private Functions
    // =============================================================================================
-   void _createVKInstance();
-   void _createDebugMessenger();
+   bool _checkDevice( const Surface& surface, const VkPhysicalDevice& physDevice );
+   bool _checkDeviceExtensionSupport( const VkPhysicalDevice& physDevice );
 
    // =============================================================================================
    // Private Variables
    // =============================================================================================
-   std::vector<const char*> _layers;
+   std::vector<const char*> _extensions;
 
+   std::vector<std::unique_ptr<Device>> _devices;
+
+   const Instance& _instance;
    const Window& _window;
-
-   VkInstance _vkInstance                   = nullptr;
-   VkDebugUtilsMessengerEXT _debugMessenger = nullptr;
+   const Surface& _surface;
 };
 }

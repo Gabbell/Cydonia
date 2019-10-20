@@ -1,22 +1,19 @@
 #pragma once
 
-#include <Core/Common/Common.h>
+#include <Core/Common/Include.h>
 
-#include <memory>
 #include <vector>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkPhysicalDevice );
+FWDHANDLE( VkInstance );
+FWDHANDLE( VkDebugUtilsMessengerEXT );
+struct VkDebugUtilsMessengerCreateInfoEXT;
 
 namespace cyd
 {
-class Instance;
 class Window;
-class Surface;
-class Device;
-class Swapchain;
 }
 
 // ================================================================================================
@@ -24,36 +21,30 @@ class Swapchain;
 // ================================================================================================
 namespace cyd
 {
-class DeviceManager
+class Instance
 {
   public:
-   explicit DeviceManager( const Instance& instance, const Window& window, const Surface& surface );
-   ~DeviceManager();
+   explicit Instance( const Window& window );
+   ~Instance();
 
-   // Swapchain created on the main device (first device that supports presentation)
-   const Swapchain* getMainSwapchain() const noexcept { return _mainSwapchain; };
-
-   // Main device is always the first one for now
-   const Device& getMainDevice() const { return *_devices[0]; };
+   const VkInstance& getVKInstance() const { return _vkInstance; }
+   const std::vector<const char*> getLayers() const { return _layers; }
 
   private:
    // =============================================================================================
    // Private Functions
    // =============================================================================================
-   bool _checkDevice( const Surface& surface, const VkPhysicalDevice& physDevice );
-   bool _checkDeviceExtensionSupport( const VkPhysicalDevice& physDevice );
+   void _createVKInstance();
+   void _createDebugMessenger();
 
    // =============================================================================================
    // Private Variables
    // =============================================================================================
-   std::vector<const char*> _extensions;
+   std::vector<const char*> _layers;
 
-   std::vector<std::unique_ptr<Device>> _devices;
-
-   const Swapchain* _mainSwapchain;
-
-   const Instance& _instance;
    const Window& _window;
-   const Surface& _surface;
+
+   VkInstance _vkInstance                   = nullptr;
+   VkDebugUtilsMessengerEXT _debugMessenger = nullptr;
 };
 }

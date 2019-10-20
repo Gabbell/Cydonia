@@ -7,7 +7,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
-#include <Core/Graphics/CommonTypes.h>
+#include <Core/Graphics/Types.h>
 
 #include <cstdint>
 #include <memory>
