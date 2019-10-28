@@ -1,22 +1,22 @@
-#include <Core/Graphics/CommandPool.h>
+#include <Core/Graphics/Vulkan/CommandPool.h>
 
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
-#include <Core/Graphics/Device.h>
-#include <Core/Graphics/CommandBuffer.h>
+#include <Core/Graphics/Vulkan/Device.h>
+#include <Core/Graphics/Vulkan/CommandBuffer.h>
 
 static constexpr uint32_t INITIAL_SIZE = 64;
 static constexpr uint32_t MAX_SIZE     = 1024;
 
-cyd::CommandPool::CommandPool( const Device& device, uint32_t familyIndex, UsageFlag type )
-    : _device( device ), _type( type )
+cyd::CommandPool::CommandPool( const Device& device, uint32_t familyIndex, QueueUsageFlag type )
+    : _device( device ), _familyIndex( familyIndex ), _type( type )
 {
    _buffers.resize( INITIAL_SIZE );
 
    VkCommandPoolCreateInfo poolInfo = {};
    poolInfo.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-   poolInfo.queueFamilyIndex        = familyIndex;
+   poolInfo.queueFamilyIndex        = _familyIndex;
    poolInfo.flags                   = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
 
    VkResult result = vkCreateCommandPool( _device.getVKDevice(), &poolInfo, nullptr, &_vkPool );

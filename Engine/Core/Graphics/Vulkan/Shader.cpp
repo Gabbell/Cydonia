@@ -1,9 +1,9 @@
-#include <Core/Graphics/Shader.h>
+#include <Core/Graphics/Vulkan/Shader.h>
 
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
-#include <Core/Graphics/Device.h>
+#include <Core/Graphics/Vulkan/Device.h>
 
 #include <fstream>
 

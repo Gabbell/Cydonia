@@ -1,9 +1,9 @@
-#include <Core/Graphics/RenderPassStash.h>
+#include <Core/Graphics/Vulkan/RenderPassStash.h>
 
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
-#include <Core/Graphics/Device.h>
+#include <Core/Graphics/Vulkan/Device.h>
 
 cyd::RenderPassStash::RenderPassStash( const Device& device ) : _device( device )
 {

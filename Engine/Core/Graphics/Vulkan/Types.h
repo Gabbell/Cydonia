@@ -1,5 +1,7 @@
 #pragma once
 
+#include <glm/glm.hpp>
+
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -27,14 +29,42 @@ namespace cyd
 // Enums
 using Flag = uint32_t;
 
-enum Usage : Flag
+enum QueueUsage : Flag
 {
-   UNKNOWN  = 0,
    GRAPHICS = 1 << 0,
    COMPUTE  = 1 << 1,
    TRANSFER = 1 << 2
 };
-using UsageFlag = Flag;
+using QueueUsageFlag = Flag;
+
+enum BufferUsage : Flag
+{
+   TRANSFER_SRC = 1 << 0,
+   TRANSFER_DST = 1 << 1,
+   UNIFORM      = 1 << 2,
+   STORAGE      = 1 << 3,
+   INDEX        = 1 << 4,
+   VERTEX       = 1 << 5
+};
+using BufferUsageFlag = Flag;
+
+enum MemoryType : Flag
+{
+   DEVICE_LOCAL  = 1 << 0,
+   HOST_VISIBLE  = 1 << 1,
+   HOST_COHERENT = 1 << 2
+};
+using MemoryTypeFlag = Flag;
+
+enum class ShaderStage
+{
+   VERTEX,
+   GEOMETRY,
+   FRAGMENT,
+   COMPUTE,
+   ALL_GRAPHICS,
+   ALL
+};
 
 enum class PixelFormat
 {
@@ -54,7 +84,7 @@ enum class PresentMode
    MAILBOX
 };
 
-enum class LoadOp  
+enum class LoadOp
 {
    LOAD,
    CLEAR,
@@ -102,6 +132,12 @@ enum class PolygonMode
 
 // ================================================================================================
 // Basic structs
+struct Vertex
+{
+   glm::vec4 pos;
+   glm::vec4 col;
+};
+
 struct Extent
 {
    bool operator==( const Extent& other ) const;

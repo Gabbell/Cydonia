@@ -1,4 +1,4 @@
-#include <Core/Graphics/Types.h>
+#include <Core/Graphics/Vulkan/Types.h>
 
 #include <Core/Common/Vulkan.h>
 #include <Core/Common/Assert.h>
@@ -105,6 +105,7 @@ VkAttachmentStoreOp cydOpToVkOp( StoreOp op )
    }
    return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
+
 VkPrimitiveTopology cydDrawPrimToVkDrawPrim( DrawPrimitive prim )
 {
    switch( prim )

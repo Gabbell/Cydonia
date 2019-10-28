@@ -1,12 +1,12 @@
-#include <Core/Graphics/Swapchain.h>
+#include <Core/Graphics/Vulkan/Swapchain.h>
 
 #include <Core/Common/Vulkan.h>
 #include <Core/Common/Assert.h>
 
-#include <Core/Graphics/Types.h>
-#include <Core/Graphics/Device.h>
-#include <Core/Graphics/Surface.h>
-#include <Core/Graphics/CommandBuffer.h>
+#include <Core/Graphics/Vulkan/Types.h>
+#include <Core/Graphics/Vulkan/Device.h>
+#include <Core/Graphics/Vulkan/Surface.h>
+#include <Core/Graphics/Vulkan/CommandBuffer.h>
 
 #include <algorithm>
 
@@ -42,7 +42,7 @@ static VkExtent2D chooseExtent( const cyd::Extent& extent, const VkSurfaceCapabi
    else
    {
       // Use the window extent
-      VkExtent2D actualExtent = {extent.width, extent.height};
+      VkExtent2D actualExtent = { extent.width, extent.height };
 
       actualExtent.width =
           std::clamp( actualExtent.width, caps.minImageExtent.width, caps.maxImageExtent.width );
@@ -237,7 +237,7 @@ void cyd::Swapchain::initFramebuffers( const VkRenderPass renderPass )
       _frameBuffers.resize( _imageCount );
       for( size_t i = 0; i < _imageCount; i++ )
       {
-         VkImageView attachments[] = {_imageViews[i]};
+         VkImageView attachments[] = { _imageViews[i] };
 
          VkFramebufferCreateInfo framebufferInfo = {};
          framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -284,8 +284,8 @@ void cyd::Swapchain::present()
       VkSubmitInfo submitInfo = {};
       submitInfo.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-      VkSemaphore waitSemaphores[]      = {_availableSems[_currentFrame]};
-      VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT};
+      VkSemaphore waitSemaphores[]      = { _availableSems[_currentFrame] };
+      VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
       submitInfo.waitSemaphoreCount     = 1;
       submitInfo.pWaitSemaphores        = waitSemaphores;
       submitInfo.pWaitDstStageMask      = waitStages;
@@ -293,11 +293,12 @@ void cyd::Swapchain::present()
       submitInfo.commandBufferCount = 1;
       submitInfo.pCommandBuffers    = &currentCmdBuffer;
 
-      VkSemaphore signalSemaphores[]  = {_renderDoneSems[_currentFrame]};
+      VkSemaphore signalSemaphores[]  = { _renderDoneSems[_currentFrame] };
       submitInfo.signalSemaphoreCount = 1;
       submitInfo.pSignalSemaphores    = signalSemaphores;
 
-      const VkQueue* graphicsPresentQueue = _device.getQueue( Usage::GRAPHICS, true );
+      // FIXME NO HARDCODING 0
+      const VkQueue* graphicsPresentQueue = _device.getQueue( 0, true );
       if( graphicsPresentQueue )
       {
          vkQueueSubmit( *graphicsPresentQueue, 1, &submitInfo, currentFence );
@@ -308,7 +309,7 @@ void cyd::Swapchain::present()
          presentInfo.waitSemaphoreCount = 1;
          presentInfo.pWaitSemaphores    = signalSemaphores;
 
-         VkSwapchainKHR swapChains[] = {_vkSwapchain};
+         VkSwapchainKHR swapChains[] = { _vkSwapchain };
          presentInfo.swapchainCount  = 1;
          presentInfo.pSwapchains     = swapChains;
 

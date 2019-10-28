@@ -1,11 +1,11 @@
-#include <Core/Graphics/Surface.h>
+#include <Core/Graphics/Vulkan/Surface.h>
 
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
 #include <Core/Window/Window.h>
 
-#include <Core/Graphics/Instance.h>
+#include <Core/Graphics/Vulkan/Instance.h>
 
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>

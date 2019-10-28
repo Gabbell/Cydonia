@@ -2,14 +2,13 @@
 
 #include <Core/Common/Include.h>
 
-#include <Core/Graphics/Types.h>
-
-#include <unordered_map>
+#include <Core/Graphics/Vulkan/Types.h>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkRenderPass );
+FWDHANDLE( VkBuffer );
+FWDHANDLE( VkDeviceMemory );
 namespace cyd
 {
 class Device;
@@ -20,19 +19,29 @@ class Device;
 // ================================================================================================
 namespace cyd
 {
-class RenderPassStash
+class Buffer
 {
   public:
-   explicit RenderPassStash( const Device& device );
-   ~RenderPassStash();
+   Buffer( const Device& device, size_t size, BufferUsageFlag usage, MemoryTypeFlag memoryType );
+   ~Buffer();
 
-   const VkRenderPass findOrCreate( const RenderPassInfo& info );
+   size_t getSize() const noexcept { return _size; }
+   VkBuffer getVKBuffer() const noexcept { return _vkBuffer; }
+
+   void mapMemory( void* data, size_t size );
 
   private:
-   void _createDefaultRenderPasses();
+   void _allocateMemory();
 
    const Device& _device;
 
-   std::unordered_map<RenderPassInfo, VkRenderPass> _renderPasses;
+   // Used for staging
+   void* _data;
+
+   size_t _size;
+   VkBuffer _vkBuffer;
+   VkDeviceMemory _vkMemory;
+   BufferUsageFlag _usage;
+   MemoryTypeFlag _memoryType;
 };
 }

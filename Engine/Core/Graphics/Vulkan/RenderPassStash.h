@@ -2,21 +2,17 @@
 
 #include <Core/Common/Include.h>
 
-#include <Core/Graphics/Types.h>
+#include <Core/Graphics/Vulkan/Types.h>
 
-#include <memory>
 #include <unordered_map>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkPipeline );
-FWDHANDLE( VkPipelineLayout );
-
+FWDHANDLE( VkRenderPass );
 namespace cyd
 {
 class Device;
-class ShaderStash;
 }
 
 // ================================================================================================
@@ -24,20 +20,19 @@ class ShaderStash;
 // ================================================================================================
 namespace cyd
 {
-class PipelineStash
+class RenderPassStash
 {
   public:
-   explicit PipelineStash( const Device& device );
-   ~PipelineStash();
+   explicit RenderPassStash( const Device& device );
+   ~RenderPassStash();
 
-   const VkPipeline findOrCreate( const PipelineInfo& info );
+   const VkRenderPass findOrCreate( const RenderPassInfo& info );
 
   private:
+   void _createDefaultRenderPasses();
+
    const Device& _device;
 
-   std::unique_ptr<ShaderStash> _shaderStash;
-
-   std::unordered_map<PipelineInfo, VkPipeline> _pipelines;
-   std::unordered_map<PipelineLayoutInfo, VkPipelineLayout> _pipLayouts;
+   std::unordered_map<RenderPassInfo, VkRenderPass> _renderPasses;
 };
 }

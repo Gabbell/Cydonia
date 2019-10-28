@@ -1,16 +1,20 @@
-#include <Core/Graphics/Device.h>
+#include <Core/Graphics/Vulkan/Device.h>
 
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
-#include <Core/Graphics/Instance.h>
-#include <Core/Graphics/Surface.h>
-#include <Core/Graphics/Swapchain.h>
-#include <Core/Graphics/PipelineStash.h>
-#include <Core/Graphics/RenderPassStash.h>
-#include <Core/Graphics/CommandPool.h>
+#include <Core/Graphics/Vulkan/Instance.h>
+#include <Core/Graphics/Vulkan/Surface.h>
+#include <Core/Graphics/Vulkan/Swapchain.h>
+#include <Core/Graphics/Vulkan/PipelineStash.h>
+#include <Core/Graphics/Vulkan/RenderPassStash.h>
+#include <Core/Graphics/Vulkan/CommandPool.h>
+#include <Core/Graphics/Vulkan/Buffer.h>
 
 #include <algorithm>
+
+static constexpr float DEFAULT_PRIORITY            = 1.0f;
+static constexpr uint32_t NUMBER_QUEUES_PER_FAMILY = 2;
 
 cyd::Device::Device(
     const Instance& instance,
@@ -43,77 +47,29 @@ void cyd::Device::_populateQueueFamilies()
 
    for( uint32_t i = 0; i < queueFamilies.size(); ++i )
    {
-      UsageFlag type = 0;
+      QueueUsageFlag type = 0;
 
       VkQueueFlags vkQueueType = queueFamilies[i].queueFlags;
       if( vkQueueType & VK_QUEUE_GRAPHICS_BIT )
       {
-         type |= static_cast<uint32_t>( Usage::GRAPHICS );
+         type |= static_cast<uint32_t>( QueueUsage::GRAPHICS );
       }
       if( vkQueueType & VK_QUEUE_COMPUTE_BIT )
       {
-         type |= static_cast<uint32_t>( Usage::COMPUTE );
+         type |= static_cast<uint32_t>( QueueUsage::COMPUTE );
       }
       if( vkQueueType & VK_QUEUE_TRANSFER_BIT )
       {
-         type |= static_cast<uint32_t>( Usage::TRANSFER );
+         type |= static_cast<uint32_t>( QueueUsage::TRANSFER );
       }
 
-      _queueFamilies.push_back( {false, i, queueFamilies[i].queueCount, type} );
-   }
-}
-
-std::optional<cyd::Device::QueueFamily> cyd::Device::_pickQueueFamily( UsageFlag desiredType )
-{
-   auto it = std::find_if(
-       _queueFamilies.begin(), _queueFamilies.end(), [desiredType]( const QueueFamily& family ) {
-          return ( desiredType & family.type ) && !family.used;
-       } );
-
-   if( it != _queueFamilies.end() )
-   {
-      // Found an appropriate queue
-      it->used = true;
-      return *it;
-   }
-
-   // The desired type was not found in the queue families, return no value
-   return std::nullopt;
-}
-
-void cyd::Device::_addQueue(
-    std::vector<VkDeviceQueueCreateInfo>& infos,
-    float priority,
-    uint32_t numQueues,
-    const QueueFamily& family,
-    const Surface& surface )
-{
-   for( uint32_t i = 0; i < numQueues; ++i )
-   {
-      // Checking for presentation support
       VkBool32 supportsPresent = false;
       vkGetPhysicalDeviceSurfaceSupportKHR(
-          _physDevice, family.index, surface.getVKSurface(), &supportsPresent );
+          _physDevice, i, _surface.getVKSurface(), &supportsPresent );
 
-      Queue queue           = {};
-      queue.familyIndex     = family.index;
-      queue.index           = i;
-      queue.supportsPresent = static_cast<bool>( supportsPresent );
-      queue.type            = family.type;
-
-      _queues.push_back( std::move( queue ) );
+      _queueFamilies.push_back(
+          { {}, i, queueFamilies[i].queueCount, type, static_cast<bool>( supportsPresent ) } );
    }
-
-   // Add queue(s) to the queue infos to later be create with the logical
-   VkDeviceQueueCreateInfo queueInfo = {};
-   queueInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-   queueInfo.pNext                   = nullptr;
-   queueInfo.flags                   = 0;
-   queueInfo.queueFamilyIndex        = family.index;
-   queueInfo.queueCount              = numQueues;
-   queueInfo.pQueuePriorities        = &priority;
-
-   infos.push_back( std::move( queueInfo ) );
 }
 
 void cyd::Device::_createLogicalDevice()
@@ -121,18 +77,19 @@ void cyd::Device::_createLogicalDevice()
    // Populating queue infos
    std::vector<VkDeviceQueueCreateInfo> queueInfos;
 
-   // Picking and potentially adding graphics queues
-   const std::optional<QueueFamily> graphicsFam = _pickQueueFamily( Usage::GRAPHICS );
-   if( graphicsFam.has_value() )
+   for( auto& family : _queueFamilies )
    {
-      _addQueue( queueInfos, 1.0f, 2, graphicsFam.value(), _surface );
-   }
+      family.queues.resize( NUMBER_QUEUES_PER_FAMILY );
 
-   // Separate transfer queue because why not
-   const std::optional<QueueFamily> transferFam = _pickQueueFamily( Usage::TRANSFER );
-   if( transferFam.has_value() )
-   {
-      _addQueue( queueInfos, 1.0f, 2, transferFam.value(), _surface );
+      VkDeviceQueueCreateInfo queueInfo = {};
+      queueInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+      queueInfo.pNext                   = nullptr;
+      queueInfo.flags                   = 0;
+      queueInfo.queueFamilyIndex        = family.index;
+      queueInfo.queueCount              = NUMBER_QUEUES_PER_FAMILY;
+      queueInfo.pQueuePriorities        = &DEFAULT_PRIORITY;
+
+      queueInfos.push_back( std::move( queueInfo ) );
    }
 
    // Create logical device
@@ -159,9 +116,13 @@ void cyd::Device::_createLogicalDevice()
 
 void cyd::Device::_fetchQueues()
 {
-   for( Queue& queue : _queues )
+   for( QueueFamily& queueFamily : _queueFamilies )
    {
-      vkGetDeviceQueue( _vkDevice, queue.familyIndex, queue.index, &queue.vkQueue );
+      auto& queues = queueFamily.queues;
+      for( uint32_t i = 0; i < queues.size(); ++i )
+      {
+         vkGetDeviceQueue( _vkDevice, queueFamily.index, i, &queues[i] );
+      }
    }
 }
 
@@ -174,20 +135,38 @@ void cyd::Device::_createCommandPools()
    }
 }
 
-std::shared_ptr<cyd::CommandBuffer> cyd::Device::createCommandBuffer( UsageFlag usage )
+std::shared_ptr<cyd::CommandBuffer> cyd::Device::createCommandBuffer(
+    QueueUsageFlag usage,
+    bool presentable )
 {
+   // TODO Implement support for EXACT type so that we can possibly send work (like transfer for
+   // example) to another queue family
+
+   // Attempting to find an adequate type
    const auto it = std::find_if(
        _commandPools.begin(),
        _commandPools.end(),
        [usage]( const std::unique_ptr<CommandPool>& pool ) { return usage & pool->getType(); } );
-
    if( it != _commandPools.end() )
    {
-      // Found a proper command pool
+      // Found an adequate command pool
       return ( *it )->createCommandBuffer();
    }
 
    return nullptr;
+}
+
+std::shared_ptr<cyd::Buffer> cyd::Device::createStagingBuffer( size_t size, BufferUsageFlag usage )
+{
+   _buffers.push_back( std::make_shared<Buffer>(
+       *this, size, usage, MemoryType::HOST_VISIBLE | MemoryType::HOST_COHERENT ) );
+   return _buffers.back();
+}
+
+std::shared_ptr<cyd::Buffer> cyd::Device::createBuffer( size_t size, BufferUsageFlag usage )
+{
+   _buffers.push_back( std::make_shared<Buffer>( *this, size, usage, MemoryType::DEVICE_LOCAL ) );
+   return _buffers.back();
 }
 
 // TODO Give possiblity of custom format and presentation mode using a create info as argument
@@ -204,32 +183,39 @@ cyd::Swapchain* cyd::Device::createSwapchain( const SwapchainInfo& scInfo )
 
 void cyd::Device::cleanup()
 {
+   // Cleaning up command buffers
    for( auto& commandPool : _commandPools )
    {
       commandPool->cleanup();
    }
+   // Cleaning up device buffers
+   for( auto& buffer : _buffers )
+   {
+      if( buffer.use_count() == 1 )
+      {
+         buffer.reset();
+      }
+   }
 }
 
-const VkQueue* cyd::Device::getQueue( cyd::UsageFlag usage, bool supportsPresentation ) const
+const VkQueue* cyd::Device::getQueue( uint32_t familyIndex, bool supportsPresentation ) const
 {
-   // Check to see if one of the queues has at least the usage that we want and it MUST support
-   // presentation if we want it
-   const auto it = std::find_if(
-       _queues.begin(), _queues.end(), [usage, supportsPresentation]( const Queue& queue ) {
-          return ( usage & queue.type ) && !( supportsPresentation && !queue.supportsPresent );
-       } );
-   if( it != _queues.end() )
+   const std::vector<VkQueue>& vkQueues = _queueFamilies[familyIndex].queues;
+   if( !vkQueues.empty() )
    {
-      return &it->vkQueue;
+      return &vkQueues[0];
    }
+
    return nullptr;
 }
 
 bool cyd::Device::supportsPresentation() const
 {
-   const auto it = std::find_if(
-       _queues.begin(), _queues.end(), []( const Queue& queue ) { return queue.supportsPresent; } );
-   if( it != _queues.end() )
+   const auto it =
+       std::find_if( _queueFamilies.begin(), _queueFamilies.end(), []( const QueueFamily& family ) {
+          return family.supportsPresent;
+       } );
+   if( it != _queueFamilies.end() )
    {
       return true;
    }
@@ -240,6 +226,10 @@ cyd::Device::~Device()
 {
    vkDeviceWaitIdle( _vkDevice );
 
+   for( auto& buffer : _buffers )
+   {
+      buffer.reset();
+   }
    _pipelines.reset();
    _renderPasses.reset();
    _swapchain.reset();

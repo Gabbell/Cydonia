@@ -2,19 +2,21 @@
 
 #include <Core/Common/Include.h>
 
-#include <Core/Graphics/Types.h>
+#include <Core/Graphics/Vulkan/Types.h>
 
-#include <cstdint>
 #include <memory>
+#include <unordered_map>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkCommandPool );
+FWDHANDLE( VkPipeline );
+FWDHANDLE( VkPipelineLayout );
+
 namespace cyd
 {
 class Device;
-class CommandBuffer;
+class ShaderStash;
 }
 
 // ================================================================================================
@@ -22,26 +24,20 @@ class CommandBuffer;
 // ================================================================================================
 namespace cyd
 {
-class CommandPool
+class PipelineStash
 {
   public:
-   CommandPool( const Device& device, uint32_t familyIndex, UsageFlag usage );
-   ~CommandPool();
+   explicit PipelineStash( const Device& device );
+   ~PipelineStash();
 
-   const VkCommandPool& getVKCommandPool() const { return _vkPool; }
-
-   std::shared_ptr<CommandBuffer> createCommandBuffer();
-
-   UsageFlag getType() const { return _type; }
-
-   void cleanup();
+   const VkPipeline findOrCreate( const PipelineInfo& info );
 
   private:
    const Device& _device;
 
-   std::vector<std::shared_ptr<CommandBuffer>> _buffers;
-   VkCommandPool _vkPool = nullptr;
+   std::unique_ptr<ShaderStash> _shaderStash;
 
-   UsageFlag _type;
+   std::unordered_map<PipelineInfo, VkPipeline> _pipelines;
+   std::unordered_map<PipelineLayoutInfo, VkPipelineLayout> _pipLayouts;
 };
 }

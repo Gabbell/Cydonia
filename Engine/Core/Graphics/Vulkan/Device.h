@@ -2,7 +2,7 @@
 
 #include <Core/Common/Include.h>
 
-#include <Core/Graphics/Types.h>
+#include <Core/Graphics/Vulkan/Types.h>
 
 #include <memory>
 #include <optional>
@@ -26,6 +26,7 @@ class PipelineStash;
 class RenderPassStash;
 class CommandPool;
 class CommandBuffer;
+class Buffer;
 struct SwapchainInfo;
 }
 
@@ -48,7 +49,7 @@ class Device
    // Getters
    const VkPhysicalDevice& getPhysicalDevice() const noexcept { return _physDevice; }
    const VkDevice& getVKDevice() const noexcept { return _vkDevice; }
-   const VkQueue* getQueue( UsageFlag usage, bool supportsPresentation = false ) const;
+   const VkQueue* getQueue( uint32_t familyIndex, bool supportsPresentation = false ) const;
    Swapchain* getSwapchain() const { return _swapchain.get(); }
 
    // These are used in the command buffers
@@ -56,9 +57,13 @@ class Device
    RenderPassStash& getRenderPassStash() const { return *_renderPasses; }
 
    // Interface
-   std::shared_ptr<CommandBuffer> createCommandBuffer( UsageFlag usage );
    Swapchain* createSwapchain( const SwapchainInfo& scInfo );
-   void cleanup(); // Clean up unused resources
+   std::shared_ptr<CommandBuffer> createCommandBuffer(
+       QueueUsageFlag usage,
+       bool presentable = false );
+   std::shared_ptr<Buffer> createStagingBuffer( size_t size, BufferUsageFlag usage );
+   std::shared_ptr<Buffer> createBuffer( size_t size, BufferUsageFlag usage );
+   void cleanup();  // Clean up unused resources
 
    // Supports
    bool supportsPresentation() const;
@@ -66,18 +71,11 @@ class Device
   private:
    struct QueueFamily
    {
-      bool used           = false;
-      uint32_t index      = 0;
-      uint32_t queueCount = 0;
-      UsageFlag type      = Usage::UNKNOWN;
-   };
-   struct Queue
-   {
-      VkQueue vkQueue      = nullptr;
-      bool supportsPresent = false;
-      uint32_t familyIndex = 0;
+      std::vector<VkQueue> queues;
       uint32_t index       = 0;
-      UsageFlag type       = Usage::UNKNOWN;
+      uint32_t queueCount  = 0;
+      QueueUsageFlag type  = 0;
+      bool supportsPresent = false;
    };
 
    // =============================================================================================
@@ -85,32 +83,20 @@ class Device
    // =============================================================================================
    void _populateQueueFamilies();
    void _createLogicalDevice();
-   std::optional<QueueFamily> _pickQueueFamily( UsageFlag desiredType );
-   void _addQueue(
-       std::vector<VkDeviceQueueCreateInfo>& infos,
-       float priority,
-       uint32_t numQueues,
-       const QueueFamily& family,
-       const Surface& surface );
    void _fetchQueues();
    void _createCommandPools();
 
    // =============================================================================================
    // Private Members
    // =============================================================================================
-
-   // Used to keep track of which queue family indices have been used to create the device. Used to
-   // create the command pools.
    std::vector<QueueFamily> _queueFamilies;
-
-   // Queues
-   std::vector<Queue> _queues;
 
    // Extensions used to create the device
    const std::vector<const char*>& _extensions;
 
-   std::unique_ptr<Swapchain> _swapchain;
+   std::vector<std::shared_ptr<Buffer>> _buffers;
    std::vector<std::unique_ptr<CommandPool>> _commandPools;
+   std::unique_ptr<Swapchain> _swapchain;
    std::unique_ptr<RenderPassStash> _renderPasses;
    std::unique_ptr<PipelineStash> _pipelines;
 

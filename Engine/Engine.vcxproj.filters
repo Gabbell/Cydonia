@@ -4,48 +4,60 @@
     <ClCompile Include="Core\Application.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Graphics\Instance.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Surface.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Swapchain.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Window\Window.cpp">
       <Filter>Core\Window</Filter>
     </ClCompile>
     <ClCompile Include="Core\Utilities\Logger.cpp">
       <Filter>Core\Utilities</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Graphics\Shader.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\ShaderStash.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\RenderPassStash.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Types.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Device.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\PipelineStash.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\DeviceHerder.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\CommandPool.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Core\Graphics\CommandBuffer.cpp">
+    <ClCompile Include="Core\Graphics\Vulkan\CommandBuffer.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\CommandPool.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Device.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\DeviceHerder.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Instance.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\PipelineStash.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\RenderPassStash.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Shader.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\ShaderStash.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Surface.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Swapchain.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Types.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Camera.cpp">
       <Filter>Core\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Frustum.cpp">
+      <Filter>Core\Graphics</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Buffer.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\VkApplication.cpp">
+      <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -82,6 +94,9 @@
     <Filter Include="Resources\Shaders\Compiled">
       <UniqueIdentifier>{88ab3131-9f77-4d62-af23-db77449126a8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Graphics\Vulkan">
+      <UniqueIdentifier>{d162f376-9851-46b2-8fd0-8d790a00524e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Application.h">
@@ -89,15 +104,6 @@
     </ClInclude>
     <ClInclude Include="Core\Common\Assert.h">
       <Filter>Core\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Instance.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Surface.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Swapchain.h">
-      <Filter>Core\Graphics</Filter>
     </ClInclude>
     <ClInclude Include="Core\Window\Window.h">
       <Filter>Core\Window</Filter>
@@ -108,35 +114,56 @@
     <ClInclude Include="Core\Common\Vulkan.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Graphics\Shader.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\ShaderStash.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\RenderPassStash.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Common\Include.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Graphics\Types.h">
+    <ClInclude Include="Core\Graphics\Vulkan\CommandBuffer.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\CommandPool.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\Device.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\DeviceHerder.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\Instance.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\PipelineStash.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\RenderPassStash.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\Shader.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\ShaderStash.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\Surface.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\Swapchain.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\Types.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Camera.h">
       <Filter>Core\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Graphics\Device.h">
+    <ClInclude Include="Core\Graphics\Frustum.h">
       <Filter>Core\Graphics</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Graphics\PipelineStash.h">
-      <Filter>Core\Graphics</Filter>
+    <ClInclude Include="Core\Graphics\Vulkan\Buffer.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Graphics\DeviceHerder.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\CommandPool.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\CommandBuffer.h">
-      <Filter>Core\Graphics</Filter>
+    <ClInclude Include="Core\VkApplication.h">
+      <Filter>Core</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

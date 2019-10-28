@@ -1,12 +1,14 @@
-#include <Core/Graphics/PipelineStash.h>
+#include <Core/Graphics/Vulkan/PipelineStash.h>
 
 #include <Core/Common/Vulkan.h>
 #include <Core/Common/Assert.h>
 
-#include <Core/Graphics/Device.h>
-#include <Core/Graphics/Shader.h>
-#include <Core/Graphics/ShaderStash.h>
-#include <Core/Graphics/RenderPassStash.h>
+#include <Core/Graphics/Vulkan/Device.h>
+#include <Core/Graphics/Vulkan/Shader.h>
+#include <Core/Graphics/Vulkan/ShaderStash.h>
+#include <Core/Graphics/Vulkan/RenderPassStash.h>
+
+#include <array>
 
 static constexpr char DEFAULT_VERT[] = "default_vert.spv";
 static constexpr char DEFAULT_FRAG[] = "default_frag.spv";
@@ -62,13 +64,33 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    // Fetching render pass
    const VkRenderPass renderPass = _device.getRenderPassStash().findOrCreate( info.renderPass );
 
-   // TODO Vertex input state
+   // Vertex input description
+   // TODO Instancing
+   VkVertexInputBindingDescription vertexBindingDesc = {};
+   vertexBindingDesc.binding                         = 0;
+   vertexBindingDesc.stride                          = sizeof( Vertex );
+   vertexBindingDesc.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
+
+   // Vertex attributes
+   std::array<VkVertexInputAttributeDescription, 2> attributeDescs = {};
+   // Position
+   attributeDescs[0].binding  = 0;
+   attributeDescs[0].location = 0;
+   attributeDescs[0].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
+   attributeDescs[0].offset   = offsetof( Vertex, pos );
+
+   // Color
+   attributeDescs[1].binding  = 0;
+   attributeDescs[1].location = 1;
+   attributeDescs[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
+   attributeDescs[1].offset   = offsetof( Vertex, col );
+
    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-   vertexInputInfo.vertexBindingDescriptionCount   = 0;
-   vertexInputInfo.pVertexBindingDescriptions      = nullptr;
-   vertexInputInfo.vertexAttributeDescriptionCount = 0;
-   vertexInputInfo.pVertexAttributeDescriptions    = nullptr;
+   vertexInputInfo.vertexBindingDescriptionCount   = 1;
+   vertexInputInfo.pVertexBindingDescriptions      = &vertexBindingDesc;
+   vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>( attributeDescs.size() );
+   vertexInputInfo.pVertexAttributeDescriptions    = attributeDescs.data();
 
    // Input assembly
    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};

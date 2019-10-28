@@ -10,9 +10,6 @@
 namespace cyd
 {
 class Window;
-class Instance;
-class Surface;
-class DeviceHerder;
 }
 
 // ================================================================================================
@@ -23,12 +20,13 @@ namespace cyd
 class Application
 {
   public:
+   Application() = delete;
    Application( uint32_t width, uint32_t height, const std::string& title );
    Application( const Application& other )     = delete;
    Application( Application&& other ) noexcept = delete;
    Application& operator=( const Application& other ) = delete;
    Application& operator=( Application&& other ) noexcept = delete;
-   ~Application();
+   ~Application()                                         = default;
 
    void startLoop();
 
@@ -38,12 +36,9 @@ class Application
    virtual void drawFrame( double deltaTime );  // Used to draw one frame
    virtual void postLoop();  // Executed when the application comes out of the main loop
 
-  private:
    std::unique_ptr<Window> _window;
-   std::unique_ptr<Instance> _instance;
-   std::unique_ptr<Surface> _surface;
-   std::unique_ptr<DeviceHerder> _dh;
 
+  private:
    bool _running;
 };
 }
