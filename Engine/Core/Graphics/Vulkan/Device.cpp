@@ -96,6 +96,9 @@ void cyd::Device::_createLogicalDevice()
    VkPhysicalDeviceFeatures deviceFeatures = {};
    vkGetPhysicalDeviceFeatures( _physDevice, &deviceFeatures );
 
+   _physProps = std::make_unique<VkPhysicalDeviceProperties>();
+   vkGetPhysicalDeviceProperties( _physDevice, _physProps.get() );
+
    const std::vector<const char*> layers = _instance.getLayers();
 
    VkDeviceCreateInfo deviceInfo      = {};
@@ -198,12 +201,30 @@ void cyd::Device::cleanup()
    }
 }
 
-const VkQueue* cyd::Device::getQueue( uint32_t familyIndex, bool supportsPresentation ) const
+const VkQueue* cyd::Device::getQueueFromFamily( uint32_t familyIndex ) const
 {
    const std::vector<VkQueue>& vkQueues = _queueFamilies[familyIndex].queues;
    if( !vkQueues.empty() )
    {
+      // TODO More dynamic queue returns, maybe based on currently used or an even distribution
       return &vkQueues[0];
+   }
+
+   return nullptr;
+}
+
+const VkQueue* cyd::Device::getQueueFromUsage( QueueUsageFlag usage, bool supportsPresentation )
+    const
+{
+   const auto it = std::find_if(
+       _queueFamilies.begin(),
+       _queueFamilies.end(),
+       [usage, supportsPresentation]( const QueueFamily& family ) {
+          return ( family.type & usage ) && !( !family.supportsPresent == supportsPresentation );
+       } );
+   if( it != _queueFamilies.end() )
+   {
+      return getQueueFromFamily( it->index );
    }
 
    return nullptr;
@@ -220,6 +241,11 @@ bool cyd::Device::supportsPresentation() const
       return true;
    }
    return false;
+}
+
+uint32_t cyd::Device::maxPushConstantsSize() const
+{
+   return _physProps ? _physProps->limits.maxPushConstantsSize : 0;
 }
 
 cyd::Device::~Device()

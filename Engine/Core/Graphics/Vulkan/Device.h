@@ -15,6 +15,7 @@ FWDHANDLE( VkQueue );
 FWDHANDLE( VkDevice );
 FWDHANDLE( VkPhysicalDevice );
 struct VkDeviceQueueCreateInfo;
+struct VkPhysicalDeviceProperties;
 
 namespace cyd
 {
@@ -46,16 +47,6 @@ class Device
        const std::vector<const char*>& extensions );
    ~Device();
 
-   // Getters
-   const VkPhysicalDevice& getPhysicalDevice() const noexcept { return _physDevice; }
-   const VkDevice& getVKDevice() const noexcept { return _vkDevice; }
-   const VkQueue* getQueue( uint32_t familyIndex, bool supportsPresentation = false ) const;
-   Swapchain* getSwapchain() const { return _swapchain.get(); }
-
-   // These are used in the command buffers
-   PipelineStash& getPipelineStash() const { return *_pipelines; }
-   RenderPassStash& getRenderPassStash() const { return *_renderPasses; }
-
    // Interface
    Swapchain* createSwapchain( const SwapchainInfo& scInfo );
    std::shared_ptr<CommandBuffer> createCommandBuffer(
@@ -65,8 +56,21 @@ class Device
    std::shared_ptr<Buffer> createBuffer( size_t size, BufferUsageFlag usage );
    void cleanup();  // Clean up unused resources
 
+   // Getters
+   const VkPhysicalDevice& getPhysicalDevice() const noexcept { return _physDevice; }
+   const VkDevice& getVKDevice() const noexcept { return _vkDevice; }
+   const VkQueue* getQueueFromFamily( uint32_t familyIndex ) const;
+   const VkQueue* getQueueFromUsage( QueueUsageFlag usage, bool supportsPresentation = false )
+       const;
+   Swapchain* getSwapchain() const { return _swapchain.get(); }
+
+   // These are used in the command buffers
+   PipelineStash& getPipelineStash() const { return *_pipelines; }
+   RenderPassStash& getRenderPassStash() const { return *_renderPasses; }
+
    // Supports
    bool supportsPresentation() const;
+   uint32_t maxPushConstantsSize() const;
 
   private:
    struct QueueFamily
@@ -106,5 +110,6 @@ class Device
 
    VkDevice _vkDevice           = nullptr;
    VkPhysicalDevice _physDevice = nullptr;
+   std::unique_ptr<VkPhysicalDeviceProperties> _physProps;
 };
 }

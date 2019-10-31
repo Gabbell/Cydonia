@@ -45,54 +45,69 @@ void cyd::CommandBuffer::waitForCompletion() const
 
 void cyd::CommandBuffer::startRecording()
 {
-   if( !_isRecording )
-   {
-      VkCommandBufferBeginInfo beginInfo = {};
-      beginInfo.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-
-      VkResult result = vkBeginCommandBuffer( _vkCmdBuffer, &beginInfo );
-      CYDASSERT(
-          result == VK_SUCCESS && "CommandBuffer: Failed to begin recording of command buffer" );
-      _isRecording = true;
-   }
-   else
+   if( _isRecording )
    {
       CYDASSERT( !"CommandBuffer: Already started recording" );
+      return;
    }
+
+   VkCommandBufferBeginInfo beginInfo = {};
+   beginInfo.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+
+   VkResult result = vkBeginCommandBuffer( _vkCmdBuffer, &beginInfo );
+   CYDASSERT(
+       result == VK_SUCCESS && "CommandBuffer: Failed to begin recording of command buffer" );
+   _isRecording = true;
 }
 
 void cyd::CommandBuffer::endRecording()
 {
-   if( _isRecording )
-   {
-      VkResult result = vkEndCommandBuffer( _vkCmdBuffer );
-      CYDASSERT(
-          result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
-
-      _boundPip       = std::nullopt;
-      _boundPipLayout = std::nullopt;
-      _isRecording    = false;
-   }
-   else
+   if( !_isRecording )
    {
       CYDASSERT( !"CommandBuffer: Trying to stop recording but was not in recording state" );
+      return;
    }
+
+   VkResult result = vkEndCommandBuffer( _vkCmdBuffer );
+   CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
+
+   _boundPip       = std::nullopt;
+   _boundPipLayout = std::nullopt;
+   _isRecording    = false;
 }
 
-void cyd::CommandBuffer::pushConstants( const PipelineLayoutInfo& info, ShaderStage stage ) {}
+void cyd::CommandBuffer::updatePushConstants( PushConstantRange range, void* data )
+{
+   if( !_boundPipLayout.has_value() )
+   {
+      CYDASSERT( !"CommandBuffer: No currently bound pipeline layout" );
+      return;
+   }
+
+   const VkPipelineLayout pipLayout =
+       _device.getPipelineStash().findOrCreate( _boundPipLayout.value() );
+
+   vkCmdPushConstants(
+       _vkCmdBuffer,
+       pipLayout,
+       cydShaderStagesToVkShaderStages( range.stages ),
+       range.offset,
+       range.size,
+       data );
+}
 
 void cyd::CommandBuffer::bindPipeline( const PipelineInfo& info )
 {
    VkPipeline pipeline = _device.getPipelineStash().findOrCreate( info );
-   if( pipeline )
-   {
-      vkCmdBindPipeline( _vkCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
-      _boundPip = info;
-   }
-   else
+   if( !pipeline )
    {
       CYDASSERT( !"CommandBuffer: Could not find or create pipeline in pipeline stash" );
+      return;
    }
+
+   vkCmdBindPipeline( _vkCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
+   _boundPip       = info;
+   _boundPipLayout = info.pipLayout;
 }
 
 void cyd::CommandBuffer::bindVertexBuffer( const std::shared_ptr<Buffer> vertexBuffer )
@@ -111,51 +126,53 @@ void cyd::CommandBuffer::setViewport( uint32_t width, uint32_t height )
 
 void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
 {
-   if( _boundPip.has_value() )
-   {
-      VkRenderPass renderPass =
-          _device.getRenderPassStash().findOrCreate( _boundPip.value().renderPass );
-
-      if( renderPass && swapchain )
-      {
-         swapchain->initFramebuffers( renderPass );
-         swapchain->acquireImage( this );
-
-         VkRenderPassBeginInfo renderPassInfo = {};
-         renderPassInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-         renderPassInfo.renderPass            = renderPass;
-         renderPassInfo.framebuffer           = swapchain->getCurrentFramebuffer();
-         renderPassInfo.renderArea.offset     = { 0, 0 };
-         renderPassInfo.renderArea.extent     = swapchain->getVKExtent();
-
-         VkClearValue clearColor        = { 0.0f, 1.0f, 1.0f, 1.0f };
-         renderPassInfo.clearValueCount = 1;
-         renderPassInfo.pClearValues    = &clearColor;
-
-         vkCmdBeginRenderPass( _vkCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
-      }
-      else
-      {
-         CYDASSERT( !"CommandBuffer: Could not find render pass in render pass stash" );
-      }
-   }
-   else
+   if( !_boundPip.has_value() )
    {
       CYDASSERT( !"CommandBuffer: Could not start render pass because no pipeline was bound" );
+      return;
    }
+
+   VkRenderPass renderPass =
+       _device.getRenderPassStash().findOrCreate( _boundPip.value().renderPass );
+
+   if( !renderPass && !swapchain )
+   {
+      CYDASSERT( !"CommandBuffer: Could not find render pass or swapchain was null" );
+      return;
+   }
+
+   swapchain->initFramebuffers( renderPass );
+   swapchain->acquireImage( this );
+
+   _semsToWait.push_back( swapchain->getSemToWait() );
+   _semsToSignal.push_back( swapchain->getSemToSignal() );
+
+   VkRenderPassBeginInfo renderPassInfo = {};
+   renderPassInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+   renderPassInfo.renderPass            = renderPass;
+   renderPassInfo.framebuffer           = swapchain->getCurrentFramebuffer();
+   renderPassInfo.renderArea.offset     = { 0, 0 };
+   renderPassInfo.renderArea.extent     = swapchain->getVKExtent();
+
+   VkClearValue clearColor        = { 0.0f, 1.0f, 1.0f, 1.0f };
+   renderPassInfo.clearValueCount = 1;
+   renderPassInfo.pClearValues    = &clearColor;
+
+   vkCmdBeginRenderPass( _vkCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
 }
 
-void cyd::CommandBuffer::draw()
+void cyd::CommandBuffer::draw( uint32_t vertexCount )
 {
    if( _usage & QueueUsage::GRAPHICS )
    {
-      vkCmdDraw( _vkCmdBuffer, 3, 1, 0, 0 );
+      vkCmdDraw( _vkCmdBuffer, vertexCount, 1, 0, 0 );
    }
    else
    {
       CYDASSERT( !"CommandBuffer: Command Buffer does not support graphics usage" );
    }
 }
+
 void cyd::CommandBuffer::endPass() { vkCmdEndRenderPass( _vkCmdBuffer ); }
 
 void cyd::CommandBuffer::copyBuffer(
@@ -177,16 +194,21 @@ void cyd::CommandBuffer::submit()
    submitInfo.commandBufferCount = 1;
    submitInfo.pCommandBuffers    = &_vkCmdBuffer;
 
-   // TODO QUEUE MUST COME FROM THE QUEUE FAMLIY FROM WHICH THE COMMAND POOL WAS CREATED
-   const VkQueue* queue = _device.getQueue( _pool.getFamilyIndex(), false );
-   if( queue )
-   {
-      vkQueueSubmit( *queue, 1, &submitInfo, _vkFence );
-   }
-   else
+   VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
+   submitInfo.waitSemaphoreCount     = static_cast<uint32_t>( _semsToWait.size() );
+   submitInfo.pWaitSemaphores        = _semsToWait.data();
+   submitInfo.pWaitDstStageMask      = waitStages;
+   submitInfo.signalSemaphoreCount   = static_cast<uint32_t>( _semsToSignal.size() );
+   submitInfo.pSignalSemaphores      = _semsToSignal.data();
+
+   const VkQueue* queue = _device.getQueueFromFamily( _pool.getFamilyIndex() );
+   if( !queue )
    {
       CYDASSERT( !"CommandBuffer: Could not find queue to submit to" );
+      return;
    }
+
+   vkQueueSubmit( *queue, 1, &submitInfo, _vkFence );
 }
 
 cyd::CommandBuffer::~CommandBuffer()

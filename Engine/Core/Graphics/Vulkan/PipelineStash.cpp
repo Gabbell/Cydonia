@@ -153,28 +153,7 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    colorBlending.blendConstants[3] = 0.0f;
 
    // Pipeline layout
-   VkPipelineLayout pipLayout;
-   const auto layoutIt = _pipLayouts.find( info.pipLayout );
-   if( layoutIt != _pipLayouts.end() )
-   {
-      pipLayout = layoutIt->second;
-   }
-   else
-   {
-      VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-
-      pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-      pipelineLayoutInfo.setLayoutCount         = 0;
-      pipelineLayoutInfo.pSetLayouts            = nullptr;
-      pipelineLayoutInfo.pushConstantRangeCount = 0;
-      pipelineLayoutInfo.pPushConstantRanges    = nullptr;
-
-      result =
-          vkCreatePipelineLayout( _device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
-      CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create pipeline layout" );
-
-      _pipLayouts[info.pipLayout] = pipLayout;
-   }
+   const VkPipelineLayout pipLayout = findOrCreate( info.pipLayout );
 
    // Dynamic state
    std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT };
@@ -209,6 +188,41 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    _pipelines.insert( { info, pipeline } );
 
    return pipeline;
+}
+
+const VkPipelineLayout cyd::PipelineStash::findOrCreate( const PipelineLayoutInfo& info )
+{
+   // Pipeline layout
+   const auto layoutIt = _pipLayouts.find( info );
+   if( layoutIt != _pipLayouts.end() )
+   {
+      return layoutIt->second;
+   }
+
+   std::vector<VkPushConstantRange> vkRanges;
+   vkRanges.reserve( info.ranges.size() );
+   for( const auto& range : info.ranges )
+   {
+      vkRanges.push_back(
+          { cydShaderStagesToVkShaderStages( range.stages ), range.offset, range.size } );
+   }
+
+   VkPipelineLayout pipLayout;
+   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+
+   pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+   pipelineLayoutInfo.setLayoutCount         = 0;
+   pipelineLayoutInfo.pSetLayouts            = nullptr;
+   pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>( vkRanges.size() );
+   pipelineLayoutInfo.pPushConstantRanges    = vkRanges.data();
+
+   VkResult result =
+       vkCreatePipelineLayout( _device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
+   CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create pipeline layout" );
+
+   _pipLayouts.insert( { info, pipLayout } );
+
+   return pipLayout;
 }
 
 cyd::PipelineStash::~PipelineStash()

@@ -47,6 +47,8 @@ class Swapchain
    const VkSwapchainKHR& getVKSwapchain() const noexcept { return _vkSwapchain; }
    const VkExtent2D& getVKExtent() const noexcept { return *_extent; }
    const VkSurfaceFormatKHR& getFormat() const noexcept { return *_surfaceFormat; }
+   const VkSemaphore& getSemToWait() const noexcept { return _availableSems[_currentFrame]; }
+   const VkSemaphore& getSemToSignal() const noexcept { return _renderDoneSems[_currentFrame]; }
 
   private:
    void _createSwapchain( const SwapchainInfo& info );

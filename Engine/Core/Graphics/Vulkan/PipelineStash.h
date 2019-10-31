@@ -31,6 +31,7 @@ class PipelineStash
    ~PipelineStash();
 
    const VkPipeline findOrCreate( const PipelineInfo& info );
+   const VkPipelineLayout findOrCreate( const PipelineLayoutInfo& info );
 
   private:
    const Device& _device;

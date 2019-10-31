@@ -37,9 +37,14 @@ bool RenderPassInfo::operator==( const RenderPassInfo& other ) const
    return true;
 }
 
+bool PushConstantRange::operator==( const PushConstantRange& other ) const
+{
+   return stages == other.stages && offset == other.offset && size == other.size;
+}
+
 bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const
 {
-   return dummy == other.dummy;
+   return ranges == other.ranges;
 }
 
 bool PipelineInfo::operator==( const PipelineInfo& other ) const
@@ -140,5 +145,31 @@ VkPolygonMode cydPolyModeToVkPolyMode( PolygonMode polyMode )
          CYDASSERT( !"Types: Polygon mode not supported" );
    }
    return VK_POLYGON_MODE_FILL;
+}
+
+VkShaderStageFlags cydShaderStagesToVkShaderStages( ShaderStageFlag stages )
+{
+   VkShaderStageFlags vkStages = 0;
+   if( stages & ShaderStage::VERTEX_STAGE )
+   {
+      vkStages |= VK_SHADER_STAGE_VERTEX_BIT;
+   }
+   if( stages & ShaderStage::FRAGMENT_STAGE )
+   {
+      vkStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
+   }
+   if( stages & ShaderStage::COMPUTE_STAGE )
+   {
+      vkStages |= VK_SHADER_STAGE_COMPUTE_BIT;
+   }
+   if( stages & ShaderStage::ALL_GRAPHICS_STAGES )
+   {
+      vkStages |= VK_SHADER_STAGE_ALL_GRAPHICS;
+   }
+   if( stages & ShaderStage::ALL_STAGES )
+   {
+      vkStages |= VK_SHADER_STAGE_ALL;
+   }
+   return vkStages;
 }
 }

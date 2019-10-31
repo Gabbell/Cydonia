@@ -276,57 +276,26 @@ void cyd::Swapchain::acquireImage( const CommandBuffer* buffer )
 
 void cyd::Swapchain::present()
 {
-   if( _inFlightCmdBuffer )
+   const VkQueue* presentQueue = _device.getQueueFromUsage( QueueUsage::GRAPHICS, true );
+   if( presentQueue )
    {
-      const VkCommandBuffer& currentCmdBuffer = _inFlightCmdBuffer->getVKBuffer();
-      const VkFence& currentFence             = _inFlightCmdBuffer->getVKFence();
+      VkSwapchainKHR swapChains[]    = { _vkSwapchain };
+      VkSemaphore signalSemaphores[] = { _renderDoneSems[_currentFrame] };
 
-      VkSubmitInfo submitInfo = {};
-      submitInfo.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+      VkPresentInfoKHR presentInfo   = {};
+      presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+      presentInfo.waitSemaphoreCount = 1;
+      presentInfo.pWaitSemaphores    = signalSemaphores;
+      presentInfo.swapchainCount     = 1;
+      presentInfo.pSwapchains        = swapChains;
+      presentInfo.pImageIndices      = &_imageIndex;
 
-      VkSemaphore waitSemaphores[]      = { _availableSems[_currentFrame] };
-      VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-      submitInfo.waitSemaphoreCount     = 1;
-      submitInfo.pWaitSemaphores        = waitSemaphores;
-      submitInfo.pWaitDstStageMask      = waitStages;
-
-      submitInfo.commandBufferCount = 1;
-      submitInfo.pCommandBuffers    = &currentCmdBuffer;
-
-      VkSemaphore signalSemaphores[]  = { _renderDoneSems[_currentFrame] };
-      submitInfo.signalSemaphoreCount = 1;
-      submitInfo.pSignalSemaphores    = signalSemaphores;
-
-      // FIXME NO HARDCODING 0
-      const VkQueue* graphicsPresentQueue = _device.getQueue( 0, true );
-      if( graphicsPresentQueue )
-      {
-         vkQueueSubmit( *graphicsPresentQueue, 1, &submitInfo, currentFence );
-
-         VkPresentInfoKHR presentInfo = {};
-         presentInfo.sType            = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-         presentInfo.waitSemaphoreCount = 1;
-         presentInfo.pWaitSemaphores    = signalSemaphores;
-
-         VkSwapchainKHR swapChains[] = { _vkSwapchain };
-         presentInfo.swapchainCount  = 1;
-         presentInfo.pSwapchains     = swapChains;
-
-         presentInfo.pImageIndices = &_imageIndex;
-
-         vkQueuePresentKHR( *graphicsPresentQueue, &presentInfo );
-
-         _currentFrame = ( _currentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
-      }
-      else
-      {
-         CYDASSERT( !"Swapchain: Could not find graphics presentation queue" );
-      }
+      vkQueuePresentKHR( *presentQueue, &presentInfo );
+      _currentFrame = ( _currentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
    }
    else
    {
-      CYDASSERT( !"Swapchain: No in flight command buffer. Was begin pass called?" );
+      CYDASSERT( !"Swapchain: Could not get a present queue" );
    }
 }
 

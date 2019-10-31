@@ -12,6 +12,7 @@
 // ================================================================================================
 FWDHANDLE( VkCommandBuffer );
 FWDHANDLE( VkFence );
+FWDHANDLE( VkSemaphore );
 namespace cyd
 {
 class CommandPool;
@@ -40,12 +41,12 @@ class CommandBuffer
    void startRecording();
    void endRecording();
 
-   void pushConstants( const PipelineLayoutInfo& info, ShaderStage stage );
+   void updatePushConstants( PushConstantRange range, void* data );
    void bindPipeline( const PipelineInfo& info );
    void bindVertexBuffer( const std::shared_ptr<Buffer> vertexBuf );
    void setViewport( uint32_t width, uint32_t height );
    void beginPass( Swapchain* swapchain );
-   void draw();
+   void draw( uint32_t vertexCount );
    void endPass();
    void copyBuffer( const std::shared_ptr<Buffer> src, const std::shared_ptr<Buffer> dst );
    void submit();
@@ -57,6 +58,10 @@ class CommandBuffer
    // Info on the currently bound pipeline
    std::optional<PipelineInfo> _boundPip;
    std::optional<PipelineLayoutInfo> _boundPipLayout;
+
+   // Syncing
+   std::vector<VkSemaphore> _semsToWait;
+   std::vector<VkSemaphore> _semsToSignal;
 
    QueueUsageFlag _usage;
    bool _isRecording            = false;

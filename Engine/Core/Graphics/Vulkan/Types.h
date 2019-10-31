@@ -56,15 +56,16 @@ enum MemoryType : Flag
 };
 using MemoryTypeFlag = Flag;
 
-enum class ShaderStage
+enum ShaderStage : Flag
 {
-   VERTEX,
-   GEOMETRY,
-   FRAGMENT,
-   COMPUTE,
-   ALL_GRAPHICS,
-   ALL
+   VERTEX_STAGE        = 1 << 0,
+   GEOMETRY_STAGE      = 1 << 1,
+   FRAGMENT_STAGE      = 1 << 2,
+   COMPUTE_STAGE       = 1 << 3,
+   ALL_GRAPHICS_STAGES = 1 << 4,
+   ALL_STAGES          = 1 << 5
 };
+using ShaderStageFlag = Flag;
 
 enum class PixelFormat
 {
@@ -155,6 +156,14 @@ struct Attachment
    AttachmentUsage usage;
 };
 
+struct PushConstantRange
+{
+   bool operator==( const PushConstantRange& other ) const;
+   ShaderStageFlag stages;
+   uint32_t offset;
+   uint32_t size;
+};
+
 // ================================================================================================
 // Create infos
 struct RenderPassInfo
@@ -174,7 +183,7 @@ struct SwapchainInfo
 struct PipelineLayoutInfo
 {
    bool operator==( const PipelineLayoutInfo& other ) const;
-   uint32_t dummy;
+   std::vector<PushConstantRange> ranges;
 };
 
 struct PipelineInfo
@@ -196,6 +205,7 @@ VkAttachmentLoadOp cydOpToVkOp( LoadOp op );
 VkAttachmentStoreOp cydOpToVkOp( StoreOp op );
 VkPrimitiveTopology cydDrawPrimToVkDrawPrim( DrawPrimitive prim );
 VkPolygonMode cydPolyModeToVkPolyMode( PolygonMode polyMode );
+uint32_t cydShaderStagesToVkShaderStages( ShaderStageFlag stages );
 }
 
 template <>
@@ -243,12 +253,28 @@ struct std::hash<cyd::RenderPassInfo>
 };
 
 template <>
+struct std::hash<cyd::PushConstantRange>
+{
+   size_t operator()( const cyd::PushConstantRange& range ) const
+   {
+      size_t seed = 0;
+      hash_combine( seed, range.stages );
+      hash_combine( seed, range.offset );
+      hash_combine( seed, range.size );
+      return seed;
+   }
+};
+
+template <>
 struct std::hash<cyd::PipelineLayoutInfo>
 {
    size_t operator()( const cyd::PipelineLayoutInfo& pipLayoutInfo ) const
    {
       size_t seed = 0;
-      hash_combine( seed, pipLayoutInfo.dummy );
+      for( const auto& range : pipLayoutInfo.ranges )
+      {
+         hash_combine( seed, range );
+      }
       return seed;
    }
 };
