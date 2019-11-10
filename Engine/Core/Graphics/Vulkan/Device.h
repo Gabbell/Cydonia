@@ -28,6 +28,7 @@ class RenderPassStash;
 class CommandPool;
 class CommandBuffer;
 class Buffer;
+class DescriptorPool;
 struct SwapchainInfo;
 }
 
@@ -48,12 +49,21 @@ class Device
    ~Device();
 
    // Interface
+   // =============================================================================================
    Swapchain* createSwapchain( const SwapchainInfo& scInfo );
+
    std::shared_ptr<CommandBuffer> createCommandBuffer(
        QueueUsageFlag usage,
        bool presentable = false );
-   std::shared_ptr<Buffer> createStagingBuffer( size_t size, BufferUsageFlag usage );
-   std::shared_ptr<Buffer> createBuffer( size_t size, BufferUsageFlag usage );
+
+   // Specialized buffer creation function
+   std::shared_ptr<Buffer> createDeviceBuffer( size_t size, BufferUsageFlag usage );
+   std::shared_ptr<Buffer> createUniformBuffer(
+       BufferUsageFlag usage,
+       const ShaderObjectInfo& info,
+       const DescriptorSetLayoutInfo& layout );
+   std::shared_ptr<Buffer> createStagingBuffer( size_t size );
+
    void cleanup();  // Clean up unused resources
 
    // Getters
@@ -64,11 +74,11 @@ class Device
        const;
    Swapchain* getSwapchain() const { return _swapchain.get(); }
 
-   // These are used in the command buffers
+   // These getters are used in the command buffers
    PipelineStash& getPipelineStash() const { return *_pipelines; }
    RenderPassStash& getRenderPassStash() const { return *_renderPasses; }
 
-   // Supports
+   // Support
    bool supportsPresentation() const;
    uint32_t maxPushConstantsSize() const;
 
@@ -89,6 +99,7 @@ class Device
    void _createLogicalDevice();
    void _fetchQueues();
    void _createCommandPools();
+   void _createDescriptorPool();
 
    // =============================================================================================
    // Private Members
@@ -100,6 +111,7 @@ class Device
 
    std::vector<std::shared_ptr<Buffer>> _buffers;
    std::vector<std::unique_ptr<CommandPool>> _commandPools;
+   std::unique_ptr<DescriptorPool> _descPool;
    std::unique_ptr<Swapchain> _swapchain;
    std::unique_ptr<RenderPassStash> _renderPasses;
    std::unique_ptr<PipelineStash> _pipelines;

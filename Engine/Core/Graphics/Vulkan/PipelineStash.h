@@ -12,6 +12,7 @@
 // ================================================================================================
 FWDHANDLE( VkPipeline );
 FWDHANDLE( VkPipelineLayout );
+FWDHANDLE( VkDescriptorSetLayout );
 
 namespace cyd
 {
@@ -30,6 +31,7 @@ class PipelineStash
    explicit PipelineStash( const Device& device );
    ~PipelineStash();
 
+   const VkDescriptorSetLayout findOrCreate( const DescriptorSetLayoutInfo& info );
    const VkPipeline findOrCreate( const PipelineInfo& info );
    const VkPipelineLayout findOrCreate( const PipelineLayoutInfo& info );
 
@@ -38,7 +40,8 @@ class PipelineStash
 
    std::unique_ptr<ShaderStash> _shaderStash;
 
-   std::unordered_map<PipelineInfo, VkPipeline> _pipelines;
+   std::unordered_map<DescriptorSetLayoutInfo, VkDescriptorSetLayout> _descSetLayouts;
    std::unordered_map<PipelineLayoutInfo, VkPipelineLayout> _pipLayouts;
+   std::unordered_map<PipelineInfo, VkPipeline> _pipelines;
 };
 }

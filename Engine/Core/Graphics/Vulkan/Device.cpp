@@ -10,6 +10,7 @@
 #include <Core/Graphics/Vulkan/RenderPassStash.h>
 #include <Core/Graphics/Vulkan/CommandPool.h>
 #include <Core/Graphics/Vulkan/Buffer.h>
+#include <Core/Graphics/Vulkan/DescriptorPool.h>
 
 #include <algorithm>
 
@@ -32,6 +33,7 @@ cyd::Device::Device(
    _createLogicalDevice();
    _fetchQueues();
    _createCommandPools();
+   _createDescriptorPool();
 
    _renderPasses = std::make_unique<RenderPassStash>( *this );
    _pipelines    = std::make_unique<PipelineStash>( *this );
@@ -138,6 +140,8 @@ void cyd::Device::_createCommandPools()
    }
 }
 
+void cyd::Device::_createDescriptorPool() { _descPool = std::make_unique<DescriptorPool>( *this ); }
+
 std::shared_ptr<cyd::CommandBuffer> cyd::Device::createCommandBuffer(
     QueueUsageFlag usage,
     bool presentable )
@@ -159,16 +163,38 @@ std::shared_ptr<cyd::CommandBuffer> cyd::Device::createCommandBuffer(
    return nullptr;
 }
 
-std::shared_ptr<cyd::Buffer> cyd::Device::createStagingBuffer( size_t size, BufferUsageFlag usage )
+std::shared_ptr<cyd::Buffer> cyd::Device::createDeviceBuffer( size_t size, BufferUsageFlag usage )
 {
-   _buffers.push_back( std::make_shared<Buffer>(
-       *this, size, usage, MemoryType::HOST_VISIBLE | MemoryType::HOST_COHERENT ) );
+   _buffers.push_back( std::make_shared<Buffer>( *this, size, usage, MemoryType::DEVICE_LOCAL ) );
    return _buffers.back();
 }
 
-std::shared_ptr<cyd::Buffer> cyd::Device::createBuffer( size_t size, BufferUsageFlag usage )
+std::shared_ptr<cyd::Buffer> cyd::Device::createUniformBuffer(
+    BufferUsageFlag usage,
+    const ShaderObjectInfo& info,
+    const DescriptorSetLayoutInfo& layout )
 {
-   _buffers.push_back( std::make_shared<Buffer>( *this, size, usage, MemoryType::DEVICE_LOCAL ) );
+   std::shared_ptr<Buffer> buffer = std::make_shared<Buffer>(
+       *this,
+       info.size,
+       usage | BufferUsage::UNIFORM,
+       MemoryType::HOST_VISIBLE | MemoryType::HOST_COHERENT );
+
+   VkDescriptorSet descSet = _descPool->findOrAllocate( info.binding, layout );
+
+   buffer->updateDescriptorSet( info, descSet );
+
+   _buffers.push_back( buffer );
+   return _buffers.back();
+}
+
+std::shared_ptr<cyd::Buffer> cyd::Device::createStagingBuffer( size_t size )
+{
+   _buffers.push_back( std::make_shared<Buffer>(
+       *this,
+       size,
+       BufferUsage::TRANSFER_SRC,
+       MemoryType::HOST_VISIBLE | MemoryType::HOST_COHERENT ) );
    return _buffers.back();
 }
 
@@ -196,6 +222,10 @@ void cyd::Device::cleanup()
    {
       if( buffer.use_count() == 1 )
       {
+         // Freeing buffer's assigned descriptor set
+         _descPool->free( buffer->getVKDescSet() );
+
+         // Destroying buffer
          buffer.reset();
       }
    }
@@ -259,6 +289,7 @@ cyd::Device::~Device()
    _pipelines.reset();
    _renderPasses.reset();
    _swapchain.reset();
+   _descPool.reset();
    for( auto& commandPool : _commandPools )
    {
       commandPool.reset();

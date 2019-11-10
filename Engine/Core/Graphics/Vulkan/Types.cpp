@@ -42,6 +42,16 @@ bool PushConstantRange::operator==( const PushConstantRange& other ) const
    return stages == other.stages && offset == other.offset && size == other.size;
 }
 
+bool ShaderObjectInfo::operator==( const ShaderObjectInfo& other ) const
+{
+   return stages == other.stages && binding == other.binding;
+}
+
+bool DescriptorSetLayoutInfo::operator==( const DescriptorSetLayoutInfo& other ) const
+{
+   return shaderObjects == other.shaderObjects;
+}
+
 bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const
 {
    return ranges == other.ranges;
@@ -116,7 +126,7 @@ VkPrimitiveTopology cydDrawPrimToVkDrawPrim( DrawPrimitive prim )
    switch( prim )
    {
       case cyd::DrawPrimitive::POINTS:
-         VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
+         return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
       case cyd::DrawPrimitive::LINES:
          return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
       case cyd::DrawPrimitive::LINE_STRIPS:
@@ -124,7 +134,7 @@ VkPrimitiveTopology cydDrawPrimToVkDrawPrim( DrawPrimitive prim )
       case cyd::DrawPrimitive::TRIANGLES:
          return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
       case cyd::DrawPrimitive::TRIANGLE_STRIPS:
-         VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+         return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
       default:
          CYDASSERT( !"Types: Draw primitive not supported" );
    }

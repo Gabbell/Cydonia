@@ -10,6 +10,9 @@
 namespace cyd
 {
 class Window;
+class Instance;
+class Surface;
+class DeviceHerder;
 }
 
 // ================================================================================================
@@ -26,7 +29,7 @@ class Application
    Application( Application&& other ) noexcept = delete;
    Application& operator=( const Application& other ) = delete;
    Application& operator=( Application&& other ) noexcept = delete;
-   ~Application()                                         = default;
+   ~Application();
 
    void startLoop();
 
@@ -37,6 +40,9 @@ class Application
    virtual void postLoop();  // Executed when the application comes out of the main loop
 
    std::unique_ptr<Window> _window;
+   std::unique_ptr<Instance> _instance;
+   std::unique_ptr<Surface> _surface;
+   std::unique_ptr<DeviceHerder> _dh;
 
   private:
    bool _running;

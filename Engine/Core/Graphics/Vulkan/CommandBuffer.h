@@ -13,6 +13,9 @@
 FWDHANDLE( VkCommandBuffer );
 FWDHANDLE( VkFence );
 FWDHANDLE( VkSemaphore );
+FWDHANDLE( VkPipeline );
+FWDHANDLE( VkPipelineLayout );
+FWDHANDLE( VkRenderPass );
 namespace cyd
 {
 class CommandPool;
@@ -36,6 +39,7 @@ class CommandBuffer
    const VkFence& getVKFence() const { return _vkFence; }
 
    bool isCompleted() const;
+   bool wasSubmitted() const noexcept { return _wasSubmitted; }
    void waitForCompletion() const;  // CPU Spinlock, avoid calling this
 
    void startRecording();
@@ -44,6 +48,7 @@ class CommandBuffer
    void updatePushConstants( PushConstantRange range, void* data );
    void bindPipeline( const PipelineInfo& info );
    void bindVertexBuffer( const std::shared_ptr<Buffer> vertexBuf );
+   void bindBuffer( const std::shared_ptr<Buffer> buffer );
    void setViewport( uint32_t width, uint32_t height );
    void beginPass( Swapchain* swapchain );
    void draw( uint32_t vertexCount );
@@ -56,8 +61,9 @@ class CommandBuffer
    const CommandPool& _pool;
 
    // Info on the currently bound pipeline
-   std::optional<PipelineInfo> _boundPip;
-   std::optional<PipelineLayoutInfo> _boundPipLayout;
+   std::optional<VkPipeline> _boundPip;
+   std::optional<VkPipelineLayout> _boundPipLayout;
+   std::optional<VkRenderPass> _boundRenderPass;
 
    // Syncing
    std::vector<VkSemaphore> _semsToWait;
@@ -65,6 +71,7 @@ class CommandBuffer
 
    QueueUsageFlag _usage;
    bool _isRecording            = false;
+   bool _wasSubmitted           = false;
    VkCommandBuffer _vkCmdBuffer = nullptr;
    VkFence _vkFence             = nullptr;
 };

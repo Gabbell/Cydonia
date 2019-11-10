@@ -84,12 +84,9 @@ void cyd::CommandBuffer::updatePushConstants( PushConstantRange range, void* dat
       return;
    }
 
-   const VkPipelineLayout pipLayout =
-       _device.getPipelineStash().findOrCreate( _boundPipLayout.value() );
-
    vkCmdPushConstants(
        _vkCmdBuffer,
-       pipLayout,
+       _boundPipLayout.value(),
        cydShaderStagesToVkShaderStages( range.stages ),
        range.offset,
        range.size,
@@ -98,16 +95,20 @@ void cyd::CommandBuffer::updatePushConstants( PushConstantRange range, void* dat
 
 void cyd::CommandBuffer::bindPipeline( const PipelineInfo& info )
 {
-   VkPipeline pipeline = _device.getPipelineStash().findOrCreate( info );
-   if( !pipeline )
+   VkPipeline pipeline        = _device.getPipelineStash().findOrCreate( info );
+   VkPipelineLayout pipLayout = _device.getPipelineStash().findOrCreate( info.pipLayout );
+   VkRenderPass renderPass    = _device.getRenderPassStash().findOrCreate( info.renderPass );
+
+   if( !pipeline || !pipLayout || !renderPass )
    {
       CYDASSERT( !"CommandBuffer: Could not find or create pipeline in pipeline stash" );
       return;
    }
 
    vkCmdBindPipeline( _vkCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
-   _boundPip       = info;
-   _boundPipLayout = info.pipLayout;
+   _boundPip        = pipeline;
+   _boundPipLayout  = pipLayout;
+   _boundRenderPass = renderPass;
 }
 
 void cyd::CommandBuffer::bindVertexBuffer( const std::shared_ptr<Buffer> vertexBuffer )
@@ -115,6 +116,25 @@ void cyd::CommandBuffer::bindVertexBuffer( const std::shared_ptr<Buffer> vertexB
    VkBuffer vertexBuffers[] = { vertexBuffer->getVKBuffer() };
    VkDeviceSize offsets[]   = { 0 };
    vkCmdBindVertexBuffers( _vkCmdBuffer, 0, 1, vertexBuffers, offsets );
+}
+
+void cyd::CommandBuffer::bindBuffer( const std::shared_ptr<Buffer> buffer )
+{
+   if( !_boundPipLayout.has_value() )
+   {
+      CYDASSERT( !"CommandBuffer: Not currently bound pipeline" );
+      return;
+   }
+
+   vkCmdBindDescriptorSets(
+       _vkCmdBuffer,
+       VK_PIPELINE_BIND_POINT_GRAPHICS,
+       _boundPipLayout.value(),
+       0,
+       1,
+       &buffer->getVKDescSet(),
+       0,
+       nullptr );
 }
 
 void cyd::CommandBuffer::setViewport( uint32_t width, uint32_t height )
@@ -126,22 +146,19 @@ void cyd::CommandBuffer::setViewport( uint32_t width, uint32_t height )
 
 void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
 {
-   if( !_boundPip.has_value() )
+   if( !_boundPip.has_value() || !_boundRenderPass.has_value() )
    {
       CYDASSERT( !"CommandBuffer: Could not start render pass because no pipeline was bound" );
       return;
    }
 
-   VkRenderPass renderPass =
-       _device.getRenderPassStash().findOrCreate( _boundPip.value().renderPass );
-
-   if( !renderPass && !swapchain )
+   if( !swapchain )
    {
       CYDASSERT( !"CommandBuffer: Could not find render pass or swapchain was null" );
       return;
    }
 
-   swapchain->initFramebuffers( renderPass );
+   swapchain->initFramebuffers( _boundRenderPass.value() );
    swapchain->acquireImage( this );
 
    _semsToWait.push_back( swapchain->getSemToWait() );
@@ -149,7 +166,7 @@ void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
 
    VkRenderPassBeginInfo renderPassInfo = {};
    renderPassInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-   renderPassInfo.renderPass            = renderPass;
+   renderPassInfo.renderPass            = _boundRenderPass.value();
    renderPassInfo.framebuffer           = swapchain->getCurrentFramebuffer();
    renderPassInfo.renderArea.offset     = { 0, 0 };
    renderPassInfo.renderArea.extent     = swapchain->getVKExtent();
@@ -187,6 +204,7 @@ void cyd::CommandBuffer::copyBuffer(
    copyRegion.size         = dst->getSize();
    vkCmdCopyBuffer( _vkCmdBuffer, src->getVKBuffer(), dst->getVKBuffer(), 1, &copyRegion );
 }
+
 void cyd::CommandBuffer::submit()
 {
    VkSubmitInfo submitInfo       = {};

@@ -18,7 +18,11 @@ cyd::ShaderStash::ShaderStash( const Device& device ) : _device( device )
 
 void cyd::ShaderStash::_initializeAllShaders()
 {
-   for( const auto& entry : std::filesystem::directory_iterator( COMPILED_SHADER_DIR ) )
+   auto directory = std::filesystem::directory_iterator( COMPILED_SHADER_DIR );
+   CYDASSERT(
+       directory->exists() && "ShaderStash: Could not find compiled shader directory" );
+
+   for( const auto& entry : directory )
    {
       std::string shaderPath = entry.path().generic_string();
 
@@ -28,7 +32,7 @@ void cyd::ShaderStash::_initializeAllShaders()
 
 const cyd::Shader* cyd::ShaderStash::getShader( std::string shaderName )
 {
-   auto it = _shaders.find( COMPILED_SHADER_DIR + shaderName );
+   auto it = _shaders.find( COMPILED_SHADER_DIR + shaderName + ".spv" );
    if( it != _shaders.end() )
    {
       return it->second.get();

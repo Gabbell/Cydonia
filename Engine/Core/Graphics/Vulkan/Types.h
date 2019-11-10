@@ -164,6 +164,15 @@ struct PushConstantRange
    uint32_t size;
 };
 
+struct ShaderObjectInfo
+{
+   bool operator==( const ShaderObjectInfo& other ) const;
+   uint32_t size;
+   BufferUsage usage;
+   ShaderStageFlag stages;
+   uint32_t binding;
+};
+
 // ================================================================================================
 // Create infos
 struct RenderPassInfo
@@ -180,21 +189,28 @@ struct SwapchainInfo
    PresentMode mode;
 };
 
+struct DescriptorSetLayoutInfo
+{
+   bool operator==( const DescriptorSetLayoutInfo& other ) const;
+   std::vector<ShaderObjectInfo> shaderObjects;
+};
+
 struct PipelineLayoutInfo
 {
    bool operator==( const PipelineLayoutInfo& other ) const;
    std::vector<PushConstantRange> ranges;
+   DescriptorSetLayoutInfo descSetLayout;
 };
 
 struct PipelineInfo
 {
    bool operator==( const PipelineInfo& other ) const;
+   std::vector<std::string> shaders;
    RenderPassInfo renderPass;
    PipelineLayoutInfo pipLayout;
    DrawPrimitive drawPrim;
    PolygonMode polyMode;
    Extent extent;
-   std::vector<std::string> shaders;
 };
 
 // ================================================================================================
@@ -253,6 +269,20 @@ struct std::hash<cyd::RenderPassInfo>
 };
 
 template <>
+struct std::hash<cyd::ShaderObjectInfo>
+{
+   size_t operator()( const cyd::ShaderObjectInfo& shaderObject ) const
+   {
+      size_t seed = 0;
+      hash_combine( seed, shaderObject.size );
+      hash_combine( seed, shaderObject.usage );
+      hash_combine( seed, shaderObject.binding );
+      hash_combine( seed, shaderObject.stages );
+      return seed;
+   }
+};
+
+template <>
 struct std::hash<cyd::PushConstantRange>
 {
    size_t operator()( const cyd::PushConstantRange& range ) const
@@ -261,6 +291,20 @@ struct std::hash<cyd::PushConstantRange>
       hash_combine( seed, range.stages );
       hash_combine( seed, range.offset );
       hash_combine( seed, range.size );
+      return seed;
+   }
+};
+
+template <>
+struct std::hash<cyd::DescriptorSetLayoutInfo>
+{
+   size_t operator()( const cyd::DescriptorSetLayoutInfo& descSetLayoutInfo ) const
+   {
+      size_t seed = 0;
+      for( const auto& ubo : descSetLayoutInfo.shaderObjects )
+      {
+         hash_combine( seed, ubo );
+      }
       return seed;
    }
 };

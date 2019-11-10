@@ -1,15 +1,12 @@
 #pragma once
 
-#include <Core/Application.h>
+#include <Core/Applications/Application.h>
 
 // ================================================================================================
-// Forwards
+// Forward
 // ================================================================================================
 namespace cyd
 {
-class Instance;
-class Surface;
-class DeviceHerder;
 class Buffer;
 }
 
@@ -18,25 +15,23 @@ class Buffer;
 // ================================================================================================
 namespace cyd
 {
-class VkApplication : public Application
+class VKSandbox final : public Application
 {
   public:
-   VkApplication() = delete;
-   VkApplication( uint32_t width, uint32_t height, const std::string& title );
-   VkApplication( const VkApplication& other )     = delete;
-   VkApplication( VkApplication&& other ) noexcept = delete;
-   VkApplication& operator=( const VkApplication& other ) = delete;
-   VkApplication& operator=( VkApplication&& other ) noexcept = delete;
-   ~VkApplication();
+   VKSandbox() = delete;
+   VKSandbox( uint32_t width, uint32_t height );
+   VKSandbox( const VKSandbox& other )     = delete;
+   VKSandbox( VKSandbox&& other ) noexcept = delete;
+   VKSandbox& operator=( const VKSandbox& other ) = delete;
+   VKSandbox& operator=( VKSandbox&& other ) noexcept = delete;
+   ~VKSandbox();
 
   protected:
+   virtual void preLoop() override;  // Executed before the application enters the main loop
    virtual void drawFrame( double deltaTime ) override;  // Used to draw one frame
 
   private:
-   std::unique_ptr<Instance> _instance;
-   std::unique_ptr<Surface> _surface;
-   std::unique_ptr<DeviceHerder> _dh;
-
    std::shared_ptr<cyd::Buffer> _vertexBuffer = nullptr;
+   std::shared_ptr<cyd::Buffer> _uboBuffer    = nullptr;
 };
 }

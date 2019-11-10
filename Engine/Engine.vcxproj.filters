@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Core\Application.cpp">
-      <Filter>Core</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Window\Window.cpp">
       <Filter>Core\Window</Filter>
     </ClCompile>
@@ -56,8 +53,20 @@
     <ClCompile Include="Core\Graphics\Vulkan\Buffer.cpp">
       <Filter>Core\Graphics\Vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="Core\VkApplication.cpp">
-      <Filter>Core</Filter>
+    <ClCompile Include="Core\Applications\Application.cpp">
+      <Filter>Core\Applications</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Applications\VKShaderViewer.cpp">
+      <Filter>Core\Applications</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\Texture.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Applications\VKSandbox.cpp">
+      <Filter>Core\Applications</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\DescriptorPool.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -97,11 +106,11 @@
     <Filter Include="Core\Graphics\Vulkan">
       <UniqueIdentifier>{d162f376-9851-46b2-8fd0-8d790a00524e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Applications">
+      <UniqueIdentifier>{c07ad7bd-1c78-4244-903c-e4c1bd30c75c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Application.h">
-      <Filter>Core</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Common\Assert.h">
       <Filter>Core\Common</Filter>
     </ClInclude>
@@ -162,8 +171,20 @@
     <ClInclude Include="Core\Graphics\Vulkan\Buffer.h">
       <Filter>Core\Graphics\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Core\VkApplication.h">
-      <Filter>Core</Filter>
+    <ClInclude Include="Core\Applications\Application.h">
+      <Filter>Core\Applications</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Applications\VKShaderViewer.h">
+      <Filter>Core\Applications</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\Texture.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Applications\VKSandbox.h">
+      <Filter>Core\Applications</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\DescriptorPool.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

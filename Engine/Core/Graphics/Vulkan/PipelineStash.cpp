@@ -33,6 +33,99 @@ static VkShaderStageFlagBits shaderTypeToVKShaderStage( cyd::Shader::Type shader
    }
 }
 
+const VkDescriptorSetLayout cyd::PipelineStash::findOrCreate( const DescriptorSetLayoutInfo& info )
+{
+   // Creating the descriptor set layout
+   const auto layoutIt = _descSetLayouts.find( info );
+   if( layoutIt != _descSetLayouts.end() )
+   {
+      return layoutIt->second;
+   }
+
+   std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBindings;
+   descSetLayoutBindings.reserve( info.shaderObjects.size() );
+   for( const auto& object : info.shaderObjects )
+   {
+      // TODO Add UBO arrays
+      VkDescriptorSetLayoutBinding descSetLayoutBinding = {};
+      descSetLayoutBinding.binding                      = object.binding;
+
+      switch( object.usage )
+      {
+         case BufferUsage::UNIFORM:
+            descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+            break;
+         case BufferUsage::STORAGE:
+            descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+            break;
+         default:
+            CYDASSERT( !"PipelineStash: Descriptor type not yet implemented" );
+      }
+
+      descSetLayoutBinding.descriptorCount    = 1;  // For arrays
+      descSetLayoutBinding.stageFlags         = cydShaderStagesToVkShaderStages( object.stages );
+      descSetLayoutBinding.pImmutableSamplers = nullptr;
+
+      descSetLayoutBindings.push_back( std::move( descSetLayoutBinding ) );
+   }
+
+   VkDescriptorSetLayoutCreateInfo layoutInfo = {};
+   layoutInfo.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+   layoutInfo.bindingCount = static_cast<uint32_t>( descSetLayoutBindings.size() );
+   layoutInfo.pBindings    = descSetLayoutBindings.data();
+
+   VkDescriptorSetLayout descSetLayout;
+   VkResult result =
+       vkCreateDescriptorSetLayout( _device.getVKDevice(), &layoutInfo, nullptr, &descSetLayout );
+
+   _descSetLayouts.insert( { info, descSetLayout } );
+
+   return descSetLayout;
+}
+
+const VkPipelineLayout cyd::PipelineStash::findOrCreate( const PipelineLayoutInfo& info )
+{
+   const auto layoutIt = _pipLayouts.find( info );
+   if( layoutIt != _pipLayouts.end() )
+   {
+      return layoutIt->second;
+   }
+
+   std::vector<VkPushConstantRange> vkRanges;
+   vkRanges.reserve( info.ranges.size() );
+   for( const auto& range : info.ranges )
+   {
+      VkPushConstantRange vkRange = {};
+      vkRange.stageFlags          = cydShaderStagesToVkShaderStages( range.stages );
+      vkRange.offset              = range.offset;
+      vkRange.size                = range.size;
+
+      vkRanges.push_back( std::move( vkRange ) );
+   }
+
+   // TODO This vector contains multiple copies of the same layout. Why is this necessary? The two
+   // layouts will have information about the same multiple bindings. This seems redundant.
+   std::vector<VkDescriptorSetLayout> descSetLayouts(
+       info.descSetLayout.shaderObjects.size(), findOrCreate( info.descSetLayout ) );
+
+   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+
+   pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+   pipelineLayoutInfo.setLayoutCount         = static_cast<uint32_t>( descSetLayouts.size() );
+   pipelineLayoutInfo.pSetLayouts            = descSetLayouts.data();
+   pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>( vkRanges.size() );
+   pipelineLayoutInfo.pPushConstantRanges    = vkRanges.data();
+
+   VkPipelineLayout pipLayout;
+   VkResult result =
+       vkCreatePipelineLayout( _device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
+   CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create pipeline layout" );
+
+   _pipLayouts.insert( { info, pipLayout } );
+
+   return pipLayout;
+}
+
 const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
 {
    // Attempting to find pipeline
@@ -73,6 +166,7 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
 
    // Vertex attributes
    std::array<VkVertexInputAttributeDescription, 2> attributeDescs = {};
+
    // Position
    attributeDescs[0].binding  = 0;
    attributeDescs[0].location = 0;
@@ -190,41 +284,6 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    return pipeline;
 }
 
-const VkPipelineLayout cyd::PipelineStash::findOrCreate( const PipelineLayoutInfo& info )
-{
-   // Pipeline layout
-   const auto layoutIt = _pipLayouts.find( info );
-   if( layoutIt != _pipLayouts.end() )
-   {
-      return layoutIt->second;
-   }
-
-   std::vector<VkPushConstantRange> vkRanges;
-   vkRanges.reserve( info.ranges.size() );
-   for( const auto& range : info.ranges )
-   {
-      vkRanges.push_back(
-          { cydShaderStagesToVkShaderStages( range.stages ), range.offset, range.size } );
-   }
-
-   VkPipelineLayout pipLayout;
-   VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-
-   pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-   pipelineLayoutInfo.setLayoutCount         = 0;
-   pipelineLayoutInfo.pSetLayouts            = nullptr;
-   pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>( vkRanges.size() );
-   pipelineLayoutInfo.pPushConstantRanges    = vkRanges.data();
-
-   VkResult result =
-       vkCreatePipelineLayout( _device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
-   CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create pipeline layout" );
-
-   _pipLayouts.insert( { info, pipLayout } );
-
-   return pipLayout;
-}
-
 cyd::PipelineStash::~PipelineStash()
 {
    for( const auto& pipeline : _pipelines )
@@ -234,5 +293,9 @@ cyd::PipelineStash::~PipelineStash()
    for( const auto& pipLayout : _pipLayouts )
    {
       vkDestroyPipelineLayout( _device.getVKDevice(), pipLayout.second, nullptr );
+   }
+   for( const auto& descSetLayout : _descSetLayouts )
+   {
+      vkDestroyDescriptorSetLayout( _device.getVKDevice(), descSetLayout.second, nullptr );
    }
 }

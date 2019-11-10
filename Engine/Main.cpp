@@ -1,13 +1,9 @@
-#include <Core/VkApplication.h>
-
-static constexpr uint32_t width  = 1280;
-static constexpr uint32_t height = 720;
-static constexpr char title[]    = "It's not delivery, it's garbagio!";
+#include <Core/Applications/VKSandbox.h>
 
 int main()
 {
    {
-      cyd::VkApplication app( width, height, title );
+      cyd::VKSandbox app( 1280, 720 );
       app.startLoop();
    }
 

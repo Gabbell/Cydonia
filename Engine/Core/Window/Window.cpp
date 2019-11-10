@@ -18,7 +18,7 @@ static void handleSDLError()
 
 cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
 {
-   _extent = {width, height};
+   _extent = { width, height };
 
    if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) handleSDLError();
 
@@ -49,6 +49,14 @@ cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
 #if _DEBUG
    _extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
 #endif
+
+   SDL_version linkedVersion;
+   SDL_GetVersion( &linkedVersion );
+   printf(
+       "SDL Window: Linked with SDL version %d.%d.%d\n",
+       linkedVersion.major,
+       linkedVersion.minor,
+       linkedVersion.patch );
 }
 
 cyd::Window::~Window()

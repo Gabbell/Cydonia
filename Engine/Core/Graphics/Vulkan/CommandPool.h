@@ -38,10 +38,13 @@ class CommandPool
    void cleanup();
 
   private:
+   void _createCommandPool();
+   void _createDescriptorPool();
+
    const Device& _device;
 
    std::vector<std::shared_ptr<CommandBuffer>> _buffers;
-   VkCommandPool _vkPool = nullptr;
+   VkCommandPool _vkPool        = nullptr;
 
    uint32_t _familyIndex;
    QueueUsageFlag _type;

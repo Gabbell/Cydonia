@@ -12,6 +12,11 @@ static constexpr uint32_t MAX_SIZE     = 1024;
 cyd::CommandPool::CommandPool( const Device& device, uint32_t familyIndex, QueueUsageFlag type )
     : _device( device ), _familyIndex( familyIndex ), _type( type )
 {
+   _createCommandPool();
+}
+
+void cyd::CommandPool::_createCommandPool()
+{
    _buffers.resize( INITIAL_SIZE );
 
    VkCommandPoolCreateInfo poolInfo = {};

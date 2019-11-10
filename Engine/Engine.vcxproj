@@ -166,12 +166,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Core\Application.cpp" />
+    <ClCompile Include="Core\Applications\Application.cpp" />
+    <ClCompile Include="Core\Applications\VKSandbox.cpp" />
+    <ClCompile Include="Core\Applications\VKShaderViewer.cpp" />
     <ClCompile Include="Core\Graphics\Camera.cpp" />
     <ClCompile Include="Core\Graphics\Frustum.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Buffer.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\CommandBuffer.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\CommandPool.cpp" />
+    <ClCompile Include="Core\Graphics\Vulkan\DescriptorPool.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Device.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\DeviceHerder.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Instance.cpp" />
@@ -181,14 +184,16 @@
     <ClCompile Include="Core\Graphics\Vulkan\ShaderStash.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Surface.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Swapchain.cpp" />
+    <ClCompile Include="Core\Graphics\Vulkan\Texture.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Types.cpp" />
     <ClCompile Include="Core\Utilities\Logger.cpp" />
-    <ClCompile Include="Core\VkApplication.cpp" />
     <ClCompile Include="Core\Window\Window.cpp" />
     <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Application.h" />
+    <ClInclude Include="Core\Applications\Application.h" />
+    <ClInclude Include="Core\Applications\VKSandbox.h" />
+    <ClInclude Include="Core\Applications\VKShaderViewer.h" />
     <ClInclude Include="Core\Common\Assert.h" />
     <ClInclude Include="Core\Common\Include.h" />
     <ClInclude Include="Core\Common\Vulkan.h" />
@@ -197,6 +202,7 @@
     <ClInclude Include="Core\Graphics\Vulkan\Buffer.h" />
     <ClInclude Include="Core\Graphics\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Core\Graphics\Vulkan\CommandPool.h" />
+    <ClInclude Include="Core\Graphics\Vulkan\DescriptorPool.h" />
     <ClInclude Include="Core\Graphics\Vulkan\Device.h" />
     <ClInclude Include="Core\Graphics\Vulkan\DeviceHerder.h" />
     <ClInclude Include="Core\Graphics\Vulkan\Instance.h" />
@@ -206,9 +212,9 @@
     <ClInclude Include="Core\Graphics\Vulkan\ShaderStash.h" />
     <ClInclude Include="Core\Graphics\Vulkan\Surface.h" />
     <ClInclude Include="Core\Graphics\Vulkan\Swapchain.h" />
+    <ClInclude Include="Core\Graphics\Vulkan\Texture.h" />
     <ClInclude Include="Core\Graphics\Vulkan\Types.h" />
     <ClInclude Include="Core\Utilities\Logger.h" />
-    <ClInclude Include="Core\VkApplication.h" />
     <ClInclude Include="Core\Window\Window.h" />
   </ItemGroup>
   <ItemGroup>

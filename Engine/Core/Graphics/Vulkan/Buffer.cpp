@@ -16,34 +16,33 @@ cyd::Buffer::Buffer(
    bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
    bufferInfo.size               = _size;
 
-   if( usage & BufferUsage::TRANSFER_SRC )
-   {
-      bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-   }
-   if( usage & BufferUsage::TRANSFER_DST )
-   {
-      bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-   }
-   if( usage & BufferUsage::UNIFORM )
+   if( _usage & BufferUsage::UNIFORM )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
    }
-   if( usage & BufferUsage::STORAGE )
+   if( _usage & BufferUsage::STORAGE )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
    }
-   if( usage & BufferUsage::INDEX )
+   if( _usage & BufferUsage::TRANSFER_SRC )
+   {
+      bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
+   }
+   if( _usage & BufferUsage::TRANSFER_DST )
+   {
+      bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+   }
+   if( _usage & BufferUsage::INDEX )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
    }
-   if( usage & BufferUsage::VERTEX )
+   if( _usage & BufferUsage::VERTEX )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
    }
 
    // TODO Investigate concurrent
    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
 
    VkResult result = vkCreateBuffer( _device.getVKDevice(), &bufferInfo, nullptr, &_vkBuffer );
    CYDASSERT( result == VK_SUCCESS && "Buffer: Could not create buffer" );
@@ -53,10 +52,37 @@ cyd::Buffer::Buffer(
 
 void cyd::Buffer::mapMemory( void* data, size_t size )
 {
+   if( !( _memoryType & MemoryType::HOST_VISIBLE ) )
+   {
+      CYDASSERT( !"Buffer: Cannot map memory, buffer memory not host visible" );
+      return;
+   }
+
    // TODO Add offsets to create chunking buffers
    vkMapMemory( _device.getVKDevice(), _vkMemory, 0, size, 0, &_data );
    memcpy( _data, data, size );
    vkUnmapMemory( _device.getVKDevice(), _vkMemory );
+}
+
+void cyd::Buffer::updateDescriptorSet( const ShaderObjectInfo& info, VkDescriptorSet descSet )
+{
+   _vkDescSet = descSet;
+
+   VkDescriptorBufferInfo bufferInfo = {};
+   bufferInfo.buffer                 = _vkBuffer;
+   bufferInfo.offset                 = 0;
+   bufferInfo.range                  = info.size;
+
+   VkWriteDescriptorSet descriptorWrite = {};
+   descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+   descriptorWrite.dstSet               = _vkDescSet;
+   descriptorWrite.dstBinding           = info.binding;
+   descriptorWrite.dstArrayElement      = 0;
+   descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+   descriptorWrite.descriptorCount      = 1;
+   descriptorWrite.pBufferInfo          = &bufferInfo;
+
+   vkUpdateDescriptorSets( _device.getVKDevice(), 1, &descriptorWrite, 0, nullptr );
 }
 
 static uint32_t findMemoryType(
