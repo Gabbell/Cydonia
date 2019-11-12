@@ -14,6 +14,10 @@ enum VkAttachmentLoadOp;
 enum VkAttachmentStoreOp;
 enum VkPrimitiveTopology;
 enum VkPolygonMode;
+enum VkImageLayout;
+enum VkDescriptorType;
+enum VkFilter;
+enum VkSamplerAddressMode;
 
 // ================================================================================================
 // Hashing utility
@@ -37,6 +41,8 @@ enum QueueUsage : Flag
 };
 using QueueUsageFlag = Flag;
 
+namespace BufferUsage
+{
 enum BufferUsage : Flag
 {
    TRANSFER_SRC = 1 << 0,
@@ -46,7 +52,22 @@ enum BufferUsage : Flag
    INDEX        = 1 << 4,
    VERTEX       = 1 << 5
 };
+}
 using BufferUsageFlag = Flag;
+
+namespace ImageUsage
+{
+enum ImageUsage : Flag
+{
+   TRANSFER_SRC  = 1 << 0,
+   TRANSFER_DST  = 1 << 1,
+   SAMPLED       = 1 << 2,
+   STORAGE       = 1 << 3,
+   COLOR         = 1 << 4,
+   DEPTH_STENCIL = 1 << 5
+};
+}
+using ImageUsageFlag = Flag;
 
 enum MemoryType : Flag
 {
@@ -105,16 +126,6 @@ enum class AttachmentType
    DEPTH_STENCIL
 };
 
-enum class AttachmentUsage
-{
-   UNKNOWN,
-   COLOR,
-   PRESENTATION,
-   TRANSFER_SRC,
-   TRANSFER_DST,
-   SHADER_READ
-};
-
 enum class DrawPrimitive
 {
    POINTS,
@@ -131,12 +142,53 @@ enum class PolygonMode
    POINT
 };
 
+enum class ImageLayout
+{
+   UNDEFINED,
+   GENERAL,
+   COLOR,
+   PRESENTATION,
+   TRANSFER_SRC,
+   TRANSFER_DST,
+   SHADER_READ
+};
+
+enum class ImageType
+{
+   TEXTURE_1D,
+   TEXTURE_2D,
+   TEXTURE_3D
+};
+
+enum class ShaderObjectType
+{
+   UNIFORM,
+   COMBINED_IMAGE_SAMPLER
+};
+
+enum class Filter
+{
+   NEAREST,
+   LINEAR,
+   CUBIC
+};
+
+enum class AddressMode
+{
+   REPEAT,
+   MIRRORED_REPEAT,
+   CLAMP_TO_EDGE,
+   CLAMP_TO_BORDER,
+   MIRROR_CLAMP_TO_EDGE,
+};
+
 // ================================================================================================
 // Basic structs
 struct Vertex
 {
    glm::vec4 pos;
    glm::vec4 col;
+   glm::vec4 uv;
 };
 
 struct Extent
@@ -153,7 +205,7 @@ struct Attachment
    LoadOp loadOp;
    StoreOp storeOp;
    AttachmentType type;
-   AttachmentUsage usage;
+   ImageLayout usage;
 };
 
 struct PushConstantRange
@@ -167,26 +219,28 @@ struct PushConstantRange
 struct ShaderObjectInfo
 {
    bool operator==( const ShaderObjectInfo& other ) const;
-   uint32_t size;
-   BufferUsage usage;
+   uint32_t size;  // Used for buffers
+   ShaderObjectType type;
    ShaderStageFlag stages;
    uint32_t binding;
 };
 
 // ================================================================================================
 // Create infos
+struct SamplerInfo
+{
+   bool operator==( const SamplerInfo& other ) const;
+   bool useAnisotropy      = true;
+   float maxAnisotropy     = 16.0f;
+   Filter magFilter        = Filter::NEAREST;
+   Filter minFilter        = Filter::NEAREST;
+   AddressMode addressMode = AddressMode::REPEAT;
+};
+
 struct RenderPassInfo
 {
    bool operator==( const RenderPassInfo& other ) const;
    std::vector<Attachment> attachments;
-};
-
-struct SwapchainInfo
-{
-   Extent extent;
-   PixelFormat format;
-   ColorSpace space;
-   PresentMode mode;
 };
 
 struct DescriptorSetLayoutInfo
@@ -222,6 +276,10 @@ VkAttachmentStoreOp cydOpToVkOp( StoreOp op );
 VkPrimitiveTopology cydDrawPrimToVkDrawPrim( DrawPrimitive prim );
 VkPolygonMode cydPolyModeToVkPolyMode( PolygonMode polyMode );
 uint32_t cydShaderStagesToVkShaderStages( ShaderStageFlag stages );
+VkImageLayout cydImageLayoutToVKImageLayout( ImageLayout layout );
+VkDescriptorType cydShaderObjectTypeToVkDescriptorType( ShaderObjectType type );
+VkFilter cydFilterToVkFilter( Filter filter );
+VkSamplerAddressMode cydAddressModeToVkAddressMode( AddressMode mode );
 }
 
 template <>
@@ -275,7 +333,7 @@ struct std::hash<cyd::ShaderObjectInfo>
    {
       size_t seed = 0;
       hash_combine( seed, shaderObject.size );
-      hash_combine( seed, shaderObject.usage );
+      hash_combine( seed, shaderObject.type );
       hash_combine( seed, shaderObject.binding );
       hash_combine( seed, shaderObject.stages );
       return seed;
@@ -339,6 +397,22 @@ struct std::hash<cyd::PipelineInfo>
       {
          hash_combine( seed, shader );
       }
+
+      return seed;
+   }
+};
+
+template <>
+struct std::hash<cyd::SamplerInfo>
+{
+   size_t operator()( const cyd::SamplerInfo& samplerInfo ) const
+   {
+      size_t seed = 0;
+      hash_combine( seed, samplerInfo.useAnisotropy );
+      hash_combine( seed, samplerInfo.maxAnisotropy );
+      hash_combine( seed, samplerInfo.magFilter );
+      hash_combine( seed, samplerInfo.minFilter );
+      hash_combine( seed, samplerInfo.addressMode );
 
       return seed;
    }

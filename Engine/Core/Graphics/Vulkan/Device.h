@@ -25,11 +25,14 @@ class Surface;
 class Swapchain;
 class PipelineStash;
 class RenderPassStash;
+class SamplerStash;
 class CommandPool;
 class CommandBuffer;
 class Buffer;
+class Texture;
 class DescriptorPool;
 struct SwapchainInfo;
+struct TextureDescription;
 }
 
 // ================================================================================================
@@ -63,6 +66,10 @@ class Device
        const ShaderObjectInfo& info,
        const DescriptorSetLayoutInfo& layout );
    std::shared_ptr<Buffer> createStagingBuffer( size_t size );
+   std::shared_ptr<Texture> createTexture(
+       const TextureDescription& desc,
+       const ShaderObjectInfo& info,
+       const DescriptorSetLayoutInfo& layout );
 
    void cleanup();  // Clean up unused resources
 
@@ -74,11 +81,12 @@ class Device
        const;
    Swapchain* getSwapchain() const { return _swapchain.get(); }
 
-   // These getters are used in the command buffers
    PipelineStash& getPipelineStash() const { return *_pipelines; }
    RenderPassStash& getRenderPassStash() const { return *_renderPasses; }
+   SamplerStash& getSamplerStash() const { return *_samplers; }
 
    // Support
+   uint32_t findMemoryType( uint32_t typeFilter, uint32_t properties ) const;
    bool supportsPresentation() const;
    uint32_t maxPushConstantsSize() const;
 
@@ -110,10 +118,12 @@ class Device
    const std::vector<const char*>& _extensions;
 
    std::vector<std::shared_ptr<Buffer>> _buffers;
+   std::vector<std::shared_ptr<Texture>> _textures;
    std::vector<std::unique_ptr<CommandPool>> _commandPools;
    std::unique_ptr<DescriptorPool> _descPool;
    std::unique_ptr<Swapchain> _swapchain;
    std::unique_ptr<RenderPassStash> _renderPasses;
+   std::unique_ptr<SamplerStash> _samplers;
    std::unique_ptr<PipelineStash> _pipelines;
 
    const Instance& _instance;

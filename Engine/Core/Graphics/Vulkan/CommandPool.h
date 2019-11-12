@@ -25,7 +25,11 @@ namespace cyd
 class CommandPool
 {
   public:
-   CommandPool( const Device& device, uint32_t familyIndex, QueueUsageFlag usage );
+   CommandPool(
+       const Device& device,
+       uint32_t familyIndex,
+       QueueUsageFlag usage,
+       bool supportsPresentation );
    ~CommandPool();
 
    const VkCommandPool& getVKCommandPool() const { return _vkPool; }
@@ -34,19 +38,20 @@ class CommandPool
 
    QueueUsageFlag getType() const noexcept { return _type; }
    uint32_t getFamilyIndex() const noexcept { return _familyIndex; }
+   bool supportsPresentation() const noexcept { return _supportsPresentation; }
 
    void cleanup();
 
   private:
    void _createCommandPool();
-   void _createDescriptorPool();
 
    const Device& _device;
 
    std::vector<std::shared_ptr<CommandBuffer>> _buffers;
-   VkCommandPool _vkPool        = nullptr;
+   VkCommandPool _vkPool = nullptr;
 
-   uint32_t _familyIndex;
    QueueUsageFlag _type;
+   uint32_t _familyIndex      = 0;
+   bool _supportsPresentation = false;
 };
 }

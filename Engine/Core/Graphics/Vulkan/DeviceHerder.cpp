@@ -18,7 +18,7 @@ cyd::DeviceHerder::DeviceHerder(
     : _instance( instance ), _window( window ), _surface( surface )
 {
    // Desired extensions to be used when creating logical devices
-   _extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+   _extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
    uint32_t physicalDeviceCount;
    vkEnumeratePhysicalDevices( instance.getVKInstance(), &physicalDeviceCount, nullptr );
@@ -60,7 +60,10 @@ bool cyd::DeviceHerder::_checkDevice( const Surface& surface, const VkPhysicalDe
 
    const bool isDiscrete = properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU;
 
-   VkBool32 supportsGraphics, supportsTransfer, supportsCompute, supportsPresent = false;
+   VkBool32 supportsGraphics = false;
+   VkBool32 supportsTransfer = false;
+   VkBool32 supportsCompute  = false;
+   VkBool32 supportsPresent  = false;
 
    for( uint32_t i = 0; i < queueFamilies.size(); ++i )
    {
@@ -125,9 +128,6 @@ bool cyd::DeviceHerder::_checkDeviceExtensionSupport( const VkPhysicalDevice& ph
    return requiredExtensions.empty();
 }
 
-const cyd::Swapchain* cyd::DeviceHerder::getMainSwapchain()
-{
-   return _devices[0]->getSwapchain();
-}
+const cyd::Swapchain* cyd::DeviceHerder::getMainSwapchain() { return _devices[0]->getSwapchain(); }
 
 cyd::DeviceHerder::~DeviceHerder() {}

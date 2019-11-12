@@ -4,14 +4,13 @@
 
 #include <Core/Graphics/Vulkan/Types.h>
 
-#include <cstdint>
 #include <unordered_map>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkDescriptorPool );
-FWDHANDLE( VkDescriptorSet );
+FWDHANDLE( VkSampler );
+
 namespace cyd
 {
 class Device;
@@ -22,20 +21,16 @@ class Device;
 // ================================================================================================
 namespace cyd
 {
-class DescriptorPool
+class SamplerStash
 {
   public:
-   DescriptorPool( const Device& device );
-   ~DescriptorPool();
+   SamplerStash( const Device& device );
+   ~SamplerStash();
 
-   VkDescriptorSet findOrAllocate( const DescriptorSetLayoutInfo& layout );
-   void free( const VkDescriptorSet& descSet );
+   const VkSampler findOrCreate( const SamplerInfo& info );
 
   private:
    const Device& _device;
-
-   std::unordered_map<DescriptorSetLayoutInfo, VkDescriptorSet> _descSets;
-
-   VkDescriptorPool _vkDescPool;
+   std::unordered_map<SamplerInfo, VkSampler> _samplers;
 };
 }

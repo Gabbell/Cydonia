@@ -6,17 +6,23 @@
 #include <Core/Graphics/Vulkan/Device.h>
 #include <Core/Graphics/Vulkan/PipelineStash.h>
 
+#include <array>
+
 cyd::DescriptorPool::DescriptorPool( const Device& device ) : _device( device )
 {
-   VkDescriptorPoolSize poolSize = {};
-   poolSize.type                 = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-   poolSize.descriptorCount      = 32;
+   std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+
+   poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+   poolSizes[0].descriptorCount = 32;
+
+   poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+   poolSizes[1].descriptorCount = 32;
 
    VkDescriptorPoolCreateInfo poolInfo = {};
    poolInfo.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
    poolInfo.flags                      = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
-   poolInfo.poolSizeCount              = 1;
-   poolInfo.pPoolSizes                 = &poolSize;
+   poolInfo.poolSizeCount              = static_cast<uint32_t>( poolSizes.size() );
+   poolInfo.pPoolSizes                 = poolSizes.data();
    poolInfo.maxSets                    = 32;
 
    VkResult result =
@@ -25,9 +31,7 @@ cyd::DescriptorPool::DescriptorPool( const Device& device ) : _device( device )
    CYDASSERT( result == VK_SUCCESS && "CommandPool: Could not create descriptor pool" );
 }
 
-VkDescriptorSet cyd::DescriptorPool::findOrAllocate(
-    uint32_t binding,
-    const DescriptorSetLayoutInfo& layout )
+VkDescriptorSet cyd::DescriptorPool::findOrAllocate( const DescriptorSetLayoutInfo& layout )
 {
    const auto descSetIt = _descSets.find( layout );
    if( descSetIt != _descSets.end() )

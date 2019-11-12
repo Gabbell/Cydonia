@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Core/Common/Include.h>
+#include <Core/Graphics/Vulkan/Types.h>
 
 #include <cstdint>
 #include <memory>
@@ -24,7 +25,6 @@ namespace cyd
 class Device;
 class Surface;
 class CommandBuffer;
-struct SwapchainInfo;
 }
 
 // ================================================================================================
@@ -32,6 +32,14 @@ struct SwapchainInfo;
 // ================================================================================================
 namespace cyd
 {
+struct SwapchainInfo
+{
+   Extent extent;
+   PixelFormat format;
+   ColorSpace space;
+   PresentMode mode;
+};
+
 class Swapchain
 {
   public:

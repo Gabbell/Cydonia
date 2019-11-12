@@ -8,8 +8,10 @@
 #include <Core/Graphics/Vulkan/Swapchain.h>
 #include <Core/Graphics/Vulkan/PipelineStash.h>
 #include <Core/Graphics/Vulkan/RenderPassStash.h>
+#include <Core/Graphics/Vulkan/SamplerStash.h>
 #include <Core/Graphics/Vulkan/CommandPool.h>
 #include <Core/Graphics/Vulkan/Buffer.h>
+#include <Core/Graphics/Vulkan/Texture.h>
 #include <Core/Graphics/Vulkan/DescriptorPool.h>
 
 #include <algorithm>
@@ -37,6 +39,7 @@ cyd::Device::Device(
 
    _renderPasses = std::make_unique<RenderPassStash>( *this );
    _pipelines    = std::make_unique<PipelineStash>( *this );
+   _samplers     = std::make_unique<SamplerStash>( *this );
 }
 
 void cyd::Device::_populateQueueFamilies()
@@ -135,8 +138,8 @@ void cyd::Device::_createCommandPools()
 {
    for( const QueueFamily& queueFamily : _queueFamilies )
    {
-      _commandPools.push_back(
-          std::make_unique<CommandPool>( *this, queueFamily.index, queueFamily.type ) );
+      _commandPools.push_back( std::make_unique<CommandPool>(
+          *this, queueFamily.index, queueFamily.type, queueFamily.supportsPresent ) );
    }
 }
 
@@ -153,7 +156,9 @@ std::shared_ptr<cyd::CommandBuffer> cyd::Device::createCommandBuffer(
    const auto it = std::find_if(
        _commandPools.begin(),
        _commandPools.end(),
-       [usage]( const std::unique_ptr<CommandPool>& pool ) { return usage & pool->getType(); } );
+       [usage, presentable]( const std::unique_ptr<CommandPool>& pool ) {
+          return ( usage & pool->getType() ) && !( presentable && !pool->supportsPresentation() );
+       } );
    if( it != _commandPools.end() )
    {
       // Found an adequate command pool
@@ -180,7 +185,7 @@ std::shared_ptr<cyd::Buffer> cyd::Device::createUniformBuffer(
        usage | BufferUsage::UNIFORM,
        MemoryType::HOST_VISIBLE | MemoryType::HOST_COHERENT );
 
-   VkDescriptorSet descSet = _descPool->findOrAllocate( info.binding, layout );
+   VkDescriptorSet descSet = _descPool->findOrAllocate( layout );
 
    buffer->updateDescriptorSet( info, descSet );
 
@@ -198,7 +203,21 @@ std::shared_ptr<cyd::Buffer> cyd::Device::createStagingBuffer( size_t size )
    return _buffers.back();
 }
 
-// TODO Give possiblity of custom format and presentation mode using a create info as argument
+std::shared_ptr<cyd::Texture> cyd::Device::createTexture(
+    const TextureDescription& desc,
+    const ShaderObjectInfo& info,
+    const DescriptorSetLayoutInfo& layout )
+{
+   std::shared_ptr<Texture> texture = std::make_shared<Texture>( *this, desc );
+
+   VkDescriptorSet descSet = _descPool->findOrAllocate( layout );
+
+   texture->updateDescriptorSet( info, descSet );
+
+   _textures.push_back( texture );
+   return _textures.back();
+}
+
 cyd::Swapchain* cyd::Device::createSwapchain( const SwapchainInfo& scInfo )
 {
    CYDASSERT( !_swapchain.get() && "Device: Swapchain already created" );
@@ -217,6 +236,20 @@ void cyd::Device::cleanup()
    {
       commandPool->cleanup();
    }
+
+   // Cleaning up textures
+   for( auto& texture : _textures )
+   {
+      if( texture.use_count() == 1 )
+      {
+         // Freeing texture's assigned descriptor set
+         _descPool->free( texture->getVKDescSet() );
+
+         // Destroying texture
+         texture.reset();
+      }
+   }
+
    // Cleaning up device buffers
    for( auto& buffer : _buffers )
    {
@@ -258,6 +291,23 @@ const VkQueue* cyd::Device::getQueueFromUsage( QueueUsageFlag usage, bool suppor
    }
 
    return nullptr;
+}
+
+uint32_t cyd::Device::findMemoryType( uint32_t typeFilter, uint32_t properties ) const
+{
+   VkPhysicalDeviceMemoryProperties memProperties;
+   vkGetPhysicalDeviceMemoryProperties( _physDevice, &memProperties );
+
+   for( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ )
+   {
+      if( ( typeFilter & ( 1 << i ) ) &&
+          ( memProperties.memoryTypes[i].propertyFlags & properties ) == properties )
+      {
+         return i;
+      }
+   }
+
+   return 0;
 }
 
 bool cyd::Device::supportsPresentation() const

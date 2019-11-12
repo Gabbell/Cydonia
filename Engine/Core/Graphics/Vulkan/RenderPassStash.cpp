@@ -33,31 +33,8 @@ const VkRenderPass cyd::RenderPassStash::findOrCreate( const RenderPassInfo& inf
       vkAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       vkAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
       vkAttachment.initialLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+      vkAttachment.finalLayout             = cydImageLayoutToVKImageLayout( attachment.usage );
 
-      switch( attachment.usage )
-      {
-         case AttachmentUsage::UNKNOWN:
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-            break;
-         case AttachmentUsage::COLOR:
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-            break;
-         case AttachmentUsage::PRESENTATION:
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            break;
-         case AttachmentUsage::TRANSFER_SRC:
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-            break;
-         case AttachmentUsage::TRANSFER_DST:
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-            break;
-         case AttachmentUsage::SHADER_READ:
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            break;
-         default:
-            CYDASSERT( !"RenderPass: Attachment usage not supported" )
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_GENERAL;
-      }
       attachmentDescs.push_back( std::move( vkAttachment ) );
 
       switch( attachment.type )
@@ -95,7 +72,7 @@ const VkRenderPass cyd::RenderPassStash::findOrCreate( const RenderPassInfo& inf
        vkCreateRenderPass( _device.getVKDevice(), &renderPassInfo, nullptr, &renderPass );
    CYDASSERT( result == VK_SUCCESS && "RenderPass: Could not create default render pass" );
 
-   _renderPasses.insert( {info, renderPass} );
+   _renderPasses.insert( { info, renderPass } );
    return renderPass;
 }
 
@@ -107,7 +84,7 @@ void cyd::RenderPassStash::_createDefaultRenderPasses()
    colorPresentation.loadOp     = LoadOp::CLEAR;
    colorPresentation.storeOp    = StoreOp::STORE;
    colorPresentation.type       = AttachmentType::COLOR;
-   colorPresentation.usage      = AttachmentUsage::PRESENTATION;
+   colorPresentation.usage      = ImageLayout::PRESENTATION;
 
    RenderPassInfo info = {};
    info.attachments.push_back( colorPresentation );

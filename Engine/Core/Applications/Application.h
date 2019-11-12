@@ -29,7 +29,7 @@ class Application
    Application( Application&& other ) noexcept = delete;
    Application& operator=( const Application& other ) = delete;
    Application& operator=( Application&& other ) noexcept = delete;
-   ~Application();
+   virtual ~Application();
 
    void startLoop();
 

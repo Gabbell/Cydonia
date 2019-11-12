@@ -3,11 +3,12 @@
 #include <Core/Applications/Application.h>
 
 // ================================================================================================
-// Forward
+// Forwards
 // ================================================================================================
 namespace cyd
 {
 class Buffer;
+class Texture;
 }
 
 // ================================================================================================
@@ -33,5 +34,6 @@ class VKSandbox final : public Application
   private:
    std::shared_ptr<cyd::Buffer> _vertexBuffer = nullptr;
    std::shared_ptr<cyd::Buffer> _uboBuffer    = nullptr;
+   std::shared_ptr<cyd::Texture> _texture     = nullptr;
 };
 }
