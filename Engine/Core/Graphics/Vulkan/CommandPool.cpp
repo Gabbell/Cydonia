@@ -9,8 +9,15 @@
 static constexpr uint32_t INITIAL_SIZE = 64;
 static constexpr uint32_t MAX_SIZE     = 1024;
 
-cyd::CommandPool::CommandPool( const Device& device, uint32_t familyIndex, QueueUsageFlag type )
-    : _device( device ), _familyIndex( familyIndex ), _type( type )
+cyd::CommandPool::CommandPool(
+    const Device& device,
+    uint32_t familyIndex,
+    QueueUsageFlag type,
+    bool supportsPresentation )
+    : _device( device ),
+      _type( type ),
+      _familyIndex( familyIndex ),
+      _supportsPresentation( supportsPresentation )
 {
    _createCommandPool();
 }

@@ -85,7 +85,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
@@ -104,7 +104,7 @@
     <ClCompile>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
@@ -121,7 +121,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -131,6 +131,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
@@ -144,7 +145,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <WarningLevel>Level3</WarningLevel>
+      <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
@@ -154,6 +155,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
@@ -180,6 +182,7 @@
     <ClCompile Include="Core\Graphics\Vulkan\Instance.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\PipelineStash.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\RenderPassStash.cpp" />
+    <ClCompile Include="Core\Graphics\Vulkan\SamplerStash.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Shader.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\ShaderStash.cpp" />
     <ClCompile Include="Core\Graphics\Vulkan\Surface.cpp" />
@@ -208,6 +211,7 @@
     <ClInclude Include="Core\Graphics\Vulkan\Instance.h" />
     <ClInclude Include="Core\Graphics\Vulkan\PipelineStash.h" />
     <ClInclude Include="Core\Graphics\Vulkan\RenderPassStash.h" />
+    <ClInclude Include="Core\Graphics\Vulkan\SamplerStash.h" />
     <ClInclude Include="Core\Graphics\Vulkan\Shader.h" />
     <ClInclude Include="Core\Graphics\Vulkan\ShaderStash.h" />
     <ClInclude Include="Core\Graphics\Vulkan\Surface.h" />

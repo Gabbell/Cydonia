@@ -22,6 +22,7 @@ bool Attachment::operator==( const Attachment& other ) const
    return format == other.format && loadOp == other.loadOp && storeOp == other.storeOp &&
           type == other.type && usage == other.usage;
 }
+
 bool RenderPassInfo::operator==( const RenderPassInfo& other ) const
 {
    bool same = true;
@@ -61,6 +62,13 @@ bool PipelineInfo::operator==( const PipelineInfo& other ) const
 {
    return pipLayout == other.pipLayout && drawPrim == other.drawPrim &&
           polyMode == other.polyMode && extent == other.extent && shaders == other.shaders;
+}
+
+bool SamplerInfo::operator==( const SamplerInfo& other ) const
+{
+   return useAnisotropy == other.useAnisotropy && maxAnisotropy == other.maxAnisotropy &&
+          magFilter == other.magFilter && minFilter == other.minFilter &&
+          addressMode == other.addressMode;
 }
 
 // ================================================================================================
@@ -181,5 +189,82 @@ VkShaderStageFlags cydShaderStagesToVkShaderStages( ShaderStageFlag stages )
       vkStages |= VK_SHADER_STAGE_ALL;
    }
    return vkStages;
+}
+
+VkImageLayout cydImageLayoutToVKImageLayout( ImageLayout layout )
+{
+   switch( layout )
+   {
+      case ImageLayout::UNDEFINED:
+         return VK_IMAGE_LAYOUT_UNDEFINED;
+      case ImageLayout::GENERAL:
+         return VK_IMAGE_LAYOUT_GENERAL;
+      case ImageLayout::COLOR:
+         return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+      case ImageLayout::PRESENTATION:
+         return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+      case ImageLayout::TRANSFER_SRC:
+         return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+      case ImageLayout::TRANSFER_DST:
+         return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+      case ImageLayout::SHADER_READ:
+         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      default:
+         CYDASSERT( !"Types: Image layout not supported" )
+   }
+   return VK_IMAGE_LAYOUT_GENERAL;
+}
+
+VkDescriptorType cydShaderObjectTypeToVkDescriptorType( ShaderObjectType type )
+{
+   switch( type )
+   {
+      case ShaderObjectType::UNIFORM:
+         return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      case ShaderObjectType::COMBINED_IMAGE_SAMPLER:
+         return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      default:
+         CYDASSERT( !"Types: Descriptor type not supported" );
+   }
+
+   return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+}
+
+VkFilter cydFilterToVkFilter( Filter filter )
+{
+   switch( filter )
+   {
+      case Filter::NEAREST:
+         return VK_FILTER_NEAREST;
+      case Filter::LINEAR:
+         return VK_FILTER_LINEAR;
+      case Filter::CUBIC:
+         return VK_FILTER_CUBIC_IMG;
+      default:
+         CYDASSERT( !"Types: Filter type not supported" );
+   }
+
+   return VK_FILTER_LINEAR;
+}
+
+VkSamplerAddressMode cydAddressModeToVkAddressMode( AddressMode mode )
+{
+   switch( mode )
+   {
+      case AddressMode::REPEAT:
+         return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+      case AddressMode::MIRRORED_REPEAT:
+         return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
+      case AddressMode::CLAMP_TO_EDGE:
+         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+      case AddressMode::CLAMP_TO_BORDER:
+         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+      case AddressMode::MIRROR_CLAMP_TO_EDGE:
+         return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+      default:
+         CYDASSERT( !"Types: Address mode not supported" );
+   }
+
+   return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 }

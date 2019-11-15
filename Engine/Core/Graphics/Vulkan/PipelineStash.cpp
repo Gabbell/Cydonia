@@ -50,13 +50,13 @@ const VkDescriptorSetLayout cyd::PipelineStash::findOrCreate( const DescriptorSe
       VkDescriptorSetLayoutBinding descSetLayoutBinding = {};
       descSetLayoutBinding.binding                      = object.binding;
 
-      switch( object.usage )
+      switch( object.type )
       {
-         case BufferUsage::UNIFORM:
+         case ShaderObjectType::UNIFORM:
             descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             break;
-         case BufferUsage::STORAGE:
-            descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+         case ShaderObjectType::COMBINED_IMAGE_SAMPLER:
+            descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             break;
          default:
             CYDASSERT( !"PipelineStash: Descriptor type not yet implemented" );
@@ -77,6 +77,7 @@ const VkDescriptorSetLayout cyd::PipelineStash::findOrCreate( const DescriptorSe
    VkDescriptorSetLayout descSetLayout;
    VkResult result =
        vkCreateDescriptorSetLayout( _device.getVKDevice(), &layoutInfo, nullptr, &descSetLayout );
+   CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create descriptor set layout" );
 
    _descSetLayouts.insert( { info, descSetLayout } );
 
@@ -165,7 +166,7 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    vertexBindingDesc.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
 
    // Vertex attributes
-   std::array<VkVertexInputAttributeDescription, 2> attributeDescs = {};
+   std::array<VkVertexInputAttributeDescription, 3> attributeDescs = {};
 
    // Position
    attributeDescs[0].binding  = 0;
@@ -178,6 +179,12 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    attributeDescs[1].location = 1;
    attributeDescs[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
    attributeDescs[1].offset   = offsetof( Vertex, col );
+
+   // Texture Coordinates
+   attributeDescs[2].binding  = 0;
+   attributeDescs[2].location = 2;
+   attributeDescs[2].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
+   attributeDescs[2].offset   = offsetof( Vertex, uv );
 
    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;

@@ -71,6 +71,8 @@ static VkSurfaceFormatKHR chooseFormat(
    }
 
    VkSurfaceFormatKHR desiredFormat;
+   desiredFormat.format     = cydFormatToVkFormat( format );
+   desiredFormat.colorSpace = cydSpaceToVkSpace( space );
 
    auto it = std::find_if(
        formats.begin(), formats.end(), [&desiredFormat]( const VkSurfaceFormatKHR& format ) {

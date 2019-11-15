@@ -78,31 +78,11 @@ void cyd::Buffer::updateDescriptorSet( const ShaderObjectInfo& info, VkDescripto
    descriptorWrite.dstSet               = _vkDescSet;
    descriptorWrite.dstBinding           = info.binding;
    descriptorWrite.dstArrayElement      = 0;
-   descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+   descriptorWrite.descriptorType       = cydShaderObjectTypeToVkDescriptorType( info.type );
    descriptorWrite.descriptorCount      = 1;
    descriptorWrite.pBufferInfo          = &bufferInfo;
 
    vkUpdateDescriptorSets( _device.getVKDevice(), 1, &descriptorWrite, 0, nullptr );
-}
-
-static uint32_t findMemoryType(
-    const VkPhysicalDevice& physicalDevice,
-    uint32_t typeFilter,
-    VkMemoryPropertyFlags properties )
-{
-   VkPhysicalDeviceMemoryProperties memProperties;
-   vkGetPhysicalDeviceMemoryProperties( physicalDevice, &memProperties );
-
-   for( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ )
-   {
-      if( ( typeFilter & ( 1 << i ) ) &&
-          ( memProperties.memoryTypes[i].propertyFlags & properties ) == properties )
-      {
-         return i;
-      }
-   }
-
-   return 0;
 }
 
 void cyd::Buffer::_allocateMemory()
@@ -128,8 +108,8 @@ void cyd::Buffer::_allocateMemory()
    VkMemoryAllocateInfo allocInfo = {};
    allocInfo.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
    allocInfo.allocationSize       = memRequirements.size;
-   allocInfo.memoryTypeIndex      = findMemoryType(
-       _device.getPhysicalDevice(), memRequirements.memoryTypeBits, memoryProperty );
+   allocInfo.memoryTypeIndex =
+       _device.findMemoryType( memRequirements.memoryTypeBits, memoryProperty );
 
    VkResult result = vkAllocateMemory( _device.getVKDevice(), &allocInfo, nullptr, &_vkMemory );
    CYDASSERT( result == VK_SUCCESS && "Buffer: Could not allocate device memory" );

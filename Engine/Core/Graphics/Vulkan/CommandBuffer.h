@@ -22,6 +22,7 @@ class CommandPool;
 class Device;
 class Swapchain;
 class Buffer;
+class Texture;
 }
 
 // ================================================================================================
@@ -35,26 +36,48 @@ class CommandBuffer
    CommandBuffer( const Device& device, const CommandPool& pool, QueueUsageFlag usage );
    ~CommandBuffer();
 
+   // Getters
+   // =============================================================================================
    const VkCommandBuffer& getVKBuffer() const { return _vkCmdBuffer; }
    const VkFence& getVKFence() const { return _vkFence; }
 
+   // Status
+   // =============================================================================================
    bool isCompleted() const;
    bool wasSubmitted() const noexcept { return _wasSubmitted; }
    void waitForCompletion() const;  // CPU Spinlock, avoid calling this
 
+   // Recording and Submission
+   // =============================================================================================
    void startRecording();
    void endRecording();
+   void submit();
 
-   void updatePushConstants( PushConstantRange range, void* data );
+   // Bindings
+   // =============================================================================================
+   void updatePushConstants( const PushConstantRange& range, void* data );
    void bindPipeline( const PipelineInfo& info );
    void bindVertexBuffer( const std::shared_ptr<Buffer> vertexBuf );
    void bindBuffer( const std::shared_ptr<Buffer> buffer );
-   void setViewport( uint32_t width, uint32_t height );
+   void bindTexture( const std::shared_ptr<Texture> texture );
+
+   // Render Pass
+   // =============================================================================================
    void beginPass( Swapchain* swapchain );
-   void draw( uint32_t vertexCount );
    void endPass();
+
+   // Dynamic State
+   // =============================================================================================
+   void setViewport( uint32_t width, uint32_t height );
+
+   // Drawing
+   // =============================================================================================
+   void draw( uint32_t vertexCount );
+
+   // Transfers
+   // =============================================================================================
    void copyBuffer( const std::shared_ptr<Buffer> src, const std::shared_ptr<Buffer> dst );
-   void submit();
+   void uploadBufferToTex( const std::shared_ptr<Buffer> src, const std::shared_ptr<Texture> dst );
 
   private:
    const Device& _device;

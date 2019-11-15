@@ -50,8 +50,8 @@ void cyd::Application::tick( double deltaTime )
    // TODO There is currently a bug in SDL 2.0.9 where this stalls every 3000ms
    // https://bugzilla.libsdl.org/show_bug.cgi?id=4417
 
-   // SDL_Event event;
-   // while( SDL_PollEvent( &event ) )
+   //SDL_Event event;
+   //while( SDL_PollEvent( &event ) )
    //{
    //   switch( event.type )
    //   {
