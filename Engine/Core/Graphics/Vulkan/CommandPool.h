@@ -22,7 +22,7 @@ class CommandBuffer;
 // ================================================================================================
 namespace cyd
 {
-class CommandPool
+class CommandPool final
 {
   public:
    CommandPool(

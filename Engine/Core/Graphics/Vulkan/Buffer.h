@@ -20,7 +20,7 @@ class Device;
 // ================================================================================================
 namespace cyd
 {
-class Buffer
+class Buffer final
 {
   public:
    Buffer( const Device& device, size_t size, BufferUsageFlag usage, MemoryTypeFlag memoryType );

@@ -7,19 +7,6 @@
 #include <vector>
 
 // ================================================================================================
-// Forwards
-enum VkFormat;
-enum VkColorSpaceKHR;
-enum VkAttachmentLoadOp;
-enum VkAttachmentStoreOp;
-enum VkPrimitiveTopology;
-enum VkPolygonMode;
-enum VkImageLayout;
-enum VkDescriptorType;
-enum VkFilter;
-enum VkSamplerAddressMode;
-
-// ================================================================================================
 // Hashing utility
 template <class T>
 void hash_combine( size_t& seed, const T& obj )
@@ -198,6 +185,12 @@ struct Extent
    uint32_t height;
 };
 
+struct Rectangle
+{
+   glm::vec2 offset;
+   Extent extent;
+};
+
 struct Attachment
 {
    bool operator==( const Attachment& other ) const;
@@ -266,20 +259,6 @@ struct PipelineInfo
    PolygonMode polyMode;
    Extent extent;
 };
-
-// ================================================================================================
-// Conversion functions
-VkFormat cydFormatToVkFormat( PixelFormat format );
-VkColorSpaceKHR cydSpaceToVkSpace( ColorSpace space );
-VkAttachmentLoadOp cydOpToVkOp( LoadOp op );
-VkAttachmentStoreOp cydOpToVkOp( StoreOp op );
-VkPrimitiveTopology cydDrawPrimToVkDrawPrim( DrawPrimitive prim );
-VkPolygonMode cydPolyModeToVkPolyMode( PolygonMode polyMode );
-uint32_t cydShaderStagesToVkShaderStages( ShaderStageFlag stages );
-VkImageLayout cydImageLayoutToVKImageLayout( ImageLayout layout );
-VkDescriptorType cydShaderObjectTypeToVkDescriptorType( ShaderObjectType type );
-VkFilter cydFilterToVkFilter( Filter filter );
-VkSamplerAddressMode cydAddressModeToVkAddressMode( AddressMode mode );
 }
 
 template <>

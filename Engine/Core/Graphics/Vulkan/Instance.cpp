@@ -3,7 +3,7 @@
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
-#include <Core/Window/Window.h>
+#include <Core/Window/GLFWWindow.h>
 
 #include <Core/Graphics/Vulkan/Device.h>
 #include <Core/Graphics/Vulkan/Surface.h>
@@ -17,9 +17,9 @@
 
 static VkBool32 errorCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT messageType,
+    VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackdata,
-    void* pUserData )
+    void* /*pUserData*/ )
 {
 #ifdef _WIN32
    // Setting up Windows console to use ANSI escape color sequences. No need to do that on Unix.
@@ -152,7 +152,7 @@ void cyd::Instance::_createVKInstance()
    CYDASSERT( checkValidationLayerSupport( _layers ) );
 #endif
 
-   const std::vector<const char*>& extensions = _window.getExtensionsFromSDL();
+   const std::vector<const char*>& extensions = _window.getExtensionsFromGLFW();
 
    // Instance create info
    VkInstanceCreateInfo instInfo    = {};
@@ -192,7 +192,6 @@ void cyd::Instance::_createDebugMessenger()
 
 cyd::Instance::~Instance()
 {
-
 #ifdef _DEBUG
    destroyDebugUtilsMessengerEXT( _vkInstance, _debugMessenger, nullptr );
 #endif

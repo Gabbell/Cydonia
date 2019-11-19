@@ -3,22 +3,18 @@
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
-#include <Core/Window/Window.h>
+#include <Core/Window/GLFWWindow.h>
 
 #include <Core/Graphics/Vulkan/Instance.h>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+#include <GLFW/glfw3.h>
 
 cyd::Surface::Surface( const Instance& instance, const Window& window )
     : _window( window ), _instance( instance )
 {
-   // Creating surface
-   if( !SDL_Vulkan_CreateSurface( window.getSDLWindow(), instance.getVKInstance(), &_vkSurface ) )
-   {
-      const char* error = SDL_GetError();
-      CYDASSERT( !error );
-   }
+   VkResult result = glfwCreateWindowSurface(
+       _instance.getVKInstance(), _window.getGLFWwindow(), nullptr, &_vkSurface );
+   CYDASSERT( result == VK_SUCCESS && "Surface: Could not create surface" );
 }
 
 cyd::Surface::~Surface()

@@ -30,7 +30,7 @@ class Texture;
 // ================================================================================================
 namespace cyd
 {
-class CommandBuffer
+class CommandBuffer final
 {
   public:
    CommandBuffer( const Device& device, const CommandPool& pool, QueueUsageFlag usage );
@@ -68,7 +68,7 @@ class CommandBuffer
 
    // Dynamic State
    // =============================================================================================
-   void setViewport( uint32_t width, uint32_t height );
+   void setViewport( const Rectangle& viewport );
 
    // Drawing
    // =============================================================================================

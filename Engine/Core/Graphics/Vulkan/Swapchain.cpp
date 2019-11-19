@@ -7,6 +7,7 @@
 #include <Core/Graphics/Vulkan/Device.h>
 #include <Core/Graphics/Vulkan/Surface.h>
 #include <Core/Graphics/Vulkan/CommandBuffer.h>
+#include <Core/Graphics/Vulkan/TypeConversions.h>
 
 #include <algorithm>
 
@@ -71,8 +72,8 @@ static VkSurfaceFormatKHR chooseFormat(
    }
 
    VkSurfaceFormatKHR desiredFormat;
-   desiredFormat.format     = cydFormatToVkFormat( format );
-   desiredFormat.colorSpace = cydSpaceToVkSpace( space );
+   desiredFormat.format     = cyd::TypeConversions::cydFormatToVkFormat( format );
+   desiredFormat.colorSpace = cyd::TypeConversions::cydSpaceToVkSpace( space );
 
    auto it = std::find_if(
        formats.begin(), formats.end(), [&desiredFormat]( const VkSurfaceFormatKHR& format ) {

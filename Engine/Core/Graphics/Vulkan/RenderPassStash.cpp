@@ -4,6 +4,7 @@
 #include <Core/Common/Vulkan.h>
 
 #include <Core/Graphics/Vulkan/Device.h>
+#include <Core/Graphics/Vulkan/TypeConversions.h>
 
 cyd::RenderPassStash::RenderPassStash( const Device& device ) : _device( device )
 {
@@ -26,14 +27,14 @@ const VkRenderPass cyd::RenderPassStash::findOrCreate( const RenderPassInfo& inf
    for( const auto& attachment : info.attachments )
    {
       VkAttachmentDescription vkAttachment = {};
-      vkAttachment.format                  = cydFormatToVkFormat( attachment.format );
-      vkAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
-      vkAttachment.loadOp                  = cydOpToVkOp( attachment.loadOp );
-      vkAttachment.storeOp                 = cydOpToVkOp( attachment.storeOp );
-      vkAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-      vkAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-      vkAttachment.initialLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
-      vkAttachment.finalLayout             = cydImageLayoutToVKImageLayout( attachment.usage );
+      vkAttachment.format         = TypeConversions::cydFormatToVkFormat( attachment.format );
+      vkAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
+      vkAttachment.loadOp         = TypeConversions::cydOpToVkOp( attachment.loadOp );
+      vkAttachment.storeOp        = TypeConversions::cydOpToVkOp( attachment.storeOp );
+      vkAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      vkAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      vkAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
+      vkAttachment.finalLayout = TypeConversions::cydImageLayoutToVKImageLayout( attachment.usage );
 
       attachmentDescs.push_back( std::move( vkAttachment ) );
 

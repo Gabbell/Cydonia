@@ -10,6 +10,7 @@
 #include <Core/Graphics/Vulkan/Swapchain.h>
 #include <Core/Graphics/Vulkan/Buffer.h>
 #include <Core/Graphics/Vulkan/Texture.h>
+#include <Core/Graphics/Vulkan/TypeConversions.h>
 
 cyd::CommandBuffer::CommandBuffer(
     const Device& device,
@@ -89,7 +90,7 @@ void cyd::CommandBuffer::updatePushConstants( const PushConstantRange& range, vo
    vkCmdPushConstants(
        _vkCmdBuffer,
        _boundPipLayout.value(),
-       cydShaderStagesToVkShaderStages( range.stages ),
+       TypeConversions::cydShaderStagesToVkShaderStages( range.stages ),
        range.offset,
        range.size,
        data );
@@ -149,16 +150,16 @@ void cyd::CommandBuffer::bindTexture( const std::shared_ptr<Texture> texture )
 
    if( texture->getLayout() != ImageLayout::SHADER_READ )
    {
-      VkImageMemoryBarrier barrier          = {};
-      barrier.sType                         = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-      barrier.oldLayout                     = cydImageLayoutToVKImageLayout( texture->getLayout() );
-      barrier.newLayout                     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-      barrier.srcQueueFamilyIndex           = VK_QUEUE_FAMILY_IGNORED;
-      barrier.dstQueueFamilyIndex           = VK_QUEUE_FAMILY_IGNORED;
-      barrier.image                         = texture->getVKImage();
-      barrier.subresourceRange.aspectMask   = VK_IMAGE_ASPECT_COLOR_BIT;
-      barrier.subresourceRange.baseMipLevel = 0;
-      barrier.subresourceRange.levelCount   = 1;
+      VkImageMemoryBarrier barrier = {};
+      barrier.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+      barrier.oldLayout = TypeConversions::cydImageLayoutToVKImageLayout( texture->getLayout() );
+      barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+      barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+      barrier.image                           = texture->getVKImage();
+      barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+      barrier.subresourceRange.baseMipLevel   = 0;
+      barrier.subresourceRange.levelCount     = 1;
       barrier.subresourceRange.baseArrayLayer = 0;
       barrier.subresourceRange.layerCount     = 1;
       barrier.srcAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
@@ -190,11 +191,16 @@ void cyd::CommandBuffer::bindTexture( const std::shared_ptr<Texture> texture )
        nullptr );
 }
 
-void cyd::CommandBuffer::setViewport( uint32_t width, uint32_t height )
+void cyd::CommandBuffer::setViewport( const Rectangle& viewport )
 {
-   VkViewport viewport = {
-       0.0f, 0.0f, static_cast<float>( width ), static_cast<float>( height ), 0.0f, 1.0f };
-   vkCmdSetViewport( _vkCmdBuffer, 0, 1, &viewport );
+   VkViewport vkViewport = {
+       viewport.offset.x,
+       viewport.offset.y,
+       static_cast<float>( viewport.extent.width ),
+       static_cast<float>( viewport.extent.height ),
+       0.0f,
+       1.0f };
+   vkCmdSetViewport( _vkCmdBuffer, 0, 1, &vkViewport );
 }
 
 void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
@@ -267,13 +273,13 @@ void cyd::CommandBuffer::uploadBufferToTex(
        "CommandBuffer: Source and destination sizes are not the same" );
 
    // Transition image layout to transfer destination optimal
-   VkImageMemoryBarrier barrier            = {};
-   barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-   barrier.oldLayout                       = cydImageLayoutToVKImageLayout( dst->getLayout() );
-   barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-   barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-   barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-   barrier.image                           = dst->getVKImage();
+   VkImageMemoryBarrier barrier = {};
+   barrier.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+   barrier.oldLayout           = TypeConversions::cydImageLayoutToVKImageLayout( dst->getLayout() );
+   barrier.newLayout           = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+   barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+   barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+   barrier.image               = dst->getVKImage();
    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
    barrier.subresourceRange.baseMipLevel   = 0;
    barrier.subresourceRange.levelCount     = 1;

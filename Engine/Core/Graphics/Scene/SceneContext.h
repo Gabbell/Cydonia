@@ -1,20 +1,15 @@
 #pragma once
 
-#include <Core/Common/Include.h>
-
 #include <Core/Graphics/Vulkan/Types.h>
 
-#include <cstdint>
-#include <unordered_map>
+#include <memory>
 
 // ================================================================================================
 // Forwards
 // ================================================================================================
-FWDHANDLE( VkDescriptorPool );
-FWDHANDLE( VkDescriptorSet );
 namespace cyd
 {
-class Device;
+class Camera;
 }
 
 // ================================================================================================
@@ -22,20 +17,15 @@ class Device;
 // ================================================================================================
 namespace cyd
 {
-class DescriptorPool final
+class SceneContext
 {
   public:
-   DescriptorPool( const Device& device );
-   ~DescriptorPool();
+   SceneContext( const Rectangle& viewport );
+   ~SceneContext();
 
-   VkDescriptorSet findOrAllocate( const DescriptorSetLayoutInfo& layout );
-   void free( const VkDescriptorSet& descSet );
+   Camera& getCamera() { return *_camera; }
 
   private:
-   const Device& _device;
-
-   std::unordered_map<DescriptorSetLayoutInfo, VkDescriptorSet> _descSets;
-
-   VkDescriptorPool _vkDescPool;
+   std::unique_ptr<Camera> _camera;
 };
 }

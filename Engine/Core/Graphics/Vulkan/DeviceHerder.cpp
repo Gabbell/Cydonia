@@ -3,7 +3,7 @@
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>
 
-#include <Core/Window/Window.h>
+#include <Core/Window/GLFWWindow.h>
 
 #include <Core/Graphics/Vulkan/Device.h>
 #include <Core/Graphics/Vulkan/Instance.h>

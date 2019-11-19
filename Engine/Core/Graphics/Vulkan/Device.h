@@ -40,7 +40,7 @@ struct TextureDescription;
 // ================================================================================================
 namespace cyd
 {
-class Device
+class Device final
 {
   public:
    Device(

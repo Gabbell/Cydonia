@@ -1,7 +1,7 @@
 // Tell SDL not to mess with main()
 #define SDL_MAIN_HANDLED
 
-#include <Core/Window/Window.h>
+#include <Core/Window/SDLWindow.h>
 
 #include <Core/Common/Assert.h>
 #include <Core/Common/Vulkan.h>

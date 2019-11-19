@@ -27,10 +27,7 @@ namespace cyd
 class DeviceHerder
 {
   public:
-   explicit DeviceHerder(
-       const Instance& instance,
-       const Window& window,
-       const Surface& surface );
+   explicit DeviceHerder( const Instance& instance, const Window& window, const Surface& surface );
    ~DeviceHerder();
 
    // Main device is always the first one for now

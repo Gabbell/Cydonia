@@ -1,9 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Core\Window\Window.cpp">
-      <Filter>Core\Window</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Utilities\Logger.cpp">
       <Filter>Core\Utilities</Filter>
     </ClCompile>
@@ -44,12 +41,6 @@
     <ClCompile Include="Core\Graphics\Vulkan\Types.cpp">
       <Filter>Core\Graphics\Vulkan</Filter>
     </ClCompile>
-    <ClCompile Include="Core\Graphics\Camera.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Frustum.cpp">
-      <Filter>Core\Graphics</Filter>
-    </ClCompile>
     <ClCompile Include="Core\Graphics\Vulkan\Buffer.cpp">
       <Filter>Core\Graphics\Vulkan</Filter>
     </ClCompile>
@@ -70,6 +61,33 @@
     </ClCompile>
     <ClCompile Include="Core\Graphics\Vulkan\SamplerStash.cpp">
       <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Window\GLFWWindow.cpp">
+      <Filter>Core\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Window\SDLWindow.cpp">
+      <Filter>Core\Window</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Input\InputInterpreter.cpp">
+      <Filter>Core\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Vulkan\TypeConversions.cpp">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Scene\Camera.cpp">
+      <Filter>Core\Graphics\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Scene\Frustum.cpp">
+      <Filter>Core\Graphics\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Scene\SceneContext.cpp">
+      <Filter>Core\Graphics\Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Input\CameraController.cpp">
+      <Filter>Core\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Graphics\Scene\Transform.cpp">
+      <Filter>Core\Graphics\Scene</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -112,13 +130,13 @@
     <Filter Include="Core\Applications">
       <UniqueIdentifier>{c07ad7bd-1c78-4244-903c-e4c1bd30c75c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Core\Graphics\Scene">
+      <UniqueIdentifier>{d31d7b60-beee-4809-8fa7-2a0be55959ba}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Common\Assert.h">
       <Filter>Core\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Window\Window.h">
-      <Filter>Core\Window</Filter>
     </ClInclude>
     <ClInclude Include="Core\Utilities\Logger.h">
       <Filter>Core\Utilities</Filter>
@@ -165,12 +183,6 @@
     <ClInclude Include="Core\Graphics\Vulkan\Types.h">
       <Filter>Core\Graphics\Vulkan</Filter>
     </ClInclude>
-    <ClInclude Include="Core\Graphics\Camera.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Frustum.h">
-      <Filter>Core\Graphics</Filter>
-    </ClInclude>
     <ClInclude Include="Core\Graphics\Vulkan\Buffer.h">
       <Filter>Core\Graphics\Vulkan</Filter>
     </ClInclude>
@@ -191,6 +203,36 @@
     </ClInclude>
     <ClInclude Include="Core\Graphics\Vulkan\SamplerStash.h">
       <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Window\GLFWWindow.h">
+      <Filter>Core\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Window\SDLWindow.h">
+      <Filter>Core\Window</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Input\InputInterpreter.h">
+      <Filter>Core\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Vulkan\TypeConversions.h">
+      <Filter>Core\Graphics\Vulkan</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Scene\Camera.h">
+      <Filter>Core\Graphics\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Scene\Frustum.h">
+      <Filter>Core\Graphics\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Scene\SceneContext.h">
+      <Filter>Core\Graphics\Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Input\CameraController.h">
+      <Filter>Core\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Input\Controller.h">
+      <Filter>Core\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\Graphics\Scene\Transform.h">
+      <Filter>Core\Graphics\Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

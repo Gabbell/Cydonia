@@ -1,6 +1,9 @@
 #include <Core/Applications/VKShaderViewer.h>
 
-#include <Core/Window/Window.h>
+#include <Core/Window/GLFWWindow.h>
+
+#include <Core/Graphics/Scene/SceneContext.h>
+#include <Core/Graphics/Scene/Camera.h>
 
 #include <Core/Graphics/Vulkan/Types.h>
 #include <Core/Graphics/Vulkan/Device.h>
@@ -95,7 +98,7 @@ void cyd::VKShaderViewer::drawFrame( double deltaTime )
    cmds->bindPipeline( pipInfo );
    cmds->updatePushConstants( pipLayoutInfo.ranges[0], &currentTime );
    cmds->bindVertexBuffer( _vertexBuffer );
-   cmds->setViewport( extent.width, extent.height );
+   cmds->setViewport( _sceneContext->getCamera().getViewport() );
    cmds->beginPass( swapchain );
    cmds->draw( 4 );
    cmds->endPass();

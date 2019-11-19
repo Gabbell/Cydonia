@@ -13,6 +13,8 @@ class Window;
 class Instance;
 class Surface;
 class DeviceHerder;
+class InputInterpreter;
+class SceneContext;
 }
 
 // ================================================================================================
@@ -40,9 +42,13 @@ class Application
    virtual void postLoop();  // Executed when the application comes out of the main loop
 
    std::unique_ptr<Window> _window;
+
    std::unique_ptr<Instance> _instance;
    std::unique_ptr<Surface> _surface;
    std::unique_ptr<DeviceHerder> _dh;
+
+   std::unique_ptr<SceneContext> _sceneContext;
+   std::unique_ptr<InputInterpreter> _inputInterpreter;
 
   private:
    bool _running;

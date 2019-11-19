@@ -5,6 +5,7 @@
 
 #include <Core/Graphics/Vulkan/Device.h>
 #include <Core/Graphics/Vulkan/SamplerStash.h>
+#include <Core/Graphics/Vulkan/TypeConversions.h>
 
 cyd::Texture::Texture( const Device& device, const TextureDescription& desc )
     : _device( device ),
@@ -45,9 +46,9 @@ void cyd::Texture::_createImage()
    imageInfo.extent.depth  = 1;
    imageInfo.mipLevels     = 1;
    imageInfo.arrayLayers   = 1;
-   imageInfo.format        = cydFormatToVkFormat( _format );
+   imageInfo.format        = TypeConversions::cydFormatToVkFormat( _format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-   imageInfo.initialLayout = cydImageLayoutToVKImageLayout( _layout );
+   imageInfo.initialLayout = TypeConversions::cydImageLayoutToVKImageLayout( _layout );
 
    if( _usage & ImageUsage::TRANSFER_SRC )
    {
@@ -104,7 +105,7 @@ void cyd::Texture::_createImageView()
    viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image                           = _vkImage;
    viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-   viewInfo.format                          = cydFormatToVkFormat( _format );
+   viewInfo.format                          = TypeConversions::cydFormatToVkFormat( _format );
    viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
    viewInfo.subresourceRange.baseMipLevel   = 0;
    viewInfo.subresourceRange.levelCount     = 1;
@@ -132,9 +133,10 @@ void cyd::Texture::updateDescriptorSet( const ShaderObjectInfo& info, VkDescript
    descriptorWrite.dstSet               = _vkDescSet;
    descriptorWrite.dstBinding           = info.binding;
    descriptorWrite.dstArrayElement      = 0;
-   descriptorWrite.descriptorType       = cydShaderObjectTypeToVkDescriptorType( info.type );
-   descriptorWrite.descriptorCount      = 1;
-   descriptorWrite.pImageInfo           = &imageInfo;
+   descriptorWrite.descriptorType =
+       TypeConversions::cydShaderObjectTypeToVkDescriptorType( info.type );
+   descriptorWrite.descriptorCount = 1;
+   descriptorWrite.pImageInfo      = &imageInfo;
 
    vkUpdateDescriptorSets( _device.getVKDevice(), 1, &descriptorWrite, 0, nullptr );
 }

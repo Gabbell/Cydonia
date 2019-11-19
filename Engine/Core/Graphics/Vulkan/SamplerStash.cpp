@@ -4,6 +4,7 @@
 #include <Core/Common/Vulkan.h>
 
 #include <Core/Graphics/Vulkan/Device.h>
+#include <Core/Graphics/Vulkan/TypeConversions.h>
 
 cyd::SamplerStash::SamplerStash( const Device& device ) : _device( device ) {}
 
@@ -17,10 +18,11 @@ const VkSampler cyd::SamplerStash::findOrCreate( const SamplerInfo& info )
 
    VkSamplerCreateInfo samplerInfo = {};
    samplerInfo.sType               = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-   samplerInfo.magFilter           = cydFilterToVkFilter( info.magFilter );
-   samplerInfo.minFilter           = cydFilterToVkFilter( info.minFilter );
+   samplerInfo.magFilter           = TypeConversions::cydFilterToVkFilter( info.magFilter );
+   samplerInfo.minFilter           = TypeConversions::cydFilterToVkFilter( info.minFilter );
 
-   VkSamplerAddressMode addressMode    = cydAddressModeToVkAddressMode( info.addressMode );
+   VkSamplerAddressMode addressMode =
+       TypeConversions::cydAddressModeToVkAddressMode( info.addressMode );
    samplerInfo.addressModeU            = addressMode;
    samplerInfo.addressModeV            = addressMode;
    samplerInfo.addressModeW            = addressMode;

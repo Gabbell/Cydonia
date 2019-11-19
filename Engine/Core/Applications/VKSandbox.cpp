@@ -1,6 +1,12 @@
 #include <Core/Applications/VKSandbox.h>
 
-#include <Core/Window/Window.h>
+#include <Core/Window/GLFWWindow.h>
+
+#include <Core/Input/CameraController.h>
+#include <Core/Input/InputInterpreter.h>
+
+#include <Core/Graphics/Scene/SceneContext.h>
+#include <Core/Graphics/Scene/Camera.h>
 
 #include <Core/Graphics/Vulkan/Types.h>
 #include <Core/Graphics/Vulkan/Device.h>
@@ -35,6 +41,11 @@ cyd::VKSandbox::VKSandbox( uint32_t width, uint32_t height ) : Application( widt
 
 void cyd::VKSandbox::preLoop()
 {
+   // Making a controller for the scene's camera. Passing the camera through here is a bit awkward
+   _controller = std::make_unique<CameraController>( _sceneContext->getCamera() );
+
+   _inputInterpreter->addController( *_controller );
+
    device = _dh->getMainDevice();
 
    // Creating pipeline
@@ -133,8 +144,8 @@ void cyd::VKSandbox::drawFrame( double deltaTime )
 
    // Generating MVP
    UBO mvp;
-   mvp.mv   = glm::rotate( (float)currentTime, glm::vec3( 0.0f, 0.0f, 1.0f ) );
-   mvp.proj = glm::orthoZO( -1.0f, 1.0f, -1.0f, 1.0f, 0.0f, 100.0f );
+   mvp.mv   = _sceneContext->getCamera().getViewMatrix();
+   mvp.proj = _sceneContext->getCamera().getProjectionMatrix();
 
    // Update MVP UBO
    _uboBuffer->mapMemory( &mvp, sizeof( UBO ) );
@@ -142,7 +153,7 @@ void cyd::VKSandbox::drawFrame( double deltaTime )
    // Drawing in the swapchain
    cmds->startRecording();
    cmds->bindPipeline( pipInfo );
-   cmds->setViewport( extent.width, extent.height );
+   cmds->setViewport( _sceneContext->getCamera().getViewport() );
    cmds->bindVertexBuffer( _vertexBuffer );
    cmds->bindBuffer( _uboBuffer );
    cmds->bindTexture( _texture );

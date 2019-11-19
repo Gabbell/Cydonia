@@ -336,6 +336,11 @@ cyd::Device::~Device()
    {
       buffer.reset();
    }
+   for( auto& texture : _textures )
+   {
+      texture.reset();
+   }
+   _samplers.reset();
    _pipelines.reset();
    _renderPasses.reset();
    _swapchain.reset();

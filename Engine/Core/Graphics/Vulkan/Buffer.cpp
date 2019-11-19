@@ -4,6 +4,7 @@
 #include <Core/Common/Vulkan.h>
 
 #include <Core/Graphics/Vulkan/Device.h>
+#include <Core/Graphics/Vulkan/TypeConversions.h>
 
 cyd::Buffer::Buffer(
     const Device& device,
@@ -78,9 +79,10 @@ void cyd::Buffer::updateDescriptorSet( const ShaderObjectInfo& info, VkDescripto
    descriptorWrite.dstSet               = _vkDescSet;
    descriptorWrite.dstBinding           = info.binding;
    descriptorWrite.dstArrayElement      = 0;
-   descriptorWrite.descriptorType       = cydShaderObjectTypeToVkDescriptorType( info.type );
-   descriptorWrite.descriptorCount      = 1;
-   descriptorWrite.pBufferInfo          = &bufferInfo;
+   descriptorWrite.descriptorType =
+       TypeConversions::cydShaderObjectTypeToVkDescriptorType( info.type );
+   descriptorWrite.descriptorCount = 1;
+   descriptorWrite.pBufferInfo     = &bufferInfo;
 
    vkUpdateDescriptorSets( _device.getVKDevice(), 1, &descriptorWrite, 0, nullptr );
 }
