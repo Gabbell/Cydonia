@@ -113,13 +113,17 @@ void cyd::CameraController::cursorCallback( GLFWwindow* /*window*/, double xpos,
    _lastCursorPos = glm::vec2( xpos, ypos );
 }
 
-void cyd::CameraController::mouseCallback( GLFWwindow* window, int button, int action, int /*mods*/ )
+void cyd::CameraController::mouseCallback(
+    GLFWwindow* window,
+    int button,
+    int action,
+    int /*mods*/ )
 {
    if( button == GLFW_MOUSE_BUTTON_RIGHT )
    {
       if( action == GLFW_PRESS )
       {
-         glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN );
+         glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
          _rotating = true;
       }
       else if( action == GLFW_RELEASE )

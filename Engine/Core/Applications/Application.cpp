@@ -12,8 +12,6 @@
 #include <Core/Graphics/Vulkan/DeviceHerder.h>
 //
 
-#include <GLFW/glfw3.h>
-
 #include <chrono>
 #include <memory>
 
@@ -53,7 +51,7 @@ void cyd::Application::startLoop()
       drawFrame( deltaTime.count() );
 
       // Determine if the main window was asked to be closed
-      _running = !glfwWindowShouldClose( _window->getGLFWwindow() );
+      _running = _window->isRunning();
    }
 
    postLoop();

@@ -92,8 +92,6 @@ void cyd::VKShaderViewer::drawFrame( double deltaTime )
    // Drawing in the swapchain
    auto cmds = device->createCommandBuffer( QueueUsage::GRAPHICS, true );
 
-   Extent extent = _window->getExtent();
-
    cmds->startRecording();
    cmds->bindPipeline( pipInfo );
    cmds->updatePushConstants( pipLayoutInfo.ranges[0], &currentTime );

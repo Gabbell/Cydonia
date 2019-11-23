@@ -30,6 +30,7 @@ class Window
    Window( uint32_t width, uint32_t height, const std::string& title );
    ~Window();
 
+   bool isRunning() const;
    const Extent& getExtent() const noexcept { return _extent; }
    GLFWwindow* getGLFWwindow() const noexcept { return _glfwWindow; }
    std::vector<const char*> getExtensionsFromGLFW() const noexcept { return _extensions; };

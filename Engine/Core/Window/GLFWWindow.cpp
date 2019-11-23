@@ -38,6 +38,8 @@ cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
    printf( "GLFW: Compiled with GLFW version %s\n", glfwGetVersionString() );
 }
 
+bool cyd::Window::isRunning() const { return !glfwWindowShouldClose( _glfwWindow ); }
+
 cyd::Window::~Window()
 {
    glfwDestroyWindow( _glfwWindow );

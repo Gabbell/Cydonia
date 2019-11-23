@@ -58,6 +58,7 @@ class CommandBuffer final
    void updatePushConstants( const PushConstantRange& range, void* data );
    void bindPipeline( const PipelineInfo& info );
    void bindVertexBuffer( const std::shared_ptr<Buffer> vertexBuf );
+   void bindIndexBuffer( const std::shared_ptr<Buffer> indexBuf );
    void bindBuffer( const std::shared_ptr<Buffer> buffer );
    void bindTexture( const std::shared_ptr<Texture> texture );
 
@@ -72,7 +73,8 @@ class CommandBuffer final
 
    // Drawing
    // =============================================================================================
-   void draw( uint32_t vertexCount );
+   void draw( size_t vertexCount );
+   void drawIndexed( size_t indexCount );
 
    // Transfers
    // =============================================================================================

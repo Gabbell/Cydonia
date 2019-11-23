@@ -30,6 +30,8 @@ class InputInterpreter final
    void mainCursorCallback( GLFWwindow* window, double xpos, double ypos );
    void mainMouseCallback( GLFWwindow* window, int button, int action, int mods );
 
+   // Call controller callbacks based on polymorphism. Consider the vtable cost.
+   // Alternatives: Delegates/Function pointers, need to compare performance
    void addController( Controller& controller ) { _controllers.push_back( &controller ); }
 
   private:

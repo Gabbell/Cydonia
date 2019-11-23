@@ -9,6 +9,7 @@ namespace cyd
 {
 class Buffer;
 class Texture;
+class CommandBuffer;
 class CameraController;
 }
 
@@ -36,8 +37,9 @@ class VKSandbox final : public Application
    std::unique_ptr<CameraController> _controller = nullptr;
 
    // Resources
-   std::shared_ptr<cyd::Buffer> _vertexBuffer = nullptr;
-   std::shared_ptr<cyd::Buffer> _uboBuffer    = nullptr;
-   std::shared_ptr<cyd::Texture> _texture     = nullptr;
+   std::shared_ptr<cyd::Buffer> _vertexBuffer    = nullptr;
+   std::shared_ptr<cyd::Buffer> _indexBuffer     = nullptr;
+   std::shared_ptr<cyd::Buffer> _uboBuffer       = nullptr;
+   std::shared_ptr<cyd::Texture> _texture        = nullptr;
 };
 }

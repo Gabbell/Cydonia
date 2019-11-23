@@ -17,7 +17,6 @@
 #include <Core/Graphics/Vulkan/Texture.h>
 
 #include <glm/glm.hpp>
-#include <glm/gtx/transform.hpp>
 
 #include <array>
 
@@ -31,8 +30,9 @@ static cyd::Device* device       = nullptr;
 
 struct UBO
 {
-   glm::mat4 mv;
-   glm::mat4 proj;
+   glm::mat4 model = glm::mat4( 1.0f );
+   glm::mat4 view  = glm::mat4( 1.0f );
+   glm::mat4 proj  = glm::mat4( 1.0f );
 };
 
 cyd::VKSandbox::VKSandbox( uint32_t width, uint32_t height ) : Application( width, height, TITLE )
@@ -80,11 +80,22 @@ void cyd::VKSandbox::preLoop()
    pipInfo.shaders    = { "defaultTex_vert", "defaultTex_frag" };
    pipInfo.pipLayout  = pipLayoutInfo;
 
-   // Triangle
+   // Quad
    const std::vector<Vertex> vertices = {
-       { { -0.5f, 0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f } },
-       { { 0.0f, -0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f, 1.0f } },
-       { { 0.5f, 0.5f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f, 1.0f } } };
+       { { -1.0f, 1.0f, 0.0f, 1.0f },
+         { 1.0f, 0.0f, 0.0f, 1.0f },
+         { 1.0f, 0.0f, 0.0f, 1.0f } },  // bottom left
+       { { -1.0f, -1.0f, 0.0f, 1.0f },
+         { 1.0f, 0.0f, 0.0f, 1.0f },
+         { 0.0f, 0.0f, 0.0f, 1.0f } },  // top left
+       { { 1.0f, 1.0f, 0.0f, 1.0f },
+         { 1.0f, 0.0f, 0.0f, 1.0f },
+         { 0.0f, 1.0f, 0.0f, 1.0f } },  // bottom right
+       { { 1.0f, -1.0f, 0.0f, 1.0f },
+         { 1.0f, 0.0f, 0.0f, 1.0f },
+         { 0.0f, 1.0f, 0.0f, 1.0f } } };  // top right
+
+   const std::vector<uint16_t> indices = { 0, 1, 2, 2, 3, 1 };
 
    // Placeholder texture
    std::array<uint32_t, 4> texData = { 0xFFFF00FF, 0xFF000000, 0xFF000000, 0xFFFF00FF };
@@ -101,23 +112,30 @@ void cyd::VKSandbox::preLoop()
    _texture = device->createTexture( texDesc, texInfo, pipLayoutInfo.descSetLayout );
 
    size_t verticesSize = sizeof( vertices[0] ) * vertices.size();
+   size_t indicesSize  = sizeof( indices[0] ) * indices.size();
+
    _vertexBuffer =
-       device->createDeviceBuffer( verticesSize, BufferUsage::TRANSFER_DST | BufferUsage ::VERTEX );
+       device->createDeviceBuffer( verticesSize, BufferUsage::TRANSFER_DST | BufferUsage::VERTEX );
+   _indexBuffer =
+       device->createDeviceBuffer( indicesSize, BufferUsage::TRANSFER_DST | BufferUsage::INDEX );
 
    _uboBuffer = device->createUniformBuffer(
        BufferUsage::TRANSFER_DST, uboInfo, pipLayoutInfo.descSetLayout );
 
    // Staging
    auto vertexStaging = device->createStagingBuffer( verticesSize );
+   auto indexStaging  = device->createStagingBuffer( indicesSize );
    auto texStaging    = device->createStagingBuffer( texSize );
 
    vertexStaging->mapMemory( (void*)vertices.data(), verticesSize );
+   indexStaging->mapMemory( (void*)indices.data(), indicesSize );
    texStaging->mapMemory( texData.data(), texSize );
 
    // Uploading vertices to device memory
    auto transferCmds = device->createCommandBuffer( QueueUsage::TRANSFER );
    transferCmds->startRecording();
    transferCmds->copyBuffer( vertexStaging, _vertexBuffer );
+   transferCmds->copyBuffer( indexStaging, _indexBuffer );
    transferCmds->uploadBufferToTex( texStaging, _texture );
    transferCmds->endRecording();
    transferCmds->submit();
@@ -136,33 +154,29 @@ void cyd::VKSandbox::preLoop()
 
 void cyd::VKSandbox::drawFrame( double deltaTime )
 {
-   static float currentTime = 0;
-   currentTime += static_cast<float>( deltaTime );
-
-   Extent extent = _window->getExtent();
-   auto cmds     = device->createCommandBuffer( QueueUsage::GRAPHICS | QueueUsage::TRANSFER, true );
-
    // Generating MVP
    UBO mvp;
-   mvp.mv   = _sceneContext->getCamera().getViewMatrix();
+   mvp.view = _sceneContext->getCamera().getViewMatrix();
    mvp.proj = _sceneContext->getCamera().getProjectionMatrix();
 
    // Update MVP UBO
    _uboBuffer->mapMemory( &mvp, sizeof( UBO ) );
 
    // Drawing in the swapchain
-   cmds->startRecording();
-   cmds->bindPipeline( pipInfo );
-   cmds->setViewport( _sceneContext->getCamera().getViewport() );
-   cmds->bindVertexBuffer( _vertexBuffer );
-   cmds->bindBuffer( _uboBuffer );
-   cmds->bindTexture( _texture );
-   cmds->beginPass( swapchain );
-   cmds->draw( 3 );
-   cmds->endPass();
-   cmds->endRecording();
-   cmds->submit();
+   auto drawCmds = device->createCommandBuffer( QueueUsage::GRAPHICS | QueueUsage::TRANSFER, true );
 
+   drawCmds->startRecording();
+   drawCmds->bindPipeline( pipInfo );
+   drawCmds->setViewport( _sceneContext->getCamera().getViewport() );
+   drawCmds->bindVertexBuffer( _vertexBuffer );
+   drawCmds->bindIndexBuffer( _indexBuffer );
+   drawCmds->bindBuffer( _uboBuffer );
+   drawCmds->bindTexture( _texture );
+   drawCmds->beginPass( swapchain );
+   drawCmds->drawIndexed( 6 );
+   drawCmds->endPass();
+   drawCmds->endRecording();
+   drawCmds->submit();
    swapchain->present();
 
    device->cleanup();

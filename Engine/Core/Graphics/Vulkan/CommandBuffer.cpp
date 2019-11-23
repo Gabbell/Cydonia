@@ -121,6 +121,11 @@ void cyd::CommandBuffer::bindVertexBuffer( const std::shared_ptr<Buffer> vertexB
    vkCmdBindVertexBuffers( _vkCmdBuffer, 0, 1, vertexBuffers, offsets );
 }
 
+void cyd::CommandBuffer::bindIndexBuffer( const std::shared_ptr<Buffer> indexBuffer )
+{
+   vkCmdBindIndexBuffer( _vkCmdBuffer, indexBuffer->getVKBuffer(), 0, VK_INDEX_TYPE_UINT16 );
+}
+
 void cyd::CommandBuffer::bindBuffer( const std::shared_ptr<Buffer> buffer )
 {
    if( !_boundPipLayout.has_value() )
@@ -237,11 +242,23 @@ void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
    vkCmdBeginRenderPass( _vkCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
 }
 
-void cyd::CommandBuffer::draw( uint32_t vertexCount )
+void cyd::CommandBuffer::draw( size_t vertexCount )
 {
    if( _usage & QueueUsage::GRAPHICS )
    {
       vkCmdDraw( _vkCmdBuffer, vertexCount, 1, 0, 0 );
+   }
+   else
+   {
+      CYDASSERT( !"CommandBuffer: Command Buffer does not support graphics usage" );
+   }
+}
+
+void cyd::CommandBuffer::drawIndexed( size_t indexCount )
+{
+   if( _usage & QueueUsage::GRAPHICS )
+   {
+      vkCmdDrawIndexed( _vkCmdBuffer, indexCount, 1, 0, 0, 0 );
    }
    else
    {
@@ -345,7 +362,18 @@ void cyd::CommandBuffer::submit()
       return;
    }
 
+   if( _wasSubmitted )
+   {
+      // CPU Lock
+      vkWaitForFences( _device.getVKDevice(), 1, &_vkFence, true, 0 );
+      vkResetFences( _device.getVKDevice(), 1, &_vkFence );
+   }
+
    vkQueueSubmit( *queue, 1, &submitInfo, _vkFence );
+   _wasSubmitted = true;
+
+   _semsToWait.clear();
+   _semsToSignal.clear();
 }
 
 cyd::CommandBuffer::~CommandBuffer()

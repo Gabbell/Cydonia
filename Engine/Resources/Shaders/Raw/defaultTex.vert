@@ -3,7 +3,8 @@
 
 layout(binding = 0) uniform UBO
 {
-    mat4 mv;
+    mat4 model;
+    mat4 view;
     mat4 proj;
 };
 
@@ -15,7 +16,7 @@ layout(location = 0) out vec4 outColor;
 layout(location = 1) out vec4 outTexCoord;
 
 void main() {
-    gl_Position = proj * mv * inPosition;
+    gl_Position = proj * view * model * inPosition;
     outColor = inColor;
     outTexCoord = inTexCoord;
 }

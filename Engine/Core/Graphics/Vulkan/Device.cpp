@@ -170,8 +170,8 @@ std::shared_ptr<cyd::CommandBuffer> cyd::Device::createCommandBuffer(
 
 std::shared_ptr<cyd::Buffer> cyd::Device::createDeviceBuffer( size_t size, BufferUsageFlag usage )
 {
-   _buffers.push_back( std::make_shared<Buffer>( *this, size, usage, MemoryType::DEVICE_LOCAL ) );
-   return _buffers.back();
+   return _buffers.emplace_back(
+       std::make_shared<Buffer>( *this, size, usage, MemoryType::DEVICE_LOCAL ) );
 }
 
 std::shared_ptr<cyd::Buffer> cyd::Device::createUniformBuffer(
@@ -189,18 +189,16 @@ std::shared_ptr<cyd::Buffer> cyd::Device::createUniformBuffer(
 
    buffer->updateDescriptorSet( info, descSet );
 
-   _buffers.push_back( buffer );
-   return _buffers.back();
+   return _buffers.emplace_back( buffer );
 }
 
 std::shared_ptr<cyd::Buffer> cyd::Device::createStagingBuffer( size_t size )
 {
-   _buffers.push_back( std::make_shared<Buffer>(
+   return _buffers.emplace_back( std::make_shared<Buffer>(
        *this,
        size,
        BufferUsage::TRANSFER_SRC,
        MemoryType::HOST_VISIBLE | MemoryType::HOST_COHERENT ) );
-   return _buffers.back();
 }
 
 std::shared_ptr<cyd::Texture> cyd::Device::createTexture(
@@ -214,8 +212,7 @@ std::shared_ptr<cyd::Texture> cyd::Device::createTexture(
 
    texture->updateDescriptorSet( info, descSet );
 
-   _textures.push_back( texture );
-   return _textures.back();
+   return _textures.emplace_back( texture );
 }
 
 cyd::Swapchain* cyd::Device::createSwapchain( const SwapchainInfo& scInfo )
