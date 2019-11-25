@@ -3,13 +3,13 @@
 #include <Core/Common/Vulkan.h>
 #include <Core/Common/Assert.h>
 
-#include <Core/Graphics/Vulkan/Types.h>
 #include <Core/Graphics/Vulkan/Device.h>
 #include <Core/Graphics/Vulkan/Surface.h>
 #include <Core/Graphics/Vulkan/CommandBuffer.h>
 #include <Core/Graphics/Vulkan/TypeConversions.h>
 
 #include <algorithm>
+#include <array>
 
 // Double-buffered
 static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
@@ -19,6 +19,7 @@ cyd::Swapchain::Swapchain( Device& device, const Surface& surface, const Swapcha
 {
    _createSwapchain( info );
    _createImageViews();
+   _createDepthResources();
    _createSyncObjects();
 }
 
@@ -206,6 +207,57 @@ void cyd::Swapchain::_createImageViews()
    }
 }
 
+void cyd::Swapchain::_createDepthResources()
+{
+   VkResult result;
+
+   VkImageCreateInfo imageInfo = {};
+   imageInfo.sType             = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+   imageInfo.imageType         = VK_IMAGE_TYPE_2D;
+   imageInfo.extent.width      = _extent->width;
+   imageInfo.extent.height     = _extent->height;
+   imageInfo.extent.depth      = 1;
+   imageInfo.mipLevels         = 1;
+   imageInfo.arrayLayers       = 1;
+   imageInfo.format            = VK_FORMAT_D32_SFLOAT;
+   imageInfo.tiling            = VK_IMAGE_TILING_OPTIMAL;
+   imageInfo.initialLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
+   imageInfo.usage             = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+   imageInfo.samples           = VK_SAMPLE_COUNT_1_BIT;
+   imageInfo.sharingMode       = VK_SHARING_MODE_EXCLUSIVE;
+
+   result = vkCreateImage( _device.getVKDevice(), &imageInfo, nullptr, &_depthImage );
+   CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image" );
+
+   VkMemoryRequirements memRequirements;
+   vkGetImageMemoryRequirements( _device.getVKDevice(), _depthImage, &memRequirements );
+
+   VkMemoryAllocateInfo allocInfo = {};
+   allocInfo.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+   allocInfo.allocationSize       = memRequirements.size;
+   allocInfo.memoryTypeIndex      = _device.findMemoryType(
+       memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
+
+   result = vkAllocateMemory( _device.getVKDevice(), &allocInfo, nullptr, &_depthImageMemory );
+   CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not allocate depth image memory" );
+
+   vkBindImageMemory( _device.getVKDevice(), _depthImage, _depthImageMemory, 0 );
+
+   VkImageViewCreateInfo imageviewInfo           = {};
+   imageviewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+   imageviewInfo.image                           = _depthImage;
+   imageviewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+   imageviewInfo.format                          = VK_FORMAT_D32_SFLOAT;
+   imageviewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT;
+   imageviewInfo.subresourceRange.baseMipLevel   = 0;
+   imageviewInfo.subresourceRange.levelCount     = 1;
+   imageviewInfo.subresourceRange.baseArrayLayer = 0;
+   imageviewInfo.subresourceRange.layerCount     = 1;
+
+   result = vkCreateImageView( _device.getVKDevice(), &imageviewInfo, nullptr, &_depthImageView );
+   CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image view" );
+}
+
 void cyd::Swapchain::_createSyncObjects()
 {
    _availableSems.resize( MAX_FRAMES_IN_FLIGHT );
@@ -230,23 +282,36 @@ void cyd::Swapchain::_createSyncObjects()
    }
 }
 
-void cyd::Swapchain::initFramebuffers( const VkRenderPass renderPass )
+void cyd::Swapchain::initFramebuffers( const RenderPassInfo& info, const VkRenderPass renderPass )
 {
-   if( ( renderPass && !_prevRenderPass ) ||
-       ( renderPass && _prevRenderPass && ( renderPass != _prevRenderPass ) ) )
+   if( renderPass != _prevRenderPass )
    {
       _prevRenderPass = renderPass;
 
       _frameBuffers.resize( _imageCount );
       for( size_t i = 0; i < _imageCount; i++ )
       {
-         VkImageView attachments[] = { _imageViews[i] };
+         std::vector<VkImageView> attachments;
+         attachments.push_back( _imageViews[i] );
+
+         bool hasDepth = std::find_if(
+                             info.attachments.begin(),
+                             info.attachments.end(),
+                             []( const Attachment& attachment ) {
+                                return attachment.type == AttachmentType::DEPTH_STENCIL ||
+                                       attachment.type == AttachmentType::DEPTH;
+                             } ) != info.attachments.end();
+
+         if( hasDepth )
+         {
+            attachments.push_back( _depthImageView );
+         }
 
          VkFramebufferCreateInfo framebufferInfo = {};
          framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
          framebufferInfo.renderPass              = renderPass;
-         framebufferInfo.attachmentCount         = 1;
-         framebufferInfo.pAttachments            = attachments;
+         framebufferInfo.attachmentCount         = static_cast<uint32_t>( attachments.size() );
+         framebufferInfo.pAttachments            = attachments.data();
          framebufferInfo.width                   = _extent->width;
          framebufferInfo.height                  = _extent->height;
          framebufferInfo.layers                  = 1;
@@ -321,6 +386,10 @@ cyd::Swapchain::~Swapchain()
    {
       vkDestroyImageView( _device.getVKDevice(), imageView, nullptr );
    }
+
+   vkDestroyImageView( _device.getVKDevice(), _depthImageView, nullptr );
+   vkDestroyImage( _device.getVKDevice(), _depthImage, nullptr );
+   vkFreeMemory( _device.getVKDevice(), _depthImageMemory, nullptr );
 
    vkDestroySwapchainKHR( _device.getVKDevice(), _vkSwapchain, nullptr );
 }

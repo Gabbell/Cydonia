@@ -54,10 +54,18 @@ void cyd::VKSandbox::preLoop()
    colorPresentation.loadOp     = LoadOp::CLEAR;
    colorPresentation.storeOp    = StoreOp::STORE;
    colorPresentation.type       = AttachmentType::COLOR;
-   colorPresentation.usage      = ImageLayout::PRESENTATION;
+   colorPresentation.layout     = ImageLayout::PRESENTATION;
+
+   Attachment depthPresentation = {};
+   depthPresentation.format     = PixelFormat::D32_SFLOAT;
+   depthPresentation.loadOp     = LoadOp::CLEAR;
+   depthPresentation.storeOp    = StoreOp::DONT_CARE;
+   depthPresentation.type       = AttachmentType::DEPTH_STENCIL;
+   depthPresentation.layout     = ImageLayout::DEPTH_STENCIL;
 
    RenderPassInfo renderPassInfo = {};
    renderPassInfo.attachments.push_back( colorPresentation );
+   renderPassInfo.attachments.push_back( depthPresentation );
 
    ShaderObjectInfo uboInfo;
    uboInfo.size    = sizeof( UBO );
@@ -82,20 +90,32 @@ void cyd::VKSandbox::preLoop()
 
    // Quad
    const std::vector<Vertex> vertices = {
-       { { -1.0f, 1.0f, 0.0f, 1.0f },
+       { { -1.0f, 1.0f, 0.0f, 1.0f },  // bottom left
          { 1.0f, 0.0f, 0.0f, 1.0f },
-         { 1.0f, 0.0f, 0.0f, 1.0f } },  // bottom left
-       { { -1.0f, -1.0f, 0.0f, 1.0f },
+         { -1.0f, 1.0f, 0.0f, 1.0f } },
+       { { -1.0f, -1.0f, 0.0f, 1.0f },  // top left
          { 1.0f, 0.0f, 0.0f, 1.0f },
-         { 0.0f, 0.0f, 0.0f, 1.0f } },  // top left
-       { { 1.0f, 1.0f, 0.0f, 1.0f },
+         { -1.0f, -1.0f, 0.0f, 1.0f } },
+       { { 1.0f, 1.0f, 0.0f, 1.0f },  // bottom right
+         { 0.0f, 1.0f, 0.0f, 1.0f },
+         { 1.0f, 1.0f, 0.0f, 1.0f } },
+       { { 1.0f, -1.0f, 0.0f, 1.0f },  // top right
          { 1.0f, 0.0f, 0.0f, 1.0f },
-         { 0.0f, 1.0f, 0.0f, 1.0f } },  // bottom right
-       { { 1.0f, -1.0f, 0.0f, 1.0f },
+         { 1.0f, -1.0f, 0.0f, 1.0f } },
+       { { -1.0f, 1.0f, -15.0f, 1.0f },  // bottom left
          { 1.0f, 0.0f, 0.0f, 1.0f },
-         { 0.0f, 1.0f, 0.0f, 1.0f } } };  // top right
+         { -1.0f, 1.0f, 0.0f, 1.0f } },
+       { { -1.0f, -1.0f, -15.0f, 1.0f },  // top left
+         { 1.0f, 0.0f, 0.0f, 1.0f },
+         { -1.0f, -1.0f, 0.0f, 1.0f } },
+       { { 1.0f, 1.0f, -15.0f, 1.0f },  // bottom right
+         { 0.0f, 1.0f, 0.0f, 1.0f },
+         { 1.0f, 1.0f, 0.0f, 1.0f } },
+       { { 1.0f, -1.0f, -15.0f, 1.0f },  // top right
+         { 1.0f, 0.0f, 0.0f, 1.0f },
+         { 1.0f, -1.0f, 0.0f, 1.0f } } };
 
-   const std::vector<uint16_t> indices = { 0, 1, 2, 2, 3, 1 };
+   const std::vector<uint16_t> indices = { 0, 1, 2, 2, 3, 1, 0xFFFF, 4, 5, 6, 6, 7, 5 };
 
    // Placeholder texture
    std::array<uint32_t, 4> texData = { 0xFFFF00FF, 0xFF000000, 0xFF000000, 0xFFFF00FF };
@@ -173,7 +193,7 @@ void cyd::VKSandbox::drawFrame( double deltaTime )
    drawCmds->bindBuffer( _uboBuffer );
    drawCmds->bindTexture( _texture );
    drawCmds->beginPass( swapchain );
-   drawCmds->drawIndexed( 6 );
+   drawCmds->drawIndexed( 13 );
    drawCmds->endPass();
    drawCmds->endRecording();
    drawCmds->submit();

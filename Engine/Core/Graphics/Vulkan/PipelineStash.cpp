@@ -81,9 +81,7 @@ const VkDescriptorSetLayout cyd::PipelineStash::findOrCreate( const DescriptorSe
        vkCreateDescriptorSetLayout( _device.getVKDevice(), &layoutInfo, nullptr, &descSetLayout );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create descriptor set layout" );
 
-   _descSetLayouts.insert( { info, descSetLayout } );
-
-   return descSetLayout;
+   return _descSetLayouts.insert( { info, descSetLayout } ).first->second;
 }
 
 const VkPipelineLayout cyd::PipelineStash::findOrCreate( const PipelineLayoutInfo& info )
@@ -124,9 +122,7 @@ const VkPipelineLayout cyd::PipelineStash::findOrCreate( const PipelineLayoutInf
        vkCreatePipelineLayout( _device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create pipeline layout" );
 
-   _pipLayouts.insert( { info, pipLayout } );
-
-   return pipLayout;
+   return _pipLayouts.insert( { info, pipLayout } ).first->second;
 }
 
 const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
@@ -199,7 +195,7 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
    inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
    inputAssembly.topology = TypeConversions::cydDrawPrimToVkDrawPrim( info.drawPrim );
-   inputAssembly.primitiveRestartEnable = VK_FALSE;
+   inputAssembly.primitiveRestartEnable = VK_TRUE;
 
    // Viewport and scissor
    VkViewport viewport = {};
@@ -266,6 +262,21 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    dynamicCreateInfo.dynamicStateCount = static_cast<uint32_t>( dynamicStates.size() );
    dynamicCreateInfo.pDynamicStates    = dynamicStates.data();
 
+   // Depth stencil state
+   // TODO Maybe not create a depth state when we don't have any depth attachment? Probably has
+   // little to no effect on performance though
+   VkPipelineDepthStencilStateCreateInfo depthStencil = {};
+   depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+   depthStencil.depthTestEnable       = VK_TRUE;
+   depthStencil.depthWriteEnable      = VK_TRUE;
+   depthStencil.depthCompareOp        = VK_COMPARE_OP_LESS;
+   depthStencil.depthBoundsTestEnable = VK_FALSE;
+   depthStencil.stencilTestEnable     = VK_FALSE;
+   depthStencil.minDepthBounds        = 0.0f;
+   depthStencil.maxDepthBounds        = 1.0f;
+   depthStencil.front                 = {};
+   depthStencil.back                  = {};
+
    // Pipeline
    VkGraphicsPipelineCreateInfo pipelineInfo = {};
    pipelineInfo.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -278,6 +289,7 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
    pipelineInfo.pMultisampleState            = &multisampling;
    pipelineInfo.pColorBlendState             = &colorBlending;
    pipelineInfo.pDynamicState                = &dynamicCreateInfo;
+   pipelineInfo.pDepthStencilState           = &depthStencil;
    pipelineInfo.layout                       = pipLayout;
    pipelineInfo.renderPass                   = renderPass;
    pipelineInfo.subpass                      = 0;
@@ -288,9 +300,7 @@ const VkPipeline cyd::PipelineStash::findOrCreate( const PipelineInfo& info )
        _device.getVKDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create default pipeline" );
 
-   _pipelines.insert( { info, pipeline } );
-
-   return pipeline;
+   return _pipelines.insert( { info, pipeline } ).first->second;
 }
 
 cyd::PipelineStash::~PipelineStash()

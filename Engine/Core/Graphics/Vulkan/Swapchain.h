@@ -16,6 +16,7 @@ FWDHANDLE( VkImageView );
 FWDHANDLE( VkFramebuffer );
 FWDHANDLE( VkRenderPass );
 FWDHANDLE( VkSemaphore );
+FWDHANDLE( VkDeviceMemory );
 struct VkSurfaceFormatKHR;
 struct VkExtent2D;
 enum VkPresentModeKHR;
@@ -46,7 +47,7 @@ class Swapchain
    Swapchain( Device& device, const Surface& surface, const SwapchainInfo& info );
    ~Swapchain();
 
-   void initFramebuffers( VkRenderPass renderPass );
+   void initFramebuffers( const RenderPassInfo& info, VkRenderPass renderPass );
    void acquireImage( const CommandBuffer* buffer );
    void present();
 
@@ -61,6 +62,7 @@ class Swapchain
   private:
    void _createSwapchain( const SwapchainInfo& info );
    void _createImageViews();
+   void _createDepthResources();
    void _createSyncObjects();
 
    // Used to create the swapchain
@@ -74,6 +76,9 @@ class Swapchain
    std::vector<VkImageView> _imageViews;
    std::vector<VkImage> _images;
    std::vector<VkFramebuffer> _frameBuffers;
+   VkImageView _depthImageView;
+   VkImage _depthImage;
+   VkDeviceMemory _depthImageMemory;
 
    uint32_t _currentFrame = 0;
    std::vector<VkSemaphore> _availableSems;

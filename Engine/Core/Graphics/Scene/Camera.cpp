@@ -9,8 +9,8 @@
 static constexpr glm::vec3 DEFAULT_ORIGIN = glm::vec3( 0.0f, 0.0f, 0.0f );
 static constexpr glm::vec3 DEFAULT_UP     = glm::vec3( 0.0f, -1.0f, 0.0f );
 static constexpr float DEFAULT_FOV        = 60.0f;
-static constexpr float DEFAULT_NEAR       = 0.0f;
-static constexpr float DEFAULT_FAR        = 1000.0f;
+static constexpr float DEFAULT_NEAR       = 0.001f;
+static constexpr float DEFAULT_FAR        = 100.0f;
 static constexpr float DEFAULT_RATIO      = 16.0f / 9.0f;  // 16:9
 
 cyd::Camera::Camera( const Rectangle& viewport )
@@ -22,9 +22,8 @@ cyd::Camera::Camera( const Rectangle& viewport )
 {
    transform = std::make_unique<Transform>( DEFAULT_ORIGIN );
 
-   _projMode = ProjectionMode::PERSPECTIVE;
-   _proj     = glm::perspective( glm::radians( _fov ), _aspectRatio, _near, _far );
-   _view     = glm::mat4( 1.0f );
+   _view = glm::mat4( 1.0f );
+   usePerspective();
 
    updateVP();
 }
@@ -44,7 +43,7 @@ void cyd::Camera::usePerspective()
       return;
    }
 
-   _proj     = glm::perspective( _fov, _aspectRatio, _near, _far );
+   _proj     = glm::perspectiveZO( glm::radians( _fov ), _aspectRatio, _near, _far );
    _projMode = ProjectionMode::PERSPECTIVE;
 }
 
@@ -56,13 +55,7 @@ void cyd::Camera::useOrthographic()
       return;
    }
 
-   _proj = glm::orthoZO(
-       0.0f,
-       static_cast<float>( _viewport.extent.width ),
-       static_cast<float>( _viewport.extent.height ),
-       0.0f,
-       _near,
-       _far );
+   _proj     = glm::orthoZO( -1.0f, 1.0f, -1.0f, 1.0f, _near, _far );
    _projMode = ProjectionMode::PERSPECTIVE;
 }
 

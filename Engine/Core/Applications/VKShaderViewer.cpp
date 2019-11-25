@@ -36,7 +36,7 @@ void cyd::VKShaderViewer::preLoop()
    colorPresentation.loadOp     = LoadOp::CLEAR;
    colorPresentation.storeOp    = StoreOp::STORE;
    colorPresentation.type       = AttachmentType::COLOR;
-   colorPresentation.usage      = ImageLayout::PRESENTATION;
+   colorPresentation.layout     = ImageLayout::PRESENTATION;
 
    RenderPassInfo renderPassInfo = {};
    renderPassInfo.attachments.push_back( colorPresentation );

@@ -14,7 +14,7 @@ bool Extent::operator==( const Extent& other ) const
 bool Attachment::operator==( const Attachment& other ) const
 {
    return format == other.format && loadOp == other.loadOp && storeOp == other.storeOp &&
-          type == other.type && usage == other.usage;
+          type == other.type && layout == other.layout;
 }
 
 bool RenderPassInfo::operator==( const RenderPassInfo& other ) const

@@ -100,9 +100,6 @@
     <Filter Include="Core\Graphics">
       <UniqueIdentifier>{ce0aa22e-94f1-41a8-9963-a02b9006cddb}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Core\Input">
-      <UniqueIdentifier>{effff310-2125-4b51-a2e0-7aa8190321cd}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Core\Utilities">
       <UniqueIdentifier>{c26a9219-8534-4eb2-9084-239ad0c70736}</UniqueIdentifier>
     </Filter>
@@ -132,6 +129,9 @@
     </Filter>
     <Filter Include="Core\Graphics\Scene">
       <UniqueIdentifier>{d31d7b60-beee-4809-8fa7-2a0be55959ba}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Core\Input">
+      <UniqueIdentifier>{effff310-2125-4b51-a2e0-7aa8190321cd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>

@@ -77,7 +77,8 @@ using ShaderStageFlag = Flag;
 
 enum class PixelFormat
 {
-   BGRA8_UNORM
+   BGRA8_UNORM,
+   D32_SFLOAT,
 };
 
 enum class ColorSpace
@@ -137,7 +138,8 @@ enum class ImageLayout
    PRESENTATION,
    TRANSFER_SRC,
    TRANSFER_DST,
-   SHADER_READ
+   SHADER_READ,
+   DEPTH_STENCIL
 };
 
 enum class ImageType
@@ -198,7 +200,7 @@ struct Attachment
    LoadOp loadOp;
    StoreOp storeOp;
    AttachmentType type;
-   ImageLayout usage;
+   ImageLayout layout;
 };
 
 struct PushConstantRange
@@ -283,7 +285,7 @@ struct std::hash<cyd::Attachment>
       hash_combine( seed, attachment.loadOp );
       hash_combine( seed, attachment.storeOp );
       hash_combine( seed, attachment.type );
-      hash_combine( seed, attachment.usage );
+      hash_combine( seed, attachment.layout );
 
       return seed;
    }

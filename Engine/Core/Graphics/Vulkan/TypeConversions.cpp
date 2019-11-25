@@ -11,6 +11,8 @@ VkFormat TypeConversions::cydFormatToVkFormat( PixelFormat format )
    {
       case cyd::PixelFormat::BGRA8_UNORM:
          return VK_FORMAT_B8G8R8A8_UNORM;
+      case cyd::PixelFormat::D32_SFLOAT:
+         return VK_FORMAT_D32_SFLOAT;
       default:
          CYDASSERT( !"Types: Pixel format not supported" );
    }
@@ -141,6 +143,8 @@ VkImageLayout TypeConversions::cydImageLayoutToVKImageLayout( ImageLayout layout
          return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
       case ImageLayout::SHADER_READ:
          return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      case ImageLayout::DEPTH_STENCIL:
+         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
       default:
          CYDASSERT( !"Types: Image layout not supported" )
    }

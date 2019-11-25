@@ -12,6 +12,8 @@
 #include <Core/Graphics/Vulkan/Texture.h>
 #include <Core/Graphics/Vulkan/TypeConversions.h>
 
+#include <array>
+
 cyd::CommandBuffer::CommandBuffer(
     const Device& device,
     const CommandPool& pool,
@@ -74,9 +76,11 @@ void cyd::CommandBuffer::endRecording()
    VkResult result = vkEndCommandBuffer( _vkCmdBuffer );
    CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
 
-   _boundPip       = std::nullopt;
-   _boundPipLayout = std::nullopt;
-   _isRecording    = false;
+   _boundPip        = std::nullopt;
+   _boundPipLayout  = std::nullopt;
+   _boundRenderPass = std::nullopt;
+   _boundPipInfo    = std::nullopt;
+   _isRecording     = false;
 }
 
 void cyd::CommandBuffer::updatePushConstants( const PushConstantRange& range, void* data )
@@ -112,6 +116,7 @@ void cyd::CommandBuffer::bindPipeline( const PipelineInfo& info )
    _boundPip        = pipeline;
    _boundPipLayout  = pipLayout;
    _boundRenderPass = renderPass;
+   _boundPipInfo    = info;
 }
 
 void cyd::CommandBuffer::bindVertexBuffer( const std::shared_ptr<Buffer> vertexBuffer )
@@ -210,7 +215,7 @@ void cyd::CommandBuffer::setViewport( const Rectangle& viewport )
 
 void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
 {
-   if( !_boundPip.has_value() || !_boundRenderPass.has_value() )
+   if( !_boundPip.has_value() || !_boundRenderPass.has_value() || !_boundPipInfo.has_value() )
    {
       CYDASSERT( !"CommandBuffer: Could not start render pass because no pipeline was bound" );
       return;
@@ -222,7 +227,7 @@ void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
       return;
    }
 
-   swapchain->initFramebuffers( _boundRenderPass.value() );
+   swapchain->initFramebuffers( _boundPipInfo->renderPass, _boundRenderPass.value() );
    swapchain->acquireImage( this );
 
    _semsToWait.push_back( swapchain->getSemToWait() );
@@ -235,9 +240,12 @@ void cyd::CommandBuffer::beginPass( Swapchain* swapchain )
    renderPassInfo.renderArea.offset     = { 0, 0 };
    renderPassInfo.renderArea.extent     = swapchain->getVKExtent();
 
-   VkClearValue clearColor        = { 0.0f, 1.0f, 1.0f, 1.0f };
-   renderPassInfo.clearValueCount = 1;
-   renderPassInfo.pClearValues    = &clearColor;
+   std::array<VkClearValue, 2> clearValues = {};
+   clearValues[0]                          = { 0.0f, 1.0f, 1.0f, 1.0f };
+   clearValues[1]                          = { 1.0f, 0 };
+
+   renderPassInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
+   renderPassInfo.pClearValues    = clearValues.data();
 
    vkCmdBeginRenderPass( _vkCmdBuffer, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE );
 }
@@ -246,7 +254,7 @@ void cyd::CommandBuffer::draw( size_t vertexCount )
 {
    if( _usage & QueueUsage::GRAPHICS )
    {
-      vkCmdDraw( _vkCmdBuffer, vertexCount, 1, 0, 0 );
+      vkCmdDraw( _vkCmdBuffer, static_cast<uint32_t>( vertexCount ), 1, 0, 0 );
    }
    else
    {
@@ -258,7 +266,7 @@ void cyd::CommandBuffer::drawIndexed( size_t indexCount )
 {
    if( _usage & QueueUsage::GRAPHICS )
    {
-      vkCmdDrawIndexed( _vkCmdBuffer, indexCount, 1, 0, 0, 0 );
+      vkCmdDrawIndexed( _vkCmdBuffer, static_cast<uint32_t>( indexCount ), 1, 0, 0, 0 );
    }
    else
    {

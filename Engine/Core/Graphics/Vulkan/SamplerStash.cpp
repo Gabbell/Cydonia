@@ -38,9 +38,7 @@ const VkSampler cyd::SamplerStash::findOrCreate( const SamplerInfo& info )
    VkResult result = vkCreateSampler( _device.getVKDevice(), &samplerInfo, nullptr, &vkSampler );
    CYDASSERT( result == VK_SUCCESS && "SamplerStash: Could not create sampler" );
 
-   _samplers.insert( { info, vkSampler } );
-
-   return vkSampler;
+   return _samplers.insert( { info, vkSampler } ).first->second;
 }
 
 cyd::SamplerStash::~SamplerStash()

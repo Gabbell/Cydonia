@@ -51,8 +51,7 @@ VkDescriptorSet cyd::DescriptorPool::findOrAllocate( const DescriptorSetLayoutIn
    VkResult result = vkAllocateDescriptorSets( _device.getVKDevice(), &allocInfo, &vkDescSet );
    CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Failed to solo allocate descriptor set" );
 
-   _descSets.insert( { layout, vkDescSet } );
-   return vkDescSet;
+   return _descSets.insert( { layout, vkDescSet } ).first->second;
 }
 
 void cyd::DescriptorPool::free( const VkDescriptorSet& descSet )

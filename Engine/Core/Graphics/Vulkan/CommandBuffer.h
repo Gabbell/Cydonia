@@ -89,6 +89,7 @@ class CommandBuffer final
    std::optional<VkPipeline> _boundPip;
    std::optional<VkPipelineLayout> _boundPipLayout;
    std::optional<VkRenderPass> _boundRenderPass;
+   std::optional<PipelineInfo> _boundPipInfo;
 
    // Syncing
    std::vector<VkSemaphore> _semsToWait;
