@@ -1,239 +1,94 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Core\Utilities\Logger.cpp">
-      <Filter>Core\Utilities</Filter>
-    </ClCompile>
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Core\Graphics\Vulkan\CommandBuffer.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\CommandPool.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Device.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\DeviceHerder.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Instance.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\PipelineStash.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\RenderPassStash.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Shader.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\ShaderStash.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Surface.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Swapchain.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Types.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Buffer.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Applications\Application.cpp">
-      <Filter>Core\Applications</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Applications\VKShaderViewer.cpp">
-      <Filter>Core\Applications</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\Texture.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Applications\VKSandbox.cpp">
-      <Filter>Core\Applications</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\DescriptorPool.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\SamplerStash.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Window\GLFWWindow.cpp">
-      <Filter>Core\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Window\SDLWindow.cpp">
-      <Filter>Core\Window</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Input\InputInterpreter.cpp">
-      <Filter>Core\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Vulkan\TypeConversions.cpp">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Scene\Camera.cpp">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Scene\Frustum.cpp">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Scene\SceneContext.cpp">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Input\CameraController.cpp">
-      <Filter>Core\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Core\Graphics\Scene\Transform.cpp">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClCompile>
+    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Buffer.cpp" />
+    <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
+    <ClCompile Include="Graphics\Vulkan\CommandPool.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DescriptorPool.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Device.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DeviceHerder.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Instance.cpp" />
+    <ClCompile Include="Graphics\Vulkan\PipelineStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\RenderPassStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\SamplerStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Shader.cpp" />
+    <ClCompile Include="Graphics\Vulkan\ShaderStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Surface.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Swapchain.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Texture.cpp" />
+    <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
+    <ClCompile Include="Graphics\Scene\Camera.cpp" />
+    <ClCompile Include="Graphics\Scene\Frustum.cpp" />
+    <ClCompile Include="Graphics\Scene\Scene.cpp" />
+    <ClCompile Include="Graphics\Scene\Transform.cpp" />
+    <ClCompile Include="Applications\Application.cpp" />
+    <ClCompile Include="Handles\HandleManager.cpp" />
+    <ClCompile Include="HID\FreeCameraController.cpp" />
+    <ClCompile Include="HID\InputInterpreter.cpp" />
+    <ClCompile Include="Window\GLFWWindow.cpp" />
+    <ClCompile Include="Graphics\RenderInterface.cpp" />
+    <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
+    <ClCompile Include="Applications\VKApplication.cpp" />
+    <ClCompile Include="Graphics\GraphicsTypes.cpp" />
+    <ClCompile Include="Applications\VKSandbox.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <Filter Include="Core">
-      <UniqueIdentifier>{e5e070a0-3db5-4772-8c54-fba5bcfcc677}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Common">
-      <UniqueIdentifier>{2fe9dfad-043b-4698-ba11-5fe9bff678d7}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Graphics">
-      <UniqueIdentifier>{ce0aa22e-94f1-41a8-9963-a02b9006cddb}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Utilities">
-      <UniqueIdentifier>{c26a9219-8534-4eb2-9084-239ad0c70736}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Window">
-      <UniqueIdentifier>{d9d395ed-5837-43ce-a854-5184ea048bb3}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Resources">
+    <Filter Include="Assets">
       <UniqueIdentifier>{2b4dffad-970a-4583-8416-0719b2e8c5ee}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Models">
+    <Filter Include="Assets\Models">
       <UniqueIdentifier>{b3ea86e4-cd39-421f-8aa4-10cec4daa3a8}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Shaders">
+    <Filter Include="Assets\Shaders">
       <UniqueIdentifier>{5d32043e-0894-43a9-9795-2b712273a321}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Shaders\Raw">
+    <Filter Include="Assets\Shaders\Raw">
       <UniqueIdentifier>{f54c063a-f317-42a5-8eca-b4d5a16f9337}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Resources\Shaders\Compiled">
+    <Filter Include="Assets\Shaders\Compiled">
       <UniqueIdentifier>{88ab3131-9f77-4d62-af23-db77449126a8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Graphics\Vulkan">
-      <UniqueIdentifier>{d162f376-9851-46b2-8fd0-8d790a00524e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Applications">
-      <UniqueIdentifier>{c07ad7bd-1c78-4244-903c-e4c1bd30c75c}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Graphics\Scene">
-      <UniqueIdentifier>{d31d7b60-beee-4809-8fa7-2a0be55959ba}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Core\Input">
-      <UniqueIdentifier>{effff310-2125-4b51-a2e0-7aa8190321cd}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Core\Common\Assert.h">
-      <Filter>Core\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Utilities\Logger.h">
-      <Filter>Core\Utilities</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Common\Vulkan.h">
-      <Filter>Core\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Common\Include.h">
-      <Filter>Core\Common</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\CommandBuffer.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\CommandPool.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Device.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\DeviceHerder.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Instance.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\PipelineStash.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\RenderPassStash.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Shader.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\ShaderStash.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Surface.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Swapchain.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Types.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Buffer.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Applications\Application.h">
-      <Filter>Core\Applications</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Applications\VKShaderViewer.h">
-      <Filter>Core\Applications</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\Texture.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Applications\VKSandbox.h">
-      <Filter>Core\Applications</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\DescriptorPool.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\SamplerStash.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Window\GLFWWindow.h">
-      <Filter>Core\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Window\SDLWindow.h">
-      <Filter>Core\Window</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Input\InputInterpreter.h">
-      <Filter>Core\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Vulkan\TypeConversions.h">
-      <Filter>Core\Graphics\Vulkan</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Scene\Camera.h">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Scene\Frustum.h">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Scene\SceneContext.h">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Input\CameraController.h">
-      <Filter>Core\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Input\Controller.h">
-      <Filter>Core\Input</Filter>
-    </ClInclude>
-    <ClInclude Include="Core\Graphics\Scene\Transform.h">
-      <Filter>Core\Graphics\Scene</Filter>
-    </ClInclude>
+    <ClInclude Include="Graphics\Vulkan\Buffer.h" />
+    <ClInclude Include="Graphics\Vulkan\CommandBuffer.h" />
+    <ClInclude Include="Graphics\Vulkan\CommandPool.h" />
+    <ClInclude Include="Graphics\Vulkan\DescriptorPool.h" />
+    <ClInclude Include="Graphics\Vulkan\Device.h" />
+    <ClInclude Include="Graphics\Vulkan\DeviceHerder.h" />
+    <ClInclude Include="Graphics\Vulkan\Instance.h" />
+    <ClInclude Include="Graphics\Vulkan\PipelineStash.h" />
+    <ClInclude Include="Graphics\Vulkan\RenderPassStash.h" />
+    <ClInclude Include="Graphics\Vulkan\SamplerStash.h" />
+    <ClInclude Include="Graphics\Vulkan\Shader.h" />
+    <ClInclude Include="Graphics\Vulkan\ShaderStash.h" />
+    <ClInclude Include="Graphics\Vulkan\Surface.h" />
+    <ClInclude Include="Graphics\Vulkan\Swapchain.h" />
+    <ClInclude Include="Graphics\Vulkan\Texture.h" />
+    <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
+    <ClInclude Include="Graphics\Buffer.h" />
+    <ClInclude Include="Graphics\RenderInterface.h" />
+    <ClInclude Include="Graphics\Texture.h" />
+    <ClInclude Include="Graphics\Scene\Transform.h" />
+    <ClInclude Include="Graphics\Scene\Camera.h" />
+    <ClInclude Include="Graphics\Scene\Frustum.h" />
+    <ClInclude Include="Graphics\Scene\Scene.h" />
+    <ClInclude Include="Common\Vulkan.h" />
+    <ClInclude Include="Common\Include.h" />
+    <ClInclude Include="Common\Assert.h" />
+    <ClInclude Include="Applications\Application.h" />
+    <ClInclude Include="Handles\Handle.h" />
+    <ClInclude Include="Handles\HandleManager.h" />
+    <ClInclude Include="HID\Controller.h" />
+    <ClInclude Include="HID\FreeCameraController.h" />
+    <ClInclude Include="HID\InputInterpreter.h" />
+    <ClInclude Include="Window\GLFWWindow.h" />
+    <ClInclude Include="Graphics\Backends\RenderBackend.h" />
+    <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
+    <ClInclude Include="Applications\VKApplication.h" />
+    <ClInclude Include="Graphics\GraphicsTypes.h" />
+    <ClInclude Include="Applications\VKSandbox.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
