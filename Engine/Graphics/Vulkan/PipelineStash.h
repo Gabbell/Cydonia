@@ -36,12 +36,12 @@ class PipelineStash final
    const VkPipelineLayout findOrCreate( const cyd::PipelineLayoutInfo& info );
 
   private:
-   const Device& _device;
+   const Device& m_device;
 
-   std::unique_ptr<ShaderStash> _shaderStash;
+   std::unique_ptr<ShaderStash> m_shaderStash;
 
-   std::unordered_map<cyd::DescriptorSetLayoutInfo, VkDescriptorSetLayout> _descSetLayouts;
-   std::unordered_map<cyd::PipelineLayoutInfo, VkPipelineLayout> _pipLayouts;
-   std::unordered_map<cyd::PipelineInfo, VkPipeline> _pipelines;
+   std::unordered_map<cyd::DescriptorSetLayoutInfo, VkDescriptorSetLayout> m_descSetLayouts;
+   std::unordered_map<cyd::PipelineLayoutInfo, VkPipelineLayout> m_pipLayouts;
+   std::unordered_map<cyd::PipelineInfo, VkPipeline> m_pipelines;
 };
 }

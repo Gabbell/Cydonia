@@ -1,7 +1,5 @@
 #include <HID/InputInterpreter.h>
 
-#include <Common/Assert.h>
-
 #include <Window/GLFWWindow.h>
 
 #include <HID/Controller.h>
@@ -10,11 +8,13 @@
 
 namespace cyd
 {
-InputInterpreter::InputInterpreter( const Window& window ) : _window( window )
+bool InputInterpreter::init( const Window& window )
 {
+   m_window = &window;
+
    // Settings instance of input interpreter to this window
    // TODO Maybe there's a better way to do this?
-   glfwSetWindowUserPointer( _window.getGLFWwindow(), this );
+   glfwSetWindowUserPointer( m_window->getGLFWwindow(), this );
 
    // Callback wrappers
    auto mainKeyCallback = []( GLFWwindow* window, int key, int scancode, int action, int mods ) {
@@ -33,15 +33,17 @@ InputInterpreter::InputInterpreter( const Window& window ) : _window( window )
    };
 
    // Registering callbacks
-   glfwSetKeyCallback( _window.getGLFWwindow(), mainKeyCallback );
-   glfwSetCursorPosCallback( _window.getGLFWwindow(), mainCursorCallback );
-   glfwSetMouseButtonCallback( _window.getGLFWwindow(), mainMouseCallback );
+   glfwSetKeyCallback( m_window->getGLFWwindow(), mainKeyCallback );
+   glfwSetCursorPosCallback( m_window->getGLFWwindow(), mainCursorCallback );
+   glfwSetMouseButtonCallback( m_window->getGLFWwindow(), mainMouseCallback );
+
+   return true;
 }
 
 void InputInterpreter::tick()
 {
    glfwPollEvents();
-   for( const auto& controller : _controllers )
+   for( const auto& controller : m_controllers )
    {
       controller->interpret();
    }
@@ -59,7 +61,7 @@ void InputInterpreter::mainKeyCallback(
       glfwSetWindowShouldClose( window, true );
    }
 
-   for( const auto& controller : _controllers )
+   for( const auto& controller : m_controllers )
    {
       controller->keyCallback( window, key, scancode, action, mods );
    }
@@ -67,7 +69,7 @@ void InputInterpreter::mainKeyCallback(
 
 void InputInterpreter::mainCursorCallback( GLFWwindow* window, double xpos, double ypos )
 {
-   for( const auto& controller : _controllers )
+   for( const auto& controller : m_controllers )
    {
       controller->cursorCallback( window, xpos, ypos );
    }
@@ -75,7 +77,7 @@ void InputInterpreter::mainCursorCallback( GLFWwindow* window, double xpos, doub
 
 void InputInterpreter::mainMouseCallback( GLFWwindow* window, int button, int action, int mods )
 {
-   for( const auto& controller : _controllers )
+   for( const auto& controller : m_controllers )
    {
       controller->mouseCallback( window, button, action, mods );
    }

@@ -24,13 +24,7 @@ Camera::Camera( float fov, float aspectRatio, float near, float far )
 }
 
 Camera::Camera( const glm::vec3& origin, float fov, float aspectRatio, float near, float far )
-    : transform( origin ),
-      _proj( glm::mat4( 1.0f ) ),
-      _view( glm::mat4( 1.0f ) ),
-      _fov( fov ),
-      _aspectRatio( aspectRatio ),
-      _near( near ),
-      _far( far )
+    : transform( origin ), m_fov( fov ), m_aspectRatio( aspectRatio ), m_near( near ), m_far( far )
 {
    usePerspective();
    updateVP();
@@ -48,14 +42,12 @@ Camera::Camera(
     float near,
     float far )
     : transform( origin ),
-      _proj( glm::mat4( 1.0f ) ),
-      _view( glm::mat4( 1.0f ) ),
-      _left( left ),
-      _right( right ),
-      _bottom( bottom ),
-      _top( top ),
-      _near( near ),
-      _far( far )
+      m_near( near ),
+      m_far( far ),
+      m_left( left ),
+      m_right( right ),
+      m_bottom( bottom ),
+      m_top( top )
 {
    useOrthographic();
    updateVP();
@@ -65,31 +57,31 @@ void Camera::updateVP()
 {
    glm::mat4 t = glm::translate( glm::mat4( 1.0f ), -transform.pos );
    glm::mat4 s = glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling );
-   _view       = glm::toMat4( glm::conjugate( transform.rotation ) ) * s * t;
+   m_view       = glm::toMat4( glm::conjugate( transform.rotation ) ) * s * t;
 }
 
 void Camera::usePerspective()
 {
-   if( _projMode == ProjectionMode::PERSPECTIVE )
+   if( m_projMode == ProjectionMode::PERSPECTIVE )
    {
       CYDASSERT( !"Camera: Was already in perspective mode, no need to switch" );
       return;
    }
 
-   _proj     = glm::perspectiveZO( glm::radians( _fov ), _aspectRatio, _near, _far );
-   _projMode = ProjectionMode::PERSPECTIVE;
+   m_proj     = glm::perspectiveZO( glm::radians( m_fov ), m_aspectRatio, m_near, m_far );
+   m_projMode = ProjectionMode::PERSPECTIVE;
 }
 
 void Camera::useOrthographic()
 {
-   if( _projMode == ProjectionMode::ORTHOGRAPHIC )
+   if( m_projMode == ProjectionMode::ORTHOGRAPHIC )
    {
       CYDASSERT( !"Camera: Was already in orthographic mode, no need to switch" );
       return;
    }
 
-   _proj     = glm::orthoZO( _left, _right, _bottom, _top, _near, _far );
-   _projMode = ProjectionMode::ORTHOGRAPHIC;
+   m_proj     = glm::orthoZO( m_left, m_right, m_bottom, m_top, m_near, m_far );
+   m_projMode = ProjectionMode::ORTHOGRAPHIC;
 }
 
 Camera::~Camera() {}

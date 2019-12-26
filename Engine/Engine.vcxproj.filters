@@ -20,18 +20,20 @@
     <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
     <ClCompile Include="Graphics\Scene\Camera.cpp" />
     <ClCompile Include="Graphics\Scene\Frustum.cpp" />
-    <ClCompile Include="Graphics\Scene\Scene.cpp" />
     <ClCompile Include="Graphics\Scene\Transform.cpp" />
     <ClCompile Include="Applications\Application.cpp" />
-    <ClCompile Include="Handles\HandleManager.cpp" />
     <ClCompile Include="HID\FreeCameraController.cpp" />
     <ClCompile Include="HID\InputInterpreter.cpp" />
     <ClCompile Include="Window\GLFWWindow.cpp" />
     <ClCompile Include="Graphics\RenderInterface.cpp" />
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
-    <ClCompile Include="Applications\VKApplication.cpp" />
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
     <ClCompile Include="Applications\VKSandbox.cpp" />
+    <ClCompile Include="Graphics\Scene\SceneContext.cpp" />
+    <ClCompile Include="Graphics\Handles\HandleManager.cpp" />
+    <ClCompile Include="ECS\EntityManager.cpp" />
+    <ClCompile Include="ECS\Entities\Entity.cpp" />
+    <ClCompile Include="ECS\Systems\RenderSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">
@@ -69,26 +71,36 @@
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
     <ClInclude Include="Graphics\Buffer.h" />
     <ClInclude Include="Graphics\RenderInterface.h" />
-    <ClInclude Include="Graphics\Texture.h" />
     <ClInclude Include="Graphics\Scene\Transform.h" />
     <ClInclude Include="Graphics\Scene\Camera.h" />
     <ClInclude Include="Graphics\Scene\Frustum.h" />
-    <ClInclude Include="Graphics\Scene\Scene.h" />
     <ClInclude Include="Common\Vulkan.h" />
     <ClInclude Include="Common\Include.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Applications\Application.h" />
-    <ClInclude Include="Handles\Handle.h" />
-    <ClInclude Include="Handles\HandleManager.h" />
     <ClInclude Include="HID\Controller.h" />
     <ClInclude Include="HID\FreeCameraController.h" />
     <ClInclude Include="HID\InputInterpreter.h" />
     <ClInclude Include="Window\GLFWWindow.h" />
     <ClInclude Include="Graphics\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
-    <ClInclude Include="Applications\VKApplication.h" />
     <ClInclude Include="Graphics\GraphicsTypes.h" />
     <ClInclude Include="Applications\VKSandbox.h" />
+    <ClInclude Include="Graphics\Scene\SceneContext.h" />
+    <ClInclude Include="Graphics\Handles\Handle.h" />
+    <ClInclude Include="Graphics\Handles\HandleManager.h" />
+    <ClInclude Include="ECS\EntityManager.h" />
+    <ClInclude Include="ECS\Systems\RenderSystem.h" />
+    <ClInclude Include="ECS\Components\BaseComponent.h" />
+    <ClInclude Include="ECS\Components\ComponentTypes.h" />
+    <ClInclude Include="ECS\Components\RenderableComponent.h" />
+    <ClInclude Include="ECS\Components\TransformComponent.h" />
+    <ClInclude Include="ECS\Components\ComponentPool.h" />
+    <ClInclude Include="ECS\Components\CameraComponent.h" />
+    <ClInclude Include="ECS\Systems\BaseSystem.h" />
+    <ClInclude Include="ECS\Systems\CommonSystem.h" />
+    <ClInclude Include="ECS\Entities\Entity.h" />
+    <ClInclude Include="ECS\Entities\Archetype.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

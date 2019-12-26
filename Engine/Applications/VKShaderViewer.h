@@ -28,16 +28,16 @@ class VKShaderViewer final : public VKApplication
        uint32_t height,
        const std::string& vertShader,
        const std::string& fragShader );
-   NON_COPIABLE(VKShaderViewer);
+   NON_COPIABLE( VKShaderViewer );
    ~VKShaderViewer();
 
   protected:
    virtual void preLoop() override;  // Executed before the application enters the main loop
-   virtual void drawFrame( double deltaTime ) override;  // Used to draw one frame
+   virtual void drawFrame( double deltaMs ) override;  // Used to draw one frame
 
   private:
-   const std::string _vertShader;
-   const std::string _fragShader;
-   std::shared_ptr<vk::Buffer> _vertexBuffer = nullptr;
+   const std::string m_vertShader;
+   const std::string m_fragShader;
+   std::shared_ptr<vk::Buffer> m_vertexBuffer = nullptr;
 };
 }

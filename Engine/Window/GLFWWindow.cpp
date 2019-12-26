@@ -7,44 +7,44 @@
 
 namespace cyd
 {
-Window::Window( uint32_t width, uint32_t height, const std::string& title )
+bool Window::init( uint32_t width, uint32_t height, const std::string& title )
 {
    if( !glfwInit() )
    {
-      CYDASSERT( !"GLFW: Init failed" );
-      return;
+      CYDASSERT_AND_RETURN( !"GLFW: Init failed", false );
    }
 
    if( !glfwVulkanSupported() )
    {
-      CYDASSERT( !"GLFW: Vulkan not supported" );
-      return;
+      CYDASSERT_AND_RETURN( !"GLFW: Vulkan not supported", false );
    }
 
-   _extent = {width, height};
+   m_extent = { width, height };
 
    // Creating GLFWwindow
    glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );  // Tell GLFW we do not need a GL context
-   _glfwWindow = glfwCreateWindow( width, height, title.c_str(), nullptr, nullptr );
-   CYDASSERT( _glfwWindow && "Could not create GLFW window" );
+   m_glfwWindow = glfwCreateWindow( width, height, title.c_str(), nullptr, nullptr );
+   CYDASSERT_AND_RETURN( m_glfwWindow && "Could not create GLFW window", false );
 
    // Populating extensions
    uint32_t extensionsCount = 0;
    const char** extensions  = glfwGetRequiredInstanceExtensions( &extensionsCount );
-   _extensions              = std::vector<const char*>( extensions, extensions + extensionsCount );
+   m_extensions             = std::vector<const char*>( extensions, extensions + extensionsCount );
 
 #if _DEBUG
-   _extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
+   m_extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
 #endif
 
    printf( "GLFW: Compiled with GLFW version %s\n", glfwGetVersionString() );
+
+   return true;
 }
 
-bool Window::isRunning() const { return !glfwWindowShouldClose( _glfwWindow ); }
+bool Window::isRunning() const { return !glfwWindowShouldClose( m_glfwWindow ); }
 
 Window::~Window()
 {
-   glfwDestroyWindow( _glfwWindow );
+   glfwDestroyWindow( m_glfwWindow );
    glfwTerminate();
 }
 }

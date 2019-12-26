@@ -34,19 +34,19 @@ class FreeCameraController final : public Controller
    Camera& _camera;
 
    // Last cursor pos registered by cursor callback
-   glm::vec2 _lastCursorPos = glm::vec2( 0.0f );
+   glm::vec2 m_lastCursorPos = glm::vec2( 0.0f );
 
    // Keeps track of mouse displacement since last update
-   glm::vec2 _cursorDelta = glm::vec2( 0.0f );
+   glm::vec2 m_cursorDelta = glm::vec2( 0.0f );
 
    static constexpr float MOVE_SPEED = 0.01f;
    static constexpr float MOUSE_SENS = 0.001f;
 
    // State
-   bool _goingForwards  = false;
-   bool _goingBackwards = false;
-   bool _goingRight     = false;
-   bool _goingLeft      = false;
-   bool _rotating       = false;
+   bool m_goingForwards  = false;
+   bool m_goingBackwards = false;
+   bool m_goingRight     = false;
+   bool m_goingLeft      = false;
+   bool m_rotating       = false;
 };
 }

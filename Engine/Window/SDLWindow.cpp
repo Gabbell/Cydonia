@@ -16,27 +16,32 @@ static void handleSDLError()
    CYDASSERT( !error );
 }
 
-cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
+bool cyd::Window::init( uint32_t width, uint32_t height, const std::string& title )
 {
-   _extent = { width, height };
+   m_extent = {width, height};
 
-   if( SDL_Init( SDL_INIT_VIDEO ) < 0 ) handleSDLError();
+   if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
+   {
+      handleSDLError();
+      return false;
+   }
 
-   // Creating SDL_Window
-   _sdlWindow = SDL_CreateWindow(
+   // Creating SDLm_Window
+   m_sdlWindow = SDL_CreateWindow(
        title.c_str(),
        SDL_WINDOWPOS_CENTERED,
        SDL_WINDOWPOS_CENTERED,
        _extent.width,
        _extent.height,
        SDL_WINDOW_VULKAN );
-   CYDASSERT( _sdlWindow && "Could not create SDL window" );
+   CYDASSERT_AND_RETURN( m_sdlWindow && "Could not create SDL window", false );
 
    // Populating extensions
    uint32_t extensionsCount = 0;
    if( !SDL_Vulkan_GetInstanceExtensions( _sdlWindow, &extensionsCount, nullptr ) )
    {
       handleSDLError();
+      return false;
    }
 
    _extensions.resize( extensionsCount );
@@ -44,13 +49,14 @@ cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
    if( !SDL_Vulkan_GetInstanceExtensions( _sdlWindow, &extensionsCount, _extensions.data() ) )
    {
       handleSDLError();
+      return false;
    }
 
-#if _DEBUG
+#if m_DEBUG
    _extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
 #endif
 
-   SDL_version linkedVersion;
+   SDLm_version linkedVersion;
    SDL_GetVersion( &linkedVersion );
    printf(
        "SDL Window: Linked with SDL version %d.%d.%d\n",
@@ -59,8 +65,10 @@ cyd::Window::Window( uint32_t width, uint32_t height, const std::string& title )
        linkedVersion.patch );
 }
 
-cyd::Window::~Window()
+bool cyd::Window::uninit()
 {
-   SDL_DestroyWindow( _sdlWindow );
+   SDL_DestroyWindow( m_sdlWindow );
    SDL_Quit();
 }
+
+cyd::Window::~Window() { uninit(); }

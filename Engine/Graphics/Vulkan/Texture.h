@@ -31,19 +31,19 @@ class Texture final
    MOVABLE( Texture );
    ~Texture() = default;
 
-   void seize( const Device& device, const cyd::TextureDescription& desc );
+   void acquire( const Device& device, const cyd::TextureDescription& desc );
    void release();
 
-   size_t getSize() const noexcept { return _size; }
-   uint32_t getWidth() const noexcept { return _width; }
-   uint32_t getHeight() const noexcept { return _height; }
-   cyd::ImageLayout getLayout() const noexcept { return _layout; }
-   const VkImage& getVKImage() const noexcept { return _vkImage; }
-   const VkDescriptorSet& getVKDescSet() const noexcept { return _vkDescSet; }
-   bool inUse() const { return _inUse; }
+   size_t getSize() const noexcept { return m_size; }
+   uint32_t getWidth() const noexcept { return m_width; }
+   uint32_t getHeight() const noexcept { return m_height; }
+   cyd::ImageLayout getLayout() const noexcept { return m_layout; }
+   const VkImage& getVKImage() const noexcept { return m_vkImage; }
+   const VkDescriptorSet& getVKDescSet() const noexcept { return m_vkDescSet; }
+   bool inUse() const { return m_inUse; }
 
-   void setUnused() { _inUse = false; }
-   void setLayout( cyd::ImageLayout layout ) { _layout = layout; }
+   void setUnused() { m_inUse = false; }
+   void setLayout( cyd::ImageLayout layout ) { m_layout = layout; }
 
    void updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescriptorSet descSet );
 
@@ -52,21 +52,21 @@ class Texture final
    void _allocateMemory();
    void _createImageView();
 
-   const Device* _device = nullptr;
+   const Device* m_pDevice = nullptr;
 
-   size_t _size     = 0;
-   uint32_t _width  = 0;
-   uint32_t _height = 0;
-   cyd::ImageType _type;
-   cyd::PixelFormat _format;
-   cyd::ImageUsageFlag _usage;
-   cyd::ImageLayout _layout;
+   size_t m_size     = 0;
+   uint32_t m_width  = 0;
+   uint32_t m_height = 0;
+   cyd::ImageType m_type;
+   cyd::PixelFormat m_format;
+   cyd::ImageUsageFlag m_usage;
+   cyd::ImageLayout m_layout;
 
-   VkImage _vkImage           = nullptr;
-   VkImageView _vkImageView   = nullptr;
-   VkDeviceMemory _vkMemory   = nullptr;
-   VkDescriptorSet _vkDescSet = nullptr;
+   VkImage m_vkImage           = nullptr;
+   VkImageView m_vkImageView   = nullptr;
+   VkDeviceMemory m_vkMemory   = nullptr;
+   VkDescriptorSet m_vkDescSet = nullptr;
 
-   bool _inUse = false;
+   bool m_inUse = false;
 };
 }

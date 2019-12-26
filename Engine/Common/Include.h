@@ -3,6 +3,13 @@
 // Forward including handles
 #define FWDHANDLE( obj ) typedef struct obj##_T* obj;
 
+// Add to a class to make it copiable
+#define COPIABLE( ClassName )                          \
+   ClassName( const ClassName& )     = default;        \
+   ClassName( ClassName&& ) noexcept = default;        \
+   ClassName& operator=( const ClassName& ) = default; \
+   ClassName& operator=( ClassName&& ) noexcept = default;
+
 // Add to a class to make it non copiable
 #define NON_COPIABLE( ClassName )                     \
    ClassName( const ClassName& )     = delete;        \
@@ -19,7 +26,7 @@
 
 // Hashing utility
 template <class T>
-void hash_combine( size_t& seed, const T& obj )
+void hashCombine( size_t& seed, const T& obj )
 {
    seed ^= std::hash<T>()( obj ) + 0x9e3779b9 + ( seed << 6 ) + ( seed >> 2 );
 }

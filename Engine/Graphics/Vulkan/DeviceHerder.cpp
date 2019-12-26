@@ -16,10 +16,10 @@ DeviceHerder::DeviceHerder(
     const cyd::Window& window,
     const Instance& instance,
     const Surface& surface )
-    : _instance( instance ), _window( window ), _surface( surface )
+    : m_instance( instance ), m_window( window ), m_surface( surface )
 {
    // Desired extensions to be used when creating logical devices
-   _extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+   m_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
 
    uint32_t physicalDeviceCount;
    vkEnumeratePhysicalDevices( instance.getVKInstance(), &physicalDeviceCount, nullptr );
@@ -35,11 +35,11 @@ DeviceHerder::DeviceHerder(
    // TODO Add support for multiple devices
    for( const auto& physDevice : physicalDevices )
    {
-      if( _checkDevice( _surface, physDevice ) )
+      if( _checkDevice( m_surface, physDevice ) )
       {
          // Found suitable device, add it to the currently managed devices
-         _devices.emplace_back(
-             std::make_unique<Device>( _window, _instance, _surface, physDevice, _extensions ) );
+         m_devices.emplace_back(
+             std::make_unique<Device>( m_window, m_instance, m_surface, physDevice, m_extensions ) );
          break;
       }
    }
@@ -120,7 +120,7 @@ bool DeviceHerder::_checkDeviceExtensionSupport( const VkPhysicalDevice& physDev
    vkEnumerateDeviceExtensionProperties(
        physDevice, nullptr, &extensionCount, supportedExtensions.data() );
 
-   std::set<std::string> requiredExtensions( _extensions.begin(), _extensions.end() );
+   std::set<std::string> requiredExtensions( m_extensions.begin(), m_extensions.end() );
    for( const auto& extension : supportedExtensions )
    {
       requiredExtensions.erase( extension.extensionName );
@@ -129,7 +129,7 @@ bool DeviceHerder::_checkDeviceExtensionSupport( const VkPhysicalDevice& physDev
    return requiredExtensions.empty();
 }
 
-const Swapchain* DeviceHerder::getMainSwapchain() { return _devices[0]->getSwapchain(); }
+const Swapchain* DeviceHerder::getMainSwapchain() { return m_devices[0]->getSwapchain(); }
 
 DeviceHerder::~DeviceHerder() {}
 }

@@ -14,19 +14,19 @@ FreeCameraController::FreeCameraController( Camera& camera ) : _camera( camera )
 void FreeCameraController::interpret()
 {
    glm::vec3 displacement( 0.0f );
-   if( _goingForwards )
+   if( m_goingForwards )
    {
       displacement.z -= MOVE_SPEED;
    }
-   if( _goingBackwards )
+   if( m_goingBackwards )
    {
       displacement.z += MOVE_SPEED;
    }
-   if( _goingRight )
+   if( m_goingRight )
    {
       displacement.x += MOVE_SPEED;
    }
-   if( _goingLeft )
+   if( m_goingLeft )
    {
       displacement.x -= MOVE_SPEED;
    }
@@ -35,13 +35,13 @@ void FreeCameraController::interpret()
       _camera.transform.translateLocal( displacement );
    }
 
-   if( _rotating )
+   if( m_rotating )
    {
-      glm::vec2 rotationAngles = _cursorDelta * MOUSE_SENS;
+      glm::vec2 rotationAngles = m_cursorDelta * MOUSE_SENS;
 
       _camera.transform.rotateLocal( -rotationAngles.y, 0, 0 );
       _camera.transform.rotate( 0, rotationAngles.x, 0 );
-      _cursorDelta = glm::vec2( 0.0f );
+      m_cursorDelta = glm::vec2( 0.0f );
    }
 
    _camera.updateVP();
@@ -58,11 +58,11 @@ void FreeCameraController::keyCallback(
    {
       if( action == GLFW_PRESS )
       {
-         _goingForwards = true;
+         m_goingForwards = true;
       }
       else if( action == GLFW_RELEASE )
       {
-         _goingForwards = false;
+         m_goingForwards = false;
       }
    }
 
@@ -70,11 +70,11 @@ void FreeCameraController::keyCallback(
    {
       if( action == GLFW_PRESS )
       {
-         _goingBackwards = true;
+         m_goingBackwards = true;
       }
       else if( action == GLFW_RELEASE )
       {
-         _goingBackwards = false;
+         m_goingBackwards = false;
       }
    }
 
@@ -82,11 +82,11 @@ void FreeCameraController::keyCallback(
    {
       if( action == GLFW_PRESS )
       {
-         _goingLeft = true;
+         m_goingLeft = true;
       }
       else if( action == GLFW_RELEASE )
       {
-         _goingLeft = false;
+         m_goingLeft = false;
       }
    }
 
@@ -94,23 +94,23 @@ void FreeCameraController::keyCallback(
    {
       if( action == GLFW_PRESS )
       {
-         _goingRight = true;
+         m_goingRight = true;
       }
       else if( action == GLFW_RELEASE )
       {
-         _goingRight = false;
+         m_goingRight = false;
       }
    }
 }
 
 void FreeCameraController::cursorCallback( GLFWwindow* /*window*/, double xpos, double ypos )
 {
-   if( _rotating )
+   if( m_rotating )
    {
-      _cursorDelta = _lastCursorPos - glm::vec2( xpos, ypos );
+      m_cursorDelta = m_lastCursorPos - glm::vec2( xpos, ypos );
    }
 
-   _lastCursorPos = glm::vec2( xpos, ypos );
+   m_lastCursorPos = glm::vec2( xpos, ypos );
 }
 
 void FreeCameraController::mouseCallback( GLFWwindow* window, int button, int action, int /*mods*/ )
@@ -120,12 +120,12 @@ void FreeCameraController::mouseCallback( GLFWwindow* window, int button, int ac
       if( action == GLFW_PRESS )
       {
          glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
-         _rotating = true;
+         m_rotating = true;
       }
       else if( action == GLFW_RELEASE )
       {
          glfwSetInputMode( window, GLFW_CURSOR, GLFW_CURSOR_NORMAL );
-         _rotating = false;
+         m_rotating = false;
       }
    }
 }

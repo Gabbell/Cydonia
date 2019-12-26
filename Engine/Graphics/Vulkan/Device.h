@@ -3,11 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
-
-#include <Graphics/Vulkan/Buffer.h>
-#include <Graphics/Vulkan/Texture.h>
-
-#include <Handles/HandleManager.h>
+#include <Graphics/Handles/HandleManager.h>
 
 #include <memory>
 #include <vector>
@@ -36,6 +32,7 @@ class RenderPassStash;
 class SamplerStash;
 class CommandPool;
 class CommandBuffer;
+class Buffer;
 class Texture;
 class DescriptorPool;
 }
@@ -67,27 +64,27 @@ class Device final
    Buffer* createStagingBuffer( size_t size );
    Buffer* createUniformBuffer(
        size_t size,
-       const cyd::ShaderObjectInfo& info,
+       uint32_t shaderObjectIdx,  // Index of the shader object info in the layout
        const cyd::DescriptorSetLayoutInfo& layout );
    Texture* createTexture(
        const cyd::TextureDescription& desc,
-       const cyd::ShaderObjectInfo& info,
+       uint32_t shaderObjectIdx,  // Index of the shader object info in the layout
        const cyd::DescriptorSetLayoutInfo& layout );
 
    void cleanup();  // Clean up unused resources
 
    // Getters
-   const VkPhysicalDevice& getPhysicalDevice() const noexcept { return _physDevice; }
-   const VkDevice& getVKDevice() const noexcept { return _vkDevice; }
+   const VkPhysicalDevice& getPhysicalDevice() const noexcept { return m_physDevice; }
+   const VkDevice& getVKDevice() const noexcept { return m_vkDevice; }
    const VkQueue* getQueueFromFamily( uint32_t familyIndex ) const;
    const VkQueue* getQueueFromUsage( cyd::QueueUsageFlag usage, bool supportsPresentation = false )
        const;
 
-   Swapchain* getSwapchain() const { return _swapchain.get(); }
+   Swapchain* getSwapchain() const { return m_swapchain.get(); }
 
-   PipelineStash& getPipelineStash() const { return *_pipelines; }
-   RenderPassStash& getRenderPassStash() const { return *_renderPasses; }
-   SamplerStash& getSamplerStash() const { return *_samplers; }
+   PipelineStash& getPipelineStash() const { return *m_pipelines; }
+   RenderPassStash& getRenderPassStash() const { return *m_renderPasses; }
+   SamplerStash& getSamplerStash() const { return *m_samplers; }
 
    // Support
    uint32_t findMemoryType( uint32_t typeFilter, uint32_t properties ) const;
@@ -111,20 +108,20 @@ class Device final
    // =============================================================================================
    // Private Members
    // =============================================================================================
-   const cyd::Window& _window;
+   const cyd::Window& m_window;
 
-   const Instance& _instance;
-   const Surface& _surface;
+   const Instance& m_instance;
+   const Surface& m_surface;
 
-   std::vector<Buffer> _buffers;
-   std::vector<Texture> _textures;
-   std::vector<std::unique_ptr<CommandPool>> _commandPools;
+   std::vector<Buffer> m_buffers;
+   std::vector<Texture> m_textures;
+   std::vector<std::unique_ptr<CommandPool>> m_commandPools;
 
-   std::unique_ptr<DescriptorPool> _descPool;
-   std::unique_ptr<Swapchain> _swapchain;
-   std::unique_ptr<RenderPassStash> _renderPasses;
-   std::unique_ptr<SamplerStash> _samplers;
-   std::unique_ptr<PipelineStash> _pipelines;
+   std::unique_ptr<DescriptorPool> m_descPool;
+   std::unique_ptr<Swapchain> m_swapchain;
+   std::unique_ptr<RenderPassStash> m_renderPasses;
+   std::unique_ptr<SamplerStash> m_samplers;
+   std::unique_ptr<PipelineStash> m_pipelines;
 
    struct QueueFamily
    {
@@ -134,13 +131,13 @@ class Device final
       cyd::QueueUsageFlag type = 0;
       bool supportsPresent     = false;
    };
-   std::vector<QueueFamily> _queueFamilies;
+   std::vector<QueueFamily> m_queueFamilies;
 
    // Extensions used to create the device
-   const std::vector<const char*>& _extensions;
+   const std::vector<const char*>& m_extensions;
 
-   VkDevice _vkDevice           = nullptr;
-   VkPhysicalDevice _physDevice = nullptr;
-   std::unique_ptr<VkPhysicalDeviceProperties> _physProps;
+   VkDevice m_vkDevice           = nullptr;
+   VkPhysicalDevice m_physDevice = nullptr;
+   std::unique_ptr<VkPhysicalDeviceProperties> m_physProps;
 };
 }

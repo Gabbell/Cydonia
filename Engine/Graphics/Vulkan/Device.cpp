@@ -31,14 +31,14 @@ Device::Device(
     const Surface& surface,
     const VkPhysicalDevice& physDevice,
     const std::vector<const char*>& extensions )
-    : _window( window ),
-      _instance( instance ),
-      _surface( surface ),
-      _extensions( extensions ),
-      _physDevice( physDevice )
+    : m_window( window ),
+      m_instance( instance ),
+      m_surface( surface ),
+      m_extensions( extensions ),
+      m_physDevice( physDevice )
 {
-   _buffers.resize( MAX_BUFFER_COUNT );
-   _textures.resize( MAX_TEXTURE_COUNT );
+   m_buffers.resize( MAX_BUFFER_COUNT );
+   m_textures.resize( MAX_TEXTURE_COUNT );
 
    _populateQueueFamilies();
    _createLogicalDevice();
@@ -46,18 +46,18 @@ Device::Device(
    _createCommandPools();
    _createDescriptorPool();
 
-   _renderPasses = std::make_unique<RenderPassStash>( *this );
-   _pipelines    = std::make_unique<PipelineStash>( *this );
-   _samplers     = std::make_unique<SamplerStash>( *this );
+   m_renderPasses = std::make_unique<RenderPassStash>( *this );
+   m_pipelines    = std::make_unique<PipelineStash>( *this );
+   m_samplers     = std::make_unique<SamplerStash>( *this );
 }
 
 void Device::_populateQueueFamilies()
 {
    uint32_t queueFamilyCount = 0;
-   vkGetPhysicalDeviceQueueFamilyProperties( _physDevice, &queueFamilyCount, nullptr );
+   vkGetPhysicalDeviceQueueFamilyProperties( m_physDevice, &queueFamilyCount, nullptr );
 
    std::vector<VkQueueFamilyProperties> queueFamilies( queueFamilyCount );
-   vkGetPhysicalDeviceQueueFamilyProperties( _physDevice, &queueFamilyCount, queueFamilies.data() );
+   vkGetPhysicalDeviceQueueFamilyProperties( m_physDevice, &queueFamilyCount, queueFamilies.data() );
 
    for( uint32_t i = 0; i < queueFamilies.size(); ++i )
    {
@@ -79,9 +79,9 @@ void Device::_populateQueueFamilies()
 
       VkBool32 supportsPresent = false;
       vkGetPhysicalDeviceSurfaceSupportKHR(
-          _physDevice, i, _surface.getVKSurface(), &supportsPresent );
+          m_physDevice, i, m_surface.getVKSurface(), &supportsPresent );
 
-      _queueFamilies.push_back(
+      m_queueFamilies.push_back(
           { {}, i, queueFamilies[i].queueCount, type, static_cast<bool>( supportsPresent ) } );
    }
 }
@@ -91,7 +91,7 @@ void Device::_createLogicalDevice()
    // Populating queue infos
    std::vector<VkDeviceQueueCreateInfo> queueInfos;
 
-   for( auto& family : _queueFamilies )
+   for( auto& family : m_queueFamilies )
    {
       family.queues.resize( NUMBER_QUEUES_PER_FAMILY );
 
@@ -108,12 +108,12 @@ void Device::_createLogicalDevice()
 
    // Create logical device
    VkPhysicalDeviceFeatures deviceFeatures = {};
-   vkGetPhysicalDeviceFeatures( _physDevice, &deviceFeatures );
+   vkGetPhysicalDeviceFeatures( m_physDevice, &deviceFeatures );
 
-   _physProps = std::make_unique<VkPhysicalDeviceProperties>();
-   vkGetPhysicalDeviceProperties( _physDevice, _physProps.get() );
+   m_physProps = std::make_unique<VkPhysicalDeviceProperties>();
+   vkGetPhysicalDeviceProperties( m_physDevice, m_physProps.get() );
 
-   const std::vector<const char*> layers = _instance.getLayers();
+   const std::vector<const char*> layers = m_instance.getLayers();
 
    VkDeviceCreateInfo deviceInfo      = {};
    deviceInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
@@ -123,36 +123,36 @@ void Device::_createLogicalDevice()
    deviceInfo.pQueueCreateInfos       = queueInfos.data();
    deviceInfo.enabledLayerCount       = static_cast<uint32_t>( layers.size() );
    deviceInfo.ppEnabledLayerNames     = layers.data();
-   deviceInfo.enabledExtensionCount   = static_cast<uint32_t>( _extensions.size() );
-   deviceInfo.ppEnabledExtensionNames = _extensions.data();
+   deviceInfo.enabledExtensionCount   = static_cast<uint32_t>( m_extensions.size() );
+   deviceInfo.ppEnabledExtensionNames = m_extensions.data();
    deviceInfo.pEnabledFeatures        = &deviceFeatures;
 
-   VkResult result = vkCreateDevice( _physDevice, &deviceInfo, nullptr, &_vkDevice );
+   VkResult result = vkCreateDevice( m_physDevice, &deviceInfo, nullptr, &m_vkDevice );
    CYDASSERT( result == VK_SUCCESS && "VEDevice: Could not create logical device" );
 }
 
 void Device::_fetchQueues()
 {
-   for( QueueFamily& queueFamily : _queueFamilies )
+   for( QueueFamily& queueFamily : m_queueFamilies )
    {
       auto& queues = queueFamily.queues;
       for( uint32_t i = 0; i < queues.size(); ++i )
       {
-         vkGetDeviceQueue( _vkDevice, queueFamily.index, i, &queues[i] );
+         vkGetDeviceQueue( m_vkDevice, queueFamily.index, i, &queues[i] );
       }
    }
 }
 
 void Device::_createCommandPools()
 {
-   for( const QueueFamily& queueFamily : _queueFamilies )
+   for( const QueueFamily& queueFamily : m_queueFamilies )
    {
-      _commandPools.push_back( std::make_unique<CommandPool>(
+      m_commandPools.push_back( std::make_unique<CommandPool>(
           *this, queueFamily.index, queueFamily.type, queueFamily.supportsPresent ) );
    }
 }
 
-void Device::_createDescriptorPool() { _descPool = std::make_unique<DescriptorPool>( *this ); }
+void Device::_createDescriptorPool() { m_descPool = std::make_unique<DescriptorPool>( *this ); }
 
 // =================================================================================================
 // Command buffers
@@ -166,12 +166,12 @@ CommandBuffer* Device::createCommandBuffer( cyd::QueueUsageFlag usage, bool pres
 
    // Attempting to find an adequate type
    const auto it = std::find_if(
-       _commandPools.begin(),
-       _commandPools.end(),
+       m_commandPools.begin(),
+       m_commandPools.end(),
        [usage, presentable]( const std::unique_ptr<CommandPool>& pool ) {
           return ( usage & pool->getType() ) && !( presentable && !pool->supportsPresentation() );
        } );
-   if( it != _commandPools.end() )
+   if( it != m_commandPools.end() )
    {
       // Found an adequate command pool
       cmdBuffer = ( *it )->createCommandBuffer();
@@ -188,13 +188,13 @@ Device::_createBuffer( size_t size, cyd::BufferUsageFlag usage, cyd::MemoryTypeF
 {
    // Check to see if we have a free spot for a buffer.
    auto it = std::find_if(
-       _buffers.rbegin(), _buffers.rend(), []( Buffer& buffer ) { return !buffer.inUse(); } );
+       m_buffers.rbegin(), m_buffers.rend(), []( Buffer& buffer ) { return !buffer.inUse(); } );
 
-   if( it != _buffers.rend() )
+   if( it != m_buffers.rend() )
    {
       // We found a buffer that can be replaced
       it->release();
-      it->seize( *this, size, usage, memoryType );
+      it->acquire( *this, size, usage, memoryType );
       return &*it;
    }
 
@@ -221,7 +221,7 @@ Buffer* Device::createIndexBuffer( size_t size )
 
 Buffer* Device::createUniformBuffer(
     size_t size,
-    const cyd::ShaderObjectInfo& info,
+    uint32_t shaderObjectIdx,
     const cyd::DescriptorSetLayoutInfo& layout )
 {
    Buffer* uniformBuffer = _createBuffer(
@@ -229,9 +229,9 @@ Buffer* Device::createUniformBuffer(
        cyd::BufferUsage::TRANSFER_DST | cyd::BufferUsage::UNIFORM,
        cyd::MemoryType::HOST_VISIBLE | cyd::MemoryType::HOST_COHERENT );
 
-   VkDescriptorSet descSet = _descPool->findOrAllocate( layout );
+   VkDescriptorSet descSet = m_descPool->findOrAllocate( layout );
 
-   uniformBuffer->updateDescriptorSet( info, descSet );
+   uniformBuffer->updateDescriptorSet( layout.shaderObjects[shaderObjectIdx], descSet );
 
    return uniformBuffer;
 }
@@ -246,22 +246,23 @@ Buffer* Device::createStagingBuffer( size_t size )
 
 Texture* Device::createTexture(
     const cyd::TextureDescription& desc,
-    const cyd::ShaderObjectInfo& info,
+    uint32_t shaderObjectIdx,
     const cyd::DescriptorSetLayoutInfo& layout )
 {
    // Check to see if we have a free spot for a texture.
-   auto it = std::find_if(
-       _textures.rbegin(), _textures.rend(), []( Texture& texture ) { return !texture.inUse(); } );
+   auto it = std::find_if( m_textures.rbegin(), m_textures.rend(), []( Texture& texture ) {
+      return !texture.inUse();
+   } );
 
-   if( it != _textures.rend() )
+   if( it != m_textures.rend() )
    {
       // We found a texture that can be replaced
       it->release();
-      it->seize( *this, desc );
+      it->acquire( *this, desc );
 
-      VkDescriptorSet descSet = _descPool->findOrAllocate( layout );
+      VkDescriptorSet descSet = m_descPool->findOrAllocate( layout );
 
-      it->updateDescriptorSet( info, descSet );
+      it->updateDescriptorSet( layout.shaderObjects[shaderObjectIdx], descSet );
 
       return &*it;
    }
@@ -275,13 +276,13 @@ Texture* Device::createTexture(
 
 Swapchain* Device::createSwapchain( const cyd::SwapchainInfo& scInfo )
 {
-   CYDASSERT( !_swapchain.get() && "Device: Swapchain already created" );
+   CYDASSERT( !m_swapchain.get() && "Device: Swapchain already created" );
 
-   if( !_swapchain.get() && supportsPresentation() )
+   if( !m_swapchain.get() && supportsPresentation() )
    {
-      _swapchain = std::make_unique<Swapchain>( *this, _surface, scInfo );
+      m_swapchain = std::make_unique<Swapchain>( *this, m_surface, scInfo );
    }
-   return _swapchain.get();
+   return m_swapchain.get();
 }
 
 // =================================================================================================
@@ -290,24 +291,24 @@ Swapchain* Device::createSwapchain( const cyd::SwapchainInfo& scInfo )
 void Device::cleanup()
 {
    // Cleaning up textures
-   for( auto& texture : _textures )
+   for( auto& texture : m_textures )
    {
       if( !texture.inUse() )
       {
          // Freeing texture's assigned descriptor set
-         _descPool->free( texture.getVKDescSet() );
+         m_descPool->free( texture.getVKDescSet() );
 
          texture.release();
       }
    }
 
    // Cleaning up device buffers
-   for( auto& buffer : _buffers )
+   for( auto& buffer : m_buffers )
    {
       if( !buffer.inUse() )
       {
          // Freeing buffer's assigned descriptor set
-         _descPool->free( buffer.getVKDescSet() );
+         m_descPool->free( buffer.getVKDescSet() );
 
          buffer.release();
       }
@@ -319,7 +320,7 @@ void Device::cleanup()
 
 const VkQueue* Device::getQueueFromFamily( uint32_t familyIndex ) const
 {
-   const std::vector<VkQueue>& vkQueues = _queueFamilies[familyIndex].queues;
+   const std::vector<VkQueue>& vkQueues = m_queueFamilies[familyIndex].queues;
    if( !vkQueues.empty() )
    {
       // TODO More dynamic queue returns, maybe based on currently used or an even distribution
@@ -333,12 +334,12 @@ const VkQueue* Device::getQueueFromUsage( cyd::QueueUsageFlag usage, bool suppor
     const
 {
    const auto it = std::find_if(
-       _queueFamilies.begin(),
-       _queueFamilies.end(),
+       m_queueFamilies.begin(),
+       m_queueFamilies.end(),
        [usage, supportsPresentation]( const QueueFamily& family ) {
           return ( family.type & usage ) && !( !family.supportsPresent == supportsPresentation );
        } );
-   if( it != _queueFamilies.end() )
+   if( it != m_queueFamilies.end() )
    {
       return getQueueFromFamily( it->index );
    }
@@ -349,7 +350,7 @@ const VkQueue* Device::getQueueFromUsage( cyd::QueueUsageFlag usage, bool suppor
 uint32_t Device::findMemoryType( uint32_t typeFilter, uint32_t properties ) const
 {
    VkPhysicalDeviceMemoryProperties memProperties;
-   vkGetPhysicalDeviceMemoryProperties( _physDevice, &memProperties );
+   vkGetPhysicalDeviceMemoryProperties( m_physDevice, &memProperties );
 
    for( uint32_t i = 0; i < memProperties.memoryTypeCount; i++ )
    {
@@ -365,11 +366,11 @@ uint32_t Device::findMemoryType( uint32_t typeFilter, uint32_t properties ) cons
 
 bool Device::supportsPresentation() const
 {
-   const auto it =
-       std::find_if( _queueFamilies.begin(), _queueFamilies.end(), []( const QueueFamily& family ) {
+   const auto it = std::find_if(
+       m_queueFamilies.begin(), m_queueFamilies.end(), []( const QueueFamily& family ) {
           return family.supportsPresent;
        } );
-   if( it != _queueFamilies.end() )
+   if( it != m_queueFamilies.end() )
    {
       return true;
    }
@@ -378,33 +379,33 @@ bool Device::supportsPresentation() const
 
 uint32_t Device::maxPushConstantsSize() const
 {
-   return _physProps ? _physProps->limits.maxPushConstantsSize : 0;
+   return m_physProps ? m_physProps->limits.maxPushConstantsSize : 0;
 }
 
 Device::~Device()
 {
-   vkDeviceWaitIdle( _vkDevice );
+   vkDeviceWaitIdle( m_vkDevice );
 
-   for( auto& buffer : _buffers )
+   for( auto& buffer : m_buffers )
    {
       buffer.release();
    }
 
-   for( auto& texture : _textures )
+   for( auto& texture : m_textures )
    {
       texture.release();
    }
 
-   _samplers.reset();
-   _pipelines.reset();
-   _renderPasses.reset();
-   _swapchain.reset();
-   _descPool.reset();
-   for( auto& commandPool : _commandPools )
+   m_samplers.reset();
+   m_pipelines.reset();
+   m_renderPasses.reset();
+   m_swapchain.reset();
+   m_descPool.reset();
+   for( auto& commandPool : m_commandPools )
    {
       commandPool.reset();
    }
 
-   vkDestroyDevice( _vkDevice, nullptr );
+   vkDestroyDevice( m_vkDevice, nullptr );
 }
 }

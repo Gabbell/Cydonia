@@ -19,8 +19,8 @@ static VkBool32 errorCallback(
 {
 #ifdef _WIN32
    // Setting up Windows console to use ANSI escape color sequences. No need to do that on Unix.
-   HANDLE hConsole = GetStdHandle( STD_OUTPUT_HANDLE );
-   DWORD mode      = 0;
+   const HANDLE hConsole = GetStdHandle( STD_OUTPUT_HANDLE );
+   DWORD mode            = 0;
    GetConsoleMode( hConsole, &mode );
    SetConsoleMode( hConsole, mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING );
 #endif
@@ -64,16 +64,14 @@ VkResult createDebugUtilsMessengerEXT(
     const VkAllocationCallbacks* pAllocator,
     VkDebugUtilsMessengerEXT* pDebugMessenger )
 {
-   auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+   const auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
        instance, "vkCreateDebugUtilsMessengerEXT" );
    if( func != nullptr )
    {
       return func( instance, pCreateInfo, pAllocator, pDebugMessenger );
    }
-   else
-   {
-      return VK_ERROR_EXTENSION_NOT_PRESENT;
-   }
+
+   return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
 void destroyDebugUtilsMessengerEXT(
@@ -81,7 +79,7 @@ void destroyDebugUtilsMessengerEXT(
     VkDebugUtilsMessengerEXT debugMessenger,
     const VkAllocationCallbacks* pAllocator )
 {
-   auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
+   const auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(
        instance, "vkDestroyDebugUtilsMessengerEXT" );
    if( func != nullptr )
    {
@@ -91,7 +89,7 @@ void destroyDebugUtilsMessengerEXT(
 
 namespace vk
 {
-Instance::Instance( const cyd::Window& window ) : _window( window )
+Instance::Instance( const cyd::Window& window ) : m_window( window )
 {
    _createVKInstance();
    _createDebugMessenger();
@@ -103,7 +101,8 @@ static bool checkValidationLayerSupport( const std::vector<const char*>& desired
    vkEnumerateInstanceLayerProperties( &layerCount, nullptr );
 
    std::vector<VkLayerProperties> supportedLayers( layerCount );
-   VkResult result = vkEnumerateInstanceLayerProperties( &layerCount, supportedLayers.data() );
+   const VkResult result =
+       vkEnumerateInstanceLayerProperties( &layerCount, supportedLayers.data() );
 
    CYDASSERT( result == VK_SUCCESS && "Instance: Could not enumerate instance layer properties" );
 
@@ -146,19 +145,19 @@ void Instance::_createVKInstance()
 
    // Use validation layers if this is a debug build
 #if defined( _DEBUG )
-   _layers.push_back( "VK_LAYER_LUNARG_standard_validation" );
-   CYDASSERT( checkValidationLayerSupport( _layers ) );
+   m_layers.push_back( "VK_LAYER_LUNARG_standard_validation" );
+   CYDASSERT( checkValidationLayerSupport( m_layers ) );
 #endif
 
-   const std::vector<const char*>& extensions = _window.getExtensionsFromGLFW();
+   const std::vector<const char*>& extensions = m_window.getExtensionsFromGLFW();
 
    // Instance create info
    VkInstanceCreateInfo instInfo    = {};
    instInfo.sType                   = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
    instInfo.flags                   = 0;
    instInfo.pApplicationInfo        = &appInfo;
-   instInfo.enabledLayerCount       = static_cast<uint32_t>( _layers.size() );
-   instInfo.ppEnabledLayerNames     = _layers.data();
+   instInfo.enabledLayerCount       = static_cast<uint32_t>( m_layers.size() );
+   instInfo.ppEnabledLayerNames     = m_layers.data();
    instInfo.enabledExtensionCount   = static_cast<uint32_t>( extensions.size() );
    instInfo.ppEnabledExtensionNames = extensions.data();
 
@@ -169,7 +168,7 @@ void Instance::_createVKInstance()
 #endif
 
    // Attempting to create an instance
-   VkResult instanceResult = vkCreateInstance( &instInfo, nullptr, &_vkInstance );
+   const VkResult instanceResult = vkCreateInstance( &instInfo, nullptr, &m_vkInstance );
    CYDASSERT( instanceResult == VK_SUCCESS && "Instance: Vulkan instance creation failed" );
 }
 
@@ -180,8 +179,8 @@ void Instance::_createDebugMessenger()
    VkDebugUtilsMessengerCreateInfoEXT debugInfo;
    populateDebugInfo( debugInfo );
 
-   VkResult debugResult =
-       createDebugUtilsMessengerEXT( _vkInstance, &debugInfo, nullptr, &_debugMessenger );
+   const VkResult debugResult =
+       createDebugUtilsMessengerEXT( m_vkInstance, &debugInfo, nullptr, &m_debugMessenger );
 
    CYDASSERT( debugResult == VK_SUCCESS && "Instance:: Debug utils messenger creation failed" );
 #endif
@@ -190,8 +189,8 @@ void Instance::_createDebugMessenger()
 Instance::~Instance()
 {
 #ifdef _DEBUG
-   destroyDebugUtilsMessengerEXT( _vkInstance, _debugMessenger, nullptr );
+   destroyDebugUtilsMessengerEXT( m_vkInstance, m_debugMessenger, nullptr );
 #endif
-   vkDestroyInstance( _vkInstance, nullptr );
+   vkDestroyInstance( m_vkInstance, nullptr );
 }
 }

@@ -10,7 +10,7 @@
 
 namespace vk
 {
-DescriptorPool::DescriptorPool( const Device& device ) : _device( device )
+DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
 {
    std::array<VkDescriptorPoolSize, 2> poolSizes = {};
 
@@ -28,41 +28,41 @@ DescriptorPool::DescriptorPool( const Device& device ) : _device( device )
    poolInfo.maxSets                    = 32;
 
    VkResult result =
-       vkCreateDescriptorPool( _device.getVKDevice(), &poolInfo, nullptr, &_vkDescPool );
+       vkCreateDescriptorPool( m_device.getVKDevice(), &poolInfo, nullptr, &m_vkDescPool );
 
    CYDASSERT( result == VK_SUCCESS && "CommandPool: Could not create descriptor pool" );
 }
 
 VkDescriptorSet DescriptorPool::findOrAllocate( const cyd::DescriptorSetLayoutInfo& layout )
 {
-   const auto descSetIt = _descSets.find( layout );
-   if( descSetIt != _descSets.end() )
+   const auto descSetIt = m_descSets.find( layout );
+   if( descSetIt != m_descSets.end() )
    {
       return descSetIt->second;
    }
 
-   const VkDescriptorSetLayout vkDescSetLayout = _device.getPipelineStash().findOrCreate( layout );
+   const VkDescriptorSetLayout vkDescSetLayout = m_device.getPipelineStash().findOrCreate( layout );
 
    VkDescriptorSetAllocateInfo allocInfo = {};
    allocInfo.sType                       = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-   allocInfo.descriptorPool              = _vkDescPool;
+   allocInfo.descriptorPool              = m_vkDescPool;
    allocInfo.descriptorSetCount          = 1;
    allocInfo.pSetLayouts                 = &vkDescSetLayout;
 
    VkDescriptorSet vkDescSet;
-   VkResult result = vkAllocateDescriptorSets( _device.getVKDevice(), &allocInfo, &vkDescSet );
+   VkResult result = vkAllocateDescriptorSets( m_device.getVKDevice(), &allocInfo, &vkDescSet );
    CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Failed to solo allocate descriptor set" );
 
-   return _descSets.insert( {layout, vkDescSet} ).first->second;
+   return m_descSets.insert( {layout, vkDescSet} ).first->second;
 }
 
 void DescriptorPool::free( const VkDescriptorSet& descSet )
 {
-   vkFreeDescriptorSets( _device.getVKDevice(), _vkDescPool, 1, &descSet );
+   vkFreeDescriptorSets( m_device.getVKDevice(), m_vkDescPool, 1, &descSet );
 }
 
 DescriptorPool::~DescriptorPool()
 {
-   vkDestroyDescriptorPool( _device.getVKDevice(), _vkDescPool, nullptr );
+   vkDestroyDescriptorPool( m_device.getVKDevice(), m_vkDescPool, nullptr );
 }
 }

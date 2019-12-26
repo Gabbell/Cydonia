@@ -169,15 +169,18 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Applications\Application.cpp" />
-    <ClCompile Include="Applications\VKApplication.cpp" />
     <ClCompile Include="Applications\VKSandbox.cpp" />
+    <ClCompile Include="ECS\Entities\Entity.cpp" />
+    <ClCompile Include="ECS\EntityManager.cpp" />
+    <ClCompile Include="ECS\Systems\RenderSystem.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
+    <ClCompile Include="Graphics\Handles\HandleManager.cpp" />
     <ClCompile Include="Graphics\RenderInterface.cpp" />
     <ClCompile Include="Graphics\Scene\Camera.cpp" />
     <ClCompile Include="Graphics\Scene\Frustum.cpp" />
-    <ClCompile Include="Graphics\Scene\Scene.cpp" />
+    <ClCompile Include="Graphics\Scene\SceneContext.cpp" />
     <ClCompile Include="Graphics\Scene\Transform.cpp" />
     <ClCompile Include="Graphics\Vulkan\Buffer.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
@@ -195,28 +198,39 @@
     <ClCompile Include="Graphics\Vulkan\Swapchain.cpp" />
     <ClCompile Include="Graphics\Vulkan\Texture.cpp" />
     <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
-    <ClCompile Include="Handles\HandleManager.cpp" />
     <ClCompile Include="HID\FreeCameraController.cpp" />
     <ClCompile Include="HID\InputInterpreter.cpp" />
     <ClCompile Include="Window\GLFWWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Applications\Application.h" />
-    <ClInclude Include="Applications\VKApplication.h" />
     <ClInclude Include="Applications\VKSandbox.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Common\Include.h" />
     <ClInclude Include="Common\Vulkan.h" />
+    <ClInclude Include="ECS\Components\BaseComponent.h" />
+    <ClInclude Include="ECS\Components\CameraComponent.h" />
+    <ClInclude Include="ECS\Components\ComponentPool.h" />
+    <ClInclude Include="ECS\Components\ComponentTypes.h" />
+    <ClInclude Include="ECS\Components\RenderableComponent.h" />
+    <ClInclude Include="ECS\Components\TransformComponent.h" />
+    <ClInclude Include="ECS\Entities\Archetype.h" />
+    <ClInclude Include="ECS\Entities\Entity.h" />
+    <ClInclude Include="ECS\EntityManager.h" />
+    <ClInclude Include="ECS\Systems\CommonSystem.h" />
+    <ClInclude Include="ECS\Systems\BaseSystem.h" />
+    <ClInclude Include="ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Graphics\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
     <ClInclude Include="Graphics\Buffer.h" />
     <ClInclude Include="Graphics\GraphicsTypes.h" />
+    <ClInclude Include="Graphics\Handles\Handle.h" />
+    <ClInclude Include="Graphics\Handles\HandleManager.h" />
     <ClInclude Include="Graphics\RenderInterface.h" />
     <ClInclude Include="Graphics\Scene\Camera.h" />
     <ClInclude Include="Graphics\Scene\Frustum.h" />
-    <ClInclude Include="Graphics\Scene\Scene.h" />
+    <ClInclude Include="Graphics\Scene\SceneContext.h" />
     <ClInclude Include="Graphics\Scene\Transform.h" />
-    <ClInclude Include="Graphics\Texture.h" />
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandPool.h" />
@@ -233,8 +247,6 @@
     <ClInclude Include="Graphics\Vulkan\Swapchain.h" />
     <ClInclude Include="Graphics\Vulkan\Texture.h" />
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
-    <ClInclude Include="Handles\Handle.h" />
-    <ClInclude Include="Handles\HandleManager.h" />
     <ClInclude Include="HID\Controller.h" />
     <ClInclude Include="HID\FreeCameraController.h" />
     <ClInclude Include="HID\InputInterpreter.h" />
@@ -250,20 +262,28 @@
     <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin32
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin32
 $(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <RunCodeAnalysis>true</RunCodeAnalysis>
+    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
   </PropertyGroup>
 </Project>

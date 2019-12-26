@@ -34,19 +34,19 @@ class Shader final
       UNKNOWN
    };
 
-   Type getType() const { return _type; }
-   const VkShaderModule& getModule() const { return _vkShader; }
+   Type getType() const { return m_type; }
+   const VkShaderModule& getModule() const { return m_vkShader; }
 
   private:
    void _readShaderFile();
    void _createShaderModule();
 
-   const Device& _device;
+   const Device& m_device;
 
-   std::vector<char> _byteCode;
-   std::string _shaderPath;
-   Type _type;
+   std::vector<char> m_byteCode;
+   std::string m_shaderPath;
+   Type m_type;
 
-   VkShaderModule _vkShader;
+   VkShaderModule m_vkShader;
 };
 }

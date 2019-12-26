@@ -6,10 +6,12 @@
 #include <HID/InputInterpreter.h>
 
 #include <Graphics/RenderInterface.h>
-#include <Graphics/Scene/Scene.h>
+#include <Graphics/Scene/SceneContext.h>
 #include <Graphics/Scene/Camera.h>
 
-#include <Handles/Handle.h>
+#include <Graphics/Handles/Handle.h>
+
+#include <ECS/EntityManager.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtx/transform.hpp>
@@ -25,12 +27,17 @@ struct UBO
 
 namespace cyd
 {
-static constexpr char TITLE[] = "Vulkan Sandbox";
 static PipelineInfo pipInfo;
 static PipelineLayoutInfo pipLayoutInfo;
 
-VKSandbox::VKSandbox( uint32_t width, uint32_t height ) : VKApplication( width, height, TITLE )
+VKSandbox::VKSandbox() {}
+
+bool VKSandbox::init( uint32_t width, uint32_t height, const std::string& title )
 {
+   Application::init( width, height, title );
+
+   initRenderBackend<VK>( *m_window );
+
    // Creating pipeline
    Attachment colorPresentation = {};
    colorPresentation.format     = PixelFormat::BGRA8_UNORM;
@@ -65,33 +72,35 @@ VKSandbox::VKSandbox( uint32_t width, uint32_t height ) : VKApplication( width, 
 
    pipInfo.renderPass = renderPassInfo;
    pipInfo.drawPrim   = DrawPrimitive::TRIANGLES;
-   pipInfo.extent     = _window->getExtent();
+   pipInfo.extent     = m_window->getExtent();
    pipInfo.polyMode   = PolygonMode::FILL;
-   pipInfo.shaders    = {"defaultTex_vert", "defaultTex_frag"};
+   pipInfo.shaders    = { "defaultTex_vert", "defaultTex_frag" };
    pipInfo.pipLayout  = pipLayoutInfo;
 
-   // Making a controller for the scene's camera. Passing the camera through here is a bit awkward
-   _controller = std::make_unique<FreeCameraController>( _scene->getCamera() );
+   // Making a controller for the scene's camera. Passing the camera through here is a bit
+   // awkward
+   m_controller = std::make_unique<FreeCameraController>( m_sceneContext->getCamera() );
 
-   _inputInterpreter->addController( *_controller );
+   m_inputInterpreter->addController( *m_controller );
+
+   return true;
 }
 
 void VKSandbox::preLoop()
 {
-   CmdListHandle transferList = createCommandList( QueueUsage::TRANSFER );
+   const CmdListHandle transferList = createCommandList( QueueUsage::TRANSFER );
 
-   _uboBuffer = createUniformBuffer(
-       sizeof( UBO ), pipLayoutInfo.descSetLayout.shaderObjects[0], pipLayoutInfo.descSetLayout );
+   m_uboBuffer = createUniformBuffer( sizeof( UBO ), 0, pipLayoutInfo.descSetLayout );
 
    // Triangle
    const std::vector<Vertex> vertices = {
-       {{-0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}},
-       {{0.0f, -0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}},
-       {{0.5f, 0.5f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}}};
+       { { -0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 1.0f, 0.0f, 0.0f } },
+       { { 0.0f, -0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 0.0f, 0.0f } },
+       { { 0.5f, 0.5f, 0.0f }, { 1.0f, 0.0f, 0.0f, 1.0f }, { 0.0f, 1.0f, 0.0f } } };
 
    // Placeholder texture
-   std::array<uint32_t, 4> texData = {0xFF0000FF, 0xFF00FF00, 0xFFFF0000, 0xFFFFFFFF};
-   size_t texSize                  = sizeof( texData[0] ) * texData.size();
+   std::array<uint32_t, 4> texData = { 0xFF0000FF, 0xFF00FF00, 0xFFFF0000, 0xFFFFFFFF };
+   const size_t texSize            = sizeof( texData[0] ) * texData.size();
 
    TextureDescription texDesc;
    texDesc.size   = texSize;
@@ -103,15 +112,14 @@ void VKSandbox::preLoop()
 
    startRecordingCommandList( transferList );
 
-   _vertexBuffer =
-       createVertexBuffer( transferList, vertices.size(), sizeof( Vertex ), vertices.data() );
-
-   _texture = createTexture(
+   m_vertexBuffer = createVertexBuffer(
        transferList,
-       texDesc,
-       pipLayoutInfo.descSetLayout.shaderObjects[1],
-       pipLayoutInfo.descSetLayout,
-       texData.data() );
+       static_cast<uint32_t>( vertices.size() ),
+       static_cast<uint32_t>( sizeof( Vertex ) ),
+       vertices.data() );
+
+   m_texture =
+       createTexture( transferList, texDesc, 1, pipLayoutInfo.descSetLayout, texData.data() );
 
    endRecordingCommandList( transferList );
 
@@ -120,27 +128,27 @@ void VKSandbox::preLoop()
    destroyCommandList( transferList );
 }
 
-void VKSandbox::drawNextFrame( double )
+void VKSandbox::drawFrame( double )
 {
    // Generating MVP
    UBO mvp;
    mvp.model = glm::scale( glm::vec3( 1.0f, 1.0f, 1.0f ) );
-   mvp.view  = _scene->getCamera().getViewMatrix();
-   mvp.proj  = _scene->getCamera().getProjectionMatrix();
+   mvp.view  = m_sceneContext->getCamera().getViewMatrix();
+   mvp.proj  = m_sceneContext->getCamera().getProjectionMatrix();
 
-   mapUniformBufferMemory( _uboBuffer, &mvp );
+   mapUniformBufferMemory( m_uboBuffer, &mvp );
 
-   CmdListHandle cmdList = createCommandList( QueueUsage::GRAPHICS, true );
+   const CmdListHandle cmdList = createCommandList( QueueUsage::GRAPHICS, true );
 
    startRecordingCommandList( cmdList );
 
    bindPipeline( cmdList, pipInfo );
-   setViewport( cmdList, {{0.0f, 0.0f}, _window->getExtent()} );
-   bindTexture( cmdList ,_texture );
-   bindVertexBuffer( cmdList, _vertexBuffer );
-   bindUniformBuffer( cmdList, _uboBuffer );
+   setViewport( cmdList, { { 0.0f, 0.0f }, m_window->getExtent() } );
+   bindTexture( cmdList, m_texture );
+   bindVertexBuffer( cmdList, m_vertexBuffer );
+   bindUniformBuffer( cmdList, m_uboBuffer );
    beginRenderPass( cmdList );
-   drawFrame( cmdList, 3 );
+   drawVertices( cmdList, 3 );
    endRenderPass( cmdList );
 
    endRecordingCommandList( cmdList );
@@ -153,7 +161,7 @@ void VKSandbox::drawNextFrame( double )
    renderBackendCleanup();
 }
 
-void VKSandbox::postLoop() { destroyVertexBuffer( _vertexBuffer ); }
+void VKSandbox::postLoop() { destroyVertexBuffer( m_vertexBuffer ); }
 
-VKSandbox::~VKSandbox() {}
+VKSandbox::~VKSandbox() = default;
 }

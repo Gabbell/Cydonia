@@ -18,9 +18,9 @@ static constexpr char DEFAULT_FRAG[] = "default_frag.spv";
 
 namespace vk
 {
-PipelineStash::PipelineStash( const Device& device ) : _device( device )
+PipelineStash::PipelineStash( const Device& device ) : m_device( device )
 {
-   _shaderStash = std::make_unique<ShaderStash>( _device );
+   m_shaderStash = std::make_unique<ShaderStash>( m_device );
 }
 
 static VkShaderStageFlagBits shaderTypeToVKShaderStage( Shader::Type shaderType )
@@ -41,8 +41,8 @@ static VkShaderStageFlagBits shaderTypeToVKShaderStage( Shader::Type shaderType 
 const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSetLayoutInfo& info )
 {
    // Creating the descriptor set layout
-   const auto layoutIt = _descSetLayouts.find( info );
-   if( layoutIt != _descSetLayouts.end() )
+   const auto layoutIt = m_descSetLayouts.find( info );
+   if( layoutIt != m_descSetLayouts.end() )
    {
       return layoutIt->second;
    }
@@ -82,16 +82,16 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
 
    VkDescriptorSetLayout descSetLayout;
    VkResult result =
-       vkCreateDescriptorSetLayout( _device.getVKDevice(), &layoutInfo, nullptr, &descSetLayout );
+       vkCreateDescriptorSetLayout( m_device.getVKDevice(), &layoutInfo, nullptr, &descSetLayout );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create descriptor set layout" );
 
-   return _descSetLayouts.insert( {info, descSetLayout} ).first->second;
+   return m_descSetLayouts.insert( { info, descSetLayout } ).first->second;
 }
 
 const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInfo& info )
 {
-   const auto layoutIt = _pipLayouts.find( info );
-   if( layoutIt != _pipLayouts.end() )
+   const auto layoutIt = m_pipLayouts.find( info );
+   if( layoutIt != m_pipLayouts.end() )
    {
       return layoutIt->second;
    }
@@ -102,8 +102,8 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
    {
       VkPushConstantRange vkRange = {};
       vkRange.stageFlags = TypeConversions::cydShaderStagesToVkShaderStages( range.stages );
-      vkRange.offset     = range.offset;
-      vkRange.size       = range.size;
+      vkRange.offset     = static_cast<uint32_t>( range.offset );
+      vkRange.size       = static_cast<uint32_t>( range.size );
 
       vkRanges.push_back( std::move( vkRange ) );
    }
@@ -123,17 +123,17 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
 
    VkPipelineLayout pipLayout;
    VkResult result =
-       vkCreatePipelineLayout( _device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
+       vkCreatePipelineLayout( m_device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create pipeline layout" );
 
-   return _pipLayouts.insert( {info, pipLayout} ).first->second;
+   return m_pipLayouts.insert( { info, pipLayout } ).first->second;
 }
 
 const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
 {
    // Attempting to find pipeline
-   const auto pipIt = _pipelines.find( info );
-   if( pipIt != _pipelines.end() )
+   const auto pipIt = m_pipelines.find( info );
+   if( pipIt != m_pipelines.end() )
    {
       return pipIt->second;
    }
@@ -145,7 +145,7 @@ const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
    shaderCreateInfos.reserve( info.shaders.size() );
    for( const std::string& shaderName : info.shaders )
    {
-      const Shader* shader = _shaderStash->getShader( shaderName );
+      const Shader* shader = m_shaderStash->getShader( shaderName );
 
       VkPipelineShaderStageCreateInfo stageInfo = {};
       stageInfo.sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -158,7 +158,7 @@ const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
    }
 
    // Fetching render pass
-   const VkRenderPass renderPass = _device.getRenderPassStash().findOrCreate( info.renderPass );
+   const VkRenderPass renderPass = m_device.getRenderPassStash().findOrCreate( info.renderPass );
 
    // Vertex input description
    // TODO Instancing
@@ -217,8 +217,8 @@ const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
    viewport.maxDepth   = 1.0f;
 
    VkRect2D scissor = {};
-   scissor.offset   = {0, 0};
-   scissor.extent   = {info.extent.width, info.extent.height};
+   scissor.offset   = { 0, 0 };
+   scissor.extent   = { info.extent.width, info.extent.height };
 
    VkPipelineViewportStateCreateInfo viewportState = {};
    viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -265,7 +265,7 @@ const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
    const VkPipelineLayout pipLayout = findOrCreate( info.pipLayout );
 
    // Dynamic state
-   std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT};
+   std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT };
 
    VkPipelineDynamicStateCreateInfo dynamicCreateInfo = {};
    dynamicCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -307,25 +307,25 @@ const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
 
    VkPipeline pipeline;
    result = vkCreateGraphicsPipelines(
-       _device.getVKDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline );
+       m_device.getVKDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create default pipeline" );
 
-   return _pipelines.insert( {info, pipeline} ).first->second;
+   return m_pipelines.insert( { info, pipeline } ).first->second;
 }
 
 PipelineStash::~PipelineStash()
 {
-   for( const auto& pipeline : _pipelines )
+   for( const auto& pipeline : m_pipelines )
    {
-      vkDestroyPipeline( _device.getVKDevice(), pipeline.second, nullptr );
+      vkDestroyPipeline( m_device.getVKDevice(), pipeline.second, nullptr );
    }
-   for( const auto& pipLayout : _pipLayouts )
+   for( const auto& pipLayout : m_pipLayouts )
    {
-      vkDestroyPipelineLayout( _device.getVKDevice(), pipLayout.second, nullptr );
+      vkDestroyPipelineLayout( m_device.getVKDevice(), pipLayout.second, nullptr );
    }
-   for( const auto& descSetLayout : _descSetLayouts )
+   for( const auto& descSetLayout : m_descSetLayouts )
    {
-      vkDestroyDescriptorSetLayout( _device.getVKDevice(), descSetLayout.second, nullptr );
+      vkDestroyDescriptorSetLayout( m_device.getVKDevice(), descSetLayout.second, nullptr );
    }
 }
 }
