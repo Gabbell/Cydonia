@@ -9,16 +9,16 @@
 
 namespace cyd
 {
-class TransformComponent final : public BaseComponent
+struct TransformComponent final : BaseComponent
 {
-  public:
    TransformComponent() = default;
-   NON_COPIABLE( TransformComponent );
+   COPIABLE( TransformComponent );
    virtual ~TransformComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::TRANSFORM;
 
-   bool init( const void* pDescription ) override;
+   bool init() override { return true; };
+   void uninit() override{};
 
    glm::vec3 position = glm::vec3( 0.0f );
    glm::vec3 scaling  = glm::vec3( 1.0f );

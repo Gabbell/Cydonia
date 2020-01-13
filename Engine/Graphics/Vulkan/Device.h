@@ -3,7 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Handles/HandleManager.h>
+#include <Handles/HandleManager.h>
 
 #include <memory>
 #include <vector>

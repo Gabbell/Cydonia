@@ -44,7 +44,5 @@
    {                                      \
       sizeof( EXPR );                     \
       sizeof( RET );                      \
-   }
-while( 0 )
-   ;
+   } while( 0 );
 #endif

@@ -4,7 +4,7 @@
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
-#include <Graphics/Handles/HandleManager.h>
+#include <Handles/HandleManager.h>
 
 #include <cstdint>
 #include <vector>

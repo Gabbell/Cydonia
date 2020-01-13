@@ -2,10 +2,7 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Systems/BaseSystem.h>
-
 #include <ECS/Entities/Entity.h>
-
 #include <ECS/Components/ComponentTypes.h>
 
 #include <vector>
@@ -15,7 +12,7 @@
 // ================================================================================================
 namespace cyd
 {
-class EntityManager;
+class Entity;
 class BaseComponent;
 }
 
@@ -24,84 +21,76 @@ class BaseComponent;
 // ================================================================================================
 namespace cyd
 {
-template <class... ComponentTypes>
+class BaseSystem
+{
+  public:
+   NON_COPIABLE( BaseSystem );
+   virtual ~BaseSystem() = default;
+
+   virtual bool init()                 = 0;
+   virtual void tick( double deltaMs ) = 0;
+
+   virtual void onEntityAssigned( const Entity& entity )   = 0;
+   virtual void onEntityUnassigned( const Entity& entity ) = 0;
+
+  protected:
+   BaseSystem() = default;
+};
+
+template <class... Components>
 class CommonSystem : public BaseSystem
 {
   public:
-   explicit CommonSystem( const EntityManager& entityManager ) : m_entityManager( entityManager ) {}
    NON_COPIABLE( CommonSystem );
    virtual ~CommonSystem() = default;
 
-   void onEntityCreate( const Entity& entity ) override final;
-   void onEntityDestroy( const Entity& entity ) override final;
+   void onEntityAssigned( const Entity& entity ) override final
+   {
+      Archetype arch;
+      size_t matchingArchs = 0;
+      for( const auto& compPair : entity.getComponentsMap() )
+      {
+         if( processEntityArchetype<0, Components...>( compPair.first, compPair.second, arch ) )
+         {
+            matchingArchs++;
+            if( matchingArchs == sizeof...( Components ) )
+            {
+               m_archetypes.push_back( std::move( arch ) );
+               break;
+            }
+         }
+      }
+   }
+
+   void onEntityUnassigned( const Entity& entity ) override final
+   {
+      //
+   }
 
   protected:
-   using CompTuple = std::tuple<std::add_pointer_t<ComponentTypes>...>;
+   CommonSystem() = default;
 
-   // All the components of the entities this system manages
-   std::vector<CompTuple> m_components;
+   using Archetype = std::tuple<std::add_pointer_t<Components>...>;
+   std::vector<Archetype> m_archetypes;
 
   private:
    template <size_t INDEX, class Component, class... Args>
    bool
-   processEntityComponent( ComponentType type, BaseComponent* pComponent, CompTuple& tupleToFill );
+   processEntityArchetype( ComponentType type, BaseComponent* pComponent, Archetype& archToFill )
+   {
+      if( Component::TYPE == type )
+      {
+         std::get<INDEX>( archToFill ) = static_cast<Component*>( pComponent );
+         return true;
+      }
+
+      return processEntityArchetype<INDEX + 1, Args...>( type, pComponent, archToFill );
+   }
 
    template <size_t INDEX>
-   bool
-   processEntityComponent( ComponentType type, BaseComponent* pComponent, CompTuple& tupleToFill );
-
-   const EntityManager& m_entityManager;
+   bool processEntityArchetype( ComponentType, BaseComponent*, Archetype& )
+   {
+      return false;
+   }
 };
-
-template <class... ComponentTypes>
-template <size_t INDEX, class Component, class... Args>
-bool CommonSystem<ComponentTypes...>::processEntityComponent(
-    ComponentType type,
-    BaseComponent* pComponent,
-    CompTuple& tupleToFill )
-{
-   if( Component::TYPE == type )
-   {
-      std::get<INDEX>( tupleToFill ) = static_cast<Component*>( pComponent );
-      return true;
-   }
-
-   return processEntityComponent<INDEX + 1, Args...>( type, pComponent, tupleToFill );
-}
-
-template <class... ComponentTypes>
-template <size_t INDEX>
-bool CommonSystem<ComponentTypes...>::processEntityComponent(
-    ComponentType,
-    BaseComponent*,
-    CompTuple& )
-{
-   return false;
-}
-
-template <class... ComponentTypes>
-void CommonSystem<ComponentTypes...>::onEntityCreate( const Entity& entity )
-{
-   CompTuple compTuple;
-   size_t matchingComps = 0;
-   for( const auto& compPair : entity.getComponentsMap() )
-   {
-      if( processEntityComponent<0, ComponentTypes...>(
-              compPair.first, compPair.second, compTuple ) )
-      {
-         matchingComps++;
-         if( matchingComps == sizeof...( ComponentTypes ) )
-         {
-            m_components.push_back( std::move( compTuple ) );
-            break;
-         }
-      }
-   }
-}
-
-template <class... ComponentTypes>
-void CommonSystem<ComponentTypes...>::onEntityDestroy( const Entity& entity )
-{
-   //
-}
 }

@@ -1,9 +1,11 @@
 #pragma once
 
 #include <Common/Include.h>
+#include <Common/Assert.h>
 
 #include <ECS/Components/ComponentTypes.h>
 
+#include <limits>
 #include <unordered_map>
 
 // ================================================================================================
@@ -27,38 +29,58 @@ class Entity final
 
   public:
    Entity() = default;
-   explicit Entity( EntityHandle handle ) : m_handle( handle ) {}
    MOVABLE( Entity );
    ~Entity() = default;
 
-   void addComponent( ComponentType type, BaseComponent* pComponent );
-   void removeComponent( ComponentType type );
+   template <class Component>
+   void addComponent( Component* pComponent )
+   {
+      static_assert(
+          (std::is_base_of_v<BaseComponent, Component>),
+          "Attempting to add an invalid component to an entity" );
 
-   // Retrieve the entity's handle
-   EntityHandle getHandle() const { return m_handle; }
+      auto it = m_components.find( Component::TYPE );
+
+      if( it != m_components.end() )
+      {
+         // Component has already been assigned to this entity
+         CYDASSERT_AND_RETURN( "Entity: Cannot overwrite components" );
+      }
+
+      m_components[Component::TYPE] = pComponent;
+   }
+
+   template <class Component>
+   void removeComponent()
+   {
+      static_assert(
+          (std::is_base_of_v<BaseComponent, Component>),
+          "Attempting to remove an invalid component from an entity" );
+
+      m_components.erase( Component::TYPE );
+   }
 
    const ComponentsMap& getComponentsMap() const { return m_components; }
 
    template <class Component>
-   Component* getComponent() const;
+   Component* getComponent() const
+   {
+      static_assert(
+          (std::is_base_of_v<BaseComponent, Component>),
+          "Attempting to get an invalid component from an entity" );
 
-   static constexpr EntityHandle INVALID_HANDLE = 0;
+      auto it = m_components.find( Component::TYPE );
+      if( it != m_components.end() )
+      {
+         return it->second;
+      }
+      return nullptr;
+   }
+
+   static constexpr EntityHandle INVALID_HANDLE = std::numeric_limits<size_t>::max();
 
   private:
    // All components associated (that were added) to this entity.
    ComponentsMap m_components;
-
-   EntityHandle m_handle = INVALID_HANDLE;
 };
-
-template <class Component>
-Component* Entity::getComponent() const
-{
-   auto it = m_components.find( Component::TYPE );
-   if( it != m_components.end() )
-   {
-      return it->second;
-   }
-   return nullptr;
-}
 }

@@ -4,7 +4,7 @@
 
 #include <Common/Include.h>
 
-#include <Graphics/Handles/Handle.h>
+#include <Handles/Handle.h>
 
 // =================================================================================================
 // Forwards

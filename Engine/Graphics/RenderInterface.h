@@ -2,9 +2,10 @@
 
 #include <Graphics/GraphicsTypes.h>
 
-#include <Graphics/Handles/Handle.h>
+#include <Handles/Handle.h>
 
-// GPU Rendering Interface
+// =================================================================================================
+// Graphics Rendering Interface Subsystem
 // =================================================================================================
 namespace cyd
 {
@@ -17,35 +18,32 @@ enum API
    GL
 };
 
+namespace GRIS
+{
 // Initialization
-// =================================================================================================
 template <API>
-void initRenderBackend( const Window& window );
-void uninitRenderBackend();
-void renderBackendCleanup();  // Should be called every frame
+void InitRenderBackend( const Window& window );
+void UninitRenderBackend();
+void RenderBackendCleanup();  // Should be called every frame
 
 // Command Buffers/Lists
-// =================================================================================================
-CmdListHandle createCommandList( QueueUsageFlag usage, bool presentable = false );
+CmdListHandle CreateCommandList( QueueUsageFlag usage, bool presentable = false );
 
-void startRecordingCommandList( CmdListHandle cmdList );
-void endRecordingCommandList( CmdListHandle cmdList );
-void submitCommandList( CmdListHandle cmdList );
+void StartRecordingCommandList( CmdListHandle cmdList );
+void EndRecordingCommandList( CmdListHandle cmdList );
+void SubmitCommandList( CmdListHandle cmdList );
 
-void waitOnCommandList( CmdListHandle cmdList );
-void destroyCommandList( CmdListHandle cmdList );
+void WaitOnCommandList( CmdListHandle cmdList );
+void DestroyCommandList( CmdListHandle cmdList );
 
 // Pipeline Specification
-// =================================================================================================
-
-void bindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo );
-void bindTexture( CmdListHandle cmdList, TextureHandle texHandle );
-void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
-void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );
-void bindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle );
-void setViewport( CmdListHandle cmdList, const Rectangle& viewport );
-
-void updateConstantBuffer(
+void BindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo );
+void BindTexture( CmdListHandle cmdList, TextureHandle texHandle );
+void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
+void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );
+void BindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle );
+void SetViewport( CmdListHandle cmdList, const Rectangle& viewport );
+void UpdateConstantBuffer(
     CmdListHandle cmdList,
     ShaderStageFlag stages,
     size_t offset,
@@ -53,37 +51,36 @@ void updateConstantBuffer(
     const void* pData );
 
 // Resources
-// =================================================================================================
-TextureHandle createTexture(
+TextureHandle CreateTexture(
     CmdListHandle transferList,
     const TextureDescription& desc,
     uint32_t shaderObjectIdx,
     const DescriptorSetLayoutInfo& layout,
     const void* pTexels );
 
-VertexBufferHandle createVertexBuffer(
+VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
     uint32_t count,
     uint32_t stride,
     const void* pVertices );
 
 IndexBufferHandle
-createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices );
+CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices );
 
 UniformBufferHandle
-createUniformBuffer( size_t size, uint32_t shaderObjectIdx, const DescriptorSetLayoutInfo& layout );
-void mapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* pData );
+CreateUniformBuffer( size_t size, uint32_t shaderObjectIdx, const DescriptorSetLayoutInfo& layout );
+void MapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* pData );
 
-void destroyTexture( TextureHandle texHandle );
-void destroyVertexBuffer( VertexBufferHandle bufferHandle );
-void destroyIndexBuffer( IndexBufferHandle bufferHandle );
-void destroyUniformBuffer( UniformBufferHandle bufferHandle );
+void DestroyTexture( TextureHandle texHandle );
+void DestroyVertexBuffer( VertexBufferHandle bufferHandle );
+void DestroyIndexBuffer( IndexBufferHandle bufferHandle );
+void DestroyUniformBuffer( UniformBufferHandle bufferHandle );
 
 // Drawing
-// =================================================================================================
-void beginRenderPass( CmdListHandle cmdList );
-void endRenderPass( CmdListHandle cmdList );
-void drawVertices( CmdListHandle cmdList, uint32_t vertexCount );
-void drawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount );
-void presentFrame();
+void BeginRenderPass( CmdListHandle cmdList );
+void EndRenderPass( CmdListHandle cmdList );
+void DrawVertices( CmdListHandle cmdList, uint32_t vertexCount );
+void DrawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount );
+void PresentFrame();
+}
 }

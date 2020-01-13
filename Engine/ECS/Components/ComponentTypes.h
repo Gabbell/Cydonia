@@ -6,6 +6,10 @@ namespace cyd
 enum class ComponentType
 {
    TRANSFORM = 0,
-   RENDERABLE
+   RENDERABLE,
+   LENS,
+   FREECONTROLLER,
+
+   COUNT // Keep at the end
 };
 }

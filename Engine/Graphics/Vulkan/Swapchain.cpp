@@ -45,7 +45,7 @@ static VkExtent2D chooseExtent( const cyd::Extent& extent, const VkSurfaceCapabi
    else
    {
       // Use the window extent
-      VkExtent2D actualExtent = {extent.width, extent.height};
+      VkExtent2D actualExtent = { extent.width, extent.height };
 
       actualExtent.width =
           std::clamp( actualExtent.width, caps.minImageExtent.width, caps.maxImageExtent.width );
@@ -273,10 +273,12 @@ void Swapchain::_createSyncObjects()
 
    for( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
    {
-      if( vkCreateSemaphore( m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_availableSems[i] ) !=
+      if( vkCreateSemaphore(
+              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_availableSems[i] ) !=
               VK_SUCCESS ||
           vkCreateSemaphore(
-              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] ) != VK_SUCCESS )
+              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] ) !=
+              VK_SUCCESS )
       {
          CYDASSERT( !"Swapchain: Could not create sync objects" );
       }
@@ -323,7 +325,7 @@ void Swapchain::initFramebuffers( const cyd::RenderPassInfo& info, const VkRende
       }
    }
 }
-  
+
 void Swapchain::acquireImage( const CommandBuffer* buffer )
 {
    vkAcquireNextImageKHR(
@@ -342,8 +344,8 @@ void Swapchain::present()
    const VkQueue* presentQueue = m_device.getQueueFromUsage( cyd::QueueUsage::GRAPHICS, true );
    if( presentQueue )
    {
-      VkSwapchainKHR swapChains[]    = {m_vkSwapchain};
-      VkSemaphore signalSemaphores[] = {m_renderDoneSems[m_currentFrame]};
+      VkSwapchainKHR swapChains[]    = { m_vkSwapchain };
+      VkSemaphore signalSemaphores[] = { m_renderDoneSems[m_currentFrame] };
 
       VkPresentInfoKHR presentInfo   = {};
       presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

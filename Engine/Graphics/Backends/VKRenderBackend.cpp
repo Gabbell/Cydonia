@@ -1,11 +1,9 @@
 #include <Graphics/Backends/VKRenderBackend.h>
 
-#include <Common/Assert.h>
-
 #include <Window/GLFWWindow.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Handles/HandleManager.h>
+#include <Handles/HandleManager.h>
 #include <Graphics/Vulkan/Instance.h>
 #include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/DeviceHerder.h>
@@ -28,7 +26,9 @@ class VKRenderBackendImp
 {
   public:
    VKRenderBackendImp( const Window& window )
-       : m_instance( window ), m_surface( window, m_instance ), m_devices( window, m_instance, m_surface )
+       : m_instance( window ),
+         m_surface( window, m_instance ),
+         m_devices( window, m_instance, m_surface )
    {
       SwapchainInfo scInfo = {};
       scInfo.extent        = window.getExtent();
