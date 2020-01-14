@@ -16,7 +16,7 @@ static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 namespace vk
 {
 Swapchain::Swapchain( Device& device, const Surface& surface, const cyd::SwapchainInfo& info )
-    : _device( device ), _surface( surface )
+    : m_device( device ), m_surface( surface )
 {
    _createSwapchain( info );
    _createImageViews();
@@ -45,7 +45,7 @@ static VkExtent2D chooseExtent( const cyd::Extent& extent, const VkSurfaceCapabi
    else
    {
       // Use the window extent
-      VkExtent2D actualExtent = {extent.width, extent.height};
+      VkExtent2D actualExtent = { extent.width, extent.height };
 
       actualExtent.width =
           std::clamp( actualExtent.width, caps.minImageExtent.width, caps.maxImageExtent.width );
@@ -139,27 +139,27 @@ static VkPresentModeKHR choosePresentMode(
 
 void Swapchain::_createSwapchain( const cyd::SwapchainInfo& info )
 {
-   const VkDevice& vkDevice           = _device.getVKDevice();
-   const VkPhysicalDevice& physDevice = _device.getPhysicalDevice();
-   const VkSurfaceKHR& vkSurface      = _surface.getVKSurface();
+   const VkDevice& vkDevice           = m_device.getVKDevice();
+   const VkPhysicalDevice& physDevice = m_device.getPhysicalDevice();
+   const VkSurfaceKHR& vkSurface      = m_surface.getVKSurface();
 
    VkSurfaceCapabilitiesKHR caps;
    vkGetPhysicalDeviceSurfaceCapabilitiesKHR( physDevice, vkSurface, &caps );
 
-   _surfaceFormat = std::make_unique<VkSurfaceFormatKHR>(
+   m_surfaceFormat = std::make_unique<VkSurfaceFormatKHR>(
        chooseFormat( info.format, info.space, physDevice, vkSurface ) );
-   _extent      = std::make_unique<VkExtent2D>( chooseExtent( info.extent, caps ) );
-   _imageCount  = chooseImageCount( caps );
-   _presentMode = choosePresentMode( info.mode, physDevice, vkSurface );
+   m_extent      = std::make_unique<VkExtent2D>( chooseExtent( info.extent, caps ) );
+   m_imageCount  = chooseImageCount( caps );
+   m_presentMode = choosePresentMode( info.mode, physDevice, vkSurface );
 
    VkSwapchainCreateInfoKHR createInfo = {};
    createInfo.sType                    = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
    createInfo.surface                  = vkSurface;
 
-   createInfo.minImageCount    = _imageCount;
-   createInfo.imageFormat      = _surfaceFormat->format;
-   createInfo.imageColorSpace  = _surfaceFormat->colorSpace;
-   createInfo.imageExtent      = *_extent;
+   createInfo.minImageCount    = m_imageCount;
+   createInfo.imageFormat      = m_surfaceFormat->format;
+   createInfo.imageColorSpace  = m_surfaceFormat->colorSpace;
+   createInfo.imageExtent      = *m_extent;
    createInfo.imageArrayLayers = 1;
    createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
@@ -168,30 +168,30 @@ void Swapchain::_createSwapchain( const cyd::SwapchainInfo& info )
 
    createInfo.preTransform   = caps.currentTransform;
    createInfo.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-   createInfo.presentMode    = _presentMode;
+   createInfo.presentMode    = m_presentMode;
    createInfo.clipped        = VK_TRUE;
 
    createInfo.oldSwapchain = VK_NULL_HANDLE;
 
-   VkResult result = vkCreateSwapchainKHR( vkDevice, &createInfo, nullptr, &_vkSwapchain );
+   VkResult result = vkCreateSwapchainKHR( vkDevice, &createInfo, nullptr, &m_vkSwapchain );
    CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create swapchain" );
 
-   vkGetSwapchainImagesKHR( vkDevice, _vkSwapchain, &_imageCount, nullptr );
-   _images.resize( _imageCount );
+   vkGetSwapchainImagesKHR( vkDevice, m_vkSwapchain, &m_imageCount, nullptr );
+   m_images.resize( m_imageCount );
 
-   vkGetSwapchainImagesKHR( vkDevice, _vkSwapchain, &_imageCount, _images.data() );
+   vkGetSwapchainImagesKHR( vkDevice, m_vkSwapchain, &m_imageCount, m_images.data() );
 }
 
 void Swapchain::_createImageViews()
 {
-   _imageViews.resize( _imageCount );
-   for( size_t i = 0; i < _imageCount; ++i )
+   m_imageViews.resize( m_imageCount );
+   for( size_t i = 0; i < m_imageCount; ++i )
    {
       VkImageViewCreateInfo createInfo           = {};
       createInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-      createInfo.image                           = _images[i];
+      createInfo.image                           = m_images[i];
       createInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-      createInfo.format                          = _surfaceFormat->format;
+      createInfo.format                          = m_surfaceFormat->format;
       createInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
       createInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
       createInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -203,7 +203,7 @@ void Swapchain::_createImageViews()
       createInfo.subresourceRange.layerCount     = 1;
 
       VkResult result =
-          vkCreateImageView( _device.getVKDevice(), &createInfo, nullptr, &_imageViews[i] );
+          vkCreateImageView( m_device.getVKDevice(), &createInfo, nullptr, &m_imageViews[i] );
       CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create image views" );
    }
 }
@@ -215,8 +215,8 @@ void Swapchain::_createDepthResources()
    VkImageCreateInfo imageInfo = {};
    imageInfo.sType             = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
    imageInfo.imageType         = VK_IMAGE_TYPE_2D;
-   imageInfo.extent.width      = _extent->width;
-   imageInfo.extent.height     = _extent->height;
+   imageInfo.extent.width      = m_extent->width;
+   imageInfo.extent.height     = m_extent->height;
    imageInfo.extent.depth      = 1;
    imageInfo.mipLevels         = 1;
    imageInfo.arrayLayers       = 1;
@@ -227,26 +227,26 @@ void Swapchain::_createDepthResources()
    imageInfo.samples           = VK_SAMPLE_COUNT_1_BIT;
    imageInfo.sharingMode       = VK_SHARING_MODE_EXCLUSIVE;
 
-   result = vkCreateImage( _device.getVKDevice(), &imageInfo, nullptr, &_depthImage );
+   result = vkCreateImage( m_device.getVKDevice(), &imageInfo, nullptr, &m_depthImage );
    CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image" );
 
    VkMemoryRequirements memRequirements;
-   vkGetImageMemoryRequirements( _device.getVKDevice(), _depthImage, &memRequirements );
+   vkGetImageMemoryRequirements( m_device.getVKDevice(), m_depthImage, &memRequirements );
 
    VkMemoryAllocateInfo allocInfo = {};
    allocInfo.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
    allocInfo.allocationSize       = memRequirements.size;
-   allocInfo.memoryTypeIndex      = _device.findMemoryType(
+   allocInfo.memoryTypeIndex      = m_device.findMemoryType(
        memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
-   result = vkAllocateMemory( _device.getVKDevice(), &allocInfo, nullptr, &_depthImageMemory );
+   result = vkAllocateMemory( m_device.getVKDevice(), &allocInfo, nullptr, &m_depthImageMemory );
    CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not allocate depth image memory" );
 
-   vkBindImageMemory( _device.getVKDevice(), _depthImage, _depthImageMemory, 0 );
+   vkBindImageMemory( m_device.getVKDevice(), m_depthImage, m_depthImageMemory, 0 );
 
    VkImageViewCreateInfo imageviewInfo           = {};
    imageviewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-   imageviewInfo.image                           = _depthImage;
+   imageviewInfo.image                           = m_depthImage;
    imageviewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
    imageviewInfo.format                          = VK_FORMAT_D32_SFLOAT;
    imageviewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT;
@@ -255,14 +255,14 @@ void Swapchain::_createDepthResources()
    imageviewInfo.subresourceRange.baseArrayLayer = 0;
    imageviewInfo.subresourceRange.layerCount     = 1;
 
-   result = vkCreateImageView( _device.getVKDevice(), &imageviewInfo, nullptr, &_depthImageView );
+   result = vkCreateImageView( m_device.getVKDevice(), &imageviewInfo, nullptr, &m_depthImageView );
    CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image view" );
 }
 
 void Swapchain::_createSyncObjects()
 {
-   _availableSems.resize( MAX_FRAMES_IN_FLIGHT );
-   _renderDoneSems.resize( MAX_FRAMES_IN_FLIGHT );
+   m_availableSems.resize( MAX_FRAMES_IN_FLIGHT );
+   m_renderDoneSems.resize( MAX_FRAMES_IN_FLIGHT );
 
    VkSemaphoreCreateInfo semaphoreInfo = {};
    semaphoreInfo.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -273,10 +273,12 @@ void Swapchain::_createSyncObjects()
 
    for( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
    {
-      if( vkCreateSemaphore( _device.getVKDevice(), &semaphoreInfo, nullptr, &_availableSems[i] ) !=
+      if( vkCreateSemaphore(
+              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_availableSems[i] ) !=
               VK_SUCCESS ||
           vkCreateSemaphore(
-              _device.getVKDevice(), &semaphoreInfo, nullptr, &_renderDoneSems[i] ) != VK_SUCCESS )
+              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] ) !=
+              VK_SUCCESS )
       {
          CYDASSERT( !"Swapchain: Could not create sync objects" );
       }
@@ -285,15 +287,15 @@ void Swapchain::_createSyncObjects()
 
 void Swapchain::initFramebuffers( const cyd::RenderPassInfo& info, const VkRenderPass renderPass )
 {
-   if( renderPass != _prevRenderPass )
+   if( renderPass != m_prevRenderPass )
    {
-      _prevRenderPass = renderPass;
+      m_prevRenderPass = renderPass;
 
-      _frameBuffers.resize( _imageCount );
-      for( size_t i = 0; i < _imageCount; i++ )
+      m_frameBuffers.resize( m_imageCount );
+      for( size_t i = 0; i < m_imageCount; i++ )
       {
          std::vector<VkImageView> attachments;
-         attachments.push_back( _imageViews[i] );
+         attachments.push_back( m_imageViews[i] );
 
          bool hasDepth = std::find_if(
                              info.attachments.begin(),
@@ -305,7 +307,7 @@ void Swapchain::initFramebuffers( const cyd::RenderPassInfo& info, const VkRende
 
          if( hasDepth )
          {
-            attachments.push_back( _depthImageView );
+            attachments.push_back( m_depthImageView );
          }
 
          VkFramebufferCreateInfo framebufferInfo = {};
@@ -313,37 +315,37 @@ void Swapchain::initFramebuffers( const cyd::RenderPassInfo& info, const VkRende
          framebufferInfo.renderPass              = renderPass;
          framebufferInfo.attachmentCount         = static_cast<uint32_t>( attachments.size() );
          framebufferInfo.pAttachments            = attachments.data();
-         framebufferInfo.width                   = _extent->width;
-         framebufferInfo.height                  = _extent->height;
+         framebufferInfo.width                   = m_extent->width;
+         framebufferInfo.height                  = m_extent->height;
          framebufferInfo.layers                  = 1;
 
          VkResult result = vkCreateFramebuffer(
-             _device.getVKDevice(), &framebufferInfo, nullptr, &_frameBuffers[i] );
+             m_device.getVKDevice(), &framebufferInfo, nullptr, &m_frameBuffers[i] );
          CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create framebuffer" );
       }
    }
 }
-  
+
 void Swapchain::acquireImage( const CommandBuffer* buffer )
 {
    vkAcquireNextImageKHR(
-       _device.getVKDevice(),
-       _vkSwapchain,
+       m_device.getVKDevice(),
+       m_vkSwapchain,
        UINT64_MAX,
-       _availableSems[_currentFrame],
+       m_availableSems[m_currentFrame],
        VK_NULL_HANDLE,
-       &_imageIndex );
+       &m_imageIndex );
 
-   _inFlightCmdBuffer = buffer;
+   m_inFlightCmdBuffer = buffer;
 }
 
 void Swapchain::present()
 {
-   const VkQueue* presentQueue = _device.getQueueFromUsage( cyd::QueueUsage::GRAPHICS, true );
+   const VkQueue* presentQueue = m_device.getQueueFromUsage( cyd::QueueUsage::GRAPHICS, true );
    if( presentQueue )
    {
-      VkSwapchainKHR swapChains[]    = {_vkSwapchain};
-      VkSemaphore signalSemaphores[] = {_renderDoneSems[_currentFrame]};
+      VkSwapchainKHR swapChains[]    = { m_vkSwapchain };
+      VkSemaphore signalSemaphores[] = { m_renderDoneSems[m_currentFrame] };
 
       VkPresentInfoKHR presentInfo   = {};
       presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -351,10 +353,10 @@ void Swapchain::present()
       presentInfo.pWaitSemaphores    = signalSemaphores;
       presentInfo.swapchainCount     = 1;
       presentInfo.pSwapchains        = swapChains;
-      presentInfo.pImageIndices      = &_imageIndex;
+      presentInfo.pImageIndices      = &m_imageIndex;
 
       vkQueuePresentKHR( *presentQueue, &presentInfo );
-      _currentFrame = ( _currentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
+      m_currentFrame = ( m_currentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
    }
    else
    {
@@ -362,30 +364,30 @@ void Swapchain::present()
    }
 }
 
-VkFramebuffer Swapchain::getCurrentFramebuffer() const { return _frameBuffers[_currentFrame]; }
+VkFramebuffer Swapchain::getCurrentFramebuffer() const { return m_frameBuffers[m_currentFrame]; }
 
 Swapchain::~Swapchain()
 {
    for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
    {
-      vkDestroySemaphore( _device.getVKDevice(), _renderDoneSems[i], nullptr );
-      vkDestroySemaphore( _device.getVKDevice(), _availableSems[i], nullptr );
+      vkDestroySemaphore( m_device.getVKDevice(), m_renderDoneSems[i], nullptr );
+      vkDestroySemaphore( m_device.getVKDevice(), m_availableSems[i], nullptr );
    }
 
-   for( auto frameBuffer : _frameBuffers )
+   for( auto frameBuffer : m_frameBuffers )
    {
-      vkDestroyFramebuffer( _device.getVKDevice(), frameBuffer, nullptr );
+      vkDestroyFramebuffer( m_device.getVKDevice(), frameBuffer, nullptr );
    }
 
-   for( auto imageView : _imageViews )
+   for( auto imageView : m_imageViews )
    {
-      vkDestroyImageView( _device.getVKDevice(), imageView, nullptr );
+      vkDestroyImageView( m_device.getVKDevice(), imageView, nullptr );
    }
 
-   vkDestroyImageView( _device.getVKDevice(), _depthImageView, nullptr );
-   vkDestroyImage( _device.getVKDevice(), _depthImage, nullptr );
-   vkFreeMemory( _device.getVKDevice(), _depthImageMemory, nullptr );
+   vkDestroyImageView( m_device.getVKDevice(), m_depthImageView, nullptr );
+   vkDestroyImage( m_device.getVKDevice(), m_depthImage, nullptr );
+   vkFreeMemory( m_device.getVKDevice(), m_depthImageMemory, nullptr );
 
-   vkDestroySwapchainKHR( _device.getVKDevice(), _vkSwapchain, nullptr );
+   vkDestroySwapchainKHR( m_device.getVKDevice(), m_vkSwapchain, nullptr );
 }
 }

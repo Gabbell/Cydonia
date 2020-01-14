@@ -9,6 +9,7 @@ namespace cyd
 {
 enum class HandleType : uint32_t
 {
+   // Graphics
    CMDLIST       = 0,
    VERTEXBUFFER  = 1,
    INDEXBUFFER   = 2,
@@ -18,7 +19,7 @@ enum class HandleType : uint32_t
 
 struct Handle
 {
-   Handle() : _index( 0 ), _counter( 0 ), _type( 0 ) {}
+   Handle() : _index( 0xFFFFFFFF ), _counter( 0xFFFFFFFF ), _type( 0xFFFFFFFF ) {}
 
    Handle( uint32_t index, uint32_t counter, HandleType type )
        : _index( index ), _counter( counter ), _type( static_cast<uint32_t>( type ) )
@@ -43,4 +44,4 @@ using IndexBufferHandle   = Handle;
 using TextureHandle       = Handle;
 using UniformBufferHandle = Handle;
 
-}  // namespace cyd
+}

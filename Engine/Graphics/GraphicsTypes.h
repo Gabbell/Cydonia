@@ -17,6 +17,7 @@ using Flag = uint32_t;
 
 enum QueueUsage : Flag
 {
+   UNKNOWN  = 0,
    GRAPHICS = 1 << 0,
    COMPUTE  = 1 << 1,
    TRANSFER = 1 << 2
@@ -182,8 +183,8 @@ struct TextureDescription
 struct Extent
 {
    bool operator==( const Extent& other ) const;
-   uint32_t width;
-   uint32_t height;
+   uint32_t width  = 0;
+   uint32_t height = 0;
 };
 
 struct Rectangle
@@ -224,8 +225,8 @@ struct PushConstantRange
 {
    bool operator==( const PushConstantRange& other ) const;
    ShaderStageFlag stages;
-   uint32_t offset;
-   uint32_t size;
+   size_t offset;
+   size_t size;
 };
 
 // ================================================================================================
@@ -286,18 +287,18 @@ struct SwapchainInfo
 template <>
 struct std::hash<cyd::Vertex>
 {
-   size_t operator()( const cyd::Vertex& vertex ) const
+   size_t operator()( const cyd::Vertex& vertex ) const noexcept
    {
       size_t seed = 0;
-      hash_combine( seed, vertex.pos.x );
-      hash_combine( seed, vertex.pos.y );
-      hash_combine( seed, vertex.pos.z );
-      hash_combine( seed, vertex.col.r );
-      hash_combine( seed, vertex.col.g );
-      hash_combine( seed, vertex.col.b );
-      hash_combine( seed, vertex.col.a );
-      hash_combine( seed, vertex.uv.x );
-      hash_combine( seed, vertex.uv.y );
+      hashCombine( seed, vertex.pos.x );
+      hashCombine( seed, vertex.pos.y );
+      hashCombine( seed, vertex.pos.z );
+      hashCombine( seed, vertex.col.r );
+      hashCombine( seed, vertex.col.g );
+      hashCombine( seed, vertex.col.b );
+      hashCombine( seed, vertex.col.a );
+      hashCombine( seed, vertex.uv.x );
+      hashCombine( seed, vertex.uv.y );
 
       return seed;
    }
@@ -306,11 +307,11 @@ struct std::hash<cyd::Vertex>
 template <>
 struct std::hash<cyd::Extent>
 {
-   size_t operator()( const cyd::Extent& extent ) const
+   size_t operator()( const cyd::Extent& extent ) const noexcept
    {
       size_t seed = 0;
-      hash_combine( seed, extent.width );
-      hash_combine( seed, extent.height );
+      hashCombine( seed, extent.width );
+      hashCombine( seed, extent.height );
       return seed;
    }
 };
@@ -318,14 +319,14 @@ struct std::hash<cyd::Extent>
 template <>
 struct std::hash<cyd::Attachment>
 {
-   size_t operator()( const cyd::Attachment& attachment ) const
+   size_t operator()( const cyd::Attachment& attachment ) const noexcept
    {
       size_t seed = 0;
-      hash_combine( seed, attachment.format );
-      hash_combine( seed, attachment.loadOp );
-      hash_combine( seed, attachment.storeOp );
-      hash_combine( seed, attachment.type );
-      hash_combine( seed, attachment.layout );
+      hashCombine( seed, attachment.format );
+      hashCombine( seed, attachment.loadOp );
+      hashCombine( seed, attachment.storeOp );
+      hashCombine( seed, attachment.type );
+      hashCombine( seed, attachment.layout );
 
       return seed;
    }
@@ -334,12 +335,12 @@ struct std::hash<cyd::Attachment>
 template <>
 struct std::hash<cyd::ShaderObjectInfo>
 {
-   size_t operator()( const cyd::ShaderObjectInfo& shaderObject ) const
+   size_t operator()( const cyd::ShaderObjectInfo& shaderObject ) const noexcept
    {
       size_t seed = 0;
-      hash_combine( seed, shaderObject.type );
-      hash_combine( seed, shaderObject.binding );
-      hash_combine( seed, shaderObject.stages );
+      hashCombine( seed, shaderObject.type );
+      hashCombine( seed, shaderObject.binding );
+      hashCombine( seed, shaderObject.stages );
       return seed;
    }
 };
@@ -347,12 +348,12 @@ struct std::hash<cyd::ShaderObjectInfo>
 template <>
 struct std::hash<cyd::PushConstantRange>
 {
-   size_t operator()( const cyd::PushConstantRange& range ) const
+   size_t operator()( const cyd::PushConstantRange& range ) const noexcept
    {
       size_t seed = 0;
-      hash_combine( seed, range.stages );
-      hash_combine( seed, range.offset );
-      hash_combine( seed, range.size );
+      hashCombine( seed, range.stages );
+      hashCombine( seed, range.offset );
+      hashCombine( seed, range.size );
       return seed;
    }
 };
@@ -360,14 +361,14 @@ struct std::hash<cyd::PushConstantRange>
 template <>
 struct std::hash<cyd::RenderPassInfo>
 {
-   size_t operator()( const cyd::RenderPassInfo& renderPass ) const
+   size_t operator()( const cyd::RenderPassInfo& renderPass ) const noexcept
    {
       const std::vector<cyd::Attachment>& attachments = renderPass.attachments;
 
       size_t seed = 0;
       for( const auto& attachment : attachments )
       {
-         hash_combine( seed, attachment );
+         hashCombine( seed, attachment );
       }
       return seed;
    }
@@ -376,12 +377,12 @@ struct std::hash<cyd::RenderPassInfo>
 template <>
 struct std::hash<cyd::DescriptorSetLayoutInfo>
 {
-   size_t operator()( const cyd::DescriptorSetLayoutInfo& descSetLayoutInfo ) const
+   size_t operator()( const cyd::DescriptorSetLayoutInfo& descSetLayoutInfo ) const noexcept
    {
       size_t seed = 0;
       for( const auto& ubo : descSetLayoutInfo.shaderObjects )
       {
-         hash_combine( seed, ubo );
+         hashCombine( seed, ubo );
       }
       return seed;
    }
@@ -390,12 +391,12 @@ struct std::hash<cyd::DescriptorSetLayoutInfo>
 template <>
 struct std::hash<cyd::PipelineLayoutInfo>
 {
-   size_t operator()( const cyd::PipelineLayoutInfo& pipLayoutInfo ) const
+   size_t operator()( const cyd::PipelineLayoutInfo& pipLayoutInfo ) const noexcept
    {
       size_t seed = 0;
       for( const auto& range : pipLayoutInfo.ranges )
       {
-         hash_combine( seed, range );
+         hashCombine( seed, range );
       }
       return seed;
    }
@@ -404,18 +405,18 @@ struct std::hash<cyd::PipelineLayoutInfo>
 template <>
 struct std::hash<cyd::PipelineInfo>
 {
-   size_t operator()( const cyd::PipelineInfo& pipInfo ) const
+   size_t operator()( const cyd::PipelineInfo& pipInfo ) const noexcept
    {
       const std::vector<std::string>& shaders = pipInfo.shaders;
 
       size_t seed = 0;
-      hash_combine( seed, pipInfo.pipLayout );
-      hash_combine( seed, pipInfo.drawPrim );
-      hash_combine( seed, pipInfo.polyMode );
-      hash_combine( seed, pipInfo.extent );
+      hashCombine( seed, pipInfo.pipLayout );
+      hashCombine( seed, pipInfo.drawPrim );
+      hashCombine( seed, pipInfo.polyMode );
+      hashCombine( seed, pipInfo.extent );
       for( const auto& shader : shaders )
       {
-         hash_combine( seed, shader );
+         hashCombine( seed, shader );
       }
 
       return seed;
@@ -425,14 +426,14 @@ struct std::hash<cyd::PipelineInfo>
 template <>
 struct std::hash<cyd::SamplerInfo>
 {
-   size_t operator()( const cyd::SamplerInfo& samplerInfo ) const
+   size_t operator()( const cyd::SamplerInfo& samplerInfo ) const noexcept
    {
       size_t seed = 0;
-      hash_combine( seed, samplerInfo.useAnisotropy );
-      hash_combine( seed, samplerInfo.maxAnisotropy );
-      hash_combine( seed, samplerInfo.magFilter );
-      hash_combine( seed, samplerInfo.minFilter );
-      hash_combine( seed, samplerInfo.addressMode );
+      hashCombine( seed, samplerInfo.useAnisotropy );
+      hashCombine( seed, samplerInfo.maxAnisotropy );
+      hashCombine( seed, samplerInfo.magFilter );
+      hashCombine( seed, samplerInfo.minFilter );
+      hashCombine( seed, samplerInfo.addressMode );
 
       return seed;
    }

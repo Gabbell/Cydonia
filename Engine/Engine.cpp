@@ -3,7 +3,9 @@
 int main()
 {
    {
-      cyd::VKSandbox app( 1280, 720 );
+      cyd::VKSandbox app;
+
+      app.init( 1280, 720, "VKSandbox" );
       app.startLoop();
    }
 

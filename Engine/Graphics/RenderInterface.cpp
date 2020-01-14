@@ -4,7 +4,7 @@
 
 #include <cstdio>
 
-namespace cyd
+namespace cyd::GRIS
 {
 static RenderBackend* b = nullptr;
 
@@ -12,7 +12,7 @@ static RenderBackend* b = nullptr;
 // Initialization
 
 template <>
-void initRenderBackend<API::VK>( const Window& window )
+void InitRenderBackend<VK>( const Window& window )
 {
    printf( "======= Initializing Vulkan Rendering Backend =======\n" );
    delete b;
@@ -20,119 +20,127 @@ void initRenderBackend<API::VK>( const Window& window )
 }
 
 template <>
-void initRenderBackend<API::GL>( const Window& )
+void InitRenderBackend<GL>( const Window& )
 {
-   printf( "======= Initializing OpenGL Rendering Backend =======\n" );
+   printf( "======= OpenGL Rendering Backend Not Yet Implemented =======\n" );
    delete b;
 }
 
-void uninitRenderBackend()
+void UninitRenderBackend()
 {
    printf( "======= Uninitializing Rendering Backend =======\n" );
    delete b;
 }
 
-void renderBackendCleanup() { b->cleanup(); }
+void RenderBackendCleanup() { b->cleanup(); }
 
 // =================================================================================================
 // Command Buffers/Lists
 
-CmdListHandle createCommandList( QueueUsageFlag usage, bool presentable )
+CmdListHandle CreateCommandList( QueueUsageFlag usage, bool presentable )
 {
    return b->createCommandList( usage, presentable );
 }
 
-void submitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
-void startRecordingCommandList( CmdListHandle cmdList ) { b->startRecordingCommandList( cmdList ); }
-void endRecordingCommandList( CmdListHandle cmdList ) { b->endRecordingCommandList( cmdList ); }
+void SubmitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
+void StartRecordingCommandList( CmdListHandle cmdList ) { b->startRecordingCommandList( cmdList ); }
+void EndRecordingCommandList( CmdListHandle cmdList ) { b->endRecordingCommandList( cmdList ); }
 
-void waitOnCommandList( CmdListHandle cmdList ) { b->waitOnCommandList( cmdList ); }
-void destroyCommandList( CmdListHandle cmdList ) { b->destroyCommandList( cmdList ); }
+void WaitOnCommandList( CmdListHandle cmdList ) { b->waitOnCommandList( cmdList ); }
+void DestroyCommandList( CmdListHandle cmdList ) { b->destroyCommandList( cmdList ); }
 
 // =================================================================================================
 // Pipeline Specification
 
-void bindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo )
+void BindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo )
 {
    b->bindPipeline( cmdList, pipInfo );
 }
 
-void bindTexture( CmdListHandle cmdList, TextureHandle texHandle )
+void BindTexture( CmdListHandle cmdList, TextureHandle texHandle )
 {
    b->bindTexture( cmdList, texHandle );
 }
 
-void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
+void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
 {
    b->bindVertexBuffer( cmdList, bufferHandle );
 }
 
-void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
+void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
 {
    b->bindIndexBuffer( cmdList, bufferHandle );
 }
 
-void bindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle )
+void BindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle )
 {
    b->bindUniformBuffer( cmdList, bufferHandle );
 }
 
-void setViewport( CmdListHandle cmdList, const Rectangle& viewport )
+void SetViewport( CmdListHandle cmdList, const Rectangle& viewport )
 {
    b->setViewport( cmdList, viewport );
+}
+
+void UpdateConstantBuffer(
+    CmdListHandle cmdList,
+    ShaderStageFlag stages,
+    size_t offset,
+    size_t size,
+    const void* pData )
+{
+   b->updateConstantBuffer( cmdList, stages, offset, size, pData );
 }
 
 // =================================================================================================
 // Resources
 
-TextureHandle createTexture(
+TextureHandle CreateTexture(
     CmdListHandle transferList,
     const TextureDescription& desc,
-    const ShaderObjectInfo& info,
+    uint32_t shaderObjectIdx,
     const DescriptorSetLayoutInfo& layout,
-    const void* texels )
+    const void* pTexels )
 {
-   return b->createTexture( transferList, desc, info, layout, texels );
+   return b->createTexture( transferList, desc, shaderObjectIdx, layout, pTexels );
 }
 
-VertexBufferHandle createVertexBuffer(
+VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
     uint32_t count,
     uint32_t stride,
-    const void* vertices )
+    const void* pVertices )
 {
-   return b->createVertexBuffer( transferList, count, stride, vertices );
+   return b->createVertexBuffer( transferList, count, stride, pVertices );
 }
 
 IndexBufferHandle
-createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* indices )
+CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices )
 {
-   return b->createIndexBuffer( transferList, count, indices );
+   return b->createIndexBuffer( transferList, count, pIndices );
 }
 
-UniformBufferHandle createUniformBuffer(
-    size_t size,
-    const ShaderObjectInfo& info,
-    const DescriptorSetLayoutInfo& layout )
+UniformBufferHandle
+CreateUniformBuffer( size_t size, uint32_t shaderObjectIdx, const DescriptorSetLayoutInfo& layout )
 {
-   return b->createUniformBuffer( size, info, layout );
+   return b->createUniformBuffer( size, shaderObjectIdx, layout );
 }
 
-void mapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* data )
+void MapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* pData )
 {
-   return b->mapUniformBufferMemory( bufferHandle, data );
+   return b->mapUniformBufferMemory( bufferHandle, pData );
 }
 
-void destroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }
+void DestroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }
 
-void destroyVertexBuffer( VertexBufferHandle bufferHandle )
+void DestroyVertexBuffer( VertexBufferHandle bufferHandle )
 {
    b->destroyVertexBuffer( bufferHandle );
 }
 
-void destroyIndexBuffer( IndexBufferHandle bufferHandle ) { b->destroyIndexBuffer( bufferHandle ); }
+void DestroyIndexBuffer( IndexBufferHandle bufferHandle ) { b->destroyIndexBuffer( bufferHandle ); }
 
-void destroyUniformBuffer( UniformBufferHandle bufferHandle )
+void DestroyUniformBuffer( UniformBufferHandle bufferHandle )
 {
    b->destroyUniformBuffer( bufferHandle );
 }
@@ -140,16 +148,19 @@ void destroyUniformBuffer( UniformBufferHandle bufferHandle )
 // =================================================================================================
 // Drawing
 
-void beginRenderPass( CmdListHandle cmdList ) { b->beginRenderPass( cmdList ); }
+void BeginRenderPass( CmdListHandle cmdList ) { b->beginRenderPass( cmdList ); }
 
-void endRenderPass( CmdListHandle cmdList ) { b->endRenderPass( cmdList ); }
+void EndRenderPass( CmdListHandle cmdList ) { b->endRenderPass( cmdList ); }
 
-void drawFrame( CmdListHandle cmdList, uint32_t vertexCount )
+void DrawVertices( CmdListHandle cmdList, uint32_t vertexCount )
 {
-   b->drawFrame( cmdList, vertexCount );
+   b->drawVertices( cmdList, vertexCount );
 }
 
-// void drawFrameIndexed( CmdListHandle handle, uint32_t indexCount );
+void DrawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount )
+{
+   b->drawVerticesIndexed( cmdList, indexCount );
+}
 
-void presentFrame() { b->presentFrame(); }
+void PresentFrame() { b->presentFrame(); }
 }

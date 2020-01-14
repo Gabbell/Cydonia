@@ -8,12 +8,12 @@
 
 namespace vk
 {
-SamplerStash::SamplerStash( const Device& device ) : _device( device ) {}
+SamplerStash::SamplerStash( const Device& device ) : m_device( device ) {}
 
 const VkSampler SamplerStash::findOrCreate( const cyd::SamplerInfo& info )
 {
-   const auto it = _samplers.find( info );
-   if( it != _samplers.end() )
+   const auto it = m_samplers.find( info );
+   if( it != m_samplers.end() )
    {
       return it->second;
    }
@@ -37,17 +37,17 @@ const VkSampler SamplerStash::findOrCreate( const cyd::SamplerInfo& info )
    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
    VkSampler vkSampler;
-   VkResult result = vkCreateSampler( _device.getVKDevice(), &samplerInfo, nullptr, &vkSampler );
+   VkResult result = vkCreateSampler( m_device.getVKDevice(), &samplerInfo, nullptr, &vkSampler );
    CYDASSERT( result == VK_SUCCESS && "SamplerStash: Could not create sampler" );
 
-   return _samplers.insert( {info, vkSampler} ).first->second;
+   return m_samplers.insert( {info, vkSampler} ).first->second;
 }
 
 SamplerStash::~SamplerStash()
 {
-   for( const auto& sampler : _samplers )
+   for( const auto& sampler : m_samplers )
    {
-      vkDestroySampler( _device.getVKDevice(), sampler.second, nullptr );
+      vkDestroySampler( m_device.getVKDevice(), sampler.second, nullptr );
    }
 }
 }

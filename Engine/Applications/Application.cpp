@@ -4,53 +4,57 @@
 
 #include <HID/InputInterpreter.h>
 
-#include <Graphics/Scene/Scene.h>
-
 #include <chrono>
 #include <memory>
 
 namespace cyd
 {
-Application::Application( uint32_t width, uint32_t height, const std::string& title )
-    : _running( true )
+Application::Application() = default;
+
+bool Application::init( uint32_t width, uint32_t height, const std::string& title )
 {
-   _window           = std::make_unique<Window>( width, height, title );
-   _inputInterpreter = std::make_unique<InputInterpreter>( *_window );
-   _scene            = std::make_unique<Scene>();
+   m_window           = std::make_unique<Window>();
+   m_inputInterpreter = std::make_unique<InputInterpreter>();
+
+   bool success = true;
+   success &= m_window->init( width, height, title );
+   success &= m_inputInterpreter->init( *m_window );
+
+   return success;
 }
 
 void Application::startLoop()
 {
+   static auto start = std::chrono::high_resolution_clock::now();
+
    preLoop();
 
-   static auto start = std::chrono::high_resolution_clock::now();
-   while( _running )  // Main loop
+   m_running = true;
+   while( m_running )  // Main loop
    {
       // Calculate delta time between frames
-      const std::chrono::duration<double> deltaTime =
+      const std::chrono::duration<double> deltaMs =
           std::chrono::high_resolution_clock::now() - start;
 
       // Reset clock
       start = std::chrono::high_resolution_clock::now();
 
-      // Systems Tick
-      _inputInterpreter->tick();
+      // TODO Replace with input system
+      m_inputInterpreter->tick();
 
-      tick( deltaTime.count() );
-      drawNextFrame( deltaTime.count() );
+      // User overloaded tick
+      tick( deltaMs.count() );
 
       // Determine if the main window was asked to be closed
-      _running = _window->isRunning();
+      m_running = m_window->isRunning();
    }
 
    postLoop();
 }
 
 void Application::preLoop() {}
-void Application::tick( double /*deltaTime*/ ) {}
-
-void Application::drawNextFrame( double /*deltaTime*/ ) {}
+void Application::tick( double /*deltaMs*/ ) {}
 void Application::postLoop() {}
 
-Application::~Application() {}
+Application::~Application() = default;
 }

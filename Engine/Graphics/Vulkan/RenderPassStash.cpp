@@ -10,7 +10,7 @@
 
 namespace vk
 {
-RenderPassStash::RenderPassStash( const Device& device ) : _device( device )
+RenderPassStash::RenderPassStash( const Device& device ) : m_device( device )
 {
    _createDefaultRenderPasses();
 }
@@ -18,8 +18,8 @@ RenderPassStash::RenderPassStash( const Device& device ) : _device( device )
 const VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
 {
    // Find
-   const auto it = _renderPasses.find( info );
-   if( it != _renderPasses.end() )
+   const auto it = m_renderPasses.find( info );
+   if( it != m_renderPasses.end() )
    {
       return it->second;
    }
@@ -106,15 +106,15 @@ const VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& inf
    // Creating render pass
    VkRenderPass renderPass;
    VkResult result =
-       vkCreateRenderPass( _device.getVKDevice(), &renderPassInfo, nullptr, &renderPass );
+       vkCreateRenderPass( m_device.getVKDevice(), &renderPassInfo, nullptr, &renderPass );
    CYDASSERT( result == VK_SUCCESS && "RenderPass: Could not create default render pass" );
 
-   return _renderPasses.insert( {info, renderPass} ).first->second;
+   return m_renderPasses.insert( {info, renderPass} ).first->second;
 }
 
 void RenderPassStash::_createDefaultRenderPasses()
 {
-   // Color Presentation BGRA8_UNORM
+   // Color Presentation BGRA8m_UNORM
    cyd::Attachment colorPresentation = {};
    colorPresentation.format          = cyd::PixelFormat::BGRA8_UNORM;
    colorPresentation.loadOp          = cyd::LoadOp::CLEAR;
@@ -129,9 +129,9 @@ void RenderPassStash::_createDefaultRenderPasses()
 
 RenderPassStash::~RenderPassStash()
 {
-   for( const auto& renderPass : _renderPasses )
+   for( const auto& renderPass : m_renderPasses )
    {
-      vkDestroyRenderPass( _device.getVKDevice(), renderPass.second, nullptr );
+      vkDestroyRenderPass( m_device.getVKDevice(), renderPass.second, nullptr );
    }
 }
 }

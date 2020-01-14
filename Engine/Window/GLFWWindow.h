@@ -27,23 +27,25 @@ namespace cyd
 class Window final
 {
   public:
-   Window( uint32_t width, uint32_t height, const std::string& title );
+   Window() = default;
    ~Window();
 
+   bool init( uint32_t width, uint32_t height, const std::string& title );
+
    bool isRunning() const;
-   const Extent& getExtent() const noexcept { return _extent; }
-   GLFWwindow* getGLFWwindow() const noexcept { return _glfwWindow; }
-   std::vector<const char*> getExtensionsFromGLFW() const noexcept { return _extensions; };
+   const Extent& getExtent() const noexcept { return m_extent; }
+   GLFWwindow* getGLFWwindow() const noexcept { return m_glfwWindow; }
+   std::vector<const char*> getExtensionsFromGLFW() const noexcept { return m_extensions; };
 
   private:
-   const std::string _title = "Default Title";
+   const std::string m_title = "Default Title";
 
-   std::vector<const char*> _extensions;
+   std::vector<const char*> m_extensions;
 
    // Window is the owner of this GLFWwindow
-   GLFWwindow* _glfwWindow = nullptr;
+   GLFWwindow* m_glfwWindow = nullptr;
 
    // Dimensions
-   Extent _extent = {0, 0};
+   Extent m_extent = {0, 0};
 };
 }

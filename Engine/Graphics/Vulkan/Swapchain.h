@@ -47,11 +47,11 @@ class Swapchain final
 
    VkFramebuffer getCurrentFramebuffer() const;
 
-   const VkSwapchainKHR& getVKSwapchain() const noexcept { return _vkSwapchain; }
-   const VkExtent2D& getVKExtent() const noexcept { return *_extent; }
-   const VkSurfaceFormatKHR& getFormat() const noexcept { return *_surfaceFormat; }
-   const VkSemaphore& getSemToWait() const noexcept { return _availableSems[_currentFrame]; }
-   const VkSemaphore& getSemToSignal() const noexcept { return _renderDoneSems[_currentFrame]; }
+   const VkSwapchainKHR& getVKSwapchain() const noexcept { return m_vkSwapchain; }
+   const VkExtent2D& getVKExtent() const noexcept { return *m_extent; }
+   const VkSurfaceFormatKHR& getFormat() const noexcept { return *m_surfaceFormat; }
+   const VkSemaphore& getSemToWait() const noexcept { return m_availableSems[m_currentFrame]; }
+   const VkSemaphore& getSemToSignal() const noexcept { return m_renderDoneSems[m_currentFrame]; }
 
   private:
    void _createSwapchain( const cyd::SwapchainInfo& info );
@@ -60,30 +60,30 @@ class Swapchain final
    void _createSyncObjects();
 
    // Used to create the swapchain
-   Device& _device;
-   const Surface& _surface;
+   Device& m_device;
+   const Surface& m_surface;
 
-   VkRenderPass _prevRenderPass = nullptr;
+   VkRenderPass m_prevRenderPass = nullptr;
 
-   uint32_t _imageCount = 0;
-   uint32_t _imageIndex = 0;
-   std::vector<VkImageView> _imageViews;
-   std::vector<VkImage> _images;
-   std::vector<VkFramebuffer> _frameBuffers;
-   VkImageView _depthImageView;
-   VkImage _depthImage;
-   VkDeviceMemory _depthImageMemory;
+   uint32_t m_imageCount = 0;
+   uint32_t m_imageIndex = 0;
+   std::vector<VkImageView> m_imageViews;
+   std::vector<VkImage> m_images;
+   std::vector<VkFramebuffer> m_frameBuffers;
+   VkImageView m_depthImageView;
+   VkImage m_depthImage;
+   VkDeviceMemory m_depthImageMemory;
 
-   uint32_t _currentFrame = 0;
-   std::vector<VkSemaphore> _availableSems;
-   std::vector<VkSemaphore> _renderDoneSems;
-   const CommandBuffer* _inFlightCmdBuffer = nullptr;
+   uint32_t m_currentFrame = 0;
+   std::vector<VkSemaphore> m_availableSems;
+   std::vector<VkSemaphore> m_renderDoneSems;
+   const CommandBuffer* m_inFlightCmdBuffer = nullptr;
 
-   VkSwapchainKHR _vkSwapchain = nullptr;
+   VkSwapchainKHR m_vkSwapchain = nullptr;
 
    // Swapchain Properties
-   VkPresentModeKHR _presentMode;                       // Presentation mode
-   std::unique_ptr<VkSurfaceFormatKHR> _surfaceFormat;  // Swapchain image format
-   std::unique_ptr<VkExtent2D> _extent;                 // Actual swapchain extent
+   VkPresentModeKHR m_presentMode;                       // Presentation mode
+   std::unique_ptr<VkSurfaceFormatKHR> m_surfaceFormat;  // Swapchain image format
+   std::unique_ptr<VkExtent2D> m_extent;                 // Actual swapchain extent
 };
 }

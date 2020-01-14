@@ -29,7 +29,7 @@ cyd::VKShaderViewer::VKShaderViewer(
 
 void cyd::VKShaderViewer::preLoop()
 {
-   viewport = {{0.0f, 0.0f}, {_window->getExtent()}};
+   viewport = {{0.0f, 0.0f}, {m_window->getExtent()}};
 
    Attachment colorPresentation = {};
    colorPresentation.format     = PixelFormat::BGRA8_UNORM;
@@ -42,7 +42,7 @@ void cyd::VKShaderViewer::preLoop()
    renderPassInfo.attachments.push_back( colorPresentation );
 
    vk::SwapchainInfo scInfo = {};
-   scInfo.extent        = _window->getExtent();
+   scInfo.extent        = m_window->getExtent();
    scInfo.format        = PixelFormat::BGRA8_UNORM;
    scInfo.space         = ColorSpace::SRGB_NONLINEAR;
    scInfo.mode          = PresentMode::MAILBOX;
@@ -51,9 +51,9 @@ void cyd::VKShaderViewer::preLoop()
 
    pipInfo.renderPass = renderPassInfo;
    pipInfo.drawPrim   = DrawPrimitive::TRIANGLE_STRIPS;
-   pipInfo.extent     = _window->getExtent();
+   pipInfo.extent     = m_window->getExtent();
    pipInfo.polyMode   = PolygonMode::FILL;
-   pipInfo.shaders    = { _vertShader, _fragShader };
+   pipInfo.shaders    = { _vertShader, m_fragShader };
    pipInfo.pipLayout  = pipLayoutInfo;
 
    device    = _dh->getMainDevice();
@@ -72,22 +72,22 @@ void cyd::VKShaderViewer::preLoop()
    vertexStaging->mapMemory( (void*)vertices.data(), verticesSize );
 
    // Uploading vertices to device memory
-   _vertexBuffer =
+   m_vertexBuffer =
        device->createDeviceBuffer( verticesSize, BufferUsage::TRANSFER_DST | BufferUsage ::VERTEX );
 
    auto transferCmds = device->createCommandBuffer( QueueUsage::TRANSFER );
    transferCmds->startRecording();
-   transferCmds->copyBuffer( vertexStaging, _vertexBuffer );
+   transferCmds->copyBuffer( vertexStaging, m_vertexBuffer );
    transferCmds->endRecording();
    transferCmds->submit();
    transferCmds->waitForCompletion();
 }
 
-void cyd::VKShaderViewer::drawFrame( double deltaTime )
+void cyd::VKShaderViewer::drawFrame( double deltaMs )
 {
    // Push constant
    static float currentTime = 0;
-   currentTime += static_cast<float>( deltaTime );
+   currentTime += static_cast<float>( deltaMs );
 
    // Drawing in the swapchain
    auto cmds = device->createCommandBuffer( QueueUsage::GRAPHICS, true );
@@ -95,7 +95,7 @@ void cyd::VKShaderViewer::drawFrame( double deltaTime )
    cmds->startRecording();
    cmds->bindPipeline( pipInfo );
    cmds->updatePushConstants( pipLayoutInfo.ranges[0], &currentTime );
-   cmds->bindVertexBuffer( _vertexBuffer );
+   cmds->bindVertexBuffer( m_vertexBuffer );
    cmds->setViewport( viewport );
    cmds->beginPass( *swapchain );
    cmds->draw( 4 );

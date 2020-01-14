@@ -27,8 +27,8 @@ class Instance final
    explicit Instance( const cyd::Window& window );
    ~Instance();
 
-   const VkInstance& getVKInstance() const { return _vkInstance; }
-   const std::vector<const char*> getLayers() const { return _layers; }
+   const VkInstance& getVKInstance() const { return m_vkInstance; }
+   const std::vector<const char*> getLayers() const { return m_layers; }
 
   private:
    // =============================================================================================
@@ -40,11 +40,11 @@ class Instance final
    // =============================================================================================
    // Private Variables
    // =============================================================================================
-   std::vector<const char*> _layers;
+   std::vector<const char*> m_layers;
 
-   const cyd::Window& _window;
+   const cyd::Window& m_window;
 
-   VkInstance _vkInstance                   = nullptr;
-   VkDebugUtilsMessengerEXT _debugMessenger = nullptr;
+   VkInstance m_vkInstance                   = nullptr;
+   VkDebugUtilsMessengerEXT m_debugMessenger = nullptr;
 };
 }

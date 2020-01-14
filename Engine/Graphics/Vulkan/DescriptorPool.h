@@ -31,10 +31,10 @@ class DescriptorPool final
    void free( const VkDescriptorSet& descSet );
 
   private:
-   const Device& _device;
+   const Device& m_device;
 
-   std::unordered_map<cyd::DescriptorSetLayoutInfo, VkDescriptorSet> _descSets;
+   std::unordered_map<cyd::DescriptorSetLayoutInfo, VkDescriptorSet> m_descSets;
 
-   VkDescriptorPool _vkDescPool;
+   VkDescriptorPool m_vkDescPool;
 };
 }

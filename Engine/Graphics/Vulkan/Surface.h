@@ -28,13 +28,13 @@ class Surface final
    Surface( const cyd::Window& window, const Instance& instance );
    ~Surface();
 
-   const VkSurfaceKHR& getVKSurface() const { return _vkSurface; }
+   const VkSurfaceKHR& getVKSurface() const { return m_vkSurface; }
 
   private:
-   const cyd::Window& _window;
+   const cyd::Window& m_window;
 
-   const Instance& _instance;
+   const Instance& m_instance;
 
-   VkSurfaceKHR _vkSurface = nullptr;
+   VkSurfaceKHR m_vkSurface = nullptr;
 };
 }

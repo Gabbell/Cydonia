@@ -12,16 +12,16 @@
 namespace vk
 {
 Surface::Surface( const cyd::Window& window, const Instance& instance )
-    : _window( window ), _instance( instance )
+    : m_window( window ), m_instance( instance )
 {
    VkResult result = glfwCreateWindowSurface(
-       _instance.getVKInstance(), _window.getGLFWwindow(), nullptr, &_vkSurface );
+       m_instance.getVKInstance(), m_window.getGLFWwindow(), nullptr, &m_vkSurface );
    CYDASSERT( result == VK_SUCCESS && "Surface: Could not create surface" );
 }
 
 Surface::~Surface()
 {
-   vkDestroySurfaceKHR( _instance.getVKInstance(), _vkSurface, nullptr );
-   _vkSurface = nullptr;
+   vkDestroySurfaceKHR( m_instance.getVKInstance(), m_vkSurface, nullptr );
+   m_vkSurface = nullptr;
 }
 }

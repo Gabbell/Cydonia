@@ -2,44 +2,25 @@
 
 #include <Common/Include.h>
 
-#include <Applications/VKApplication.h>
-
-#include <Handles/Handle.h>
-
-#include <memory>
-
-// ================================================================================================
-// Forwards
-// ================================================================================================
-namespace cyd
-{
-class FreeCameraController;
-}
+#include <Applications/Application.h>
 
 // ================================================================================================
 // Definition
 // ================================================================================================
 namespace cyd
 {
-class VKSandbox final : public VKApplication
+class VKSandbox final : public Application
 {
   public:
-   VKSandbox() = delete;
-   VKSandbox( uint32_t width, uint32_t height );
+   VKSandbox();
    NON_COPIABLE( VKSandbox );
-   virtual ~VKSandbox();
+   ~VKSandbox() override;
+
+   bool init( uint32_t width, uint32_t height, const std::string& title ) override;
 
   protected:
-   void preLoop() override;  // Executed before the application enters the main loop
-   void drawNextFrame( double deltaTime ) override;  // Used to draw one frame
+   void preLoop() override;
+   void tick( double deltaMs ) override;
    void postLoop() override;
-
-  private:
-   std::unique_ptr<FreeCameraController> _controller = nullptr;
-
-   VertexBufferHandle _vertexBuffer;
-   IndexBufferHandle _indexBuffer;
-   UniformBufferHandle _uboBuffer;
-   TextureHandle _texture;
 };
 }

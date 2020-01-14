@@ -35,7 +35,7 @@ class DeviceHerder final
    ~DeviceHerder();
 
    // Main device is always the first one for now
-   Device* getMainDevice() const { return _devices[0].get(); }
+   Device* getMainDevice() const { return m_devices[0].get(); }
    const Swapchain* getMainSwapchain();
 
   private:
@@ -48,13 +48,13 @@ class DeviceHerder final
    // =============================================================================================
    // Private Variables
    // =============================================================================================
-   const cyd::Window& _window;
+   const cyd::Window& m_window;
 
-   std::vector<const char*> _extensions;
+   std::vector<const char*> m_extensions;
 
-   std::vector<std::unique_ptr<Device>> _devices;
+   std::vector<std::unique_ptr<Device>> m_devices;
 
-   const Instance& _instance;
-   const Surface& _surface;
+   const Instance& m_instance;
+   const Surface& m_surface;
 };
 }

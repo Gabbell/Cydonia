@@ -32,8 +32,8 @@ class RenderPassStash final
   private:
    void _createDefaultRenderPasses();
 
-   const Device& _device;
+   const Device& m_device;
 
-   std::unordered_map<cyd::RenderPassInfo, VkRenderPass> _renderPasses;
+   std::unordered_map<cyd::RenderPassInfo, VkRenderPass> m_renderPasses;
 };
 }

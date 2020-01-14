@@ -8,20 +8,20 @@
 
 namespace vk
 {
-void Buffer::seize(
+void Buffer::acquire(
     const Device& device,
     size_t size,
     cyd::BufferUsageFlag usage,
     cyd::MemoryTypeFlag memoryType )
 {
-   _device     = &device;
-   _size       = size;
-   _memoryType = memoryType;
-   _inUse      = true;
+   m_pDevice    = &device;
+   m_size       = size;
+   m_memoryType = memoryType;
+   m_inUse      = true;
 
    VkBufferCreateInfo bufferInfo = {};
    bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-   bufferInfo.size               = _size;
+   bufferInfo.size               = m_size;
 
    if( usage & cyd::BufferUsage::UNIFORM )
    {
@@ -51,7 +51,7 @@ void Buffer::seize(
    // TODO Investigate concurrent
    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-   VkResult result = vkCreateBuffer( _device->getVKDevice(), &bufferInfo, nullptr, &_vkBuffer );
+   VkResult result = vkCreateBuffer( m_pDevice->getVKDevice(), &bufferInfo, nullptr, &m_vkBuffer );
    CYDASSERT( result == VK_SUCCESS && "Buffer: Could not create buffer" );
 
    _allocateMemory();
@@ -59,49 +59,49 @@ void Buffer::seize(
 
 void Buffer::release()
 {
-   if( _device )
+   if( m_pDevice )
    {
-      _size       = 0;
-      _memoryType = 0;
-      _inUse      = false;
+      m_size       = 0;
+      m_memoryType = 0;
+      m_inUse      = false;
 
-      vkDestroyBuffer( _device->getVKDevice(), _vkBuffer, nullptr );
-      vkFreeMemory( _device->getVKDevice(), _vkMemory, nullptr );
+      vkDestroyBuffer( m_pDevice->getVKDevice(), m_vkBuffer, nullptr );
+      vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
-      _device    = nullptr;
-      _data      = nullptr;
-      _vkBuffer  = nullptr;
-      _vkMemory  = nullptr;
-      _vkDescSet = nullptr;
+      m_pDevice   = nullptr;
+      m_data      = nullptr;
+      m_vkBuffer  = nullptr;
+      m_vkMemory  = nullptr;
+      m_vkDescSet = nullptr;
    }
 }
 
-void Buffer::mapMemory( const void* data )
+void Buffer::mapMemory( const void* pData )
 {
-   if( !( _memoryType & cyd::MemoryType::HOST_VISIBLE ) )
+   if( !( m_memoryType & cyd::MemoryType::HOST_VISIBLE ) )
    {
       CYDASSERT( !"Buffer: Cannot map memory, buffer memory not host visible" );
       return;
    }
 
    // TODO Add offsets to create chunking buffers
-   vkMapMemory( _device->getVKDevice(), _vkMemory, 0, _size, 0, &_data );
-   memcpy( _data, data, _size );
-   vkUnmapMemory( _device->getVKDevice(), _vkMemory );
+   vkMapMemory( m_pDevice->getVKDevice(), m_vkMemory, 0, m_size, 0, &m_data );
+   memcpy( m_data, pData, m_size );
+   vkUnmapMemory( m_pDevice->getVKDevice(), m_vkMemory );
 }
 
 void Buffer::updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescriptorSet descSet )
 {
-   _vkDescSet = descSet;
+   m_vkDescSet = descSet;
 
    VkDescriptorBufferInfo bufferInfo = {};
-   bufferInfo.buffer                 = _vkBuffer;
+   bufferInfo.buffer                 = m_vkBuffer;
    bufferInfo.offset                 = 0;
-   bufferInfo.range                  = _size;
+   bufferInfo.range                  = m_size;
 
    VkWriteDescriptorSet descriptorWrite = {};
    descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-   descriptorWrite.dstSet               = _vkDescSet;
+   descriptorWrite.dstSet               = m_vkDescSet;
    descriptorWrite.dstBinding           = info.binding;
    descriptorWrite.dstArrayElement      = 0;
    descriptorWrite.descriptorType =
@@ -109,25 +109,25 @@ void Buffer::updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescripto
    descriptorWrite.descriptorCount = 1;
    descriptorWrite.pBufferInfo     = &bufferInfo;
 
-   vkUpdateDescriptorSets( _device->getVKDevice(), 1, &descriptorWrite, 0, nullptr );
+   vkUpdateDescriptorSets( m_pDevice->getVKDevice(), 1, &descriptorWrite, 0, nullptr );
 }
 
 void Buffer::_allocateMemory()
 {
    // Allocating memory
    VkMemoryRequirements memRequirements;
-   vkGetBufferMemoryRequirements( _device->getVKDevice(), _vkBuffer, &memRequirements );
+   vkGetBufferMemoryRequirements( m_pDevice->getVKDevice(), m_vkBuffer, &memRequirements );
 
    VkMemoryPropertyFlags memoryProperty = 0;
-   if( _memoryType & cyd::MemoryType::DEVICE_LOCAL )
+   if( m_memoryType & cyd::MemoryType::DEVICE_LOCAL )
    {
       memoryProperty |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
    }
-   if( _memoryType & cyd::MemoryType::HOST_VISIBLE )
+   if( m_memoryType & cyd::MemoryType::HOST_VISIBLE )
    {
       memoryProperty |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
    }
-   if( _memoryType & cyd::MemoryType::HOST_COHERENT )
+   if( m_memoryType & cyd::MemoryType::HOST_COHERENT )
    {
       memoryProperty |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
    }
@@ -136,11 +136,11 @@ void Buffer::_allocateMemory()
    allocInfo.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
    allocInfo.allocationSize       = memRequirements.size;
    allocInfo.memoryTypeIndex =
-       _device->findMemoryType( memRequirements.memoryTypeBits, memoryProperty );
+       m_pDevice->findMemoryType( memRequirements.memoryTypeBits, memoryProperty );
 
-   VkResult result = vkAllocateMemory( _device->getVKDevice(), &allocInfo, nullptr, &_vkMemory );
+   VkResult result = vkAllocateMemory( m_pDevice->getVKDevice(), &allocInfo, nullptr, &m_vkMemory );
    CYDASSERT( result == VK_SUCCESS && "Buffer: Could not allocate device memory" );
 
-   vkBindBufferMemory( _device->getVKDevice(), _vkBuffer, _vkMemory, 0 );
+   vkBindBufferMemory( m_pDevice->getVKDevice(), m_vkBuffer, m_vkMemory, 0 );
 }
 }

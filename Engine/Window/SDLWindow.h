@@ -27,22 +27,25 @@ namespace cyd
 class Window
 {
   public:
-   Window( uint32_t width, uint32_t height, const std::string& title );
+   Window() = default;
    ~Window();
+
+   bool init( uint32_t width, uint32_t height, const std::string& title );
+   bool uninit();
 
    const Extent& getExtent() const noexcept { return _extent; }
    SDL_Window* getSDLWindow() const noexcept { return _sdlWindow; }
    std::vector<const char*> getExtensionsFromSDL() const noexcept { return _extensions; };
 
   private:
-   const std::string _title = "Default Title";
+   const std::string m_title = "Default Title";
 
    std::vector<const char*> _extensions;
 
-   // Window is the owner of this SDL_Window
-   SDL_Window* _sdlWindow = nullptr;
+   // Window is the owner of this SDLm_Window
+   SDL_Window* m_sdlWindow = nullptr;
 
    // Dimensions
-   Extent _extent = {0, 0};
+   Extent m_extent = {0, 0};
 };
 }

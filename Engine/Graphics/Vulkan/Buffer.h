@@ -28,41 +28,41 @@ class Buffer final
    MOVABLE( Buffer );
    ~Buffer() = default;
 
-   void seize(
+   void acquire(
        const Device& device,
        size_t size,
        cyd::BufferUsageFlag usage,
        cyd::MemoryTypeFlag memoryType );
    void release();
 
-   size_t getSize() const noexcept { return _size; }
-   VkBuffer getVKBuffer() const noexcept { return _vkBuffer; }
-   const VkDescriptorSet& getVKDescSet() const noexcept { return _vkDescSet; }
-   bool inUse() const { return _inUse; }
+   size_t getSize() const noexcept { return m_size; }
+   VkBuffer getVKBuffer() const noexcept { return m_vkBuffer; }
+   const VkDescriptorSet& getVKDescSet() const noexcept { return m_vkDescSet; }
+   bool inUse() const { return m_inUse; }
 
-   void setUnused() { _inUse = false; }
+   void setUnused() { m_inUse = false; }
 
    void
    updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescriptorSet descSet );
-   void mapMemory( const void* data );
+   void mapMemory( const void* pData );
 
   private:
    void _allocateMemory();
 
-   const Device* _device = nullptr;
+   const Device* m_pDevice = nullptr;
 
    // Used for staging buffers
-   void* _data = nullptr;
+   void* m_data = nullptr;
 
    // Common
-   size_t _size             = 0;
-   VkBuffer _vkBuffer       = nullptr;
-   VkDeviceMemory _vkMemory = nullptr;
-   cyd::MemoryTypeFlag _memoryType;
+   size_t m_size             = 0;
+   VkBuffer m_vkBuffer       = nullptr;
+   VkDeviceMemory m_vkMemory = nullptr;
+   cyd::MemoryTypeFlag m_memoryType;
 
    // Optional for shader accessible buffers
-   VkDescriptorSet _vkDescSet = nullptr;
+   VkDescriptorSet m_vkDescSet = nullptr;
    
-   bool _inUse = false;
+   bool m_inUse = false;
 };
 }
