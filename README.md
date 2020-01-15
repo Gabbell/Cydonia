@@ -1,6 +1,9 @@
 ## Cydonia - *Experimental Engine*
 I'm just messing around.
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
+![https://ci.appveyor.com/api/projects/status/Gabbell/cydonia?svg=true&branch={master}](https://ci.appveyor.com/api/projects/status/Gabbell/cydonia?svg=true&branch={master})
+
 Take a look at the engine master branch project if you want to know what's on my mind right now and what I'm planning to do in the future.
 
 **Things this engine has:**
