@@ -4,7 +4,6 @@
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
-#include <Handles/HandleManager.h>
 
 #include <cstdint>
 #include <vector>
@@ -27,11 +26,13 @@ namespace vk
 class CommandPool final
 {
   public:
+   CommandPool() = delete;
    CommandPool(
        const Device& device,
        uint32_t familyIndex,
        cyd::QueueUsageFlag usage,
        bool supportsPresentation );
+   NON_COPIABLE( CommandPool )
    ~CommandPool();
 
    const VkCommandPool& getVKCommandPool() const { return m_vkPool; }
@@ -45,13 +46,11 @@ class CommandPool final
   private:
    void _createCommandPool();
 
-   const Device& m_device;
+   const Device* m_pDevice = nullptr;
 
    // Command Buffer Pool
    static constexpr uint32_t MAX_CMD_BUFFERS_IN_FLIGHT = 5;
    std::vector<CommandBuffer> m_cmdBuffers;
-
-   cyd::HandleManager m_cmdBufferHandles;
 
    VkCommandPool m_vkPool = nullptr;
 

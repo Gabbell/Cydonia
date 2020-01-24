@@ -55,6 +55,11 @@ void Buffer::acquire(
    CYDASSERT( result == VK_SUCCESS && "Buffer: Could not create buffer" );
 
    _allocateMemory();
+
+   if( m_memoryType & cyd::MemoryType::HOST_VISIBLE )
+   {
+      _mapMemory();
+   }
 }
 
 void Buffer::release()
@@ -65,18 +70,32 @@ void Buffer::release()
       m_memoryType = 0;
       m_inUse      = false;
 
+      if( m_memoryType & cyd::MemoryType::HOST_VISIBLE )
+      {
+         _unmapMemory();
+      }
+
       vkDestroyBuffer( m_pDevice->getVKDevice(), m_vkBuffer, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
-      m_pDevice   = nullptr;
-      m_data      = nullptr;
-      m_vkBuffer  = nullptr;
-      m_vkMemory  = nullptr;
-      m_vkDescSet = nullptr;
+      m_pDevice  = nullptr;
+      m_vkBuffer = nullptr;
+      m_vkMemory = nullptr;
    }
 }
 
-void Buffer::mapMemory( const void* pData )
+void Buffer::copy( const void* pData )
+{
+   if( !( m_memoryType & cyd::MemoryType::HOST_VISIBLE ) )
+   {
+      CYDASSERT( !"Buffer: Cannot copy to buffer, buffer memory not host visible" );
+      return;
+   }
+
+   memcpy( m_data, pData, m_size );
+}
+
+void Buffer::_mapMemory()
 {
    if( !( m_memoryType & cyd::MemoryType::HOST_VISIBLE ) )
    {
@@ -86,30 +105,21 @@ void Buffer::mapMemory( const void* pData )
 
    // TODO Add offsets to create chunking buffers
    vkMapMemory( m_pDevice->getVKDevice(), m_vkMemory, 0, m_size, 0, &m_data );
-   memcpy( m_data, pData, m_size );
-   vkUnmapMemory( m_pDevice->getVKDevice(), m_vkMemory );
 }
 
-void Buffer::updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescriptorSet descSet )
+void Buffer::_unmapMemory()
 {
-   m_vkDescSet = descSet;
+   if( !( m_memoryType & cyd::MemoryType::HOST_VISIBLE ) )
+   {
+      CYDASSERT( !"Buffer: Cannot unmap memory, buffer memory not host visible" );
+      return;
+   }
 
-   VkDescriptorBufferInfo bufferInfo = {};
-   bufferInfo.buffer                 = m_vkBuffer;
-   bufferInfo.offset                 = 0;
-   bufferInfo.range                  = m_size;
-
-   VkWriteDescriptorSet descriptorWrite = {};
-   descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-   descriptorWrite.dstSet               = m_vkDescSet;
-   descriptorWrite.dstBinding           = info.binding;
-   descriptorWrite.dstArrayElement      = 0;
-   descriptorWrite.descriptorType =
-       TypeConversions::cydShaderObjectTypeToVkDescriptorType( info.type );
-   descriptorWrite.descriptorCount = 1;
-   descriptorWrite.pBufferInfo     = &bufferInfo;
-
-   vkUpdateDescriptorSets( m_pDevice->getVKDevice(), 1, &descriptorWrite, 0, nullptr );
+   if( m_data )
+   {
+      vkUnmapMemory( m_pDevice->getVKDevice(), m_vkMemory );
+      m_data = nullptr;
+   }
 }
 
 void Buffer::_allocateMemory()
@@ -143,4 +153,6 @@ void Buffer::_allocateMemory()
 
    vkBindBufferMemory( m_pDevice->getVKDevice(), m_vkBuffer, m_vkMemory, 0 );
 }
+
+Buffer::~Buffer() { release(); }
 }

@@ -27,7 +27,7 @@ class TypeConversions final
 {
   public:
    TypeConversions() = delete;
-   NON_COPIABLE( TypeConversions );
+   NON_COPIABLE( TypeConversions )
    ~TypeConversions() = delete;
 
    static VkFormat cydFormatToVkFormat( cyd::PixelFormat format );
@@ -38,7 +38,7 @@ class TypeConversions final
    static VkPolygonMode cydPolyModeToVkPolyMode( cyd::PolygonMode polyMode );
    static uint32_t cydShaderStagesToVkShaderStages( cyd::ShaderStageFlag stages );
    static VkImageLayout cydImageLayoutToVKImageLayout( cyd::ImageLayout layout );
-   static VkDescriptorType cydShaderObjectTypeToVkDescriptorType( cyd::ShaderObjectType type );
+   static VkDescriptorType cydShaderObjectTypeToVkDescriptorType( cyd::ShaderResourceType type );
    static VkFilter cydFilterToVkFilter( cyd::Filter filter );
    static VkSamplerAddressMode cydAddressModeToVkAddressMode( cyd::AddressMode mode );
 };

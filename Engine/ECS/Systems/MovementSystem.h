@@ -5,26 +5,22 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/TransformComponent.h>
-#include <ECS/Components/RenderableComponent.h>
+#include <ECS/Components/MotionComponent.h>
 
 // ================================================================================================
 // Definition
 // ================================================================================================
 namespace cyd
 {
-class RenderSystem final : public CommonSystem<TransformComponent, RenderableComponent>
+class MovementSystem final : public CommonSystem<TransformComponent, MotionComponent>
 {
   public:
-   RenderSystem() = default;
-   NON_COPIABLE( RenderSystem )
-   virtual ~RenderSystem() = default;
+   MovementSystem() = default;
+   NON_COPIABLE( MovementSystem )
+   virtual ~MovementSystem() = default;
 
-   bool init() override;
+   bool init() override{};
    void uninit() override{};
-   
    void tick( double deltaS ) override;
-
-  private:
-   void _preparePipeline() const;
 };
 }

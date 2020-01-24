@@ -27,7 +27,7 @@ class RenderPassStash final
    explicit RenderPassStash( const Device& device );
    ~RenderPassStash();
 
-   const VkRenderPass findOrCreate( const cyd::RenderPassInfo& info );
+   VkRenderPass findOrCreate( const cyd::RenderPassInfo& info );
 
   private:
    void _createDefaultRenderPasses();

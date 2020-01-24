@@ -27,14 +27,14 @@ class DescriptorPool final
    explicit DescriptorPool( const Device& device );
    ~DescriptorPool();
 
-   VkDescriptorSet findOrAllocate( const cyd::DescriptorSetLayoutInfo& layout );
-   void free( const VkDescriptorSet& descSet );
+   VkDescriptorSet allocate( const cyd::DescriptorSetLayoutInfo& layout ) const;
+   void free( const VkDescriptorSet& descSet ) const;
 
   private:
    const Device& m_device;
 
    std::unordered_map<cyd::DescriptorSetLayoutInfo, VkDescriptorSet> m_descSets;
 
-   VkDescriptorPool m_vkDescPool;
+   VkDescriptorPool m_vkDescPool{};
 };
 }

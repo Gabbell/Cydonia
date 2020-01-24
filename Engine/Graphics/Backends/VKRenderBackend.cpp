@@ -68,6 +68,12 @@ class VKRenderBackendImp
       cmdBuffer->submit();
    }
 
+   void resetCommandList( CmdListHandle cmdList )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->reset();
+   }
+
    void waitOnCommandList( CmdListHandle cmdList )
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
@@ -91,18 +97,16 @@ class VKRenderBackendImp
       m_coreHandles.remove( cmdList );
    }
 
+   void setViewport( CmdListHandle cmdList, const Rectangle& viewport )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->setViewport( viewport );
+   }
+
    void bindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo )
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       cmdBuffer->bindPipeline( pipInfo );
-   }
-
-   void bindTexture( CmdListHandle cmdList, TextureHandle texHandle )
-   {
-      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      auto texture   = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
-
-      cmdBuffer->bindTexture( texture );
    }
 
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
@@ -121,18 +125,25 @@ class VKRenderBackendImp
       cmdBuffer->bindIndexBuffer<uint32_t>( indexBuffer );
    }
 
-   void bindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle )
+   void
+   bindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      auto texture   = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
+
+      cmdBuffer->bindTexture( texture, set, binding );
+   }
+
+   void bindUniformBuffer(
+       CmdListHandle cmdList,
+       UniformBufferHandle bufferHandle,
+       uint32_t set,
+       uint32_t binding )
    {
       auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
-      cmdBuffer->bindBuffer( uniformBuffer );
-   }
-
-   void setViewport( CmdListHandle cmdList, const Rectangle& viewport )
-   {
-      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->setViewport( viewport );
+      cmdBuffer->bindBuffer( uniformBuffer, set, binding );
    }
 
    void updateConstantBuffer(
@@ -151,22 +162,18 @@ class VKRenderBackendImp
       cmdBuffer->updatePushConstants( range, pData );
    }
 
-   TextureHandle createTexture(
-       CmdListHandle transferList,
-       const TextureDescription& desc,
-       uint32_t shaderObjectIdx,
-       const DescriptorSetLayoutInfo& layout,
-       const void* pTexels )
+   TextureHandle
+   createTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
 
       // Staging
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( desc.size );
-      staging->mapMemory( pTexels );
+      staging->copy( pTexels );
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
-      vk::Texture* texture = m_mainDevice->createTexture( desc, shaderObjectIdx, layout );
+      vk::Texture* texture = m_mainDevice->createTexture( desc );
       cmdBuffer->uploadBufferToTex( staging, texture );
 
       return m_coreHandles.add( texture, HandleType::TEXTURE );
@@ -184,7 +191,7 @@ class VKRenderBackendImp
 
       // Staging
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( bufferSize );
-      staging->mapMemory( pVertices );
+      staging->copy( pVertices );
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
@@ -204,7 +211,7 @@ class VKRenderBackendImp
 
       // Staging
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( bufferSize );
-      staging->mapMemory( pIndices );
+      staging->copy( pIndices );
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
@@ -214,20 +221,17 @@ class VKRenderBackendImp
       return m_coreHandles.add( indexBuffer, HandleType::INDEXBUFFER );
    }
 
-   UniformBufferHandle createUniformBuffer(
-       size_t size,
-       uint32_t shaderObjectIdx,
-       const DescriptorSetLayoutInfo& layout )
+   UniformBufferHandle createUniformBuffer( size_t size )
    {
-      auto uniformBuffer = m_mainDevice->createUniformBuffer( size, shaderObjectIdx, layout );
+      auto uniformBuffer = m_mainDevice->createUniformBuffer( size );
 
       return m_coreHandles.add( uniformBuffer, HandleType::UNIFORMBUFFER );
    }
 
-   void mapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* pData )
+   void copyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData )
    {
       auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-      uniformBuffer->mapMemory( pData );
+      uniformBuffer->copy( pData );
    }
 
    void destroyTexture( TextureHandle texHandle )
@@ -262,10 +266,10 @@ class VKRenderBackendImp
       m_coreHandles.remove( bufferHandle );
    }
 
-   void beginRenderPass( CmdListHandle cmdList )
+   void beginRenderSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo )
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->beginPass( *m_mainSwapchain );
+      cmdBuffer->beginPass( renderPassInfo, *m_mainSwapchain );
    }
 
    void endRenderPass( CmdListHandle cmdList )
@@ -333,6 +337,11 @@ void VKRenderBackend::submitCommandList( CmdListHandle cmdList )
    _imp->submitCommandList( cmdList );
 }
 
+void VKRenderBackend::resetCommandList( CmdListHandle cmdList )
+{
+   _imp->resetCommandList( cmdList );
+}
+
 void VKRenderBackend::waitOnCommandList( CmdListHandle cmdList )
 {
    _imp->waitOnCommandList( cmdList );
@@ -348,11 +357,6 @@ void VKRenderBackend::bindPipeline( CmdListHandle cmdList, const PipelineInfo& p
    _imp->bindPipeline( cmdList, pipInfo );
 }
 
-void VKRenderBackend::bindTexture( CmdListHandle cmdList, TextureHandle texHandle )
-{
-   _imp->bindTexture( cmdList, texHandle );
-}
-
 void VKRenderBackend::bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
 {
    _imp->bindVertexBuffer( cmdList, bufferHandle );
@@ -363,9 +367,22 @@ void VKRenderBackend::bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle 
    _imp->bindIndexBuffer( cmdList, bufferHandle );
 }
 
-void VKRenderBackend::bindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle )
+void VKRenderBackend::bindTexture(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    uint32_t set,
+    uint32_t binding )
 {
-   _imp->bindUniformBuffer( cmdList, bufferHandle );
+   _imp->bindTexture( cmdList, texHandle, set, binding );
+}
+
+void VKRenderBackend::bindUniformBuffer(
+    CmdListHandle cmdList,
+    UniformBufferHandle bufferHandle,
+    uint32_t set,
+    uint32_t binding )
+{
+   _imp->bindUniformBuffer( cmdList, bufferHandle, set, binding );
 }
 
 void VKRenderBackend::setViewport( CmdListHandle cmdList, const Rectangle& viewport )
@@ -386,11 +403,9 @@ void VKRenderBackend::updateConstantBuffer(
 TextureHandle VKRenderBackend::createTexture(
     CmdListHandle transferList,
     const cyd::TextureDescription& desc,
-    uint32_t shaderObjectIdx,
-    const cyd::DescriptorSetLayoutInfo& layout,
     const void* pTexels )
 {
-   return _imp->createTexture( transferList, desc, shaderObjectIdx, layout, pTexels );
+   return _imp->createTexture( transferList, desc, pTexels );
 }
 
 VertexBufferHandle VKRenderBackend::createVertexBuffer(
@@ -410,17 +425,14 @@ IndexBufferHandle VKRenderBackend::createIndexBuffer(
    return _imp->createIndexBuffer( transferList, count, pIndices );
 }
 
-UniformBufferHandle VKRenderBackend::createUniformBuffer(
-    size_t size,
-    uint32_t shaderObjectIdx,
-    const DescriptorSetLayoutInfo& layout )
+UniformBufferHandle VKRenderBackend::createUniformBuffer( size_t size )
 {
-   return _imp->createUniformBuffer( size, shaderObjectIdx, layout );
+   return _imp->createUniformBuffer( size );
 }
 
-void VKRenderBackend::mapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* pData )
+void VKRenderBackend::copyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData )
 {
-   _imp->mapUniformBufferMemory( bufferHandle, pData );
+   _imp->copyToUniformBuffer( bufferHandle, pData );
 }
 
 void VKRenderBackend::destroyTexture( TextureHandle texHandle )
@@ -443,7 +455,12 @@ void VKRenderBackend::destroyUniformBuffer( UniformBufferHandle bufferHandle )
    _imp->destroyUniformBuffer( bufferHandle );
 }
 
-void VKRenderBackend::beginRenderPass( CmdListHandle cmdList ) { _imp->beginRenderPass( cmdList ); }
+void VKRenderBackend::beginRenderSwapchain(
+    CmdListHandle cmdList,
+    const RenderPassInfo& renderPassInfo )
+{
+   _imp->beginRenderSwapchain( cmdList, renderPassInfo );
+}
 
 void VKRenderBackend::endRenderPass( CmdListHandle cmdList ) { _imp->endRenderPass( cmdList ); }
 

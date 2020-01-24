@@ -20,7 +20,6 @@
     <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
     <ClCompile Include="Graphics\Scene\Frustum.cpp" />
     <ClCompile Include="Applications\Application.cpp" />
-    <ClCompile Include="HID\InputInterpreter.cpp" />
     <ClCompile Include="Window\GLFWWindow.cpp" />
     <ClCompile Include="Graphics\RenderInterface.cpp" />
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
@@ -30,6 +29,9 @@
     <ClCompile Include="ECS\Components\RenderableComponent.cpp" />
     <ClCompile Include="Handles\HandleManager.cpp" />
     <ClCompile Include="ECS\ECS.cpp" />
+    <ClCompile Include="ECS\Systems\MovementSystem.cpp" />
+    <ClCompile Include="ECS\Systems\PlayerMoveSystem.cpp" />
+    <ClCompile Include="ECS\Systems\InputSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">
@@ -72,8 +74,6 @@
     <ClInclude Include="Common\Include.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Applications\Application.h" />
-    <ClInclude Include="HID\Controller.h" />
-    <ClInclude Include="HID\InputInterpreter.h" />
     <ClInclude Include="Window\GLFWWindow.h" />
     <ClInclude Include="Graphics\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
@@ -85,13 +85,19 @@
     <ClInclude Include="ECS\Components\RenderableComponent.h" />
     <ClInclude Include="ECS\Components\TransformComponent.h" />
     <ClInclude Include="ECS\Entities\Entity.h" />
-    <ClInclude Include="ECS\Components\FreeControllerComponent.h" />
     <ClInclude Include="Handles\Handle.h" />
     <ClInclude Include="Handles\HandleManager.h" />
     <ClInclude Include="ECS\Components\LensComponent.h" />
     <ClInclude Include="ECS\Components\ComponentPool.h" />
     <ClInclude Include="ECS\Systems\CommonSystem.h" />
     <ClInclude Include="ECS\ECS.h" />
+    <ClInclude Include="ECS\Systems\MovementSystem.h" />
+    <ClInclude Include="ECS\Components\MotionComponent.h" />
+    <ClInclude Include="ECS\Systems\PlayerMoveSystem.h" />
+    <ClInclude Include="ECS\Entity.h" />
+    <ClInclude Include="ECS\SharedComponents\InputComponent.h" />
+    <ClInclude Include="ECS\Systems\InputSystem.h" />
+    <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

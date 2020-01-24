@@ -83,11 +83,11 @@ void cyd::VKShaderViewer::preLoop()
    transferCmds->waitForCompletion();
 }
 
-void cyd::VKShaderViewer::drawFrame( double deltaMs )
+void cyd::VKShaderViewer::drawFrame( double deltaS )
 {
    // Push constant
    static float currentTime = 0;
-   currentTime += static_cast<float>( deltaMs );
+   currentTime += static_cast<float>( deltaS );
 
    // Drawing in the swapchain
    auto cmds = device->createCommandBuffer( QueueUsage::GRAPHICS, true );

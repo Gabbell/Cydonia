@@ -10,7 +10,7 @@ static RenderBackend* b = nullptr;
 
 // =================================================================================================
 // Initialization
-
+//
 template <>
 void InitRenderBackend<VK>( const Window& window )
 {
@@ -36,30 +36,30 @@ void RenderBackendCleanup() { b->cleanup(); }
 
 // =================================================================================================
 // Command Buffers/Lists
-
+//
 CmdListHandle CreateCommandList( QueueUsageFlag usage, bool presentable )
 {
    return b->createCommandList( usage, presentable );
 }
 
-void SubmitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
 void StartRecordingCommandList( CmdListHandle cmdList ) { b->startRecordingCommandList( cmdList ); }
 void EndRecordingCommandList( CmdListHandle cmdList ) { b->endRecordingCommandList( cmdList ); }
-
+void SubmitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
+void ResetCommandList( CmdListHandle cmdList ) { b->resetCommandList( cmdList ); }
 void WaitOnCommandList( CmdListHandle cmdList ) { b->waitOnCommandList( cmdList ); }
 void DestroyCommandList( CmdListHandle cmdList ) { b->destroyCommandList( cmdList ); }
 
 // =================================================================================================
 // Pipeline Specification
+//
+void SetViewport( CmdListHandle cmdList, const Rectangle& viewport )
+{
+   b->setViewport( cmdList, viewport );
+}
 
 void BindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo )
 {
    b->bindPipeline( cmdList, pipInfo );
-}
-
-void BindTexture( CmdListHandle cmdList, TextureHandle texHandle )
-{
-   b->bindTexture( cmdList, texHandle );
 }
 
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
@@ -72,14 +72,18 @@ void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
    b->bindIndexBuffer( cmdList, bufferHandle );
 }
 
-void BindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle )
+void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
 {
-   b->bindUniformBuffer( cmdList, bufferHandle );
+   b->bindTexture( cmdList, texHandle, set, binding );
 }
 
-void SetViewport( CmdListHandle cmdList, const Rectangle& viewport )
+void BindUniformBuffer(
+    CmdListHandle cmdList,
+    UniformBufferHandle bufferHandle,
+    uint32_t set,
+    uint32_t binding )
 {
-   b->setViewport( cmdList, viewport );
+   b->bindUniformBuffer( cmdList, bufferHandle, set, binding );
 }
 
 void UpdateConstantBuffer(
@@ -94,15 +98,11 @@ void UpdateConstantBuffer(
 
 // =================================================================================================
 // Resources
-
-TextureHandle CreateTexture(
-    CmdListHandle transferList,
-    const TextureDescription& desc,
-    uint32_t shaderObjectIdx,
-    const DescriptorSetLayoutInfo& layout,
-    const void* pTexels )
+//
+TextureHandle
+CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
 {
-   return b->createTexture( transferList, desc, shaderObjectIdx, layout, pTexels );
+   return b->createTexture( transferList, desc, pTexels );
 }
 
 VertexBufferHandle CreateVertexBuffer(
@@ -120,15 +120,11 @@ CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndi
    return b->createIndexBuffer( transferList, count, pIndices );
 }
 
-UniformBufferHandle
-CreateUniformBuffer( size_t size, uint32_t shaderObjectIdx, const DescriptorSetLayoutInfo& layout )
-{
-   return b->createUniformBuffer( size, shaderObjectIdx, layout );
-}
+UniformBufferHandle CreateUniformBuffer( size_t size ) { return b->createUniformBuffer( size ); }
 
-void MapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* pData )
+void CopyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData )
 {
-   return b->mapUniformBufferMemory( bufferHandle, pData );
+   return b->copyToUniformBuffer( bufferHandle, pData );
 }
 
 void DestroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }
@@ -147,8 +143,11 @@ void DestroyUniformBuffer( UniformBufferHandle bufferHandle )
 
 // =================================================================================================
 // Drawing
-
-void BeginRenderPass( CmdListHandle cmdList ) { b->beginRenderPass( cmdList ); }
+//
+void BeginRenderPass( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo )
+{
+   b->beginRenderSwapchain( cmdList, renderPassInfo );
+}
 
 void EndRenderPass( CmdListHandle cmdList ) { b->endRenderPass( cmdList ); }
 

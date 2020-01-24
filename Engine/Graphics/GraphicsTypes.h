@@ -145,7 +145,7 @@ enum class ImageType
    TEXTURE_3D
 };
 
-enum class ShaderObjectType
+enum class ShaderResourceType
 {
    UNIFORM,
    COMBINED_IMAGE_SAMPLER
@@ -203,12 +203,13 @@ struct Vertex
    glm::vec3 normal;
 };
 
-struct ShaderObjectInfo
+struct ShaderResourceInfo
 {
-   bool operator==( const ShaderObjectInfo& other ) const;
-   ShaderObjectType type;
-   ShaderStageFlag stages;
+   bool operator==( const ShaderResourceInfo& other ) const;
+   uint32_t set;
    uint32_t binding;
+   ShaderStageFlag stages;
+   ShaderResourceType type;
 };
 
 struct Attachment
@@ -235,49 +236,48 @@ struct PushConstantRange
 struct SamplerInfo
 {
    bool operator==( const SamplerInfo& other ) const;
-   bool useAnisotropy           = true;
-   float maxAnisotropy          = 16.0f;
-   cyd::Filter magFilter        = cyd::Filter::NEAREST;
-   cyd::Filter minFilter        = cyd::Filter::NEAREST;
-   cyd::AddressMode addressMode = cyd::AddressMode::REPEAT;
+   bool useAnisotropy      = true;
+   float maxAnisotropy     = 16.0f;
+   Filter magFilter        = Filter::NEAREST;
+   Filter minFilter        = Filter::NEAREST;
+   AddressMode addressMode = AddressMode::REPEAT;
 };
 
 struct RenderPassInfo
 {
    bool operator==( const RenderPassInfo& other ) const;
-   std::vector<cyd::Attachment> attachments;
+   std::vector<Attachment> attachments;
 };
 
 struct DescriptorSetLayoutInfo
 {
    bool operator==( const DescriptorSetLayoutInfo& other ) const;
-   std::vector<cyd::ShaderObjectInfo> shaderObjects;
+   std::vector<ShaderResourceInfo> shaderResources;
 };
 
 struct PipelineLayoutInfo
 {
    bool operator==( const PipelineLayoutInfo& other ) const;
-   std::vector<cyd::PushConstantRange> ranges;
-   DescriptorSetLayoutInfo descSetLayout;
+   std::vector<PushConstantRange> ranges;
+   std::vector<DescriptorSetLayoutInfo> descSets;
 };
 
 struct PipelineInfo
 {
    bool operator==( const PipelineInfo& other ) const;
    std::vector<std::string> shaders;
-   RenderPassInfo renderPass;
    PipelineLayoutInfo pipLayout;
-   cyd::DrawPrimitive drawPrim;
-   cyd::PolygonMode polyMode;
-   cyd::Extent extent;
+   DrawPrimitive drawPrim;
+   PolygonMode polyMode;
+   Extent extent;
 };
 
 struct SwapchainInfo
 {
-   cyd::Extent extent;
-   cyd::PixelFormat format;
-   cyd::ColorSpace space;
-   cyd::PresentMode mode;
+   Extent extent;
+   PixelFormat format;
+   ColorSpace space;
+   PresentMode mode;
 };
 }
 
@@ -333,9 +333,9 @@ struct std::hash<cyd::Attachment>
 };
 
 template <>
-struct std::hash<cyd::ShaderObjectInfo>
+struct std::hash<cyd::ShaderResourceInfo>
 {
-   size_t operator()( const cyd::ShaderObjectInfo& shaderObject ) const noexcept
+   size_t operator()( const cyd::ShaderResourceInfo& shaderObject ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, shaderObject.type );
@@ -380,7 +380,7 @@ struct std::hash<cyd::DescriptorSetLayoutInfo>
    size_t operator()( const cyd::DescriptorSetLayoutInfo& descSetLayoutInfo ) const noexcept
    {
       size_t seed = 0;
-      for( const auto& ubo : descSetLayoutInfo.shaderObjects )
+      for( const auto& ubo : descSetLayoutInfo.shaderResources )
       {
          hashCombine( seed, ubo );
       }

@@ -27,7 +27,6 @@ namespace vk
 class Device;
 class Surface;
 class CommandBuffer;
-struct RenderPassInfo;
 }
 
 // ================================================================================================
@@ -39,6 +38,7 @@ class Swapchain final
 {
   public:
    Swapchain( Device& device, const Surface& surface, const cyd::SwapchainInfo& info );
+   NON_COPIABLE( Swapchain )
    ~Swapchain();
 
    void initFramebuffers( const cyd::RenderPassInfo& info, VkRenderPass renderPass );

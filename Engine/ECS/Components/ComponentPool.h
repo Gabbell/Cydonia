@@ -2,9 +2,15 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/BaseComponent.h>
-
 #include <array>
+
+// ================================================================================================
+// Definition
+// ================================================================================================
+namespace cyd
+{
+class BaseComponent;
+}
 
 // ================================================================================================
 // Definition
@@ -17,17 +23,12 @@ class BaseComponentPool
    BaseComponentPool() = default;
 };
 
-template <class Component>
+template <class Component, typename = std::enable_if_t<std::is_base_of_v<BaseComponent, Component>>>
 class ComponentPool final : public BaseComponentPool
 {
   public:
-   ComponentPool()
-   {
-      static_assert(
-          (std::is_base_of_v<BaseComponent, Component>),
-          "Attempting to create an archetype pool with an invalid component" );
-   }
-   NON_COPIABLE( ComponentPool );
+   ComponentPool() = default;
+   NON_COPIABLE( ComponentPool )
    ~ComponentPool() = default;
 
    static constexpr size_t INVALID_POOL_IDX = std::numeric_limits<size_t>::max();
@@ -60,7 +61,7 @@ class ComponentPool final : public BaseComponentPool
    }
 
   private:
-   static constexpr size_t MAX_POOL_SIZE        = 1024 * 8;  // 8kB
+   static constexpr size_t MAX_POOL_SIZE        = 1024 * 64;  // 64kB
    static constexpr size_t COMPONENT_ARRAY_SIZE = MAX_POOL_SIZE / sizeof( Component );
 
    std::array<bool, COMPONENT_ARRAY_SIZE> m_slots           = {};

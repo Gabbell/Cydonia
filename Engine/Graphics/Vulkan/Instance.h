@@ -23,7 +23,7 @@ namespace vk
 class Instance final
 {
   public:
-   NON_COPIABLE( Instance );
+   NON_COPIABLE( Instance )
    explicit Instance( const cyd::Window& window );
    ~Instance();
 

@@ -152,13 +152,13 @@ VkImageLayout TypeConversions::cydImageLayoutToVKImageLayout( cyd::ImageLayout l
 }
 
 VkDescriptorType TypeConversions::cydShaderObjectTypeToVkDescriptorType(
-    cyd::ShaderObjectType type )
+    cyd::ShaderResourceType type )
 {
    switch( type )
    {
-      case cyd::ShaderObjectType::UNIFORM:
+      case cyd::ShaderResourceType::UNIFORM:
          return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-      case cyd::ShaderObjectType::COMBINED_IMAGE_SAMPLER:
+      case cyd::ShaderResourceType::COMBINED_IMAGE_SAMPLER:
          return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
       default:
          CYDASSERT( !"Types: Descriptor type not supported" );

@@ -11,6 +11,7 @@
 // Forwards
 // ================================================================================================
 FWDHANDLE( VkPipeline );
+FWDHANDLE( VkRenderPass );
 FWDHANDLE( VkPipelineLayout );
 FWDHANDLE( VkDescriptorSetLayout );
 
@@ -32,7 +33,7 @@ class PipelineStash final
    ~PipelineStash();
 
    const VkDescriptorSetLayout findOrCreate( const cyd::DescriptorSetLayoutInfo& info );
-   const VkPipeline findOrCreate( const cyd::PipelineInfo& info );
+   const VkPipeline findOrCreate( const cyd::PipelineInfo& info, VkRenderPass renderPass );
    const VkPipelineLayout findOrCreate( const cyd::PipelineLayoutInfo& info );
 
   private:

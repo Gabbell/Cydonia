@@ -1,15 +1,20 @@
 #pragma once
 
+#include <cstdint>
+
 namespace cyd
 {
-// TODO Make this available at the game layer. Should be able to create custom components
-enum class ComponentType
+// TODO Make these available at the game layer. Should be able to create custom components
+
+// All entity component types.
+enum class ComponentType : uint8_t
 {
    TRANSFORM = 0,
    RENDERABLE,
+   MOTION,
    LENS,
-   FREECONTROLLER,
+   CONTROLLER,
 
-   COUNT // Keep at the end
+   COUNT  // Keep at the end
 };
 }

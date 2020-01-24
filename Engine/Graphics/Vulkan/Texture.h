@@ -28,7 +28,7 @@ class Texture final
 {
   public:
    Texture() = default;
-   MOVABLE( Texture );
+   MOVABLE( Texture )
    ~Texture() = default;
 
    void acquire( const Device& device, const cyd::TextureDescription& desc );
@@ -37,15 +37,11 @@ class Texture final
    size_t getSize() const noexcept { return m_size; }
    uint32_t getWidth() const noexcept { return m_width; }
    uint32_t getHeight() const noexcept { return m_height; }
-   cyd::ImageLayout getLayout() const noexcept { return m_layout; }
    const VkImage& getVKImage() const noexcept { return m_vkImage; }
-   const VkDescriptorSet& getVKDescSet() const noexcept { return m_vkDescSet; }
+   const VkImageView& getVKImageView() const noexcept { return m_vkImageView; }
    bool inUse() const { return m_inUse; }
 
    void setUnused() { m_inUse = false; }
-   void setLayout( cyd::ImageLayout layout ) { m_layout = layout; }
-
-   void updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescriptorSet descSet );
 
   private:
    void _createImage();
@@ -60,12 +56,10 @@ class Texture final
    cyd::ImageType m_type;
    cyd::PixelFormat m_format;
    cyd::ImageUsageFlag m_usage;
-   cyd::ImageLayout m_layout;
 
    VkImage m_vkImage           = nullptr;
    VkImageView m_vkImageView   = nullptr;
    VkDeviceMemory m_vkMemory   = nullptr;
-   VkDescriptorSet m_vkDescSet = nullptr;
 
    bool m_inUse = false;
 };
