@@ -23,7 +23,7 @@ bool PushConstantRange::operator==( const PushConstantRange& other ) const
    return stages == other.stages && offset == other.offset && size == other.size;
 }
 
-bool ShaderObjectInfo::operator==( const ShaderObjectInfo& other ) const
+bool ShaderResourceInfo::operator==( const ShaderResourceInfo& other ) const
 {
    return stages == other.stages && binding == other.binding;
 }
@@ -45,7 +45,7 @@ bool RenderPassInfo::operator==( const RenderPassInfo& other ) const
 
 bool DescriptorSetLayoutInfo::operator==( const DescriptorSetLayoutInfo& other ) const
 {
-   return shaderObjects == other.shaderObjects;
+   return shaderResources == other.shaderResources;
 }
 
 bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const

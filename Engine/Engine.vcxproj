@@ -172,6 +172,9 @@
     <ClCompile Include="Applications\VKSandbox.cpp" />
     <ClCompile Include="ECS\Components\RenderableComponent.cpp" />
     <ClCompile Include="ECS\ECS.cpp" />
+    <ClCompile Include="ECS\Systems\InputSystem.cpp" />
+    <ClCompile Include="ECS\Systems\MovementSystem.cpp" />
+    <ClCompile Include="ECS\Systems\PlayerMoveSystem.cpp" />
     <ClCompile Include="ECS\Systems\RenderSystem.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
@@ -195,7 +198,6 @@
     <ClCompile Include="Graphics\Vulkan\Texture.cpp" />
     <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
     <ClCompile Include="Handles\HandleManager.cpp" />
-    <ClCompile Include="HID\InputInterpreter.cpp" />
     <ClCompile Include="Window\GLFWWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -206,14 +208,20 @@
     <ClInclude Include="Common\Vulkan.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\LensComponent.h" />
+    <ClInclude Include="ECS\Components\MotionComponent.h" />
     <ClInclude Include="ECS\ECS.h" />
     <ClInclude Include="ECS\Components\ComponentPool.h" />
     <ClInclude Include="ECS\Components\ComponentTypes.h" />
-    <ClInclude Include="ECS\Components\FreeControllerComponent.h" />
     <ClInclude Include="ECS\Components\RenderableComponent.h" />
     <ClInclude Include="ECS\Components\TransformComponent.h" />
     <ClInclude Include="ECS\Entities\Entity.h" />
+    <ClInclude Include="ECS\Entity.h" />
+    <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
+    <ClInclude Include="ECS\SharedComponents\InputComponent.h" />
     <ClInclude Include="ECS\Systems\CommonSystem.h" />
+    <ClInclude Include="ECS\Systems\InputSystem.h" />
+    <ClInclude Include="ECS\Systems\MovementSystem.h" />
+    <ClInclude Include="ECS\Systems\PlayerMoveSystem.h" />
     <ClInclude Include="ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Graphics\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
@@ -239,8 +247,6 @@
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
     <ClInclude Include="Handles\Handle.h" />
     <ClInclude Include="Handles\HandleManager.h" />
-    <ClInclude Include="HID\Controller.h" />
-    <ClInclude Include="HID\InputInterpreter.h" />
     <ClInclude Include="Window\GLFWWindow.h" />
   </ItemGroup>
   <ItemGroup>

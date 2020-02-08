@@ -15,7 +15,7 @@ CommandPool::CommandPool(
     uint32_t familyIndex,
     cyd::QueueUsageFlag type,
     bool supportsPresentation )
-    : m_device( device ),
+    : m_pDevice( &device ),
       m_type( type ),
       m_familyIndex( familyIndex ),
       m_supportsPresentation( supportsPresentation )
@@ -31,9 +31,10 @@ void CommandPool::_createCommandPool()
    VkCommandPoolCreateInfo poolInfo = {};
    poolInfo.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
    poolInfo.queueFamilyIndex        = m_familyIndex;
-   poolInfo.flags                   = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+   poolInfo.flags =
+       VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
-   VkResult result = vkCreateCommandPool( m_device.getVKDevice(), &poolInfo, nullptr, &m_vkPool );
+   VkResult result = vkCreateCommandPool( m_pDevice->getVKDevice(), &poolInfo, nullptr, &m_vkPool );
    CYDASSERT( result == VK_SUCCESS && "CommandPool: Could not create command pool" );
 }
 
@@ -50,7 +51,7 @@ CommandBuffer* CommandPool::createCommandBuffer()
    {
       // We found a completed command buffer that can be replaced
       it->release();
-      it->acquire( m_device, *this, m_type );
+      it->acquire( *m_pDevice, *this, m_type );
       return &*it;
    }
 
@@ -64,6 +65,6 @@ CommandPool::~CommandPool()
    {
       cmdBuffer.release();
    }
-   vkDestroyCommandPool( m_device.getVKDevice(), m_vkPool, nullptr );
+   vkDestroyCommandPool( m_pDevice->getVKDevice(), m_vkPool, nullptr );
 }
 }

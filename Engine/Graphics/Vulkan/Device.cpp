@@ -20,8 +20,8 @@ static constexpr float DEFAULT_PRIORITY            = 1.0f;
 static constexpr uint32_t NUMBER_QUEUES_PER_FAMILY = 2;
 
 // VK Resource Pools Sizes
-static constexpr uint32_t MAX_BUFFER_COUNT  = 64;
-static constexpr uint32_t MAX_TEXTURE_COUNT = 64;
+static constexpr uint32_t MAX_BUFFER_COUNT  = 512;
+static constexpr uint32_t MAX_TEXTURE_COUNT = 512;
 
 namespace vk
 {
@@ -57,7 +57,8 @@ void Device::_populateQueueFamilies()
    vkGetPhysicalDeviceQueueFamilyProperties( m_physDevice, &queueFamilyCount, nullptr );
 
    std::vector<VkQueueFamilyProperties> queueFamilies( queueFamilyCount );
-   vkGetPhysicalDeviceQueueFamilyProperties( m_physDevice, &queueFamilyCount, queueFamilies.data() );
+   vkGetPhysicalDeviceQueueFamilyProperties(
+       m_physDevice, &queueFamilyCount, queueFamilies.data() );
 
    for( uint32_t i = 0; i < queueFamilies.size(); ++i )
    {
@@ -128,7 +129,7 @@ void Device::_createLogicalDevice()
    deviceInfo.pEnabledFeatures        = &deviceFeatures;
 
    VkResult result = vkCreateDevice( m_physDevice, &deviceInfo, nullptr, &m_vkDevice );
-   CYDASSERT( result == VK_SUCCESS && "VEDevice: Could not create logical device" );
+   CYDASSERT( result == VK_SUCCESS && "Device: Could not create logical device" );
 }
 
 void Device::_fetchQueues()
@@ -147,7 +148,7 @@ void Device::_createCommandPools()
 {
    for( const QueueFamily& queueFamily : m_queueFamilies )
    {
-      m_commandPools.push_back( std::make_unique<CommandPool>(
+      m_commandPools.emplace_back( std::make_unique<CommandPool>(
           *this, queueFamily.index, queueFamily.type, queueFamily.supportsPresent ) );
    }
 }
@@ -219,23 +220,6 @@ Buffer* Device::createIndexBuffer( size_t size )
        cyd::MemoryType::DEVICE_LOCAL );
 }
 
-Buffer* Device::createUniformBuffer(
-    size_t size,
-    uint32_t shaderObjectIdx,
-    const cyd::DescriptorSetLayoutInfo& layout )
-{
-   Buffer* uniformBuffer = _createBuffer(
-       size,
-       cyd::BufferUsage::TRANSFER_DST | cyd::BufferUsage::UNIFORM,
-       cyd::MemoryType::HOST_VISIBLE | cyd::MemoryType::HOST_COHERENT );
-
-   VkDescriptorSet descSet = m_descPool->findOrAllocate( layout );
-
-   uniformBuffer->updateDescriptorSet( layout.shaderObjects[shaderObjectIdx], descSet );
-
-   return uniformBuffer;
-}
-
 Buffer* Device::createStagingBuffer( size_t size )
 {
    return _createBuffer(
@@ -244,10 +228,15 @@ Buffer* Device::createStagingBuffer( size_t size )
        cyd::MemoryType::HOST_VISIBLE | cyd::MemoryType::HOST_COHERENT );
 }
 
-Texture* Device::createTexture(
-    const cyd::TextureDescription& desc,
-    uint32_t shaderObjectIdx,
-    const cyd::DescriptorSetLayoutInfo& layout )
+Buffer* Device::createUniformBuffer( size_t size )
+{
+   return _createBuffer(
+       size,
+       cyd::BufferUsage::TRANSFER_DST | cyd::BufferUsage::UNIFORM,
+       cyd::MemoryType::HOST_VISIBLE | cyd::MemoryType::HOST_COHERENT );
+}
+
+Texture* Device::createTexture( const cyd::TextureDescription& desc )
 {
    // Check to see if we have a free spot for a texture.
    auto it = std::find_if( m_textures.rbegin(), m_textures.rend(), []( Texture& texture ) {
@@ -259,10 +248,6 @@ Texture* Device::createTexture(
       // We found a texture that can be replaced
       it->release();
       it->acquire( *this, desc );
-
-      VkDescriptorSet descSet = m_descPool->findOrAllocate( layout );
-
-      it->updateDescriptorSet( layout.shaderObjects[shaderObjectIdx], descSet );
 
       return &*it;
    }
@@ -295,9 +280,6 @@ void Device::cleanup()
    {
       if( !texture.inUse() )
       {
-         // Freeing texture's assigned descriptor set
-         m_descPool->free( texture.getVKDescSet() );
-
          texture.release();
       }
    }
@@ -307,9 +289,6 @@ void Device::cleanup()
    {
       if( !buffer.inUse() )
       {
-         // Freeing buffer's assigned descriptor set
-         m_descPool->free( buffer.getVKDescSet() );
-
          buffer.release();
       }
    }

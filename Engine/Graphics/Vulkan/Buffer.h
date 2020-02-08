@@ -25,8 +25,8 @@ class Buffer final
 {
   public:
    Buffer() = default;
-   MOVABLE( Buffer );
-   ~Buffer() = default;
+   MOVABLE( Buffer )
+   ~Buffer();
 
    void acquire(
        const Device& device,
@@ -37,16 +37,15 @@ class Buffer final
 
    size_t getSize() const noexcept { return m_size; }
    VkBuffer getVKBuffer() const noexcept { return m_vkBuffer; }
-   const VkDescriptorSet& getVKDescSet() const noexcept { return m_vkDescSet; }
    bool inUse() const { return m_inUse; }
 
    void setUnused() { m_inUse = false; }
 
-   void
-   updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescriptorSet descSet );
-   void mapMemory( const void* pData );
+   void copy( const void* pData );
 
   private:
+   void _mapMemory();
+   void _unmapMemory();
    void _allocateMemory();
 
    const Device* m_pDevice = nullptr;
@@ -59,9 +58,6 @@ class Buffer final
    VkBuffer m_vkBuffer       = nullptr;
    VkDeviceMemory m_vkMemory = nullptr;
    cyd::MemoryTypeFlag m_memoryType;
-
-   // Optional for shader accessible buffers
-   VkDescriptorSet m_vkDescSet = nullptr;
    
    bool m_inUse = false;
 };

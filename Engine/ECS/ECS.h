@@ -2,7 +2,7 @@
 
 #include <Common/Assert.h>
 
-#include <ECS/Entities/Entity.h>
+#include <ECS/Entity.h>
 #include <ECS/Components/ComponentPool.h>
 #include <ECS/Systems/CommonSystem.h>
 
@@ -10,38 +10,68 @@
 #include <unordered_map>
 #include <vector>
 
+// ================================================================================================
+// Forwards
+// ================================================================================================
+namespace cyd
+{
+class BaseComponent;
+class BaseSharedComponent;
+}
+
+// ================================================================================================
+// Definition
+// ================================================================================================
 namespace cyd::ECS
 {
 namespace detail
 {
-using Entities   = std::unordered_map<EntityHandle, Entity>;
-using Components = std::array<BaseComponentPool*, static_cast<size_t>( ComponentType::COUNT )>;
-using Systems    = std::vector<BaseSystem*>;
+using Entities         = std::unordered_map<EntityHandle, Entity>;
+using Components       = std::array<BaseComponentPool*, size_t( ComponentType::COUNT )>;
+using SharedComponents = std::array<BaseSharedComponent*, size_t( SharedComponentType::COUNT )>;
+using Systems          = std::vector<BaseSystem*>;
 
 // All entities currently managed by the manager (all entities in the world)
 inline Entities entities;
 
 // Pools of all components. Index is component type.
 inline Components components;
+inline SharedComponents sharedComponents;
 
 // All currently running data transformation systems
 inline Systems systems;
-};
+}
 
+// Initialization and update
+// ================================================================================================
 bool Initialize();
 void Uninitialize();
 
-void Tick( double deltaMs );
+void Tick( double deltaS );
 
+// Entity management
+// ================================================================================================
 EntityHandle CreateEntity();
-
 void RemoveEntity( EntityHandle handle );
 
+// Adding system
+// ================================================================================================
+template <
+    class System,
+    typename... Args,
+    typename = std::enable_if_t<std::is_base_of_v<BaseSystem, System>>>
+void AddSystem( Args&&... args )
+{
+   System* system = new System( args... );
+   system->init();
+   detail::systems.emplace_back( system );
+}
+
+// Component assignment
+// ================================================================================================
 template <class Component, typename... Args>
 void Assign( EntityHandle handle, Args&&... args )
 {
-   static_assert( std::is_base_of_v<BaseComponent, Component>, "Assigning an invalid component" );
-
    auto it = detail::entities.find( handle );
    if( it == detail::entities.end() )
    {
@@ -49,16 +79,33 @@ void Assign( EntityHandle handle, Args&&... args )
       return;
    }
 
-   // Fetching the adequate component pool
-   ComponentPool<Component>*& pPool =
-       (ComponentPool<Component>*&)detail::components[static_cast<size_t>( Component::TYPE )];
-   if( !pPool )
+   Component* pComponent = nullptr;
+
+   // Fetching component from adequate pool
+   if constexpr( std::is_base_of_v<BaseComponent, Component> )
    {
-      // Pool has never been created, create it
-      pPool = new ComponentPool<Component>();
+      // Component is a normal component
+      ComponentPool<Component>*& pPool =
+          (ComponentPool<Component>*&)detail::components[size_t( Component::TYPE )];
+      if( !pPool )
+      {
+         // Pool has never been created, create it
+         pPool = new ComponentPool<Component>();
+      }
+
+      pComponent = pPool->acquireComponent( std::forward<Args>( args )... );
+      pComponent->init();
+   }
+   else if constexpr( std::is_base_of_v<BaseSharedComponent, Component> )
+   {
+      // Component is a shared component
+      pComponent = static_cast<Component*>( detail::sharedComponents[size_t( Component::TYPE )] );
+   }
+   else
+   {
+      static_assert( !"ECS: Assigning an invalid component" );
    }
 
-   Component* pComponent = pPool->acquireComponent( args... );
    it->second.addComponent<Component>( pComponent );
 
    // Notify systems that an entity was assigned a component
@@ -68,18 +115,13 @@ void Assign( EntityHandle handle, Args&&... args )
    }
 }
 
+// Component unassignment
+// ================================================================================================
 template <class Component>
 void Unassign( EntityHandle handle )
 {
    // Deallocate component from component pool
    // Remove it from the entity
    // Notify systems that an entity was unassigned a component
-}
-
-template <class System>
-void AddSystem()
-{
-   static_assert( std::is_base_of_v<BaseSystem, System>, "Adding an invalid system" );
-   detail::systems.push_back( new System() );
 }
 };

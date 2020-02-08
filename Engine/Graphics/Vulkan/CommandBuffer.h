@@ -5,6 +5,7 @@
 #include <Graphics/GraphicsTypes.h>
 
 #include <optional>
+#include <unordered_map>
 
 // ================================================================================================
 // Forwards
@@ -15,6 +16,7 @@ FWDHANDLE( VkSemaphore );
 FWDHANDLE( VkPipeline );
 FWDHANDLE( VkPipelineLayout );
 FWDHANDLE( VkRenderPass );
+FWDHANDLE( VkDescriptorSet );
 
 namespace vk
 {
@@ -34,7 +36,7 @@ class CommandBuffer final
 {
   public:
    CommandBuffer() = default;
-   MOVABLE( CommandBuffer );
+   MOVABLE( CommandBuffer )
    ~CommandBuffer() = default;
 
    // Allocation and Deallocation
@@ -58,6 +60,7 @@ class CommandBuffer final
    void startRecording();
    void endRecording();
    void submit();
+   void reset();
 
    // Bindings
    // =============================================================================================
@@ -65,13 +68,13 @@ class CommandBuffer final
    template <typename T>
    void bindIndexBuffer( const Buffer* indexBuf );
    void bindPipeline( const cyd::PipelineInfo& info );
-   void bindBuffer( const Buffer* buffer );
-   void bindTexture( Texture* texture );
+   void bindBuffer( const Buffer* buffer, uint32_t set, uint32_t binding );
+   void bindTexture( const Texture* texture, uint32_t set, uint32_t binding );
    void updatePushConstants( const cyd::PushConstantRange& range, const void* pData );
 
    // Render Pass
    // =============================================================================================
-   void beginPass( Swapchain& swapchain );
+   void beginPass( const cyd::RenderPassInfo& renderPassInfo, Swapchain& swapchain );
    void endPass() const;
 
    // Dynamic State
@@ -80,29 +83,36 @@ class CommandBuffer final
 
    // Drawing
    // =============================================================================================
-   void draw( size_t vertexCount ) const;
-   void drawIndexed( size_t indexCount ) const;
+   void draw( size_t vertexCount );
+   void drawIndexed( size_t indexCount );
 
    // Transfers
    // =============================================================================================
    void copyBuffer( const Buffer* src, const Buffer* dst ) const;
-   void uploadBufferToTex( const Buffer* src, Texture* dst ) const;
+   void uploadBufferToTex( const Buffer* src, Texture* dst );
 
   private:
+   void _prepareDescriptorSets();
+
    const Device* m_pDevice    = nullptr;
    const CommandPool* m_pPool = nullptr;
 
    // Info on the currently bound pipeline
+   std::optional<cyd::PipelineInfo> m_boundPipInfo;
    std::optional<VkPipeline> m_boundPip;
    std::optional<VkPipelineLayout> m_boundPipLayout;
    std::optional<VkRenderPass> m_boundRenderPass;
-   std::optional<cyd::PipelineInfo> m_boundPipInfo;
+
+   // The buffers/textures to update before the next draw along with a list of descriptor sets that
+   // were allocated by this command buffer
+   std::vector<VkDescriptorSet> m_descSets;
 
    // Syncing
    std::vector<VkSemaphore> m_semsToWait;
    std::vector<VkSemaphore> m_semsToSignal;
 
    cyd::QueueUsageFlag m_usage   = cyd::QueueUsage::UNKNOWN;
+   cyd::ImageLayout m_prevLayout = cyd::ImageLayout::UNDEFINED;
    bool m_isRecording            = false;
    bool m_wasSubmitted           = false;
    VkCommandBuffer m_vkCmdBuffer = nullptr;

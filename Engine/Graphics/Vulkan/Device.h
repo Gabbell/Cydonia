@@ -62,14 +62,8 @@ class Device final
    Buffer* createVertexBuffer( size_t size );
    Buffer* createIndexBuffer( size_t size );
    Buffer* createStagingBuffer( size_t size );
-   Buffer* createUniformBuffer(
-       size_t size,
-       uint32_t shaderObjectIdx,  // Index of the shader object info in the layout
-       const cyd::DescriptorSetLayoutInfo& layout );
-   Texture* createTexture(
-       const cyd::TextureDescription& desc,
-       uint32_t shaderObjectIdx,  // Index of the shader object info in the layout
-       const cyd::DescriptorSetLayoutInfo& layout );
+   Buffer* createUniformBuffer( size_t size );
+   Texture* createTexture( const cyd::TextureDescription& desc );
 
    void cleanup();  // Clean up unused resources
 
@@ -85,6 +79,7 @@ class Device final
    PipelineStash& getPipelineStash() const { return *m_pipelines; }
    RenderPassStash& getRenderPassStash() const { return *m_renderPasses; }
    SamplerStash& getSamplerStash() const { return *m_samplers; }
+   DescriptorPool& getDescriptorPool() const { return *m_descPool; }
 
    // Support
    uint32_t findMemoryType( uint32_t typeFilter, uint32_t properties ) const;

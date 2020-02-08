@@ -18,7 +18,6 @@ void Texture::acquire( const Device& device, const cyd::TextureDescription& desc
    m_type    = desc.type;
    m_format  = desc.format;
    m_usage   = desc.usage;
-   m_layout  = cyd::ImageLayout::UNDEFINED;
    m_inUse   = true;
 
    _createImage();
@@ -36,7 +35,6 @@ void Texture::release()
       m_type   = cyd::ImageType::TEXTURE_2D;
       m_format = cyd::PixelFormat::BGRA8_UNORM;
       m_usage  = 0;
-      m_layout = cyd::ImageLayout::UNDEFINED;
       m_inUse  = false;
 
       vkDestroyImageView( m_pDevice->getVKDevice(), m_vkImageView, nullptr );
@@ -76,7 +74,8 @@ void Texture::_createImage()
    imageInfo.arrayLayers   = 1;
    imageInfo.format        = TypeConversions::cydFormatToVkFormat( m_format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-   imageInfo.initialLayout = TypeConversions::cydImageLayoutToVKImageLayout( m_layout );
+   imageInfo.initialLayout =
+       TypeConversions::cydImageLayoutToVKImageLayout( cyd::ImageLayout::UNDEFINED );
 
    if( m_usage & cyd::ImageUsage::TRANSFER_SRC )
    {
@@ -143,30 +142,5 @@ void Texture::_createImageView()
    VkResult result =
        vkCreateImageView( m_pDevice->getVKDevice(), &viewInfo, nullptr, &m_vkImageView );
    CYDASSERT( result == VK_SUCCESS && "Texture: Could not create image view" );
-}
-
-void Texture::updateDescriptorSet( const cyd::ShaderObjectInfo& info, VkDescriptorSet descSet )
-{
-   m_vkDescSet = descSet;
-
-   const VkSampler vkSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
-
-   VkDescriptorImageInfo imageInfo = {};
-   // By the point we bind this texture, it should have transferred to this layout
-   imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-   imageInfo.imageView   = m_vkImageView;
-   imageInfo.sampler     = vkSampler;
-
-   VkWriteDescriptorSet descriptorWrite = {};
-   descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-   descriptorWrite.dstSet               = m_vkDescSet;
-   descriptorWrite.dstBinding           = info.binding;
-   descriptorWrite.dstArrayElement      = 0;
-   descriptorWrite.descriptorType =
-       TypeConversions::cydShaderObjectTypeToVkDescriptorType( info.type );
-   descriptorWrite.descriptorCount = 1;
-   descriptorWrite.pImageInfo      = &imageInfo;
-
-   vkUpdateDescriptorSets( m_pDevice->getVKDevice(), 1, &descriptorWrite, 0, nullptr );
 }
 }

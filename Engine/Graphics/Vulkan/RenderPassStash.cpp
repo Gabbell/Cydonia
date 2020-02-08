@@ -15,7 +15,7 @@ RenderPassStash::RenderPassStash( const Device& device ) : m_device( device )
    _createDefaultRenderPasses();
 }
 
-const VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
+VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
 {
    // Find
    const auto it = m_renderPasses.find( info );
@@ -40,7 +40,7 @@ const VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& inf
             colorAttachmentRef.attachment            = 0;
             colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
-            colorRefs.push_back( std::move( colorAttachmentRef ) );
+            colorRefs.push_back( colorAttachmentRef );
             break;
          }
          case cyd::AttachmentType::DEPTH_STENCIL:
@@ -67,7 +67,7 @@ const VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& inf
       vkAttachment.finalLayout =
           TypeConversions::cydImageLayoutToVKImageLayout( attachment.layout );
 
-      attachmentDescs.push_back( std::move( vkAttachment ) );
+      attachmentDescs.push_back( vkAttachment );
    }
 
    VkSubpassDescription subpass = {};
@@ -89,10 +89,10 @@ const VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& inf
       dependency.dstAccessMask =
           VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-      dependencies.push_back( std::move( dependency ) );
+      dependencies.push_back( dependency );
    }
 
-   subpassDescs.push_back( std::move( subpass ) );
+   subpassDescs.push_back( subpass );
 
    VkRenderPassCreateInfo renderPassInfo = {};
    renderPassInfo.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
@@ -109,22 +109,12 @@ const VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& inf
        vkCreateRenderPass( m_device.getVKDevice(), &renderPassInfo, nullptr, &renderPass );
    CYDASSERT( result == VK_SUCCESS && "RenderPass: Could not create default render pass" );
 
-   return m_renderPasses.insert( {info, renderPass} ).first->second;
+   return m_renderPasses.insert( { info, renderPass } ).first->second;
 }
 
 void RenderPassStash::_createDefaultRenderPasses()
 {
-   // Color Presentation BGRA8m_UNORM
-   cyd::Attachment colorPresentation = {};
-   colorPresentation.format          = cyd::PixelFormat::BGRA8_UNORM;
-   colorPresentation.loadOp          = cyd::LoadOp::CLEAR;
-   colorPresentation.storeOp         = cyd::StoreOp::STORE;
-   colorPresentation.type            = cyd::AttachmentType::COLOR;
-   colorPresentation.layout          = cyd::ImageLayout::PRESENTATION;
-
-   cyd::RenderPassInfo info = {};
-   info.attachments.push_back( colorPresentation );
-   findOrCreate( info );
+   //
 }
 
 RenderPassStash::~RenderPassStash()

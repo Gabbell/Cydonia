@@ -8,10 +8,11 @@
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/Shader.h>
 #include <Graphics/Vulkan/ShaderStash.h>
-#include <Graphics/Vulkan/RenderPassStash.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <array>
+#include <unordered_set>
+#include <vector>
 
 static constexpr char DEFAULT_VERT[] = "default_vert.spv";
 static constexpr char DEFAULT_FRAG[] = "default_frag.spv";
@@ -48,8 +49,9 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
    }
 
    std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBindings;
-   descSetLayoutBindings.reserve( info.shaderObjects.size() );
-   for( const auto& object : info.shaderObjects )
+   std::vector<VkDescriptorBindingFlagsEXT> descBindingFlags;
+   descSetLayoutBindings.reserve( info.shaderResources.size() );
+   for( const auto& object : info.shaderResources )
    {
       // TODO Add UBO arrays
       VkDescriptorSetLayoutBinding descSetLayoutBinding = {};
@@ -57,10 +59,10 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
 
       switch( object.type )
       {
-         case cyd::ShaderObjectType::UNIFORM:
+         case cyd::ShaderResourceType::UNIFORM:
             descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
             break;
-         case cyd::ShaderObjectType::COMBINED_IMAGE_SAMPLER:
+         case cyd::ShaderResourceType::COMBINED_IMAGE_SAMPLER:
             descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
             break;
          default:
@@ -108,16 +110,19 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
       vkRanges.push_back( std::move( vkRange ) );
    }
 
-   // TODO This vector contains multiple copies of the same layout. Why is this necessary? The two
-   // layouts will have information about the same multiple bindings. This seems redundant.
-   std::vector<VkDescriptorSetLayout> descSetLayouts(
-       info.descSetLayout.shaderObjects.size(), findOrCreate( info.descSetLayout ) );
+   std::unordered_set<VkDescriptorSetLayout> descSetLayouts;
+   for( const auto& descSetLayout : info.descSets )
+   {
+      descSetLayouts.insert( findOrCreate( descSetLayout ) );
+   }
+   // Vector containing unique VkDescriptorSetLayouts
+   std::vector<VkDescriptorSetLayout> descSetLayoutsVec(
+       descSetLayouts.begin(), descSetLayouts.end() );
 
    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
-
-   pipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-   pipelineLayoutInfo.setLayoutCount         = static_cast<uint32_t>( descSetLayouts.size() );
-   pipelineLayoutInfo.pSetLayouts            = descSetLayouts.data();
+   pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+   pipelineLayoutInfo.setLayoutCount         = static_cast<uint32_t>( descSetLayoutsVec.size() );
+   pipelineLayoutInfo.pSetLayouts            = descSetLayoutsVec.data();
    pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>( vkRanges.size() );
    pipelineLayoutInfo.pPushConstantRanges    = vkRanges.data();
 
@@ -129,7 +134,9 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
    return m_pipLayouts.insert( { info, pipLayout } ).first->second;
 }
 
-const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
+const VkPipeline PipelineStash::findOrCreate(
+    const cyd::PipelineInfo& info,
+    VkRenderPass renderPass )
 {
    // Attempting to find pipeline
    const auto pipIt = m_pipelines.find( info );
@@ -156,9 +163,6 @@ const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
 
       shaderCreateInfos.push_back( std::move( stageInfo ) );
    }
-
-   // Fetching render pass
-   const VkRenderPass renderPass = m_device.getRenderPassStash().findOrCreate( info.renderPass );
 
    // Vertex input description
    // TODO Instancing
@@ -262,7 +266,7 @@ const VkPipeline PipelineStash::findOrCreate( const cyd::PipelineInfo& info )
    colorBlending.blendConstants[3] = 0.0f;
 
    // Pipeline layout
-   const VkPipelineLayout pipLayout = findOrCreate( info.pipLayout );
+   VkPipelineLayout pipLayout = findOrCreate( info.pipLayout );
 
    // Dynamic state
    std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT };

@@ -2,8 +2,6 @@
 
 #include <Window/GLFWWindow.h>
 
-#include <HID/InputInterpreter.h>
-
 #include <chrono>
 #include <memory>
 
@@ -13,14 +11,9 @@ Application::Application() = default;
 
 bool Application::init( uint32_t width, uint32_t height, const std::string& title )
 {
-   m_window           = std::make_unique<Window>();
-   m_inputInterpreter = std::make_unique<InputInterpreter>();
+   m_window = std::make_unique<Window>();
 
-   bool success = true;
-   success &= m_window->init( width, height, title );
-   success &= m_inputInterpreter->init( *m_window );
-
-   return success;
+   return m_window->init( width, height, title );
 }
 
 void Application::startLoop()
@@ -33,17 +26,14 @@ void Application::startLoop()
    while( m_running )  // Main loop
    {
       // Calculate delta time between frames
-      const std::chrono::duration<double> deltaMs =
+      const std::chrono::duration<double> deltaS =
           std::chrono::high_resolution_clock::now() - start;
 
       // Reset clock
       start = std::chrono::high_resolution_clock::now();
 
-      // TODO Replace with input system
-      m_inputInterpreter->tick();
-
       // User overloaded tick
-      tick( deltaMs.count() );
+      tick( deltaS.count() );
 
       // Determine if the main window was asked to be closed
       m_running = m_window->isRunning();
@@ -53,7 +43,7 @@ void Application::startLoop()
 }
 
 void Application::preLoop() {}
-void Application::tick( double /*deltaMs*/ ) {}
+void Application::tick( double /*deltaS*/ ) {}
 void Application::postLoop() {}
 
 Application::~Application() = default;

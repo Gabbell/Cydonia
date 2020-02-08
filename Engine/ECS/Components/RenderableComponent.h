@@ -6,19 +6,8 @@
 
 #include <Handles/Handle.h>
 
-#include <Graphics/GraphicsTypes.h>
-
-#include <glm/glm.hpp>
-
 namespace cyd
 {
-struct MVP
-{
-   glm::mat4 model = glm::mat4( 1.0f );
-   glm::mat4 view  = glm::mat4( 1.0f );
-   glm::mat4 proj  = glm::mat4( 1.0f );
-};
-
 class RenderableComponent final : public BaseComponent
 {
   public:
@@ -31,13 +20,10 @@ class RenderableComponent final : public BaseComponent
    bool init() override;
    void uninit() override;
 
-   Extent extent;
-   PipelineInfo pipInfo;
-   PipelineLayoutInfo pipLayoutInfo;
+   UniformBufferHandle matBuffer;
+   TextureHandle matTexture;
 
-   TextureHandle texture;
    VertexBufferHandle vertexBuffer;
    IndexBufferHandle indexBuffer;
-   UniformBufferHandle uboBuffer;
 };
 }

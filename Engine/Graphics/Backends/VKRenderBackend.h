@@ -24,7 +24,7 @@ class VKRenderBackend final : public RenderBackend
 {
   public:
    VKRenderBackend( const Window& window );
-   NON_COPIABLE( VKRenderBackend );
+   NON_COPIABLE( VKRenderBackend )
    virtual ~VKRenderBackend();
 
    void cleanup() override;
@@ -33,22 +33,29 @@ class VKRenderBackend final : public RenderBackend
    // ==============================================================================================
    CmdListHandle createCommandList( QueueUsageFlag usage, bool presentable ) override;
 
-   void submitCommandList( CmdListHandle cmdList ) override;
    void startRecordingCommandList( CmdListHandle cmdList ) override;
    void endRecordingCommandList( CmdListHandle cmdList ) override;
-
+   void submitCommandList( CmdListHandle cmdList ) override;
+   void resetCommandList( CmdListHandle cmdList ) override;
    void waitOnCommandList( CmdListHandle cmdList ) override;
    void destroyCommandList( CmdListHandle cmdList ) override;
 
    // Pipeline Specification
    // ==============================================================================================
+   void setViewport( CmdListHandle cmdList, const Rectangle& viewport ) override;
    void bindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo ) override;
-   void bindTexture( CmdListHandle cmdList, TextureHandle texHandle ) override;
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) override;
    void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle ) override;
-   void bindUniformBuffer( CmdListHandle cmdList, UniformBufferHandle bufferHandle ) override;
-   void setViewport( CmdListHandle cmdList, const Rectangle& viewport ) override;
-
+   void bindTexture(
+       CmdListHandle cmdList,
+       TextureHandle texHandle,
+       uint32_t set,
+       uint32_t binding ) override;
+   void bindUniformBuffer(
+       CmdListHandle cmdList,
+       UniformBufferHandle bufferHandle,
+       uint32_t set,
+       uint32_t binding ) override;
    void updateConstantBuffer(
        CmdListHandle cmdList,
        ShaderStageFlag stages,
@@ -61,8 +68,6 @@ class VKRenderBackend final : public RenderBackend
    TextureHandle createTexture(
        CmdListHandle transferList,
        const TextureDescription& desc,
-       uint32_t shaderObjectIdx,
-       const DescriptorSetLayoutInfo& layout,
        const void* pTexels ) override;
 
    VertexBufferHandle createVertexBuffer(
@@ -74,11 +79,8 @@ class VKRenderBackend final : public RenderBackend
    IndexBufferHandle
    createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) override;
 
-   UniformBufferHandle createUniformBuffer(
-       size_t size,
-       uint32_t shaderObjectIdx,
-       const DescriptorSetLayoutInfo& layout ) override;
-   void mapUniformBufferMemory( UniformBufferHandle bufferHandle, const void* pData ) override;
+   UniformBufferHandle createUniformBuffer( size_t size ) override;
+   void copyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData ) override;
 
    void destroyTexture( TextureHandle texHandle ) override;
    void destroyVertexBuffer( VertexBufferHandle bufferHandle ) override;
@@ -87,7 +89,7 @@ class VKRenderBackend final : public RenderBackend
 
    // Drawing
    // ==============================================================================================
-   void beginRenderPass( CmdListHandle cmdList ) override;
+   void beginRenderSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo ) override;
    void endRenderPass( CmdListHandle cmdList ) override;
    void drawVertices( CmdListHandle cmdList, uint32_t vertexCount ) override;
    void drawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount ) override;

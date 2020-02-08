@@ -30,17 +30,11 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
    VkResult result =
        vkCreateDescriptorPool( m_device.getVKDevice(), &poolInfo, nullptr, &m_vkDescPool );
 
-   CYDASSERT( result == VK_SUCCESS && "CommandPool: Could not create descriptor pool" );
+   CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Could not create descriptor pool" );
 }
 
-VkDescriptorSet DescriptorPool::findOrAllocate( const cyd::DescriptorSetLayoutInfo& layout )
+VkDescriptorSet DescriptorPool::allocate( const cyd::DescriptorSetLayoutInfo& layout ) const
 {
-   const auto descSetIt = m_descSets.find( layout );
-   if( descSetIt != m_descSets.end() )
-   {
-      return descSetIt->second;
-   }
-
    const VkDescriptorSetLayout vkDescSetLayout = m_device.getPipelineStash().findOrCreate( layout );
 
    VkDescriptorSetAllocateInfo allocInfo = {};
@@ -53,10 +47,10 @@ VkDescriptorSet DescriptorPool::findOrAllocate( const cyd::DescriptorSetLayoutIn
    VkResult result = vkAllocateDescriptorSets( m_device.getVKDevice(), &allocInfo, &vkDescSet );
    CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Failed to solo allocate descriptor set" );
 
-   return m_descSets.insert( {layout, vkDescSet} ).first->second;
+   return vkDescSet;
 }
 
-void DescriptorPool::free( const VkDescriptorSet& descSet )
+void DescriptorPool::free( const VkDescriptorSet& descSet ) const
 {
    vkFreeDescriptorSets( m_device.getVKDevice(), m_vkDescPool, 1, &descSet );
 }
