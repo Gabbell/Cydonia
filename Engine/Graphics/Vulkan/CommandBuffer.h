@@ -107,6 +107,31 @@ class CommandBuffer final
    // were allocated by this command buffer
    std::vector<VkDescriptorSet> m_descSets;
 
+   // Used for deferred updating and binding of descriptor sets before a draw command
+   struct BufferUpdateInfo
+   {
+      BufferUpdateInfo( const Buffer* buffer, uint32_t set, uint32_t binding )
+          : buffer( buffer ), set( set ), binding( binding )
+      {
+      }
+      const Buffer* buffer;
+      uint32_t set;
+      uint32_t binding;
+   };
+   std::vector<BufferUpdateInfo> m_buffersToUpdate;
+
+   struct TextureUpdateInfo
+   {
+      TextureUpdateInfo( const Texture* texture, uint32_t set, uint32_t binding )
+          : texture( texture ), set( set ), binding( binding )
+      {
+      }
+      const Texture* texture;
+      uint32_t set;
+      uint32_t binding;
+   };
+   std::vector<TextureUpdateInfo> m_texturesToUpdate;
+
    // Syncing
    std::vector<VkSemaphore> m_semsToWait;
    std::vector<VkSemaphore> m_semsToSignal;

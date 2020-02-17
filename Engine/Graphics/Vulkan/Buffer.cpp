@@ -55,11 +55,6 @@ void Buffer::acquire(
    CYDASSERT( result == VK_SUCCESS && "Buffer: Could not create buffer" );
 
    _allocateMemory();
-
-   if( m_memoryType & cyd::MemoryType::HOST_VISIBLE )
-   {
-      _mapMemory();
-   }
 }
 
 void Buffer::release()
@@ -69,11 +64,6 @@ void Buffer::release()
       m_size       = 0;
       m_memoryType = 0;
       m_inUse      = false;
-
-      if( m_memoryType & cyd::MemoryType::HOST_VISIBLE )
-      {
-         _unmapMemory();
-      }
 
       vkDestroyBuffer( m_pDevice->getVKDevice(), m_vkBuffer, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
@@ -92,7 +82,9 @@ void Buffer::copy( const void* pData )
       return;
    }
 
+   _mapMemory();
    memcpy( m_data, pData, m_size );
+   _unmapMemory();
 }
 
 void Buffer::_mapMemory()

@@ -10,19 +10,15 @@
 #include <unordered_map>
 #include <vector>
 
-// ================================================================================================
-// Forwards
-// ================================================================================================
+// =================================================================================================
+// Entity Component System Interface
+// =================================================================================================
 namespace cyd
 {
-class BaseComponent;
+class BaseComponentPool;
 class BaseSharedComponent;
-}
 
-// ================================================================================================
-// Definition
-// ================================================================================================
-namespace cyd::ECS
+namespace ECS
 {
 namespace detail
 {
@@ -53,6 +49,16 @@ void Tick( double deltaS );
 // ================================================================================================
 EntityHandle CreateEntity();
 void RemoveEntity( EntityHandle handle );
+
+// Shared component accessor
+// ================================================================================================
+template <
+    class Component,
+    typename = std::enable_if_t<std::is_base_of_v<BaseSharedComponent, Component>>>
+Component& GetSharedComponent()
+{
+   return *static_cast<Component*>( detail::sharedComponents[size_t( Component::TYPE )] );
+}
 
 // Adding system
 // ================================================================================================
@@ -124,4 +130,5 @@ void Unassign( EntityHandle handle )
    // Remove it from the entity
    // Notify systems that an entity was unassigned a component
 }
-};
+}  
+}

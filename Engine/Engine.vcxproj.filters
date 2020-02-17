@@ -32,6 +32,7 @@
     <ClCompile Include="ECS\Systems\MovementSystem.cpp" />
     <ClCompile Include="ECS\Systems\PlayerMoveSystem.cpp" />
     <ClCompile Include="ECS\Systems\InputSystem.cpp" />
+    <ClCompile Include="ECS\Systems\CameraSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">
@@ -87,7 +88,6 @@
     <ClInclude Include="ECS\Entities\Entity.h" />
     <ClInclude Include="Handles\Handle.h" />
     <ClInclude Include="Handles\HandleManager.h" />
-    <ClInclude Include="ECS\Components\LensComponent.h" />
     <ClInclude Include="ECS\Components\ComponentPool.h" />
     <ClInclude Include="ECS\Systems\CommonSystem.h" />
     <ClInclude Include="ECS\ECS.h" />
@@ -98,6 +98,9 @@
     <ClInclude Include="ECS\SharedComponents\InputComponent.h" />
     <ClInclude Include="ECS\Systems\InputSystem.h" />
     <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
+    <ClInclude Include="ECS\SharedComponents\CameraComponent.h" />
+    <ClInclude Include="ECS\SharedComponents\SharedComponentType.h" />
+    <ClInclude Include="ECS\Systems\CameraSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

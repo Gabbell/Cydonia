@@ -131,5 +131,5 @@ bool DeviceHerder::_checkDeviceExtensionSupport( const VkPhysicalDevice& physDev
 
 const Swapchain* DeviceHerder::getMainSwapchain() { return m_devices[0]->getSwapchain(); }
 
-DeviceHerder::~DeviceHerder() {}
+DeviceHerder::~DeviceHerder() = default;
 }

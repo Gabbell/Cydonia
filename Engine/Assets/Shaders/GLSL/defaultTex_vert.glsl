@@ -38,7 +38,7 @@ layout(location = 1) out vec3 outTexCoord;
 // =================================================================================================
 
 void main() {
-    gl_Position = model * vec4(inPosition, 1.0);
+    gl_Position = proj * view * model * vec4(inPosition, 1.0);
     outColor = inColor;
     outTexCoord = inTexCoords;
 }

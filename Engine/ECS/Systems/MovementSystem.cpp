@@ -4,12 +4,12 @@ namespace cyd
 {
 void MovementSystem::tick( double deltaS )
 {
-   for( const auto& archPair : m_archetypes )
+   for( const auto& compPair : m_components )
    {
-      TransformComponent& transform = *std::get<TransformComponent*>( archPair.second );
-      const MotionComponent& motion = *std::get<MotionComponent*>( archPair.second );
+      TransformComponent& transform = *std::get<TransformComponent*>( compPair.second );
+      const MotionComponent& motion = *std::get<MotionComponent*>( compPair.second );
 
-      transform.position *= ( motion.velocity * static_cast<float>( deltaS ) );
+      transform.position += ( motion.velocity * static_cast<float>( deltaS ) );
    }
 }
 }

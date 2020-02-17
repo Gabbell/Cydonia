@@ -15,9 +15,6 @@ public:
 
    static constexpr SharedComponentType TYPE = SharedComponentType::INPUT;
 
-   static constexpr float MOVE_SPEED = 0.01f;
-   static constexpr float MOUSE_SENS = 0.001f;
-
    // Last cursor pos registered by cursor callback
    glm::vec2 lastCursorPos = glm::vec2( 0.0f );
 

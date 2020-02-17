@@ -41,6 +41,9 @@ bool InputSystem::init()
 
 void InputSystem::tick( double /*deltaS*/ )
 {
+   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
+   input.cursorDelta     = glm::vec2( 0.0f );
+
    // Polling GLFW to trigger the callbacks
    glfwPollEvents();
 }
@@ -57,7 +60,7 @@ void InputSystem::_keyCallback(
       glfwSetWindowShouldClose( window, true );
    }
 
-   InputComponent& input = *std::get<InputComponent*>( (*m_archetypes.begin()).second );
+   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
 
    if( key == GLFW_KEY_W )
    {
@@ -110,19 +113,21 @@ void InputSystem::_keyCallback(
 
 void InputSystem::_cursorCallback( GLFWwindow* /*window*/, double xpos, double ypos )
 {
-   InputComponent& input = *std::get<InputComponent*>( ( *m_archetypes.begin() ).second );
+   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
+
+   glm::vec2 curPos( xpos, ypos );
 
    if( input.rotating )
    {
-      input.cursorDelta = input.lastCursorPos - glm::vec2( xpos, ypos );
+      input.cursorDelta = input.lastCursorPos - curPos;
    }
 
-   input.lastCursorPos = glm::vec2( xpos, ypos );
+   input.lastCursorPos = curPos;
 }
 
 void InputSystem::_mouseCallback( GLFWwindow* window, int button, int action, int /*mods*/ )
 {
-   InputComponent& input = *std::get<InputComponent*>( ( *m_archetypes.begin() ).second );
+   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
 
    if( button == GLFW_MOUSE_BUTTON_RIGHT )
    {

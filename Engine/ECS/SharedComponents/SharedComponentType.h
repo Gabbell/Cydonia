@@ -10,6 +10,7 @@ namespace cyd
 enum class SharedComponentType : uint8_t
 {
    INPUT = 0,
+   CAMERA,
    COUNT  //  Keep at the end
 };
 }

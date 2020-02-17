@@ -40,7 +40,7 @@ class VKRenderBackendImp
       m_mainSwapchain = m_mainDevice->createSwapchain( scInfo );
    }
 
-   ~VKRenderBackendImp() {}
+   ~VKRenderBackendImp() = default;
 
    void cleanup() { m_mainDevice->cleanup(); }
 

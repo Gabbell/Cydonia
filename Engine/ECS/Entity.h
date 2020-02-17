@@ -74,9 +74,7 @@ class Entity final
 
    // Remove component pointer from entity
    // ==============================================================================================
-   template <
-       class Component,
-       typename = std::enable_if_t<std::is_base_of_v<BaseComponent, Component>>>
+   template <class Component>
    void removeComponent()
    {
       if constexpr( std::is_base_of_v<BaseComponent, Component> )

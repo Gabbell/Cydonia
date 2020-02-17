@@ -18,9 +18,6 @@
 
 namespace vk
 {
-static std::unordered_map<cyd::ShaderResourceInfo, const Buffer*> m_buffersToUpdate;
-static std::unordered_map<cyd::ShaderResourceInfo, const Texture*> m_texturesToUpdate;
-
 void CommandBuffer::acquire(
     const Device& device,
     const CommandPool& pool,
@@ -193,23 +190,13 @@ void CommandBuffer::bindIndexBuffer<uint32_t>( const Buffer* indexBuffer )
 void CommandBuffer::bindBuffer( const Buffer* buffer, uint32_t set, uint32_t binding )
 {
    // Will need to update this buffer's descriptor set before next draw
-   cyd::ShaderResourceInfo info = {};
-   info.set                     = set;
-   info.binding                 = binding;
-   // We don't need the other info
-
-   m_buffersToUpdate[info] = buffer;
+   m_buffersToUpdate.emplace_back( buffer, set, binding );
 }
 
 void CommandBuffer::bindTexture( const Texture* texture, uint32_t set, uint32_t binding )
 {
    // Will need to update this texture's descriptor set before next draw
-   cyd::ShaderResourceInfo info = {};
-   info.set                     = set;
-   info.binding                 = binding;
-   // We don't need the other info
-
-   m_texturesToUpdate[info] = texture;
+   m_texturesToUpdate.emplace_back( texture, set, binding );
 }
 
 void CommandBuffer::setViewport( const cyd::Rectangle& viewport ) const
@@ -257,7 +244,7 @@ void CommandBuffer::beginPass( const cyd::RenderPassInfo& renderPassInfo, Swapch
 void CommandBuffer::_prepareDescriptorSets()
 {
    // Allocating descriptor sets
-   const uint32_t prevSize = m_descSets.size();
+   const size_t prevSize = m_descSets.size();
 
    m_descSets.reserve( prevSize + m_boundPipInfo.value().pipLayout.descSets.size() );
    for( const auto& descSet : m_boundPipInfo.value().pipLayout.descSets )
@@ -266,24 +253,30 @@ void CommandBuffer::_prepareDescriptorSets()
    }
 
    // Creating write descriptors for resources we want to update for this draw
+   const size_t totalSize = m_buffersToUpdate.size() + m_texturesToUpdate.size();
+   std::vector<VkDescriptorBufferInfo> bufferInfos;
+   std::vector<VkDescriptorImageInfo> imageInfos;
    std::vector<VkWriteDescriptorSet> writeDescSets;
-   writeDescSets.reserve( m_buffersToUpdate.size() + m_texturesToUpdate.size() );
+   writeDescSets.reserve( totalSize );
+   bufferInfos.reserve( totalSize );
+   imageInfos.reserve( totalSize );
 
    for( const auto& entry : m_buffersToUpdate )
    {
       VkDescriptorBufferInfo bufferInfo;
-      bufferInfo.buffer = entry.second->getVKBuffer();
+      bufferInfo.buffer = entry.buffer->getVKBuffer();
       bufferInfo.offset = 0;
-      bufferInfo.range  = entry.second->getSize();
+      bufferInfo.range  = entry.buffer->getSize();
+      bufferInfos.push_back( bufferInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
       descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      descriptorWrite.dstSet               = m_descSets[prevSize + entry.first.set];
-      descriptorWrite.dstBinding           = entry.first.binding;
+      descriptorWrite.dstSet               = m_descSets[prevSize + entry.set];
+      descriptorWrite.dstBinding           = entry.binding;
       descriptorWrite.dstArrayElement      = 0;
       descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
       descriptorWrite.descriptorCount      = 1;
-      descriptorWrite.pBufferInfo          = &bufferInfo;
+      descriptorWrite.pBufferInfo          = &bufferInfos.back();
 
       writeDescSets.push_back( descriptorWrite );
    }
@@ -295,17 +288,18 @@ void CommandBuffer::_prepareDescriptorSets()
       VkDescriptorImageInfo imageInfo = {};
       // By the point we bind this texture, it should have transferred to this layout
       imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-      imageInfo.imageView   = entry.second->getVKImageView();
+      imageInfo.imageView   = entry.texture->getVKImageView();
       imageInfo.sampler     = vkSampler;
+      imageInfos.push_back( imageInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
       descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      descriptorWrite.dstSet               = m_descSets[prevSize + entry.first.set];
-      descriptorWrite.dstBinding           = entry.first.binding;
+      descriptorWrite.dstSet               = m_descSets[prevSize + entry.set];
+      descriptorWrite.dstBinding           = entry.binding;
       descriptorWrite.dstArrayElement      = 0;
       descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
       descriptorWrite.descriptorCount      = 1;
-      descriptorWrite.pImageInfo           = &imageInfo;
+      descriptorWrite.pImageInfo           = &imageInfos.back();
 
       writeDescSets.push_back( descriptorWrite );
    }

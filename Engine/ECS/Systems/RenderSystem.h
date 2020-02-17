@@ -23,8 +23,5 @@ class RenderSystem final : public CommonSystem<TransformComponent, RenderableCom
    void uninit() override{};
    
    void tick( double deltaS ) override;
-
-  private:
-   void _preparePipeline() const;
 };
 }

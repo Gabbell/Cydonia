@@ -379,11 +379,11 @@ Device::~Device()
    m_pipelines.reset();
    m_renderPasses.reset();
    m_swapchain.reset();
-   m_descPool.reset();
    for( auto& commandPool : m_commandPools )
    {
       commandPool.reset();
    }
+   m_descPool.reset();
 
    vkDestroyDevice( m_vkDevice, nullptr );
 }

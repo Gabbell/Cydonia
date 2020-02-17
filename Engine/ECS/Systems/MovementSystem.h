@@ -19,7 +19,7 @@ class MovementSystem final : public CommonSystem<TransformComponent, MotionCompo
    NON_COPIABLE( MovementSystem )
    virtual ~MovementSystem() = default;
 
-   bool init() override{};
+   bool init() override { return true; };
    void uninit() override{};
    void tick( double deltaS ) override;
 };

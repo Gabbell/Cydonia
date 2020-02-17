@@ -6,11 +6,14 @@
 
 #include <ECS/Systems/InputSystem.h>
 #include <ECS/Systems/PlayerMoveSystem.h>
+#include <ECS/Systems/MovementSystem.h>
+#include <ECS/Systems/CameraSystem.h>
 #include <ECS/Systems/RenderSystem.h>
 
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MotionComponent.h>
 #include <ECS/Components/RenderableComponent.h>
+#include <ECS/SharedComponents/CameraComponent.h>
 #include <ECS/SharedComponents/InputComponent.h>
 
 namespace cyd
@@ -32,30 +35,30 @@ void VKSandbox::preLoop()
    // This order is the order in which the systems will be ticked
    ECS::AddSystem<InputSystem>( *m_window );
    ECS::AddSystem<PlayerMoveSystem>();
+   ECS::AddSystem<MovementSystem>();
+   ECS::AddSystem<CameraSystem>();
    ECS::AddSystem<RenderSystem>();
 
    // Creating player entity
    const EntityHandle player = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( player );
    ECS::Assign<InputComponent>( player );
+   ECS::Assign<TransformComponent>( player );
    ECS::Assign<MotionComponent>( player );
+   ECS::Assign<CameraComponent>( player );
 
    // Creating some renderable entities
-   for( uint32_t i = 0; i < 5; ++i )
-   {
-     const EntityHandle triangle = ECS::CreateEntity();
-     ECS::Assign<TransformComponent>(
-         triangle,
-         glm::vec3( i / 100.0f, 0.0f, 0.0f ),
-         glm::vec3( 1.0f ),
-         glm::identity<glm::quat>() );
-     ECS::Assign<RenderableComponent>( triangle );
-   }
+   const EntityHandle triangle = ECS::CreateEntity();
+   ECS::Assign<TransformComponent>( triangle );
+   ECS::Assign<RenderableComponent>( triangle );
 }
 
 void VKSandbox::tick( double deltaS ) { ECS::Tick( deltaS ); }
 
 void VKSandbox::postLoop() {}
 
-VKSandbox::~VKSandbox() { ECS::Uninitialize(); }
+VKSandbox::~VKSandbox()
+{
+   ECS::Uninitialize();
+   GRIS::UninitRenderBackend();
+}
 }

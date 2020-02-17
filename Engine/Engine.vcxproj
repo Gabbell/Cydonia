@@ -172,6 +172,7 @@
     <ClCompile Include="Applications\VKSandbox.cpp" />
     <ClCompile Include="ECS\Components\RenderableComponent.cpp" />
     <ClCompile Include="ECS\ECS.cpp" />
+    <ClCompile Include="ECS\Systems\CameraSystem.cpp" />
     <ClCompile Include="ECS\Systems\InputSystem.cpp" />
     <ClCompile Include="ECS\Systems\MovementSystem.cpp" />
     <ClCompile Include="ECS\Systems\PlayerMoveSystem.cpp" />
@@ -207,7 +208,6 @@
     <ClInclude Include="Common\Include.h" />
     <ClInclude Include="Common\Vulkan.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
-    <ClInclude Include="ECS\Components\LensComponent.h" />
     <ClInclude Include="ECS\Components\MotionComponent.h" />
     <ClInclude Include="ECS\ECS.h" />
     <ClInclude Include="ECS\Components\ComponentPool.h" />
@@ -217,7 +217,10 @@
     <ClInclude Include="ECS\Entities\Entity.h" />
     <ClInclude Include="ECS\Entity.h" />
     <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
+    <ClInclude Include="ECS\SharedComponents\CameraComponent.h" />
     <ClInclude Include="ECS\SharedComponents\InputComponent.h" />
+    <ClInclude Include="ECS\SharedComponents\SharedComponentType.h" />
+    <ClInclude Include="ECS\Systems\CameraSystem.h" />
     <ClInclude Include="ECS\Systems\CommonSystem.h" />
     <ClInclude Include="ECS\Systems\InputSystem.h" />
     <ClInclude Include="ECS\Systems\MovementSystem.h" />

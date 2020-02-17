@@ -4,7 +4,7 @@
 
 #include <ECS/Entity.h>
 
-#include <vector>
+#include <utility>
 
 // ================================================================================================
 // Forwards
@@ -50,14 +50,14 @@ class CommonSystem : public BaseSystem
    virtual ~CommonSystem() = default;
 
    // If the system is not watching any entity, no need to tick
-   bool hasToTick() const noexcept override { return !m_archetypes.empty(); }
+   bool hasToTick() const noexcept override { return !m_components.empty(); }
 
    void onEntityAssigned( const Entity& entity ) override final
    {
       EntityHandle handle = entity.getHandle();
 
       // Make sure that if the entity previously matched, we are not doubling components
-      if( m_archetypes.find( handle ) == m_archetypes.end() )
+      if( m_components.find( handle ) == m_components.end() )
       {
          Archetype arch;
          uint32_t matches = 0;
@@ -67,7 +67,7 @@ class CommonSystem : public BaseSystem
          // Check if we have a match!
          if( matches == sizeof...( Components ) )
          {
-            m_archetypes[handle] = std::move( arch );
+            m_components[handle] = std::move( arch );
          }
       }
    }
@@ -80,8 +80,15 @@ class CommonSystem : public BaseSystem
   protected:
    CommonSystem() = default;
 
-   using Archetype = std::tuple<std::add_pointer_t<Components>...>;
-   std::unordered_map<EntityHandle, Archetype> m_archetypes;
+   // The archetype only includes the normal components as they are the only ones worth tracking
+   // since they are per entity. We therefore filter out anything else from the parameter pack
+   using Archetype = decltype( std::tuple_cat(
+       std::declval<std::conditional_t<
+           std::is_base_of_v<BaseComponent, Components>,
+           std::tuple<std::add_pointer_t<Components>>,
+           std::tuple<>>>()... ) );
+
+   std::unordered_map<EntityHandle, Archetype> m_components;
 
   private:
    template <size_t INDEX, class Component, class... Args>
@@ -100,6 +107,7 @@ class CommonSystem : public BaseSystem
                std::get<INDEX>( archToFill ) = static_cast<Component*>( compPair.second );
             }
          }
+         _processEntityArchetype<INDEX + 1, Args...>( entity, matches, archToFill );
       }
       else if constexpr( std::is_base_of_v<BaseSharedComponent, Component> )
       {
@@ -107,13 +115,12 @@ class CommonSystem : public BaseSystem
          {
             if( Component::TYPE == compPair.first )
             {
+               // Shared components are checked for match only. We do not add them to the archetype
                matches++;
-               std::get<INDEX>( archToFill ) = static_cast<Component*>( compPair.second );
             }
          }
+         _processEntityArchetype<INDEX, Args...>( entity, matches, archToFill );
       }
-
-      _processEntityArchetype<INDEX + 1, Args...>( entity, matches, archToFill );
    }
 
    template <size_t INDEX>

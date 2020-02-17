@@ -2,50 +2,59 @@
 
 #include <Graphics/RenderInterface.h>
 
+#include <ECS/ECS.h>
+#include <ECS/SharedComponents/CameraComponent.h>
+
 namespace cyd
 {
-struct MVP
-{
-   glm::mat4 model = glm::mat4( 1.0f );
-   glm::mat4 view  = glm::mat4( 1.0f );
-   glm::mat4 proj  = glm::mat4( 1.0f );
-};
 
 static PipelineInfo pipInfo;
 static RenderPassInfo renderPassInfo;
+static UniformBufferHandle alphaBuffer;
 
+// Static function signatures only to keep things tidy and the important stuff at the top
+static void preparePipeline();
+
+// Init
+// ================================================================================================
 bool RenderSystem::init()
 {
-   _preparePipeline();
+   alphaBuffer = GRIS::CreateUniformBuffer( sizeof( glm::mat4 ) * 2 );
+
+   preparePipeline();
    return true;
 }
 
+// Tick
+// ================================================================================================
 void RenderSystem::tick( double /*deltaS*/ )
 {
    const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, true );
+
+   const CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
+   GRIS::CopyToUniformBuffer( alphaBuffer, &camera.vp );
 
    GRIS::StartRecordingCommandList( cmdList );
 
    // Dynamic state
    GRIS::SetViewport( cmdList, { { 0.0f, 0.0f }, pipInfo.extent } );
 
-   // First pass: muh triangles
-   GRIS::BeginRenderPass( cmdList, renderPassInfo );
+   // Main pass
+   GRIS::BeginRenderPassSwapchain( cmdList, renderPassInfo );
    {
       GRIS::BindPipeline( cmdList, pipInfo );
 
       // Bind view and environment values (Alpha)
-      // GRIS::BindUniformBuffer( cmdList, alphaBuffer, 0, 0 );
+      GRIS::BindUniformBuffer( cmdList, alphaBuffer, 0, 0 );
 
       // Bind shader control values (Beta)
       // GRIS::BindUniformBuffer( cmdList, betaBuffer, 1, 0 );
 
-      // Render scene
-      for( const auto& archPair : m_archetypes )
+      for( const auto& compPair : m_components )
       {
          // This system is read only
-         const TransformComponent& transform   = *std::get<TransformComponent*>( archPair.second );
-         const RenderableComponent& renderable = *std::get<RenderableComponent*>( archPair.second );
+         const TransformComponent& transform   = *std::get<TransformComponent*>( compPair.second );
+         const RenderableComponent& renderable = *std::get<RenderableComponent*>( compPair.second );
 
          glm::mat4 model = glm::translate( glm::mat4( 1.0f ), transform.position ) *
                            glm::scale( glm::mat4( 1.0f ), transform.scaling ) *
@@ -56,11 +65,11 @@ void RenderSystem::tick( double /*deltaS*/ )
          GRIS::BindTexture( cmdList, renderable.matTexture, 2, 1 );
 
          // Update model properties (Epsilon)
-         GRIS::UpdateConstantBuffer( cmdList, VERTEX_STAGE, 0, sizeof( MVP::model ), &model );
+         GRIS::UpdateConstantBuffer( cmdList, VERTEX_STAGE, 0, sizeof( glm::mat4 ), &model );
 
          // GRIS::BindIndexBuffer( cmdList, renderable.indexBuffer );
          GRIS::BindVertexBuffer( cmdList, renderable.vertexBuffer );
-         GRIS::DrawVertices( cmdList, 3 );  // TODO Generalize
+         GRIS::DrawVertices( cmdList, 36 );  // TODO Generalize
       }
    }
    GRIS::EndRenderPass( cmdList );
@@ -75,7 +84,7 @@ void RenderSystem::tick( double /*deltaS*/ )
    GRIS::RenderBackendCleanup();
 }
 
-void RenderSystem::_preparePipeline() const
+void preparePipeline()
 {
    // Alpha layout - View and environment (low frequency updates)
    // ==============================================================================================
@@ -83,7 +92,7 @@ void RenderSystem::_preparePipeline() const
 
    ShaderResourceInfo viewInfo = {};
    viewInfo.type               = ShaderResourceType::UNIFORM;
-   viewInfo.stages             = VERTEX_STAGE;
+   viewInfo.stages             = VERTEX_STAGE | FRAGMENT_STAGE;
    viewInfo.binding            = 0;
 
    alphaLayout.shaderResources.push_back( viewInfo );
@@ -121,7 +130,7 @@ void RenderSystem::_preparePipeline() const
    PushConstantRange epsilonRange = {};
    epsilonRange.stages            = VERTEX_STAGE;
    epsilonRange.offset            = 0;
-   epsilonRange.size              = sizeof( MVP::model );
+   epsilonRange.size              = sizeof( glm::mat4 );
 
    // Pipeline layout
    // ==============================================================================================

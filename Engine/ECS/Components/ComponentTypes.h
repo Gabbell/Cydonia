@@ -12,7 +12,7 @@ enum class ComponentType : uint8_t
    TRANSFORM = 0,
    RENDERABLE,
    MOTION,
-   LENS,
+   CAMERA,
    CONTROLLER,
 
    COUNT  // Keep at the end

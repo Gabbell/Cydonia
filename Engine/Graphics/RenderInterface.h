@@ -72,7 +72,7 @@ void DestroyIndexBuffer( IndexBufferHandle bufferHandle );
 void DestroyUniformBuffer( UniformBufferHandle bufferHandle );
 
 // Drawing
-void BeginRenderPass( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo );
+void BeginRenderPassSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo );
 void EndRenderPass( CmdListHandle cmdList );
 void DrawVertices( CmdListHandle cmdList, uint32_t vertexCount );
 void DrawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount );

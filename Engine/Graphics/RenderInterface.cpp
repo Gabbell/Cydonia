@@ -144,7 +144,7 @@ void DestroyUniformBuffer( UniformBufferHandle bufferHandle )
 // =================================================================================================
 // Drawing
 //
-void BeginRenderPass( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo )
+void BeginRenderPassSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo )
 {
    b->beginRenderSwapchain( cmdList, renderPassInfo );
 }

@@ -20,10 +20,10 @@ class RenderableComponent final : public BaseComponent
    bool init() override;
    void uninit() override;
 
-   UniformBufferHandle matBuffer;
+   UniformBufferHandle matBuffer;  // Material properties
    TextureHandle matTexture;
 
-   VertexBufferHandle vertexBuffer;
+   VertexBufferHandle vertexBuffer;  // Mesh data
    IndexBufferHandle indexBuffer;
 };
 }

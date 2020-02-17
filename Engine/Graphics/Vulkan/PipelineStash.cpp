@@ -110,10 +110,11 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
       vkRanges.push_back( std::move( vkRange ) );
    }
 
-   std::unordered_set<VkDescriptorSetLayout> descSetLayouts;
+   std::vector<VkDescriptorSetLayout> descSetLayouts;
+   descSetLayouts.reserve( info.descSets.size() );
    for( const auto& descSetLayout : info.descSets )
    {
-      descSetLayouts.insert( findOrCreate( descSetLayout ) );
+      descSetLayouts.push_back( findOrCreate( descSetLayout ) );
    }
    // Vector containing unique VkDescriptorSetLayouts
    std::vector<VkDescriptorSetLayout> descSetLayoutsVec(
