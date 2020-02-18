@@ -52,7 +52,7 @@ static VkBool32 errorCallback(
    // If the severity is error, we want to assert immediately
    if( messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT )
    {
-      // CYDASSERT( !"Fix validation layers" );
+      CYDASSERT( !"Fix validation layers" );
    }
 
    return VK_FALSE;

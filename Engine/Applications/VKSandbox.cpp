@@ -24,10 +24,12 @@ bool VKSandbox::init( uint32_t width, uint32_t height, const std::string& title 
 {
    Application::init( width, height, title );
 
-   GRIS::InitRenderBackend<VK>( *m_window );
-   ECS::Initialize();
+   bool success = true;
 
-   return true;
+   success &= GRIS::InitRenderBackend<VK>( *m_window );
+   success &= ECS::Initialize();
+
+   return success;
 }
 
 void VKSandbox::preLoop()

@@ -12,18 +12,20 @@ static RenderBackend* b = nullptr;
 // Initialization
 //
 template <>
-void InitRenderBackend<VK>( const Window& window )
+bool InitRenderBackend<VK>( const Window& window )
 {
    printf( "======= Initializing Vulkan Rendering Backend =======\n" );
    delete b;
    b = new VKRenderBackend( window );
+   return true;
 }
 
 template <>
-void InitRenderBackend<GL>( const Window& )
+bool InitRenderBackend<GL>( const Window& )
 {
    printf( "======= OpenGL Rendering Backend Not Yet Implemented =======\n" );
    delete b;
+   return false;
 }
 
 void UninitRenderBackend()

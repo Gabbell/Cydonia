@@ -22,7 +22,7 @@ namespace GRIS
 {
 // Initialization
 template <API>
-void InitRenderBackend( const Window& window );
+bool InitRenderBackend( const Window& window );
 void UninitRenderBackend();
 void RenderBackendCleanup();  // Should be called every frame
 

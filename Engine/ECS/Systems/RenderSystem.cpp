@@ -7,10 +7,11 @@
 
 namespace cyd
 {
-
 static PipelineInfo pipInfo;
 static RenderPassInfo renderPassInfo;
-static UniformBufferHandle alphaBuffer;
+
+static UniformBufferHandle viewBuffer;
+static UniformBufferHandle lightBuffer;
 
 // Static function signatures only to keep things tidy and the important stuff at the top
 static void preparePipeline();
@@ -19,7 +20,20 @@ static void preparePipeline();
 // ================================================================================================
 bool RenderSystem::init()
 {
-   alphaBuffer = GRIS::CreateUniformBuffer( sizeof( glm::mat4 ) * 2 );
+   viewBuffer = GRIS::CreateUniformBuffer( sizeof( glm::mat4 ) * 2 );
+
+   struct Lights
+   {
+      glm::vec4 lightPos;
+      glm::vec4 lightCol;
+   } lightInfo;
+
+   lightBuffer = GRIS::CreateUniformBuffer( sizeof( Lights ) );
+
+   lightInfo.lightPos = glm::vec4( 4.0f, 4.0f, 4.0f, 1.0f );
+   lightInfo.lightCol = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
+
+   GRIS::CopyToUniformBuffer( lightBuffer, &lightInfo );
 
    preparePipeline();
    return true;
@@ -32,7 +46,7 @@ void RenderSystem::tick( double /*deltaS*/ )
    const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, true );
 
    const CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
-   GRIS::CopyToUniformBuffer( alphaBuffer, &camera.vp );
+   GRIS::CopyToUniformBuffer( viewBuffer, &camera.vp );
 
    GRIS::StartRecordingCommandList( cmdList );
 
@@ -45,7 +59,8 @@ void RenderSystem::tick( double /*deltaS*/ )
       GRIS::BindPipeline( cmdList, pipInfo );
 
       // Bind view and environment values (Alpha)
-      GRIS::BindUniformBuffer( cmdList, alphaBuffer, 0, 0 );
+      GRIS::BindUniformBuffer( cmdList, viewBuffer, 0, 0 );
+      GRIS::BindUniformBuffer( cmdList, lightBuffer, 0, 1 );
 
       // Bind shader control values (Beta)
       // GRIS::BindUniformBuffer( cmdList, betaBuffer, 1, 0 );
@@ -77,6 +92,8 @@ void RenderSystem::tick( double /*deltaS*/ )
    GRIS::EndRecordingCommandList( cmdList );
 
    GRIS::SubmitCommandList( cmdList );
+   GRIS::WaitOnCommandList( cmdList );
+
    GRIS::PresentFrame();
 
    GRIS::DestroyCommandList( cmdList );
@@ -92,10 +109,16 @@ void preparePipeline()
 
    ShaderResourceInfo viewInfo = {};
    viewInfo.type               = ShaderResourceType::UNIFORM;
-   viewInfo.stages             = VERTEX_STAGE | FRAGMENT_STAGE;
+   viewInfo.stages             = VERTEX_STAGE;
    viewInfo.binding            = 0;
 
+   ShaderResourceInfo lightInfo = {};
+   lightInfo.type               = ShaderResourceType::UNIFORM;
+   lightInfo.stages             = FRAGMENT_STAGE;
+   lightInfo.binding            = 1;
+
    alphaLayout.shaderResources.push_back( viewInfo );
+   alphaLayout.shaderResources.push_back( lightInfo );
 
    // Beta layout - Shader control values (medium frequency updates)
    // ==============================================================================================
@@ -144,7 +167,7 @@ void preparePipeline()
    pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
    pipInfo.extent   = { 1280, 720 };  // Current resolution
    pipInfo.polyMode = PolygonMode::FILL;
-   pipInfo.shaders  = { "defaultTex_vert", "defaultTex_frag" };
+   pipInfo.shaders  = { "defaultTex_vert", "phongTex_frag" };
 
    // Attachments
    Attachment colorPresentation = {};

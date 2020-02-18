@@ -35,6 +35,15 @@ void PlayerMoveSystem::tick( double /*deltaS*/ )
       TransformComponent& transform = *std::get<TransformComponent*>( compPair.second );
       MotionComponent& motion       = *std::get<MotionComponent*>( compPair.second );
 
+      // Modifying the transform component directly for rotation
+      if( input.rotating )
+      {
+         glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
+
+         rotateLocal( transform, -rotationAngles.y, 0, 0 );
+         rotate( transform, 0, rotationAngles.x, 0 );
+      }
+
       // Modifying the motion component for position in local coordinates
       glm::vec3 velocity( 0.0f );
       if( input.goingForwards )
@@ -55,16 +64,7 @@ void PlayerMoveSystem::tick( double /*deltaS*/ )
       }
 
       // Converting to world coordinates
-      motion.velocity = velocity;
-
-      // Modifying the transform component directly for rotation
-      if( input.rotating )
-      {
-         glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
-         
-         rotateLocal( transform, -rotationAngles.y, 0, 0 );
-         rotate( transform, 0, rotationAngles.x, 0 );
-      }
+      motion.velocity = glm::rotate( transform.rotation, velocity );
    }
 }
 }
