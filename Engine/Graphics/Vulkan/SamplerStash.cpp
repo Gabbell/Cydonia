@@ -20,11 +20,11 @@ const VkSampler SamplerStash::findOrCreate( const cyd::SamplerInfo& info )
 
    VkSamplerCreateInfo samplerInfo = {};
    samplerInfo.sType               = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-   samplerInfo.magFilter           = TypeConversions::cydFilterToVkFilter( info.magFilter );
-   samplerInfo.minFilter           = TypeConversions::cydFilterToVkFilter( info.minFilter );
+   samplerInfo.magFilter           = TypeConversions::cydToVkFilter( info.magFilter );
+   samplerInfo.minFilter           = TypeConversions::cydToVkFilter( info.minFilter );
 
    VkSamplerAddressMode addressMode =
-       TypeConversions::cydAddressModeToVkAddressMode( info.addressMode );
+       TypeConversions::cydToVkAddressMode( info.addressMode );
    samplerInfo.addressModeU            = addressMode;
    samplerInfo.addressModeV            = addressMode;
    samplerInfo.addressModeW            = addressMode;

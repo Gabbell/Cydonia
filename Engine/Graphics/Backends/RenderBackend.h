@@ -33,7 +33,8 @@ class RenderBackend
    virtual void setViewport( CmdListHandle cmdList, const Rectangle& viewport )            = 0;
    virtual void bindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo )         = 0;
    virtual void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) = 0;
-   virtual void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle )   = 0;
+   virtual void
+   bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type ) = 0;
    virtual void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -67,8 +68,12 @@ class RenderBackend
    virtual IndexBufferHandle
    createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) = 0;
 
-   virtual UniformBufferHandle createUniformBuffer( size_t size )                          = 0;
-   virtual void copyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData ) = 0;
+   virtual UniformBufferHandle createUniformBuffer( size_t size ) = 0;
+   virtual void copyToUniformBuffer(
+       UniformBufferHandle bufferHandle,
+       const void* pData,
+       size_t offset,
+       size_t size ) = 0;
 
    virtual void destroyTexture( TextureHandle texHandle )                = 0;
    virtual void destroyVertexBuffer( VertexBufferHandle bufferHandle )   = 0;

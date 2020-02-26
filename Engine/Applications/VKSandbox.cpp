@@ -18,6 +18,16 @@
 
 namespace cyd
 {
+// Plane
+static std::vector<Vertex> vertices = {
+    //    ~ Position ~               ~ Color ~                ~ UV ~            ~ Normal ~
+    {{999.0f, 0.0f, 999.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{-999.0f, 0.0f, -999.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{-999.0f, 0.0f, 999.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{999.0f, 0.0f, 999.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{999.0f, 0.0f, -999.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 1.0f, 0.0f}, {0.0f, 1.0f, 0.0f}},
+    {{-999.0f, 0.0f, -999.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {1.0f, 0.0f, 0.0f}, {0.0f, 1.0f, 0.0f}}};
+
 VKSandbox::VKSandbox() = default;
 
 bool VKSandbox::init( uint32_t width, uint32_t height, const std::string& title )
@@ -49,9 +59,14 @@ void VKSandbox::preLoop()
    ECS::Assign<CameraComponent>( player );
 
    // Creating some renderable entities
-   const EntityHandle triangle = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( triangle );
-   ECS::Assign<RenderableComponent>( triangle );
+   const EntityHandle sphere = ECS::CreateEntity();
+   ECS::Assign<TransformComponent>( sphere );
+   ECS::Assign<RenderableComponent>( sphere, "Assets/Meshes/sphere.obj" );
+
+   const EntityHandle plane = ECS::CreateEntity();
+   ECS::Assign<TransformComponent>(
+       plane, glm::vec3( 0.0f, -20.0f, 0.0f ), glm::vec3(1.0f), glm::quat() );
+   ECS::Assign<RenderableComponent>( plane, vertices );
 }
 
 void VKSandbox::tick( double deltaS ) { ECS::Tick( deltaS ); }
@@ -63,4 +78,4 @@ VKSandbox::~VKSandbox()
    ECS::Uninitialize();
    GRIS::UninitRenderBackend();
 }
-}
+}  // namespace cyd

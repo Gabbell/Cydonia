@@ -21,6 +21,8 @@ void CameraSystem::tick( double /*deltaS*/ )
    {
       const TransformComponent& transform = *std::get<TransformComponent*>( compPair.second );
 
+      camera.pos = glm::vec4( transform.position, 1.0f );
+
       camera.vp.view = glm::toMat4( glm::conjugate( transform.rotation ) ) *
                        glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling ) *
                        glm::translate( glm::mat4( 1.0f ), -transform.position );

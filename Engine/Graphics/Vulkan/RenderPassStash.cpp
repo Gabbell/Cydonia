@@ -57,15 +57,15 @@ VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
       }
 
       VkAttachmentDescription vkAttachment = {};
-      vkAttachment.format         = TypeConversions::cydFormatToVkFormat( attachment.format );
+      vkAttachment.format         = TypeConversions::cydToVkFormat( attachment.format );
       vkAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
-      vkAttachment.loadOp         = TypeConversions::cydOpToVkOp( attachment.loadOp );
-      vkAttachment.storeOp        = TypeConversions::cydOpToVkOp( attachment.storeOp );
+      vkAttachment.loadOp         = TypeConversions::cydToVkOp( attachment.loadOp );
+      vkAttachment.storeOp        = TypeConversions::cydToVkOp( attachment.storeOp );
       vkAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       vkAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
       vkAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
       vkAttachment.finalLayout =
-          TypeConversions::cydImageLayoutToVKImageLayout( attachment.layout );
+          TypeConversions::cydToVkImageLayout( attachment.layout );
 
       attachmentDescs.push_back( vkAttachment );
    }

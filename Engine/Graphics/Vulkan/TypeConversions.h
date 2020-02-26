@@ -7,6 +7,7 @@
 // ================================================================================================
 // Forwards
 // ================================================================================================
+enum VkIndexType;
 enum VkFormat;
 enum VkColorSpaceKHR;
 enum VkAttachmentLoadOp;
@@ -30,16 +31,17 @@ class TypeConversions final
    NON_COPIABLE( TypeConversions )
    ~TypeConversions() = delete;
 
-   static VkFormat cydFormatToVkFormat( cyd::PixelFormat format );
-   static VkColorSpaceKHR cydSpaceToVkSpace( cyd::ColorSpace space );
-   static VkAttachmentLoadOp cydOpToVkOp( cyd::LoadOp op );
-   static VkAttachmentStoreOp cydOpToVkOp( cyd::StoreOp op );
-   static VkPrimitiveTopology cydDrawPrimToVkDrawPrim( cyd::DrawPrimitive prim );
-   static VkPolygonMode cydPolyModeToVkPolyMode( cyd::PolygonMode polyMode );
-   static uint32_t cydShaderStagesToVkShaderStages( cyd::ShaderStageFlag stages );
-   static VkImageLayout cydImageLayoutToVKImageLayout( cyd::ImageLayout layout );
-   static VkDescriptorType cydShaderObjectTypeToVkDescriptorType( cyd::ShaderResourceType type );
-   static VkFilter cydFilterToVkFilter( cyd::Filter filter );
-   static VkSamplerAddressMode cydAddressModeToVkAddressMode( cyd::AddressMode mode );
+   static VkIndexType cydToVkIndexType( cyd::IndexType type );
+   static VkFormat cydToVkFormat( cyd::PixelFormat format );
+   static VkColorSpaceKHR cydToVkSpace( cyd::ColorSpace space );
+   static VkAttachmentLoadOp cydToVkOp( cyd::LoadOp op );
+   static VkAttachmentStoreOp cydToVkOp( cyd::StoreOp op );
+   static VkPrimitiveTopology cydToVkDrawPrim( cyd::DrawPrimitive prim );
+   static VkPolygonMode cydToVkPolyMode( cyd::PolygonMode polyMode );
+   static uint32_t cydToVkShaderStages( cyd::ShaderStageFlag stages );
+   static VkImageLayout cydToVkImageLayout( cyd::ImageLayout layout );
+   static VkDescriptorType cydToVkDescriptorType( cyd::ShaderResourceType type );
+   static VkFilter cydToVkFilter( cyd::Filter filter );
+   static VkSamplerAddressMode cydToVkAddressMode( cyd::AddressMode mode );
 };
 }

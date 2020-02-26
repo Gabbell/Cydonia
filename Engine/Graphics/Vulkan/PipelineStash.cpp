@@ -71,7 +71,7 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
 
       descSetLayoutBinding.descriptorCount = 1;  // For arrays
       descSetLayoutBinding.stageFlags =
-          TypeConversions::cydShaderStagesToVkShaderStages( object.stages );
+          TypeConversions::cydToVkShaderStages( object.stages );
       descSetLayoutBinding.pImmutableSamplers = nullptr;
 
       descSetLayoutBindings.push_back( std::move( descSetLayoutBinding ) );
@@ -103,7 +103,7 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
    for( const auto& range : info.ranges )
    {
       VkPushConstantRange vkRange = {};
-      vkRange.stageFlags = TypeConversions::cydShaderStagesToVkShaderStages( range.stages );
+      vkRange.stageFlags = TypeConversions::cydToVkShaderStages( range.stages );
       vkRange.offset     = static_cast<uint32_t>( range.offset );
       vkRange.size       = static_cast<uint32_t>( range.size );
 
@@ -209,7 +209,7 @@ const VkPipeline PipelineStash::findOrCreate(
    // Input assembly
    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
    inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-   inputAssembly.topology = TypeConversions::cydDrawPrimToVkDrawPrim( info.drawPrim );
+   inputAssembly.topology = TypeConversions::cydToVkDrawPrim( info.drawPrim );
    inputAssembly.primitiveRestartEnable = VK_FALSE;
 
    // Viewport and scissor
@@ -222,8 +222,9 @@ const VkPipeline PipelineStash::findOrCreate(
    viewport.maxDepth   = 1.0f;
 
    VkRect2D scissor = {};
-   scissor.offset   = { 0, 0 };
-   scissor.extent   = { info.extent.width, info.extent.height };
+   scissor.offset   = {0, 0};
+   scissor.extent   = {static_cast<uint32_t>( info.extent.width ),
+                     static_cast<uint32_t>( info.extent.height )};
 
    VkPipelineViewportStateCreateInfo viewportState = {};
    viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -237,10 +238,10 @@ const VkPipeline PipelineStash::findOrCreate(
    rasterizer.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
    rasterizer.depthClampEnable        = VK_FALSE;
    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-   rasterizer.polygonMode             = TypeConversions::cydPolyModeToVkPolyMode( info.polyMode );
+   rasterizer.polygonMode             = TypeConversions::cydToVkPolyMode( info.polyMode );
    rasterizer.lineWidth               = 1.0f;
    rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
-   rasterizer.frontFace               = VK_FRONT_FACE_CLOCKWISE;
+   rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
    rasterizer.depthBiasEnable         = VK_FALSE;
 
    // Multisampling

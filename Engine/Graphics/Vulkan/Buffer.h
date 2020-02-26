@@ -41,7 +41,7 @@ class Buffer final
 
    void setUnused() { m_inUse = false; }
 
-   void copy( const void* pData );
+   void copy( const void* pData, size_t offset, size_t side );
 
   private:
    void _mapMemory();

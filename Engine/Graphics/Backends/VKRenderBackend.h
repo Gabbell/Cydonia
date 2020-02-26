@@ -45,7 +45,8 @@ class VKRenderBackend final : public RenderBackend
    void setViewport( CmdListHandle cmdList, const Rectangle& viewport ) override;
    void bindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo ) override;
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) override;
-   void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle ) override;
+   void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
+       override;
    void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -80,7 +81,11 @@ class VKRenderBackend final : public RenderBackend
    createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) override;
 
    UniformBufferHandle createUniformBuffer( size_t size ) override;
-   void copyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData ) override;
+   void copyToUniformBuffer(
+       UniformBufferHandle bufferHandle,
+       const void* pData,
+       size_t offset,
+       size_t size ) override;
 
    void destroyTexture( TextureHandle texHandle ) override;
    void destroyVertexBuffer( VertexBufferHandle bufferHandle ) override;

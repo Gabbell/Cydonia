@@ -4,8 +4,8 @@
 
 #include <Graphics/GraphicsTypes.h>
 
+#include <array>
 #include <optional>
-#include <unordered_map>
 
 // ================================================================================================
 // Forwards
@@ -65,8 +65,7 @@ class CommandBuffer final
    // Bindings
    // =============================================================================================
    void bindVertexBuffer( const Buffer* vertexBuf ) const;
-   template <typename T>
-   void bindIndexBuffer( const Buffer* indexBuf );
+   void bindIndexBuffer( const Buffer* indexBuf, cyd::IndexType type );
    void bindPipeline( const cyd::PipelineInfo& info );
    void bindBuffer( const Buffer* buffer, uint32_t set, uint32_t binding );
    void bindTexture( const Texture* texture, uint32_t set, uint32_t binding );
@@ -92,6 +91,11 @@ class CommandBuffer final
    void uploadBufferToTex( const Buffer* src, Texture* dst );
 
   private:
+   // The updating and binding of descriptor sets is deferred all the way until we do a draw call.
+   // We will only update and bind the "new" descriptor sets in Vulkan with the descriptor sets that
+   // were bound to the command buffer since the last draw call. This ensures that we do not create
+   // unnecessary descriptor sets and that we only update and bind what is needed for the next draw.
+   VkDescriptorSet _findOrAllocateDescSet( size_t prevSize, uint32_t set );
    void _prepareDescriptorSets();
 
    const Device* m_pDevice    = nullptr;
@@ -103,9 +107,17 @@ class CommandBuffer final
    std::optional<VkPipelineLayout> m_boundPipLayout;
    std::optional<VkRenderPass> m_boundRenderPass;
 
-   // The buffers/textures to update before the next draw along with a list of descriptor sets that
-   // were allocated by this command buffer
-   std::vector<VkDescriptorSet> m_descSets;
+   // Currently bound descriptor sets
+   static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 32;
+   std::array<VkDescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> m_boundSets;
+
+   // All descriptor sets linked to this command buffer
+   struct DescriptorSetInfo
+   {
+      uint32_t set;
+      VkDescriptorSet vkDescSet;
+   };
+   std::vector<DescriptorSetInfo> m_descSets;
 
    // Used for deferred updating and binding of descriptor sets before a draw command
    struct BufferUpdateInfo

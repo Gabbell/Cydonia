@@ -28,6 +28,8 @@ struct Handle
 
    operator uint32_t() const { return _type << 27 | _counter << 12 | _index; }
 
+   static constexpr uint32_t INVALID_HANDLE = 0xFFFFFFFF;
+
    // The resource's index
    uint32_t _index : 12;
 

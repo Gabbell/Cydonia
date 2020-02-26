@@ -25,6 +25,8 @@ public:
    bool goingBackwards = false;
    bool goingRight     = false;
    bool goingLeft      = false;
+   bool goingUp        = false;
+   bool goingDown      = false;
    bool rotating       = false;
 };
 }

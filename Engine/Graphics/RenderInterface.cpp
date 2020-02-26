@@ -30,7 +30,7 @@ bool InitRenderBackend<GL>( const Window& )
 
 void UninitRenderBackend()
 {
-   printf( "======= Uninitializing Rendering Backend =======\n" );
+   printf( "======= Reports of my death have been greatly exaggerated =======\n" );
    delete b;
 }
 
@@ -69,9 +69,16 @@ void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
    b->bindVertexBuffer( cmdList, bufferHandle );
 }
 
-void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
+template <>
+void BindIndexBuffer<uint16_t>( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
 {
-   b->bindIndexBuffer( cmdList, bufferHandle );
+   b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT16 );
+}
+
+template <>
+void BindIndexBuffer<uint32_t>( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
+{
+   b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT32 );
 }
 
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
@@ -124,9 +131,13 @@ CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndi
 
 UniformBufferHandle CreateUniformBuffer( size_t size ) { return b->createUniformBuffer( size ); }
 
-void CopyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData )
+void CopyToUniformBuffer(
+    UniformBufferHandle bufferHandle,
+    const void* pData,
+    size_t offset,
+    size_t size )
 {
-   return b->copyToUniformBuffer( bufferHandle, pData );
+   return b->copyToUniformBuffer( bufferHandle, pData, offset, size );
 }
 
 void DestroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }

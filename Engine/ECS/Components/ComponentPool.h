@@ -19,6 +19,10 @@ namespace cyd
 {
 class BaseComponentPool
 {
+  public:
+   NON_COPIABLE( BaseComponentPool )
+   virtual ~BaseComponentPool() = default;
+
   protected:
    BaseComponentPool() = default;
 };
@@ -29,7 +33,13 @@ class ComponentPool final : public BaseComponentPool
   public:
    ComponentPool() = default;
    NON_COPIABLE( ComponentPool )
-   ~ComponentPool() = default;
+   virtual ~ComponentPool()
+   {
+      for( auto& component : m_components )
+      {
+         component.uninit();
+      }
+   }
 
    static constexpr size_t INVALID_POOL_IDX = std::numeric_limits<size_t>::max();
 

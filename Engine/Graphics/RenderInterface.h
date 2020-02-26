@@ -39,6 +39,7 @@ void DestroyCommandList( CmdListHandle cmdList );
 void SetViewport( CmdListHandle cmdList, const Rectangle& viewport );
 void BindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo );
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
+template<class T>
 void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding );
 void BindUniformBuffer(
@@ -64,7 +65,11 @@ VertexBufferHandle CreateVertexBuffer(
 IndexBufferHandle
 CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices );
 UniformBufferHandle CreateUniformBuffer( size_t size );
-void CopyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData );
+void CopyToUniformBuffer(
+    UniformBufferHandle bufferHandle,
+    const void* pData,
+    size_t offset,
+    size_t size );
 
 void DestroyTexture( TextureHandle texHandle );
 void DestroyVertexBuffer( VertexBufferHandle bufferHandle );

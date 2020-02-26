@@ -40,7 +40,7 @@ void PlayerMoveSystem::tick( double /*deltaS*/ )
       {
          glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
 
-         rotateLocal( transform, -rotationAngles.y, 0, 0 );
+         rotateLocal( transform, rotationAngles.y, 0, 0 );
          rotate( transform, 0, rotationAngles.x, 0 );
       }
 
@@ -64,7 +64,18 @@ void PlayerMoveSystem::tick( double /*deltaS*/ )
       }
 
       // Converting to world coordinates
-      motion.velocity = glm::rotate( transform.rotation, velocity );
+      velocity = glm::rotate( transform.rotation, velocity );
+
+      if( input.goingUp )
+      {
+         velocity.y += MOVE_SPEED;
+      }
+      if( input.goingDown )
+      {
+         velocity.y -= MOVE_SPEED;
+      }
+
+      motion.velocity = velocity;
    }
 }
 }

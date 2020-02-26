@@ -5,7 +5,22 @@
 
 namespace vk
 {
-VkFormat TypeConversions::cydFormatToVkFormat( cyd::PixelFormat format )
+VkIndexType TypeConversions::cydToVkIndexType( cyd::IndexType type )
+{
+   switch( type )
+   {
+      case cyd::IndexType::UNSIGNED_INT16:
+         return VK_INDEX_TYPE_UINT16;
+      case cyd::IndexType::UNSIGNED_INT32:
+         return VK_INDEX_TYPE_UINT32;
+      default:
+         CYDASSERT( !"Types: Index type not supported" );
+   }
+
+   return VK_INDEX_TYPE_UINT16;
+}
+
+VkFormat TypeConversions::cydToVkFormat( cyd::PixelFormat format )
 {
    switch( format )
    {
@@ -20,7 +35,7 @@ VkFormat TypeConversions::cydFormatToVkFormat( cyd::PixelFormat format )
    return VK_FORMAT_B8G8R8A8_UNORM;
 }
 
-VkColorSpaceKHR TypeConversions::cydSpaceToVkSpace( cyd::ColorSpace space )
+VkColorSpaceKHR TypeConversions::cydToVkSpace( cyd::ColorSpace space )
 {
    switch( space )
    {
@@ -33,7 +48,7 @@ VkColorSpaceKHR TypeConversions::cydSpaceToVkSpace( cyd::ColorSpace space )
    return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 }
 
-VkAttachmentLoadOp TypeConversions::cydOpToVkOp( cyd::LoadOp op )
+VkAttachmentLoadOp TypeConversions::cydToVkOp( cyd::LoadOp op )
 {
    switch( op )
    {
@@ -49,7 +64,7 @@ VkAttachmentLoadOp TypeConversions::cydOpToVkOp( cyd::LoadOp op )
    return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
-VkAttachmentStoreOp TypeConversions::cydOpToVkOp( cyd::StoreOp op )
+VkAttachmentStoreOp TypeConversions::cydToVkOp( cyd::StoreOp op )
 {
    switch( op )
    {
@@ -63,7 +78,7 @@ VkAttachmentStoreOp TypeConversions::cydOpToVkOp( cyd::StoreOp op )
    return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
-VkPrimitiveTopology TypeConversions::cydDrawPrimToVkDrawPrim( cyd::DrawPrimitive prim )
+VkPrimitiveTopology TypeConversions::cydToVkDrawPrim( cyd::DrawPrimitive prim )
 {
    switch( prim )
    {
@@ -83,7 +98,7 @@ VkPrimitiveTopology TypeConversions::cydDrawPrimToVkDrawPrim( cyd::DrawPrimitive
    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
-VkPolygonMode TypeConversions::cydPolyModeToVkPolyMode( cyd::PolygonMode polyMode )
+VkPolygonMode TypeConversions::cydToVkPolyMode( cyd::PolygonMode polyMode )
 {
    switch( polyMode )
    {
@@ -99,7 +114,7 @@ VkPolygonMode TypeConversions::cydPolyModeToVkPolyMode( cyd::PolygonMode polyMod
    return VK_POLYGON_MODE_FILL;
 }
 
-VkShaderStageFlags TypeConversions::cydShaderStagesToVkShaderStages( cyd::ShaderStageFlag stages )
+VkShaderStageFlags TypeConversions::cydToVkShaderStages( cyd::ShaderStageFlag stages )
 {
    VkShaderStageFlags vkStages = 0;
    if( stages & cyd::ShaderStage::VERTEX_STAGE )
@@ -125,7 +140,7 @@ VkShaderStageFlags TypeConversions::cydShaderStagesToVkShaderStages( cyd::Shader
    return vkStages;
 }
 
-VkImageLayout TypeConversions::cydImageLayoutToVKImageLayout( cyd::ImageLayout layout )
+VkImageLayout TypeConversions::cydToVkImageLayout( cyd::ImageLayout layout )
 {
    switch( layout )
    {
@@ -151,7 +166,7 @@ VkImageLayout TypeConversions::cydImageLayoutToVKImageLayout( cyd::ImageLayout l
    return VK_IMAGE_LAYOUT_GENERAL;
 }
 
-VkDescriptorType TypeConversions::cydShaderObjectTypeToVkDescriptorType(
+VkDescriptorType TypeConversions::cydToVkDescriptorType(
     cyd::ShaderResourceType type )
 {
    switch( type )
@@ -167,7 +182,7 @@ VkDescriptorType TypeConversions::cydShaderObjectTypeToVkDescriptorType(
    return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 }
 
-VkFilter TypeConversions::cydFilterToVkFilter( cyd::Filter filter )
+VkFilter TypeConversions::cydToVkFilter( cyd::Filter filter )
 {
    switch( filter )
    {
@@ -184,7 +199,7 @@ VkFilter TypeConversions::cydFilterToVkFilter( cyd::Filter filter )
    return VK_FILTER_LINEAR;
 }
 
-VkSamplerAddressMode TypeConversions::cydAddressModeToVkAddressMode( cyd::AddressMode mode )
+VkSamplerAddressMode TypeConversions::cydToVkAddressMode( cyd::AddressMode mode )
 {
    switch( mode )
    {

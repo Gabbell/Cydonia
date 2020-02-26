@@ -117,12 +117,12 @@ class VKRenderBackendImp
       cmdBuffer->bindVertexBuffer( vertexBuffer );
    }
 
-   void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
+   void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
    {
       auto cmdBuffer   = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       auto indexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
-      cmdBuffer->bindIndexBuffer<uint32_t>( indexBuffer );
+      cmdBuffer->bindIndexBuffer( indexBuffer, type );
    }
 
    void
@@ -169,7 +169,7 @@ class VKRenderBackendImp
 
       // Staging
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( desc.size );
-      staging->copy( pTexels );
+      staging->copy( pTexels, 0, desc.size );
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
@@ -191,7 +191,7 @@ class VKRenderBackendImp
 
       // Staging
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( bufferSize );
-      staging->copy( pVertices );
+      staging->copy( pVertices, 0, bufferSize );
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
@@ -211,7 +211,7 @@ class VKRenderBackendImp
 
       // Staging
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( bufferSize );
-      staging->copy( pIndices );
+      staging->copy( pIndices, 0, bufferSize );
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
@@ -228,42 +228,61 @@ class VKRenderBackendImp
       return m_coreHandles.add( uniformBuffer, HandleType::UNIFORMBUFFER );
    }
 
-   void copyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData )
+   void copyToUniformBuffer(
+       UniformBufferHandle bufferHandle,
+       const void* pData,
+       size_t offset,
+       size_t size )
    {
-      auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-      uniformBuffer->copy( pData );
+      if( bufferHandle != Handle::INVALID_HANDLE )
+      {
+         auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+         uniformBuffer->copy( pData, offset, size );
+      }
    }
 
    void destroyTexture( TextureHandle texHandle )
    {
-      auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
-      texture->setUnused();
+      if( texHandle != Handle::INVALID_HANDLE )
+      {
+         auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
+         texture->setUnused();
 
-      m_coreHandles.remove( texHandle );
+         m_coreHandles.remove( texHandle );
+      }
    }
 
    void destroyVertexBuffer( VertexBufferHandle bufferHandle )
    {
-      auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-      buffer->setUnused();
+      if( bufferHandle != Handle::INVALID_HANDLE )
+      {
+         auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+         buffer->setUnused();
 
-      m_coreHandles.remove( bufferHandle );
+         m_coreHandles.remove( bufferHandle );
+      }
    }
 
    void destroyIndexBuffer( IndexBufferHandle bufferHandle )
    {
-      auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-      buffer->setUnused();
+      if( bufferHandle != Handle::INVALID_HANDLE )
+      {
+         auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+         buffer->setUnused();
 
-      m_coreHandles.remove( bufferHandle );
+         m_coreHandles.remove( bufferHandle );
+      }
    }
 
    void destroyUniformBuffer( UniformBufferHandle bufferHandle )
    {
-      auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-      buffer->setUnused();
+      if( bufferHandle != Handle::INVALID_HANDLE )
+      {
+         auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+         buffer->setUnused();
 
-      m_coreHandles.remove( bufferHandle );
+         m_coreHandles.remove( bufferHandle );
+      }
    }
 
    void beginRenderSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo )
@@ -362,9 +381,12 @@ void VKRenderBackend::bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandl
    _imp->bindVertexBuffer( cmdList, bufferHandle );
 }
 
-void VKRenderBackend::bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
+void VKRenderBackend::bindIndexBuffer(
+    CmdListHandle cmdList,
+    IndexBufferHandle bufferHandle,
+    IndexType type )
 {
-   _imp->bindIndexBuffer( cmdList, bufferHandle );
+   _imp->bindIndexBuffer( cmdList, bufferHandle, type );
 }
 
 void VKRenderBackend::bindTexture(
@@ -430,9 +452,13 @@ UniformBufferHandle VKRenderBackend::createUniformBuffer( size_t size )
    return _imp->createUniformBuffer( size );
 }
 
-void VKRenderBackend::copyToUniformBuffer( UniformBufferHandle bufferHandle, const void* pData )
+void VKRenderBackend::copyToUniformBuffer(
+    UniformBufferHandle bufferHandle,
+    const void* pData,
+    size_t offset,
+    size_t size )
 {
-   _imp->copyToUniformBuffer( bufferHandle, pData );
+   _imp->copyToUniformBuffer( bufferHandle, pData, offset, size );
 }
 
 void VKRenderBackend::destroyTexture( TextureHandle texHandle )

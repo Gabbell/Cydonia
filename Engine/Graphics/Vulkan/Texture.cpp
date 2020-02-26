@@ -72,10 +72,10 @@ void Texture::_createImage()
    imageInfo.extent.depth  = 1;
    imageInfo.mipLevels     = 1;
    imageInfo.arrayLayers   = 1;
-   imageInfo.format        = TypeConversions::cydFormatToVkFormat( m_format );
+   imageInfo.format        = TypeConversions::cydToVkFormat( m_format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
    imageInfo.initialLayout =
-       TypeConversions::cydImageLayoutToVKImageLayout( cyd::ImageLayout::UNDEFINED );
+       TypeConversions::cydToVkImageLayout( cyd::ImageLayout::UNDEFINED );
 
    if( m_usage & cyd::ImageUsage::TRANSFER_SRC )
    {
@@ -132,7 +132,7 @@ void Texture::_createImageView()
    viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image                           = m_vkImage;
    viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-   viewInfo.format                          = TypeConversions::cydFormatToVkFormat( m_format );
+   viewInfo.format                          = TypeConversions::cydToVkFormat( m_format );
    viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
    viewInfo.subresourceRange.baseMipLevel   = 0;
    viewInfo.subresourceRange.levelCount     = 1;

@@ -4,8 +4,6 @@
 
 #include <Graphics/GraphicsTypes.h>
 
-#include <unordered_map>
-
 // ================================================================================================
 // Forwards
 // ================================================================================================
@@ -33,8 +31,6 @@ class DescriptorPool final
   private:
    const Device& m_device;
 
-   std::unordered_map<cyd::DescriptorSetLayoutInfo, VkDescriptorSet> m_descSets;
-
-   VkDescriptorPool m_vkDescPool{};
+   VkDescriptorPool m_vkDescPool = nullptr;
 };
 }

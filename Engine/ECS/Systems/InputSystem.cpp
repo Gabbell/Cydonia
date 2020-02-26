@@ -109,6 +109,30 @@ void InputSystem::_keyCallback(
          input.goingRight = false;
       }
    }
+
+   if( key == GLFW_KEY_SPACE )
+   {
+      if( action == GLFW_PRESS )
+      {
+         input.goingUp = true;
+      }
+      else if( action == GLFW_RELEASE )
+      {
+         input.goingUp = false;
+      }
+   }
+
+   if( key == GLFW_KEY_LEFT_SHIFT )
+   {
+      if( action == GLFW_PRESS )
+      {
+         input.goingDown = true;
+      }
+      else if( action == GLFW_RELEASE )
+      {
+         input.goingDown = false;
+      }
+   }
 }
 
 void InputSystem::_cursorCallback( GLFWwindow* /*window*/, double xpos, double ypos )

@@ -6,24 +6,33 @@
 
 #include <Handles/Handle.h>
 
+#include <vector>
+#include <string>
+
 namespace cyd
 {
+struct Vertex;
+
 class RenderableComponent final : public BaseComponent
 {
   public:
-   RenderableComponent() = default;
-   COPIABLE( RenderableComponent );
-   virtual ~RenderableComponent();
+   RenderableComponent() = default;                             // Nothing constructor
+   RenderableComponent( const std::vector<Vertex>& vertices );  // Vertex constructor
+   RenderableComponent( const std::string& meshPath );          // Mesh constructor
+   COPIABLE( RenderableComponent )
+   virtual ~RenderableComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
-   bool init() override;
+   bool init() override { return true; }
    void uninit() override;
-
-   UniformBufferHandle matBuffer;  // Material properties
-   TextureHandle matTexture;
 
    VertexBufferHandle vertexBuffer;  // Mesh data
    IndexBufferHandle indexBuffer;
+   uint32_t indexCount;
+   uint32_t vertexCount;
+
+   UniformBufferHandle matBuffer;  // Material properties
+   TextureHandle matTexture;
 };
 }

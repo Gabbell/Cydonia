@@ -128,11 +128,11 @@ class Entity final
    const ComponentsMap& getComponents() const { return m_components; }
    const SharedComponentsMap& getSharedComponents() const { return m_sharedComponents; }
 
-   static constexpr EntityHandle INVALID_HANDLE = std::numeric_limits<size_t>::max();
+   static constexpr EntityHandle INVALID_ENTITY = std::numeric_limits<size_t>::max();
 
   private:
    // This entity's handle
-   EntityHandle m_handle = INVALID_HANDLE;
+   EntityHandle m_handle = INVALID_ENTITY;
 
    // All components associated (that were added) to this entity.
    ComponentsMap m_components;

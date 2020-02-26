@@ -32,7 +32,7 @@ class CameraSystem : public CommonSystem<TransformComponent, CameraComponent>
 
    // Planes
    float _near = 0.001f;
-   float _far  = 100.0f;
+   float _far  = 1000.0f;
 
    // Projection
    float _fov         = 60.0f;         // in degrees

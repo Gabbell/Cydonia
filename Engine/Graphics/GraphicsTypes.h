@@ -71,6 +71,13 @@ enum ShaderStage : Flag
 };
 using ShaderStageFlag = Flag;
 
+enum class IndexType
+{
+   UNSIGNED_INT8,
+   UNSIGNED_INT16,
+   UNSIGNED_INT32,
+};
+
 enum class PixelFormat
 {
    BGRA8_UNORM,
@@ -189,8 +196,10 @@ struct Extent
 
 struct Rectangle
 {
-   glm::vec2 offset;
-   Extent extent;
+   float offsetX;
+   float offsetY;
+   float width;
+   float height;
 };
 
 struct Vertex

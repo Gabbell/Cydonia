@@ -53,10 +53,11 @@ void CommandBuffer::release()
       m_wasSubmitted = false;
 
       // Clearing tracked descriptor sets
-      for( const auto& descSet : m_descSets )
+      for( const auto& descSetInfo : m_descSets )
       {
-         m_pDevice->getDescriptorPool().free( descSet );
+         m_pDevice->getDescriptorPool().free( descSetInfo.vkDescSet );
       }
+
       m_descSets.clear();
 
       m_semsToWait.clear();
@@ -127,10 +128,11 @@ void CommandBuffer::reset()
    vkResetCommandBuffer( m_vkCmdBuffer, {} );
 
    // Clearing tracked descriptor sets
-   for( const auto& descSet : m_descSets )
+   for( const auto& descSetInfo : m_descSets )
    {
-      m_pDevice->getDescriptorPool().free( descSet );
+      m_pDevice->getDescriptorPool().free( descSetInfo.vkDescSet );
    }
+
    m_descSets.clear();
 }
 
@@ -141,7 +143,7 @@ void CommandBuffer::updatePushConstants( const cyd::PushConstantRange& range, co
    vkCmdPushConstants(
        m_vkCmdBuffer,
        m_boundPipLayout.value(),
-       TypeConversions::cydShaderStagesToVkShaderStages( range.stages ),
+       TypeConversions::cydToVkShaderStages( range.stages ),
        static_cast<uint32_t>( range.offset ),
        static_cast<uint32_t>( range.size ),
        pData );
@@ -175,16 +177,10 @@ void CommandBuffer::bindVertexBuffer( const Buffer* vertexBuffer ) const
    vkCmdBindVertexBuffers( m_vkCmdBuffer, 0, 1, vertexBuffers, offsets );
 }
 
-template <>
-void CommandBuffer::bindIndexBuffer<uint16_t>( const Buffer* indexBuffer )
+void CommandBuffer::bindIndexBuffer( const Buffer* indexBuffer, cyd::IndexType type )
 {
-   vkCmdBindIndexBuffer( m_vkCmdBuffer, indexBuffer->getVKBuffer(), 0, VK_INDEX_TYPE_UINT16 );
-}
-
-template <>
-void CommandBuffer::bindIndexBuffer<uint32_t>( const Buffer* indexBuffer )
-{
-   vkCmdBindIndexBuffer( m_vkCmdBuffer, indexBuffer->getVKBuffer(), 0, VK_INDEX_TYPE_UINT32 );
+   vkCmdBindIndexBuffer(
+       m_vkCmdBuffer, indexBuffer->getVKBuffer(), 0, TypeConversions::cydToVkIndexType( type ) );
 }
 
 void CommandBuffer::bindBuffer( const Buffer* buffer, uint32_t set, uint32_t binding )
@@ -202,12 +198,7 @@ void CommandBuffer::bindTexture( const Texture* texture, uint32_t set, uint32_t 
 void CommandBuffer::setViewport( const cyd::Rectangle& viewport ) const
 {
    VkViewport vkViewport = {
-       viewport.offset.x,
-       viewport.offset.y,
-       static_cast<float>( viewport.extent.width ),
-       static_cast<float>( viewport.extent.height ),
-       0.0f,
-       1.0f };
+       viewport.offsetX, viewport.offsetY, viewport.width, viewport.height, 0.0f, 1.0f };
    vkCmdSetViewport( m_vkCmdBuffer, 0, 1, &vkViewport );
 }
 
@@ -241,25 +232,42 @@ void CommandBuffer::beginPass( const cyd::RenderPassInfo& renderPassInfo, Swapch
    vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
 }
 
+VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t set )
+{
+   for( auto it = m_descSets.begin() + prevSize; it != m_descSets.end(); ++it )
+   {
+      if( it->set == set )
+      {
+         // This set has already been created during this draw scope, just return it
+         return it->vkDescSet;
+      }
+   }
+
+   // Adding this descriptor set to the list of all tracked descriptor set in this command buffer
+   VkDescriptorSet vkDescSet =
+       m_pDevice->getDescriptorPool().allocate( m_boundPipInfo.value().pipLayout.descSets[set] );
+
+   m_descSets.push_back( { set, vkDescSet } );
+
+   m_boundSets[set] = vkDescSet;
+   return vkDescSet;
+}
+
 void CommandBuffer::_prepareDescriptorSets()
 {
-   // Allocating descriptor sets
+   // We do not care about any of the descriptor sets before this index
    const size_t prevSize = m_descSets.size();
-
-   m_descSets.reserve( prevSize + m_boundPipInfo.value().pipLayout.descSets.size() );
-   for( const auto& descSet : m_boundPipInfo.value().pipLayout.descSets )
-   {
-      m_descSets.push_back( m_pDevice->getDescriptorPool().allocate( descSet ) );
-   }
 
    // Creating write descriptors for resources we want to update for this draw
    const size_t totalSize = m_buffersToUpdate.size() + m_texturesToUpdate.size();
+
+   // New descriptor sets that need to be allocated for this draw call
    std::vector<VkDescriptorBufferInfo> bufferInfos;
    std::vector<VkDescriptorImageInfo> imageInfos;
    std::vector<VkWriteDescriptorSet> writeDescSets;
-   writeDescSets.reserve( totalSize );
    bufferInfos.reserve( totalSize );
    imageInfos.reserve( totalSize );
+   writeDescSets.reserve( totalSize );
 
    for( const auto& entry : m_buffersToUpdate )
    {
@@ -271,7 +279,7 @@ void CommandBuffer::_prepareDescriptorSets()
 
       VkWriteDescriptorSet descriptorWrite = {};
       descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      descriptorWrite.dstSet               = m_descSets[prevSize + entry.set];
+      descriptorWrite.dstSet               = _findOrAllocateDescSet( prevSize, entry.set );
       descriptorWrite.dstBinding           = entry.binding;
       descriptorWrite.dstArrayElement      = 0;
       descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -294,7 +302,7 @@ void CommandBuffer::_prepareDescriptorSets()
 
       VkWriteDescriptorSet descriptorWrite = {};
       descriptorWrite.sType                = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-      descriptorWrite.dstSet               = m_descSets[prevSize + entry.set];
+      descriptorWrite.dstSet               = _findOrAllocateDescSet( prevSize, entry.set );
       descriptorWrite.dstBinding           = entry.binding;
       descriptorWrite.dstArrayElement      = 0;
       descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -318,8 +326,8 @@ void CommandBuffer::_prepareDescriptorSets()
        VK_PIPELINE_BIND_POINT_GRAPHICS,
        m_boundPipLayout.value(),
        0,
-       static_cast<uint32_t>( m_descSets.size() - prevSize ),
-       &m_descSets[prevSize],
+       static_cast<uint32_t>( m_boundPipInfo.value().pipLayout.descSets.size() ),  // Must be this
+       m_boundSets.data(),
        0,
        nullptr );
 
@@ -375,13 +383,13 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst )
        "CommandBuffer: Source and destination sizes are not the same" );
 
    // Transition image layout to transfer destination optimal
-   VkImageMemoryBarrier barrier = {};
-   barrier.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-   barrier.oldLayout            = TypeConversions::cydImageLayoutToVKImageLayout( m_prevLayout );
-   barrier.newLayout            = VK_IMAGE_LAYOUT_GENERAL;
-   barrier.srcQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
-   barrier.dstQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
-   barrier.image                = dst->getVKImage();
+   VkImageMemoryBarrier barrier            = {};
+   barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+   barrier.oldLayout                       = TypeConversions::cydToVkImageLayout( m_prevLayout );
+   barrier.newLayout                       = VK_IMAGE_LAYOUT_GENERAL;
+   barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+   barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
+   barrier.image                           = dst->getVKImage();
    barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
    barrier.subresourceRange.baseMipLevel   = 0;
    barrier.subresourceRange.levelCount     = 1;

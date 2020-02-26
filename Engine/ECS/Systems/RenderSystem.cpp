@@ -5,8 +5,11 @@
 #include <ECS/ECS.h>
 #include <ECS/SharedComponents/CameraComponent.h>
 
+#include <cmath>
+
 namespace cyd
 {
+static Rectangle viewport;
 static PipelineInfo pipInfo;
 static RenderPassInfo renderPassInfo;
 
@@ -20,38 +23,50 @@ static void preparePipeline();
 // ================================================================================================
 bool RenderSystem::init()
 {
+   preparePipeline();
+
+   // Flipping Y in viewport since we want Y to be up (like GL)
+   viewport.offsetX = 0.0f;
+   viewport.offsetY = static_cast<float>( pipInfo.extent.height );
+   viewport.width   = static_cast<float>( pipInfo.extent.width );
+   viewport.height  = -static_cast<float>( pipInfo.extent.height );
+
    viewBuffer = GRIS::CreateUniformBuffer( sizeof( glm::mat4 ) * 2 );
 
-   struct Lights
-   {
-      glm::vec4 lightPos;
-      glm::vec4 lightCol;
-   } lightInfo;
+   // Uploading light information
+   lightBuffer = GRIS::CreateUniformBuffer( sizeof( glm::vec4 ) * 3 );
 
-   lightBuffer = GRIS::CreateUniformBuffer( sizeof( Lights ) );
+   glm::vec4 lightCol = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
 
-   lightInfo.lightPos = glm::vec4( 4.0f, 4.0f, 4.0f, 1.0f );
-   lightInfo.lightCol = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
+   GRIS::CopyToUniformBuffer(
+       lightBuffer, &lightCol, sizeof( glm::vec4 ) * 2, sizeof( glm::vec4 ) );
 
-   GRIS::CopyToUniformBuffer( lightBuffer, &lightInfo );
-
-   preparePipeline();
    return true;
 }
 
 // Tick
 // ================================================================================================
-void RenderSystem::tick( double /*deltaS*/ )
+void RenderSystem::tick( double deltaS )
 {
    const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, true );
 
    const CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
-   GRIS::CopyToUniformBuffer( viewBuffer, &camera.vp );
+
+   static double timeElapsed = 0;
+   timeElapsed += deltaS;
+
+   const float x = 100.0f * static_cast<float>( std::cos( timeElapsed ) );
+   const float z = 100.0f * static_cast<float>( std::sin( timeElapsed ) );
+   glm::vec4 lightPos( x, 0.0f, z, 1.0f );
+
+   GRIS::CopyToUniformBuffer( viewBuffer, &camera.vp, 0, sizeof( camera.vp ) );
+   GRIS::CopyToUniformBuffer( lightBuffer, &camera.pos, 0, sizeof( glm::vec4 ) );
+   GRIS::CopyToUniformBuffer( lightBuffer, &lightPos, sizeof( glm::vec4 ), sizeof( glm::vec4 ) );
 
    GRIS::StartRecordingCommandList( cmdList );
 
    // Dynamic state
-   GRIS::SetViewport( cmdList, { { 0.0f, 0.0f }, pipInfo.extent } );
+   GRIS::SetViewport( cmdList, viewport );
 
    // Main pass
    GRIS::BeginRenderPassSwapchain( cmdList, renderPassInfo );
@@ -76,15 +91,23 @@ void RenderSystem::tick( double /*deltaS*/ )
                            glm::toMat4( transform.rotation );
 
          // Bind material properties (Gamma)
-         GRIS::BindUniformBuffer( cmdList, renderable.matBuffer, 2, 0 );
-         GRIS::BindTexture( cmdList, renderable.matTexture, 2, 1 );
+         GRIS::BindUniformBuffer( cmdList, renderable.matBuffer, 1, 0 );
+         GRIS::BindTexture( cmdList, renderable.matTexture, 1, 1 );
 
          // Update model properties (Epsilon)
          GRIS::UpdateConstantBuffer( cmdList, VERTEX_STAGE, 0, sizeof( glm::mat4 ), &model );
 
-         // GRIS::BindIndexBuffer( cmdList, renderable.indexBuffer );
          GRIS::BindVertexBuffer( cmdList, renderable.vertexBuffer );
-         GRIS::DrawVertices( cmdList, 36 );  // TODO Generalize
+
+         if( renderable.indexBuffer != Handle::INVALID_HANDLE )
+         {
+            GRIS::BindIndexBuffer<uint16_t>( cmdList, renderable.indexBuffer );
+            GRIS::DrawVerticesIndexed( cmdList, renderable.indexCount );
+         }
+         else
+         {
+            GRIS::DrawVertices( cmdList, 6 );
+         }
       }
    }
    GRIS::EndRenderPass( cmdList );
@@ -122,14 +145,14 @@ void preparePipeline()
 
    // Beta layout - Shader control values (medium frequency updates)
    // ==============================================================================================
-   DescriptorSetLayoutInfo betaLayout;
+   // DescriptorSetLayoutInfo betaLayout;
 
-   ShaderResourceInfo shaderControlInfo = {};
-   shaderControlInfo.type               = ShaderResourceType::UNIFORM;
-   shaderControlInfo.stages             = VERTEX_STAGE | FRAGMENT_STAGE;
-   shaderControlInfo.binding            = 0;
+   // ShaderResourceInfo shaderControlInfo = {};
+   // shaderControlInfo.type               = ShaderResourceType::UNIFORM;
+   // shaderControlInfo.stages             = VERTEX_STAGE | FRAGMENT_STAGE;
+   // shaderControlInfo.binding            = 0;
 
-   betaLayout.shaderResources.push_back( shaderControlInfo );
+   // betaLayout.shaderResources.push_back( shaderControlInfo );
 
    // Gamma layout - Material properties (high frequency updates)
    // ==============================================================================================
@@ -158,16 +181,16 @@ void preparePipeline()
    // Pipeline layout
    // ==============================================================================================
    pipInfo.pipLayout.descSets.push_back( alphaLayout );  // Set 0
-   pipInfo.pipLayout.descSets.push_back( betaLayout );   // Set 1
-   pipInfo.pipLayout.descSets.push_back( gammaLayout );  // Set 2
+   // pipInfo.pipLayout.descSets.push_back( betaLayout );   // Set 1
+   pipInfo.pipLayout.descSets.push_back( gammaLayout );  // Set 1
    pipInfo.pipLayout.ranges.push_back( epsilonRange );   // Push constant
 
    // Pipeline Info
    // ==============================================================================================
    pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
-   pipInfo.extent   = { 1280, 720 };  // Current resolution
+   pipInfo.extent   = {1920, 1080};
    pipInfo.polyMode = PolygonMode::FILL;
-   pipInfo.shaders  = { "defaultTex_vert", "phongTex_frag" };
+   pipInfo.shaders  = {"phongTex_vert", "phongTex_frag"};
 
    // Attachments
    Attachment colorPresentation = {};
@@ -177,6 +200,14 @@ void preparePipeline()
    colorPresentation.type       = AttachmentType::COLOR;
    colorPresentation.layout     = ImageLayout::PRESENTATION;
 
+   Attachment depthPresentation = {};
+   depthPresentation.format     = PixelFormat::D32_SFLOAT;
+   depthPresentation.loadOp     = LoadOp::CLEAR;
+   depthPresentation.storeOp    = StoreOp::DONT_CARE;
+   depthPresentation.type       = AttachmentType::DEPTH_STENCIL;
+   depthPresentation.layout     = ImageLayout::DEPTH_STENCIL;
+
    renderPassInfo.attachments.push_back( colorPresentation );
+   renderPassInfo.attachments.push_back( depthPresentation );
 }
 }
