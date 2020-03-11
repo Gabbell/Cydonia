@@ -3,7 +3,6 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Vulkan/CommandBuffer.h>
 
 #include <cstdint>
 #include <vector>
@@ -16,6 +15,7 @@ FWDHANDLE( VkCommandPool );
 namespace vk
 {
 class Device;
+class CommandBuffer;
 }
 
 // ================================================================================================
@@ -32,7 +32,7 @@ class CommandPool final
        uint32_t familyIndex,
        cyd::QueueUsageFlag usage,
        bool supportsPresentation );
-   NON_COPIABLE( CommandPool )
+   MOVABLE( CommandPool )
    ~CommandPool();
 
    const VkCommandPool& getVKCommandPool() const { return m_vkPool; }

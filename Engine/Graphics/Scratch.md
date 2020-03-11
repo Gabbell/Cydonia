@@ -1,3 +1,5 @@
+### Cube
+
 static std::vector<Vertex> vertices = {
     //    ~ Position ~            ~ Color ~                ~ UV ~              ~ Normal ~
     {{-1.0f, -1.0f, -1.0f}, {1.0f, 0.0f, 0.0f, 1.0f}, {0.0f, 0.0f, 0.0f}, {-1.0f, 0.0f, 0.0f}},

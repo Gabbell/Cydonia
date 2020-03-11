@@ -8,7 +8,7 @@ namespace cyd::ECS
 bool Initialize()
 {
    // Initializing shared components
-   detail::sharedComponents[size_t( SharedComponentType::INPUT )]   = new InputComponent();
+   detail::sharedComponents[size_t( SharedComponentType::INPUT )]  = new InputComponent();
    detail::sharedComponents[size_t( SharedComponentType::CAMERA )] = new CameraComponent();
 
    return true;

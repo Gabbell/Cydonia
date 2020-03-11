@@ -46,7 +46,7 @@ class CommonSystem : public BaseSystem
           std::is_base_of_v<BaseSharedComponent, Components>)&&... ) );
 
   public:
-   NON_COPIABLE( CommonSystem );
+   NON_COPIABLE( CommonSystem )
    virtual ~CommonSystem() = default;
 
    // If the system is not watching any entity, no need to tick

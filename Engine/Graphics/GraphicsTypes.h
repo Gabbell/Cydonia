@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Graphics/ShaderConstants.h>
+
 #include <Common/Include.h>
 
 #include <glm/glm.hpp>
@@ -275,6 +277,7 @@ struct PipelineInfo
 {
    bool operator==( const PipelineInfo& other ) const;
    std::vector<std::string> shaders;
+   ShaderConstants constants;
    PipelineLayoutInfo pipLayout;
    DrawPrimitive drawPrim;
    PolygonMode polyMode;

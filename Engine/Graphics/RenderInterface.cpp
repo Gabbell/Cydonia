@@ -114,6 +114,8 @@ CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const
    return b->createTexture( transferList, desc, pTexels );
 }
 
+TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
+
 VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
     uint32_t count,
@@ -157,9 +159,17 @@ void DestroyUniformBuffer( UniformBufferHandle bufferHandle )
 // =================================================================================================
 // Drawing
 //
-void BeginRenderPassSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo )
+void BeginRenderPassSwapchain( CmdListHandle cmdList, bool hasDepth )
 {
-   b->beginRenderSwapchain( cmdList, renderPassInfo );
+   b->beginRenderSwapchain( cmdList, hasDepth );
+}
+
+void BeginRenderPassTargets(
+    CmdListHandle cmdList,
+    const RenderPassInfo& renderPassInfo,
+    const std::vector<TextureHandle>& textures )
+{
+   b->beginRenderTargets( cmdList, renderPassInfo, textures );
 }
 
 void EndRenderPass( CmdListHandle cmdList ) { b->endRenderPass( cmdList ); }

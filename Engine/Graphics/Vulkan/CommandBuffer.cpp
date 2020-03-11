@@ -6,9 +6,9 @@
 #include <Graphics/Vulkan/CommandPool.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/PipelineStash.h>
-#include <Graphics/Vulkan/RenderPassStash.h>
 #include <Graphics/Vulkan/DescriptorPool.h>
 #include <Graphics/Vulkan/SamplerStash.h>
+#include <Graphics/Vulkan/RenderPassStash.h>
 #include <Graphics/Vulkan/Swapchain.h>
 #include <Graphics/Vulkan/Buffer.h>
 #include <Graphics/Vulkan/Texture.h>
@@ -57,6 +57,13 @@ void CommandBuffer::release()
       {
          m_pDevice->getDescriptorPool().free( descSetInfo.vkDescSet );
       }
+
+      // Clearing accumulated framebuffers
+      for( const auto& framebuffer : m_curFramebuffers )
+      {
+         vkDestroyFramebuffer( m_pDevice->getVKDevice(), framebuffer, nullptr );
+      }
+      m_curFramebuffers.clear();
 
       m_descSets.clear();
 
@@ -116,8 +123,10 @@ void CommandBuffer::endRecording()
    m_boundPip        = std::nullopt;
    m_boundPipLayout  = std::nullopt;
    m_boundRenderPass = std::nullopt;
-   m_boundPipInfo    = std::nullopt;
-   m_isRecording     = false;
+
+   m_boundPipInfo.reset();
+
+   m_isRecording = false;
 }
 
 void CommandBuffer::reset()
@@ -167,7 +176,7 @@ void CommandBuffer::bindPipeline( const cyd::PipelineInfo& info )
    vkCmdBindPipeline( m_vkCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
    m_boundPip       = pipeline;
    m_boundPipLayout = pipLayout;
-   m_boundPipInfo   = info;
+   m_boundPipInfo   = std::make_unique<cyd::PipelineInfo>( info );
 }
 
 void CommandBuffer::bindVertexBuffer( const Buffer* vertexBuffer ) const
@@ -202,15 +211,15 @@ void CommandBuffer::setViewport( const cyd::Rectangle& viewport ) const
    vkCmdSetViewport( m_vkCmdBuffer, 0, 1, &vkViewport );
 }
 
-void CommandBuffer::beginPass( const cyd::RenderPassInfo& renderPassInfo, Swapchain& swapchain )
+void CommandBuffer::beginPass( Swapchain& swapchain, bool hasDepth )
 {
-   VkRenderPass renderPass = m_pDevice->getRenderPassStash().findOrCreate( renderPassInfo );
+   swapchain.initFramebuffers( hasDepth );
+   swapchain.acquireImage( this );
+
+   VkRenderPass renderPass = swapchain.getCurrentRenderPass();
    CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
 
    m_boundRenderPass = renderPass;
-
-   swapchain.initFramebuffers( renderPassInfo, renderPass );
-   swapchain.acquireImage( this );
 
    m_semsToWait.push_back( swapchain.getSemToWait() );
    m_semsToSignal.push_back( swapchain.getSemToSignal() );
@@ -221,6 +230,68 @@ void CommandBuffer::beginPass( const cyd::RenderPassInfo& renderPassInfo, Swapch
    passBeginInfo.framebuffer           = swapchain.getCurrentFramebuffer();
    passBeginInfo.renderArea.offset     = { 0, 0 };
    passBeginInfo.renderArea.extent     = swapchain.getVKExtent();
+
+   std::array<VkClearValue, 2> clearValues = {};
+   clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
+   clearValues[1]                          = { 1.0f, 0 };
+
+   passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
+   passBeginInfo.pClearValues    = clearValues.data();
+
+   vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
+}
+
+void CommandBuffer::beginPass(
+    const cyd::RenderPassInfo& renderPassInfo,
+    const std::vector<const Texture*>& textures )
+{
+   VkRenderPass renderPass = m_pDevice->getRenderPassStash().findOrCreate( renderPassInfo );
+   CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
+
+   m_boundRenderPass = renderPass;
+
+   const uint32_t commonWidth  = textures[0]->getWidth();
+   const uint32_t commonHeight = textures[0]->getHeight();
+
+   // Fetching image views for framebuffer
+   std::vector<VkImageView> vkImageViews;
+   vkImageViews.reserve( textures.size() );
+   for( const auto& texture : textures )
+   {
+      // All textures should have the same dimensions for this renderpass/framebuffer
+      if( texture->getWidth() == commonWidth && texture->getHeight() == commonHeight )
+      {
+         vkImageViews.push_back( texture->getVKImageView() );
+      }
+      else
+      {
+         CYDASSERT( !"CommandBuffer: Mismatched dimensions for framebuffer" );
+      }
+   }
+
+   VkFramebufferCreateInfo framebufferInfo = {};
+   framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+   framebufferInfo.renderPass              = renderPass;
+   framebufferInfo.attachmentCount         = static_cast<uint32_t>( vkImageViews.size() );
+   framebufferInfo.pAttachments            = vkImageViews.data();
+   framebufferInfo.width                   = commonWidth;
+   framebufferInfo.height                  = commonHeight;
+   framebufferInfo.layers                  = 1;
+
+   VkFramebuffer vkFramebuffer;
+   const VkResult result =
+       vkCreateFramebuffer( m_pDevice->getVKDevice(), &framebufferInfo, nullptr, &vkFramebuffer );
+
+   CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create framebuffer" );
+
+   m_curFramebuffers.push_back( vkFramebuffer );
+
+   VkRenderPassBeginInfo passBeginInfo = {};
+   passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+   passBeginInfo.renderPass            = m_boundRenderPass.value();
+   passBeginInfo.framebuffer           = vkFramebuffer;
+   passBeginInfo.renderArea.offset     = { 0, 0 };
+   passBeginInfo.renderArea.extent     = { commonWidth, commonHeight };
 
    std::array<VkClearValue, 2> clearValues = {};
    clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
@@ -245,7 +316,7 @@ VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t
 
    // Adding this descriptor set to the list of all tracked descriptor set in this command buffer
    VkDescriptorSet vkDescSet =
-       m_pDevice->getDescriptorPool().allocate( m_boundPipInfo.value().pipLayout.descSets[set] );
+       m_pDevice->getDescriptorPool().allocate( m_boundPipInfo->pipLayout.descSets[set] );
 
    m_descSets.push_back( { set, vkDescSet } );
 
@@ -326,7 +397,7 @@ void CommandBuffer::_prepareDescriptorSets()
        VK_PIPELINE_BIND_POINT_GRAPHICS,
        m_boundPipLayout.value(),
        0,
-       static_cast<uint32_t>( m_boundPipInfo.value().pipLayout.descSets.size() ),  // Must be this
+       static_cast<uint32_t>( m_boundPipInfo->pipLayout.descSets.size() ),  // Must be this
        m_boundSets.data(),
        0,
        nullptr );
@@ -341,8 +412,7 @@ void CommandBuffer::draw( size_t vertexCount )
        m_usage & cyd::QueueUsage::GRAPHICS &&
        "CommandBuffer: Command buffer does not support graphics usage" );
 
-   CYDASSERT(
-       m_boundPipInfo.has_value() && "CommandBuffer: Cannot draw because no pipeline was bound" );
+   CYDASSERT( m_boundPipInfo && "CommandBuffer: Cannot draw because no pipeline was bound" );
 
    _prepareDescriptorSets();
 
@@ -355,15 +425,21 @@ void CommandBuffer::drawIndexed( size_t indexCount )
        m_usage & cyd::QueueUsage::GRAPHICS &&
        "CommandBuffer: Command Buffer does not support graphics usage" );
 
-   CYDASSERT(
-       m_boundPipInfo.has_value() && "CommandBuffer: Cannot draw because no pipeline was bound" );
+   CYDASSERT( m_boundPipInfo && "CommandBuffer: Cannot draw because no pipeline was bound" );
 
    _prepareDescriptorSets();
 
    vkCmdDrawIndexed( m_vkCmdBuffer, static_cast<uint32_t>( indexCount ), 1, 0, 0, 0 );
 }
 
-void CommandBuffer::endPass() const { vkCmdEndRenderPass( m_vkCmdBuffer ); }
+void CommandBuffer::endPass() const
+{
+   CYDASSERT(
+       m_boundRenderPass.has_value() &&
+       "CommandBuffer: Cannot end a pass that was never started!" );
+
+   vkCmdEndRenderPass( m_vkCmdBuffer );
+}
 
 void CommandBuffer::copyBuffer( const Buffer* src, const Buffer* dst ) const
 {

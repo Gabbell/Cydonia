@@ -48,7 +48,7 @@ class Entity final
          if( it != m_components.end() )
          {
             // Component has already been assigned to this entity
-            CYDASSERT( "!Entity: Cannot overwrite components" );
+            CYDASSERT( !"Entity: Cannot overwrite components" );
             return;
          }
 

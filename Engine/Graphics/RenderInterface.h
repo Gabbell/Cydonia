@@ -39,7 +39,7 @@ void DestroyCommandList( CmdListHandle cmdList );
 void SetViewport( CmdListHandle cmdList, const Rectangle& viewport );
 void BindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo );
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
-template<class T>
+template <class T>
 void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding );
 void BindUniformBuffer(
@@ -57,6 +57,7 @@ void UpdateConstantBuffer(
 // Resources
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels );
+TextureHandle CreateTexture( const TextureDescription& desc );
 VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
     uint32_t count,
@@ -77,7 +78,11 @@ void DestroyIndexBuffer( IndexBufferHandle bufferHandle );
 void DestroyUniformBuffer( UniformBufferHandle bufferHandle );
 
 // Drawing
-void BeginRenderPassSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo );
+void BeginRenderPassSwapchain( CmdListHandle cmdList, bool hasDepth = false );
+void BeginRenderPassTargets(
+    CmdListHandle cmdList,
+    const RenderPassInfo& renderPassInfo,
+    const std::vector<TextureHandle>& textures );
 void EndRenderPass( CmdListHandle cmdList );
 void DrawVertices( CmdListHandle cmdList, uint32_t vertexCount );
 void DrawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount );

@@ -6,6 +6,7 @@
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
+#include <Graphics/Vulkan/RenderPassStash.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <algorithm>
@@ -18,6 +19,19 @@ namespace vk
 Swapchain::Swapchain( Device& device, const Surface& surface, const cyd::SwapchainInfo& info )
     : m_device( device ), m_surface( surface )
 {
+   // Initializing attachments
+   m_colorPresentation.format  = info.format;
+   m_colorPresentation.loadOp  = cyd::LoadOp::CLEAR;
+   m_colorPresentation.storeOp = cyd::StoreOp::STORE;
+   m_colorPresentation.type    = cyd::AttachmentType::COLOR;
+   m_colorPresentation.layout  = cyd::ImageLayout::PRESENTATION;
+
+   m_depthPresentation.format  = cyd::PixelFormat::D32_SFLOAT;
+   m_depthPresentation.loadOp  = cyd::LoadOp::CLEAR;
+   m_depthPresentation.storeOp = cyd::StoreOp::DONT_CARE;
+   m_depthPresentation.type    = cyd::AttachmentType::DEPTH_STENCIL;
+   m_depthPresentation.layout  = cyd::ImageLayout::DEPTH_STENCIL;
+
    _createSwapchain( info );
    _createImageViews();
    _createDepthResources();
@@ -285,36 +299,41 @@ void Swapchain::_createSyncObjects()
    }
 }
 
-void Swapchain::initFramebuffers( const cyd::RenderPassInfo& info, const VkRenderPass renderPass )
+void Swapchain::initFramebuffers( bool hasDepth )
 {
-   if( renderPass != m_prevRenderPass )
+   // If we are switching from depth on/off or never initialized the render pass
+   if( ( hasDepth != m_hasDepth ) || !( m_vkRenderPass ) )
    {
-      m_prevRenderPass = renderPass;
+      cyd::RenderPassInfo renderPassInfo = {};
+
+      renderPassInfo.attachments.push_back( m_colorPresentation );
+
+      if( hasDepth )
+      {
+         renderPassInfo.attachments.push_back( m_depthPresentation );
+      }
+
+      VkRenderPass renderPass = m_device.getRenderPassStash().findOrCreate( renderPassInfo );
+      CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
+
+      m_vkRenderPass = renderPass;
 
       m_frameBuffers.resize( m_imageCount );
       for( size_t i = 0; i < m_imageCount; i++ )
       {
-         std::vector<VkImageView> attachments;
-         attachments.push_back( m_imageViews[i] );
-
-         bool hasDepth = std::find_if(
-                             info.attachments.begin(),
-                             info.attachments.end(),
-                             []( const cyd::Attachment& attachment ) {
-                                return attachment.type == cyd::AttachmentType::DEPTH_STENCIL ||
-                                       attachment.type == cyd::AttachmentType::DEPTH;
-                             } ) != info.attachments.end();
+         std::vector<VkImageView> vkImageViews;
+         vkImageViews.push_back( m_imageViews[i] );
 
          if( hasDepth )
          {
-            attachments.push_back( m_depthImageView );
+            vkImageViews.push_back( m_depthImageView );
          }
 
          VkFramebufferCreateInfo framebufferInfo = {};
          framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-         framebufferInfo.renderPass              = renderPass;
-         framebufferInfo.attachmentCount         = static_cast<uint32_t>( attachments.size() );
-         framebufferInfo.pAttachments            = attachments.data();
+         framebufferInfo.renderPass              = m_vkRenderPass;
+         framebufferInfo.attachmentCount         = static_cast<uint32_t>( vkImageViews.size() );
+         framebufferInfo.pAttachments            = vkImageViews.data();
          framebufferInfo.width                   = m_extent->width;
          framebufferInfo.height                  = m_extent->height;
          framebufferInfo.layers                  = 1;
@@ -322,6 +341,8 @@ void Swapchain::initFramebuffers( const cyd::RenderPassInfo& info, const VkRende
          VkResult result = vkCreateFramebuffer(
              m_device.getVKDevice(), &framebufferInfo, nullptr, &m_frameBuffers[i] );
          CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create framebuffer" );
+
+         m_hasDepth = hasDepth;
       }
    }
 }
@@ -363,8 +384,6 @@ void Swapchain::present()
       CYDASSERT( !"Swapchain: Could not get a present queue" );
    }
 }
-
-VkFramebuffer Swapchain::getCurrentFramebuffer() const { return m_frameBuffers[m_currentFrame]; }
 
 Swapchain::~Swapchain()
 {

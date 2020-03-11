@@ -1,6 +1,13 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+// Constant buffer
+// =================================================================================================
+layout( push_constant ) uniform Epsilon
+{
+    mat4 model;
+};
+
 // View and environment
 // =================================================================================================
 layout( set = 0, binding = 0 ) uniform Alpha
@@ -15,13 +22,6 @@ layout( set = 0, binding = 0 ) uniform Alpha
 // {
 //     vec4 control;
 // };
-
-// Model transforms
-// =================================================================================================
-layout( push_constant ) uniform Epsilon
-{
-    mat4 model;
-};
 
 // =================================================================================================
 

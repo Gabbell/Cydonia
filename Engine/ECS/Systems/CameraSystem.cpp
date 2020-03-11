@@ -27,13 +27,14 @@ void CameraSystem::tick( double /*deltaS*/ )
                        glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling ) *
                        glm::translate( glm::mat4( 1.0f ), -transform.position );
 
-      switch( _projMode )
+      switch( m_projMode )
       {
          case ProjectionMode::PERSPECTIVE:
-            camera.vp.proj = glm::perspectiveZO( glm::radians( _fov ), _aspectRatio, _near, _far );
+            camera.vp.proj =
+                glm::perspectiveZO( glm::radians( m_fov ), m_aspectRatio, m_near, m_far );
             break;
          case ProjectionMode::ORTHOGRAPHIC:
-            camera.vp.proj = glm::orthoZO( _left, _right, _bottom, _top, _near, _far );
+            camera.vp.proj = glm::orthoZO( m_left, m_right, m_bottom, m_top, m_near, m_far );
             break;
          default:
             CYDASSERT( !"Unrecognized camera projection mode" );

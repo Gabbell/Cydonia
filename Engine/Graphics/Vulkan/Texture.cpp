@@ -4,7 +4,6 @@
 #include <Common/Vulkan.h>
 
 #include <Graphics/Vulkan/Device.h>
-#include <Graphics/Vulkan/SamplerStash.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
 namespace vk
@@ -74,8 +73,7 @@ void Texture::_createImage()
    imageInfo.arrayLayers   = 1;
    imageInfo.format        = TypeConversions::cydToVkFormat( m_format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-   imageInfo.initialLayout =
-       TypeConversions::cydToVkImageLayout( cyd::ImageLayout::UNDEFINED );
+   imageInfo.initialLayout = TypeConversions::cydToVkImageLayout( cyd::ImageLayout::UNDEFINED );
 
    if( m_usage & cyd::ImageUsage::TRANSFER_SRC )
    {
@@ -126,6 +124,16 @@ void Texture::_allocateMemory()
    vkBindImageMemory( m_pDevice->getVKDevice(), m_vkImage, m_vkMemory, 0 );
 }
 
+static VkImageAspectFlagBits getAspectBit( cyd::PixelFormat format )
+{
+   if( format == cyd::PixelFormat::D32_SFLOAT )
+   {
+      return VK_IMAGE_ASPECT_DEPTH_BIT;
+   }
+
+   return VK_IMAGE_ASPECT_COLOR_BIT;
+}
+
 void Texture::_createImageView()
 {
    VkImageViewCreateInfo viewInfo           = {};
@@ -133,7 +141,7 @@ void Texture::_createImageView()
    viewInfo.image                           = m_vkImage;
    viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
    viewInfo.format                          = TypeConversions::cydToVkFormat( m_format );
-   viewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+   viewInfo.subresourceRange.aspectMask     = getAspectBit( m_format );
    viewInfo.subresourceRange.baseMipLevel   = 0;
    viewInfo.subresourceRange.levelCount     = 1;
    viewInfo.subresourceRange.baseArrayLayer = 0;

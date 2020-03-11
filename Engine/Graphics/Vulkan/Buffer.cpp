@@ -102,7 +102,9 @@ void Buffer::_mapMemory()
    }
 
    // TODO Add offsets to create chunking buffers
-   vkMapMemory( m_pDevice->getVKDevice(), m_vkMemory, 0, m_size, 0, &m_data );
+   const VkResult result =
+       vkMapMemory( m_pDevice->getVKDevice(), m_vkMemory, 0, m_size, 0, &m_data );
+   CYDASSERT( result == VK_SUCCESS && "Buffer: Mapping memory failed" );
 }
 
 void Buffer::_unmapMemory()

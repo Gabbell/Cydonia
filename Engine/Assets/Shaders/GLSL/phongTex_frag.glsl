@@ -1,28 +1,21 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+layout( constant_id = 0 ) const int MAX_LIGHTS = 2;
+
 // View and environment
 // =================================================================================================
 layout( set = 0, binding = 1 ) uniform Alpha
 {
-    vec4 viewPos;
-    vec4 lightPos;
-    vec4 lightCol;
+   bool enabled[MAX_LIGHTS];
+   vec4 lightPositions[MAX_LIGHTS];
+   vec4 lightColors[MAX_LIGHTS];
+   vec4 viewPos;
 };
-
-// Shader control values
-// =================================================================================================
-// layout( set = 1, binding = 0 ) uniform Beta
-// {
-//     vec4 control;
-// };
 
 // Material properties
 // =================================================================================================
-layout( set = 1, binding = 0 ) uniform Gamma
-{
-    vec4 mat;
-};
+layout( set = 1, binding = 0 ) uniform Gamma { vec4 mat; };
 layout( set = 1, binding = 1 ) uniform sampler2D texSampler;
 
 layout( location = 0 ) in vec4 inColor;
@@ -32,29 +25,47 @@ layout( location = 3 ) in vec3 fragPos;
 
 layout( location = 0 ) out vec4 outColor;
 
-float ambientStrength = 0.1;
-float specularStrength = 0.5;
+const float ambientStrength  = 0.1;
+const float specularStrength = 0.5;
 
-void main() {
-   vec3 norm = normalize( inNormal );
+vec3 calcLightContribution( int index, vec3 normal )
+{
+   vec3 lightColor = vec3( lightColors[index] );
 
    // Ambient
-   vec3 ambient = ambientStrength * vec3( lightCol );
+   vec3 ambient = ambientStrength * lightColor;
 
    // Diffuse
-   vec3 lightDir = normalize( vec3( lightPos ) - fragPos );
-   float diff = max( dot( norm, lightDir ), 0.0 );
-   vec3 diffuse = diff * vec3( lightCol );
+   vec3 lightDir = normalize( vec3( lightPositions[index] ) - fragPos );
+   float diff    = max( dot( normal, lightDir ), 0.0 );
+   vec3 diffuse  = diff * lightColor;
 
    // Specular
-   vec3 viewDir = normalize( vec3( viewPos ) - fragPos );
-   vec3 reflectDir = reflect( -lightDir, norm );  
-   float spec = pow( max( dot( normalize( viewDir ), reflectDir ), 0.0), 256 );
-   vec3 specular = specularStrength * spec * vec3( lightCol );  
-   
-   vec3 sampledColor = vec3( texture( texSampler, inTexCoord.xy ) );
-   vec3 result = ( ambient + diffuse + specular ) * sampledColor;
+   vec3 specular = vec3( 0.0, 0.0, 0.0 );
+   if( diff != 0.0 )  // Don't add a specular component when the diffuse dot product is 0
+   {
+      vec3 viewDir    = normalize( vec3( viewPos[0] ) - fragPos );
+      vec3 reflectDir = reflect( -lightDir, normal );
+      float spec      = pow( max( dot( normalize( viewDir ), reflectDir ), 0.0 ), 256 );
+      vec3 specular   = specularStrength * spec * lightColor;
+   }
 
-   outColor = vec4( result, 1.0 );
+   return ( ambient + diffuse + specular );
 }
 
+void main()
+{
+   vec3 norm         = normalize( inNormal );
+   vec3 sampledColor = vec3( texture( texSampler, inTexCoord.xy ) );
+
+   vec3 lightContributions = vec3( 0.0, 0.0, 0.0 );
+   for( int i = 0; i < MAX_LIGHTS; ++i )
+   {
+      if( enabled[i] )
+      {
+         lightContributions += calcLightContribution( i, norm );
+      }
+   }
+
+   outColor = vec4( sampledColor * lightContributions, 1.0 );
+}

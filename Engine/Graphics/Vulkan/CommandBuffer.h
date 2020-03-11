@@ -5,6 +5,7 @@
 #include <Graphics/GraphicsTypes.h>
 
 #include <array>
+#include <memory>
 #include <optional>
 
 // ================================================================================================
@@ -17,6 +18,7 @@ FWDHANDLE( VkPipeline );
 FWDHANDLE( VkPipelineLayout );
 FWDHANDLE( VkRenderPass );
 FWDHANDLE( VkDescriptorSet );
+FWDHANDLE( VkFramebuffer );
 
 namespace vk
 {
@@ -73,7 +75,10 @@ class CommandBuffer final
 
    // Render Pass
    // =============================================================================================
-   void beginPass( const cyd::RenderPassInfo& renderPassInfo, Swapchain& swapchain );
+   void beginPass( Swapchain& swapchain, bool hasDepth );
+   void beginPass(
+       const cyd::RenderPassInfo& renderPassInfo,
+       const std::vector<const Texture*>& textures );
    void endPass() const;
 
    // Dynamic State
@@ -102,10 +107,16 @@ class CommandBuffer final
    const CommandPool* m_pPool = nullptr;
 
    // Info on the currently bound pipeline
-   std::optional<cyd::PipelineInfo> m_boundPipInfo;
    std::optional<VkPipeline> m_boundPip;
    std::optional<VkPipelineLayout> m_boundPipLayout;
    std::optional<VkRenderPass> m_boundRenderPass;
+
+   // To keep in scope for destruction
+   std::vector<VkFramebuffer> m_curFramebuffers;
+
+   // MSVC's implementation of the move assignment/constructor for unordered_map is not noexcept.
+   // This prevents us from using unordered_maps in STL containers properly. Wtf why.
+   std::unique_ptr<cyd::PipelineInfo> m_boundPipInfo;
 
    // Currently bound descriptor sets
    static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 32;

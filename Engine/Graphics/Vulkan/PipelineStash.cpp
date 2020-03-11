@@ -14,9 +14,6 @@
 #include <unordered_set>
 #include <vector>
 
-static constexpr char DEFAULT_VERT[] = "default_vert.spv";
-static constexpr char DEFAULT_FRAG[] = "default_frag.spv";
-
 namespace vk
 {
 PipelineStash::PipelineStash( const Device& device ) : m_device( device )
@@ -70,8 +67,7 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
       }
 
       descSetLayoutBinding.descriptorCount = 1;  // For arrays
-      descSetLayoutBinding.stageFlags =
-          TypeConversions::cydToVkShaderStages( object.stages );
+      descSetLayoutBinding.stageFlags      = TypeConversions::cydToVkShaderStages( object.stages );
       descSetLayoutBinding.pImmutableSamplers = nullptr;
 
       descSetLayoutBindings.push_back( std::move( descSetLayoutBinding ) );
@@ -103,9 +99,9 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
    for( const auto& range : info.ranges )
    {
       VkPushConstantRange vkRange = {};
-      vkRange.stageFlags = TypeConversions::cydToVkShaderStages( range.stages );
-      vkRange.offset     = static_cast<uint32_t>( range.offset );
-      vkRange.size       = static_cast<uint32_t>( range.size );
+      vkRange.stageFlags          = TypeConversions::cydToVkShaderStages( range.stages );
+      vkRange.offset              = static_cast<uint32_t>( range.offset );
+      vkRange.size                = static_cast<uint32_t>( range.size );
 
       vkRanges.push_back( std::move( vkRange ) );
    }
@@ -128,7 +124,7 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
    pipelineLayoutInfo.pPushConstantRanges    = vkRanges.data();
 
    VkPipelineLayout pipLayout;
-   VkResult result =
+   const VkResult result =
        vkCreatePipelineLayout( m_device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create pipeline layout" );
 
@@ -148,21 +144,59 @@ const VkPipeline PipelineStash::findOrCreate(
 
    VkResult result;
 
-   // Fetching shaders
+   // Scope protection for shader info structs
    std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfos;
+   std::vector<VkSpecializationInfo> specInfos;
+   std::vector<VkSpecializationMapEntry> specMapEntries;
+
    shaderCreateInfos.reserve( info.shaders.size() );
+   specInfos.reserve( info.shaders.size() );
+
+   // Fetching shaders
    for( const std::string& shaderName : info.shaders )
    {
       const Shader* shader = m_shaderStash->getShader( shaderName );
 
+      // Building shader constants
+      VkSpecializationInfo* pSpecInfo          = nullptr;
+      const cyd::ShaderConstants::Entry* entry = info.constants.getEntry( shaderName );
+
+      if( entry )
+      {
+         // This shader has at least one constant
+         const cyd::ShaderConstants::InfoMap& constantInfos = entry->getConstantInfos();
+
+         size_t prevSize = specMapEntries.size();
+
+         for( const auto& constantInfo : constantInfos )
+         {
+            VkSpecializationMapEntry specMapEntry = {};
+            specMapEntry.constantID               = constantInfo.first;
+            specMapEntry.offset                   = constantInfo.second.offset;
+            specMapEntry.size                     = constantInfo.second.size;
+            specMapEntries.push_back( specMapEntry );
+         }
+
+         VkSpecializationInfo specInfo = {};
+         specInfo.mapEntryCount        = static_cast<uint32_t>( specMapEntries.size() );
+         specInfo.pMapEntries          = &specMapEntries[prevSize];
+         specInfo.dataSize             = entry->getDataSize();
+         specInfo.pData                = entry->getData();
+
+         specInfos.push_back( specInfo );
+
+         pSpecInfo = &specInfos.back();
+      }
+
+      // Building shader stage
       VkPipelineShaderStageCreateInfo stageInfo = {};
       stageInfo.sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
       stageInfo.stage               = shaderTypeToVKShaderStage( shader->getType() );
       stageInfo.module              = shader->getModule();
       stageInfo.pName               = "main";
-      stageInfo.pSpecializationInfo = nullptr;  // TODO SPEC CONSTS
+      stageInfo.pSpecializationInfo = pSpecInfo;
 
-      shaderCreateInfos.push_back( std::move( stageInfo ) );
+      shaderCreateInfos.push_back( stageInfo );
    }
 
    // Vertex input description
@@ -222,9 +256,9 @@ const VkPipeline PipelineStash::findOrCreate(
    viewport.maxDepth   = 1.0f;
 
    VkRect2D scissor = {};
-   scissor.offset   = {0, 0};
-   scissor.extent   = {static_cast<uint32_t>( info.extent.width ),
-                     static_cast<uint32_t>( info.extent.height )};
+   scissor.offset   = { 0, 0 };
+   scissor.extent   = {
+       static_cast<uint32_t>( info.extent.width ), static_cast<uint32_t>( info.extent.height ) };
 
    VkPipelineViewportStateCreateInfo viewportState = {};
    viewportState.sType         = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -309,11 +343,11 @@ const VkPipeline PipelineStash::findOrCreate(
    pipelineInfo.layout                       = pipLayout;
    pipelineInfo.renderPass                   = renderPass;
    pipelineInfo.subpass                      = 0;
-   pipelineInfo.basePipelineHandle           = VK_NULL_HANDLE;
+   pipelineInfo.basePipelineHandle           = nullptr;
 
    VkPipeline pipeline;
    result = vkCreateGraphicsPipelines(
-       m_device.getVKDevice(), VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline );
+       m_device.getVKDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create default pipeline" );
 
    return m_pipelines.insert( { info, pipeline } ).first->second;

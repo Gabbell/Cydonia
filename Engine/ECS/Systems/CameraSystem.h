@@ -28,20 +28,20 @@ class CameraSystem : public CommonSystem<TransformComponent, CameraComponent>
       ORTHOGRAPHIC
    };
 
-   ProjectionMode _projMode = ProjectionMode::PERSPECTIVE;
+   ProjectionMode m_projMode = ProjectionMode::PERSPECTIVE;
 
    // Planes
-   float _near = 0.001f;
-   float _far  = 1000.0f;
+   float m_near = 0.001f;
+   float m_far  = 1000.0f;
 
    // Projection
-   float _fov         = 60.0f;         // in degrees
-   float _aspectRatio = 16.0f / 9.0f;  // 16:9
+   float m_fov         = 60.0f;         // in degrees
+   float m_aspectRatio = 16.0f / 9.0f;  // 16:9
 
    // Orthographic
-   float _left   = -1.0f;
-   float _right  = 1.0f;
-   float _bottom = -1.0f;
-   float _top    = 1.0f;
+   float m_left   = -1.0f;
+   float m_right  = 1.0f;
+   float m_bottom = -1.0f;
+   float m_top    = 1.0f;
 };
 }

@@ -41,14 +41,16 @@ class Swapchain final
    NON_COPIABLE( Swapchain )
    ~Swapchain();
 
-   void initFramebuffers( const cyd::RenderPassInfo& info, VkRenderPass renderPass );
+   void initFramebuffers( bool hasDepth );
    void acquireImage( const CommandBuffer* buffer );
    void present();
 
-   VkFramebuffer getCurrentFramebuffer() const;
+   // For render pass begin info
+   const VkExtent2D& getVKExtent() const { return *m_extent; }
+   VkFramebuffer getCurrentFramebuffer() const { return m_frameBuffers[m_currentFrame]; }
+   VkRenderPass getCurrentRenderPass() const { return m_vkRenderPass; }
 
    const VkSwapchainKHR& getVKSwapchain() const noexcept { return m_vkSwapchain; }
-   const VkExtent2D& getVKExtent() const noexcept { return *m_extent; }
    const VkSurfaceFormatKHR& getFormat() const noexcept { return *m_surfaceFormat; }
    const VkSemaphore& getSemToWait() const noexcept { return m_availableSems[m_currentFrame]; }
    const VkSemaphore& getSemToSignal() const noexcept { return m_renderDoneSems[m_currentFrame]; }
@@ -63,7 +65,10 @@ class Swapchain final
    Device& m_device;
    const Surface& m_surface;
 
-   VkRenderPass m_prevRenderPass = nullptr;
+   bool m_hasDepth = false;
+   cyd::Attachment m_colorPresentation;
+   cyd::Attachment m_depthPresentation;
+   VkRenderPass m_vkRenderPass = nullptr;
 
    uint32_t m_imageCount = 0;
    uint32_t m_imageIndex = 0;

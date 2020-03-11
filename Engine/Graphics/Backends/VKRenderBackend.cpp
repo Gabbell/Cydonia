@@ -179,6 +179,13 @@ class VKRenderBackendImp
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
 
+   TextureHandle createTexture( const TextureDescription& desc )
+   {
+      // Creating GPU texture
+      vk::Texture* texture = m_mainDevice->createTexture( desc );
+      return m_coreHandles.add( texture, HandleType::TEXTURE );
+   }
+
    VertexBufferHandle createVertexBuffer(
        CmdListHandle transferList,
        uint32_t count,
@@ -285,10 +292,28 @@ class VKRenderBackendImp
       }
    }
 
-   void beginRenderSwapchain( CmdListHandle cmdList, const RenderPassInfo& renderPassInfo )
+   void beginRenderSwapchain( CmdListHandle cmdList, bool hasDepth )
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->beginPass( renderPassInfo, *m_mainSwapchain );
+      cmdBuffer->beginPass( *m_mainSwapchain, hasDepth );
+   }
+
+   void beginRenderTargets(
+       CmdListHandle cmdList,
+       const RenderPassInfo& renderPassInfo,
+       const std::vector<TextureHandle>& textures )
+   {
+      // Fetching textures
+      std::vector<const vk::Texture*> vkTextures;
+      vkTextures.reserve( textures.size() );
+      for( const auto& target : textures )
+      {
+         auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( target ) );
+         vkTextures.push_back( vkTexture );
+      }
+
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->beginPass( renderPassInfo, vkTextures );
    }
 
    void endRenderPass( CmdListHandle cmdList )
@@ -430,6 +455,11 @@ TextureHandle VKRenderBackend::createTexture(
    return _imp->createTexture( transferList, desc, pTexels );
 }
 
+TextureHandle VKRenderBackend::createTexture( const cyd::TextureDescription& desc )
+{
+   return _imp->createTexture( desc );
+}
+
 VertexBufferHandle VKRenderBackend::createVertexBuffer(
     CmdListHandle transferList,
     uint32_t count,
@@ -481,11 +511,17 @@ void VKRenderBackend::destroyUniformBuffer( UniformBufferHandle bufferHandle )
    _imp->destroyUniformBuffer( bufferHandle );
 }
 
-void VKRenderBackend::beginRenderSwapchain(
-    CmdListHandle cmdList,
-    const RenderPassInfo& renderPassInfo )
+void VKRenderBackend::beginRenderSwapchain( CmdListHandle cmdList, bool hasDepth )
 {
-   _imp->beginRenderSwapchain( cmdList, renderPassInfo );
+   _imp->beginRenderSwapchain( cmdList, hasDepth );
+}
+
+void VKRenderBackend::beginRenderTargets(
+    CmdListHandle cmdList,
+    const RenderPassInfo& renderPassInfo,
+    const std::vector<TextureHandle>& textures )
+{
+   _imp->beginRenderTargets( cmdList, renderPassInfo, textures );
 }
 
 void VKRenderBackend::endRenderPass( CmdListHandle cmdList ) { _imp->endRenderPass( cmdList ); }
