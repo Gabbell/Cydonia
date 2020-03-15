@@ -21,7 +21,7 @@ class RenderSystem final : public CommonSystem<TransformComponent, RenderableCom
 
    bool init() override;
    void uninit() override{};
-   
+
    void tick( double deltaS ) override;
 };
 }

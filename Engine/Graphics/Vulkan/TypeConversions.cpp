@@ -26,6 +26,8 @@ VkFormat TypeConversions::cydToVkFormat( cyd::PixelFormat format )
    {
       case cyd::PixelFormat::BGRA8_UNORM:
          return VK_FORMAT_B8G8R8A8_UNORM;
+      case cyd::PixelFormat::RGBA8_SRGB:
+         return VK_FORMAT_R8G8B8A8_SRGB;
       case cyd::PixelFormat::D32_SFLOAT:
          return VK_FORMAT_D32_SFLOAT;
       default:
@@ -138,32 +140,6 @@ VkShaderStageFlags TypeConversions::cydToVkShaderStages( cyd::ShaderStageFlag st
       vkStages |= VK_SHADER_STAGE_ALL;
    }
    return vkStages;
-}
-
-VkImageLayout TypeConversions::cydToVkImageLayout( cyd::ImageLayout layout )
-{
-   switch( layout )
-   {
-      case cyd::ImageLayout::UNDEFINED:
-         return VK_IMAGE_LAYOUT_UNDEFINED;
-      case cyd::ImageLayout::GENERAL:
-         return VK_IMAGE_LAYOUT_GENERAL;
-      case cyd::ImageLayout::COLOR:
-         return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-      case cyd::ImageLayout::PRESENTATION:
-         return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-      case cyd::ImageLayout::TRANSFER_SRC:
-         return VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-      case cyd::ImageLayout::TRANSFER_DST:
-         return VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-      case cyd::ImageLayout::SHADER_READ:
-         return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-      case cyd::ImageLayout::DEPTH_STENCIL:
-         return VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-      default:
-         CYDASSERT( !"Types: Image layout not supported" )
-   }
-   return VK_IMAGE_LAYOUT_GENERAL;
 }
 
 VkDescriptorType TypeConversions::cydToVkDescriptorType(

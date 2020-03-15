@@ -23,14 +23,12 @@ Swapchain::Swapchain( Device& device, const Surface& surface, const cyd::Swapcha
    m_colorPresentation.format  = info.format;
    m_colorPresentation.loadOp  = cyd::LoadOp::CLEAR;
    m_colorPresentation.storeOp = cyd::StoreOp::STORE;
-   m_colorPresentation.type    = cyd::AttachmentType::COLOR;
-   m_colorPresentation.layout  = cyd::ImageLayout::PRESENTATION;
+   m_colorPresentation.type    = cyd::AttachmentType::COLOR_PRESENTATION;
 
    m_depthPresentation.format  = cyd::PixelFormat::D32_SFLOAT;
    m_depthPresentation.loadOp  = cyd::LoadOp::CLEAR;
    m_depthPresentation.storeOp = cyd::StoreOp::DONT_CARE;
    m_depthPresentation.type    = cyd::AttachmentType::DEPTH_STENCIL;
-   m_depthPresentation.layout  = cyd::ImageLayout::DEPTH_STENCIL;
 
    _createSwapchain( info );
    _createImageViews();

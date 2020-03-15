@@ -1,9 +1,9 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout( constant_id = 0 ) const int MAX_LIGHTS = 2;
+layout( constant_id = 0 ) const int MAX_LIGHTS = 4;
 
-// View and environment
+// View and environment (Alpha)
 // =================================================================================================
 layout( set = 0, binding = 1 ) uniform Alpha
 {
@@ -13,15 +13,13 @@ layout( set = 0, binding = 1 ) uniform Alpha
    vec4 viewPos;
 };
 
-// Material properties
+// Material properties (Gamma)
 // =================================================================================================
-layout( set = 1, binding = 0 ) uniform Gamma { vec4 mat; };
-layout( set = 1, binding = 1 ) uniform sampler2D texSampler;
+layout( set = 1, binding = 0 ) uniform sampler2D texSampler;
 
-layout( location = 0 ) in vec4 inColor;
-layout( location = 1 ) in vec3 inTexCoord;
-layout( location = 2 ) in vec3 inNormal;
-layout( location = 3 ) in vec3 fragPos;
+layout( location = 0 ) in vec3 inTexCoord;
+layout( location = 1 ) in vec3 inNormal;
+layout( location = 2 ) in vec3 fragPos;
 
 layout( location = 0 ) out vec4 outColor;
 

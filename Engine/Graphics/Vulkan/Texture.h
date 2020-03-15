@@ -57,9 +57,9 @@ class Texture final
    cyd::PixelFormat m_format;
    cyd::ImageUsageFlag m_usage;
 
-   VkImage m_vkImage           = nullptr;
-   VkImageView m_vkImageView   = nullptr;
-   VkDeviceMemory m_vkMemory   = nullptr;
+   VkImage m_vkImage         = nullptr;
+   VkImageView m_vkImageView = nullptr;
+   VkDeviceMemory m_vkMemory = nullptr;
 
    bool m_inUse = false;
 };

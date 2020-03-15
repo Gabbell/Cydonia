@@ -111,7 +111,7 @@ void PhongRenderSystem::tick( double deltaS )
    GRIS::SetViewport( cmdList, viewport );
 
    // Main pass
-   GRIS::BeginRenderPassTargets( cmdList, renderPassInfo, {colorTex, depthTex} );
+   GRIS::BeginRenderPassTargets( cmdList, renderPassInfo, { colorTex, depthTex } );
    {
       GRIS::BindPipeline( cmdList, pipInfo );
 
@@ -128,8 +128,7 @@ void PhongRenderSystem::tick( double deltaS )
                            glm::scale( glm::mat4( 1.0f ), transform.scaling ) *
                            glm::toMat4( transform.rotation );
 
-         GRIS::BindUniformBuffer( cmdList, renderable.matBuffer, GAMMA, 0 );
-         GRIS::BindTexture( cmdList, renderable.matTexture, GAMMA, 1 );
+         GRIS::BindTexture( cmdList, renderable.albedo, GAMMA, 1 );
 
          // Update model properties
          GRIS::UpdateConstantBuffer( cmdList, VERTEX_STAGE, 0, sizeof( glm::mat4 ), &model );
@@ -155,7 +154,7 @@ void PhongRenderSystem::tick( double deltaS )
    GRIS::SubmitCommandList( cmdList );
    GRIS::WaitOnCommandList( cmdList );
 
-   //GRIS::PresentFrame();
+   // GRIS::PresentFrame();
 
    GRIS::DestroyCommandList( cmdList );
 
@@ -217,9 +216,9 @@ void preparePipeline()
    // Pipeline Info
    // ==============================================================================================
    pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
-   pipInfo.extent   = {1920, 1080};
+   pipInfo.extent   = { 1920, 1080 };
    pipInfo.polyMode = PolygonMode::FILL;
-   pipInfo.shaders  = {VERTEX_SHADER, FRAGMENT_SHADER};
+   pipInfo.shaders  = { VERTEX_SHADER, FRAGMENT_SHADER };
 
    // Specialization Constants
    pipInfo.constants.add( FRAGMENT_SHADER, 0, MAX_LIGHTS );
@@ -230,14 +229,12 @@ void preparePipeline()
    colorAttachment.loadOp     = LoadOp::CLEAR;
    colorAttachment.storeOp    = StoreOp::STORE;
    colorAttachment.type       = AttachmentType::COLOR;
-   colorAttachment.layout     = ImageLayout::PRESENTATION;
 
    Attachment depthAttachment = {};
    depthAttachment.format     = PixelFormat::D32_SFLOAT;
    depthAttachment.loadOp     = LoadOp::CLEAR;
    depthAttachment.storeOp    = StoreOp::DONT_CARE;
    depthAttachment.type       = AttachmentType::DEPTH_STENCIL;
-   depthAttachment.layout     = ImageLayout::DEPTH_STENCIL;
 
    renderPassInfo.attachments.push_back( colorAttachment );
    renderPassInfo.attachments.push_back( depthAttachment );

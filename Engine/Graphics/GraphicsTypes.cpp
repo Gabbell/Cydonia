@@ -15,7 +15,7 @@ bool Extent::operator==( const Extent& other ) const
 bool Attachment::operator==( const Attachment& other ) const
 {
    return format == other.format && loadOp == other.loadOp && storeOp == other.storeOp &&
-          type == other.type && layout == other.layout;
+          type == other.type;
 }
 
 bool PushConstantRange::operator==( const PushConstantRange& other ) const

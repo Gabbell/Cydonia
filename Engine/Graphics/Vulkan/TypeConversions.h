@@ -39,7 +39,6 @@ class TypeConversions final
    static VkPrimitiveTopology cydToVkDrawPrim( cyd::DrawPrimitive prim );
    static VkPolygonMode cydToVkPolyMode( cyd::PolygonMode polyMode );
    static uint32_t cydToVkShaderStages( cyd::ShaderStageFlag stages );
-   static VkImageLayout cydToVkImageLayout( cyd::ImageLayout layout );
    static VkDescriptorType cydToVkDescriptorType( cyd::ShaderResourceType type );
    static VkFilter cydToVkFilter( cyd::Filter filter );
    static VkSamplerAddressMode cydToVkAddressMode( cyd::AddressMode mode );

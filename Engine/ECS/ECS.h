@@ -68,7 +68,7 @@ template <
     typename = std::enable_if_t<std::is_base_of_v<BaseSystem, System>>>
 void AddSystem( Args&&... args )
 {
-   System* system = new System( args... );
+   System* system = new System( std::forward<Args>( args )... );
    system->init();
    detail::systems.emplace_back( system );
 }

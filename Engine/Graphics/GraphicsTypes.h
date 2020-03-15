@@ -83,6 +83,7 @@ enum class IndexType
 enum class PixelFormat
 {
    BGRA8_UNORM,
+   RGBA8_SRGB,
    D32_SFLOAT,
 };
 
@@ -115,6 +116,7 @@ enum class StoreOp
 enum class AttachmentType
 {
    COLOR,
+   COLOR_PRESENTATION,
    DEPTH,
    DEPTH_STENCIL
 };
@@ -133,18 +135,6 @@ enum class PolygonMode
    FILL,
    LINE,
    POINT
-};
-
-enum class ImageLayout
-{
-   UNDEFINED,
-   GENERAL,
-   COLOR,
-   PRESENTATION,
-   TRANSFER_SRC,
-   TRANSFER_DST,
-   SHADER_READ,
-   DEPTH_STENCIL
 };
 
 enum class ImageType
@@ -230,7 +220,6 @@ struct Attachment
    LoadOp loadOp;
    StoreOp storeOp;
    AttachmentType type;
-   ImageLayout layout;
 };
 
 struct PushConstantRange
@@ -338,7 +327,6 @@ struct std::hash<cyd::Attachment>
       hashCombine( seed, attachment.loadOp );
       hashCombine( seed, attachment.storeOp );
       hashCombine( seed, attachment.type );
-      hashCombine( seed, attachment.layout );
 
       return seed;
    }

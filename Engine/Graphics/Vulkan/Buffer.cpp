@@ -4,7 +4,6 @@
 #include <Common/Vulkan.h>
 
 #include <Graphics/Vulkan/Device.h>
-#include <Graphics/Vulkan/TypeConversions.h>
 
 namespace vk
 {

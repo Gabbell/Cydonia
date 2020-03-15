@@ -177,6 +177,7 @@
     <ClCompile Include="ECS\Systems\MovementSystem.cpp" />
     <ClCompile Include="ECS\Systems\PhongRenderSystem.cpp" />
     <ClCompile Include="ECS\Systems\PlayerMoveSystem.cpp" />
+    <ClCompile Include="ECS\Systems\RenderSystem.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
@@ -227,6 +228,7 @@
     <ClInclude Include="ECS\Systems\MovementSystem.h" />
     <ClInclude Include="ECS\Systems\PhongRenderSystem.h" />
     <ClInclude Include="ECS\Systems\PlayerMoveSystem.h" />
+    <ClInclude Include="ECS\Systems\RenderSystem.h" />
     <ClInclude Include="Graphics\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
     <ClInclude Include="Graphics\Buffer.h" />

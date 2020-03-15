@@ -3,50 +3,36 @@
 
 // Constant buffer
 // =================================================================================================
-layout( push_constant ) uniform Epsilon
-{
-    mat4 model;
-};
+layout( push_constant ) uniform Epsilon { mat4 model; };
 
-// View and environment
+// View and environment (Alpha)
 // =================================================================================================
 layout( set = 0, binding = 0 ) uniform Alpha
 {
-    mat4 view;
-    mat4 proj;
+   mat4 view;
+   mat4 proj;
 };
-
-// Shader control values
-// =================================================================================================
-// layout( set = 1, binding = 0 ) uniform Beta
-// {
-//     vec4 control;
-// };
 
 // =================================================================================================
 
 // Inputs
 layout( location = 0 ) in vec3 inPosition;
-layout( location = 1 ) in vec4 inColor;
 layout( location = 2 ) in vec3 inTexCoord;
 layout( location = 3 ) in vec3 inNormal;
 
 // Outputs
-layout( location = 0 ) out vec4 outColor;
-layout( location = 1 ) out vec3 outTexCoord;
-layout( location = 2 ) out vec3 outNormal;
-layout( location = 3 ) out vec3 fragPos;
+layout( location = 0 ) out vec3 outTexCoord;
+layout( location = 1 ) out vec3 outNormal;
+layout( location = 2 ) out vec3 fragPos;
 
 // =================================================================================================
 
 void main()
 {
-	 fragPos = vec3( model * vec4( inPosition, 1.0 ) ); // World coordinates
+   fragPos = vec3( model * vec4( inPosition, 1.0 ) );  // World coordinates
 
-    gl_Position = proj * view * vec4( fragPos, 1.0 );
+   gl_Position = proj * view * vec4( fragPos, 1.0 );
 
-    outColor = inColor;
-    outTexCoord = inTexCoord;
-    outNormal = inNormal;
+   outTexCoord = inTexCoord;
+   outNormal   = vec3( model * vec4( inNormal, 1.0 ) );
 }
-

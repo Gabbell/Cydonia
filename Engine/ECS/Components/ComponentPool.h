@@ -53,7 +53,7 @@ class ComponentPool final : public BaseComponentPool
          if( !m_slots[i] )
          {
             // A free slot was found
-            m_components[i] = Component( args... );
+            m_components[i] = Component( std::forward<Args>( args )... );
             m_components[i].init();
 
             m_slots[i] = true;

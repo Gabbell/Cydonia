@@ -32,7 +32,7 @@ void Texture::release()
       m_width  = 0;
       m_height = 0;
       m_type   = cyd::ImageType::TEXTURE_2D;
-      m_format = cyd::PixelFormat::BGRA8_UNORM;
+      m_format = cyd::PixelFormat::RGBA8_SRGB;
       m_usage  = 0;
       m_inUse  = false;
 
@@ -73,7 +73,7 @@ void Texture::_createImage()
    imageInfo.arrayLayers   = 1;
    imageInfo.format        = TypeConversions::cydToVkFormat( m_format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
-   imageInfo.initialLayout = TypeConversions::cydToVkImageLayout( cyd::ImageLayout::UNDEFINED );
+   imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
    if( m_usage & cyd::ImageUsage::TRANSFER_SRC )
    {

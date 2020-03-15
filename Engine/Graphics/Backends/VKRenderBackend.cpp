@@ -111,6 +111,12 @@ class VKRenderBackendImp
 
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
    {
+      if( bufferHandle == Handle::INVALID_HANDLE )
+      {
+         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid vertex buffer" );
+         return;
+      }
+
       auto cmdBuffer    = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       auto vertexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
@@ -119,6 +125,12 @@ class VKRenderBackendImp
 
    void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
    {
+      if( bufferHandle == Handle::INVALID_HANDLE )
+      {
+         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid index buffer" );
+         return;
+      }
+
       auto cmdBuffer   = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       auto indexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
@@ -128,6 +140,12 @@ class VKRenderBackendImp
    void
    bindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
    {
+      if( texHandle == Handle::INVALID_HANDLE )
+      {
+         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
+         return;
+      }
+
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       auto texture   = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
 
@@ -214,7 +232,7 @@ class VKRenderBackendImp
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
 
       // TODO Dynamic uint32_t/uint16_t
-      size_t bufferSize = count * sizeof( uint32_t );
+      size_t bufferSize = count * sizeof( uint16_t );
 
       // Staging
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( bufferSize );

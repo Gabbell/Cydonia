@@ -14,6 +14,8 @@ enum class ComponentType : uint8_t
    MOTION,
    CAMERA,
    CONTROLLER,
+   POINT_LIGHT,
+   DIRECTIONAL_LIGHT,
 
    COUNT  // Keep at the end
 };

@@ -8,7 +8,7 @@
 #include <ECS/Systems/PlayerMoveSystem.h>
 #include <ECS/Systems/MovementSystem.h>
 #include <ECS/Systems/CameraSystem.h>
-#include <ECS/Systems/PhongRenderSystem.h>
+#include <ECS/Systems/RenderSystem.h>
 
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MotionComponent.h>
@@ -49,23 +49,25 @@ void VKSandbox::preLoop()
    ECS::AddSystem<PlayerMoveSystem>();
    ECS::AddSystem<MovementSystem>();
    ECS::AddSystem<CameraSystem>();
-   ECS::AddSystem<PhongRenderSystem>();
+   ECS::AddSystem<RenderSystem>();
 
    // Creating player entity
    const EntityHandle player = ECS::CreateEntity();
    ECS::Assign<InputComponent>( player );
-   ECS::Assign<TransformComponent>( player, glm::vec3( 0.0f, 20.0f, 50.0f ) );
+   ECS::Assign<TransformComponent>( player, glm::vec3( 0.0f, 0.0f, 50.0f ) );
    ECS::Assign<MotionComponent>( player );
    ECS::Assign<CameraComponent>( player );
 
    // Creating some renderable entities
    const EntityHandle sphere = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( sphere, glm::vec3( 0.0f, 20.0f, 0.0f ) );
-   ECS::Assign<RenderableComponent>( sphere, "Assets/Meshes/sphere.obj" );
+   ECS::Assign<TransformComponent>(
+       sphere, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f ), glm::identity<glm::quat>() );
+   ECS::Assign<RenderableComponent>(
+       sphere, "Assets/Meshes/sphere.obj", "Assets/Textures/PBR/layered-rock1/" );
 
-   const EntityHandle plane = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( plane, glm::vec3( 0.0f, -20.0f, 0.0f ) );
-   ECS::Assign<RenderableComponent>( plane, vertices );
+   // const EntityHandle plane = ECS::CreateEntity();
+   // ECS::Assign<TransformComponent>( plane, glm::vec3( 0.0f, -20.0f, 0.0f ) );
+   // ECS::Assign<RenderableComponent>( plane, vertices );
 }
 
 void VKSandbox::tick( double deltaS ) { ECS::Tick( deltaS ); }

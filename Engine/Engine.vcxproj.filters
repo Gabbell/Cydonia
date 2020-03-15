@@ -34,6 +34,7 @@
     <ClCompile Include="ECS\Systems\CameraSystem.cpp" />
     <ClCompile Include="ECS\Systems\PhongRenderSystem.cpp" />
     <ClCompile Include="Graphics\ShaderConstants.cpp" />
+    <ClCompile Include="ECS\Systems\RenderSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">
@@ -103,6 +104,7 @@
     <ClInclude Include="ECS\Systems\CameraSystem.h" />
     <ClInclude Include="ECS\Systems\PhongRenderSystem.h" />
     <ClInclude Include="Graphics\ShaderConstants.h" />
+    <ClInclude Include="ECS\Systems\RenderSystem.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

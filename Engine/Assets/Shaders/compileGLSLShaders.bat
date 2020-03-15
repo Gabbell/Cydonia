@@ -12,6 +12,9 @@ glslc -fshader-stage=frag GLSL/defaultTex_frag.glsl -o Compiled/defaultTex_frag.
 glslc -fshader-stage=vert GLSL/phongTex_vert.glsl -o Compiled/phongTex_vert.spv
 glslc -fshader-stage=frag GLSL/phongTex_frag.glsl -o Compiled/phongTex_frag.spv
 
+glslc -fshader-stage=vert GLSL/pbrTex_vert.glsl -o Compiled/pbrTex_vert.spv
+glslc -fshader-stage=frag GLSL/pbrTex_frag.glsl -o Compiled/pbrTex_frag.spv
+
 glslc -fshader-stage=frag GLSL/proteanclouds_frag.glsl -o Compiled/proteanclouds_frag.spv
 
 @echo ============== COMPILING DONE ==============

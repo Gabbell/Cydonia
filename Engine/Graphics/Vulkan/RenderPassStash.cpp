@@ -32,8 +32,28 @@ VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
    std::vector<VkSubpassDependency> dependencies;
    for( const auto& attachment : info.attachments )
    {
+      VkAttachmentDescription vkAttachment = {};
+      vkAttachment.format                  = TypeConversions::cydToVkFormat( attachment.format );
+      vkAttachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
+      vkAttachment.loadOp                  = TypeConversions::cydToVkOp( attachment.loadOp );
+      vkAttachment.storeOp                 = TypeConversions::cydToVkOp( attachment.storeOp );
+      vkAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      vkAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      vkAttachment.initialLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+
       switch( attachment.type )
       {
+         case cyd::AttachmentType::COLOR_PRESENTATION:
+         {
+            VkAttachmentReference presentationAttachmentRef = {};
+            presentationAttachmentRef.attachment            = 0;
+            presentationAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+            colorRefs.push_back( presentationAttachmentRef );
+
+            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            break;
+         }
          case cyd::AttachmentType::COLOR:
          {
             VkAttachmentReference colorAttachmentRef = {};
@@ -41,6 +61,8 @@ VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
             colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             colorRefs.push_back( colorAttachmentRef );
+
+            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             break;
          }
          case cyd::AttachmentType::DEPTH_STENCIL:
@@ -50,22 +72,13 @@ VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
             depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
             depthRef = depthAttachmentRef;
+
+            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             break;
          }
          default:
             CYDASSERT( !"RenderPass: Attachment type not supported" );
       }
-
-      VkAttachmentDescription vkAttachment = {};
-      vkAttachment.format         = TypeConversions::cydToVkFormat( attachment.format );
-      vkAttachment.samples        = VK_SAMPLE_COUNT_1_BIT;
-      vkAttachment.loadOp         = TypeConversions::cydToVkOp( attachment.loadOp );
-      vkAttachment.storeOp        = TypeConversions::cydToVkOp( attachment.storeOp );
-      vkAttachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-      vkAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-      vkAttachment.initialLayout  = VK_IMAGE_LAYOUT_UNDEFINED;
-      vkAttachment.finalLayout =
-          TypeConversions::cydToVkImageLayout( attachment.layout );
 
       attachmentDescs.push_back( vkAttachment );
    }

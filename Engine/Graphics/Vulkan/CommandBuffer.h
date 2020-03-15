@@ -93,7 +93,7 @@ class CommandBuffer final
    // Transfers
    // =============================================================================================
    void copyBuffer( const Buffer* src, const Buffer* dst ) const;
-   void uploadBufferToTex( const Buffer* src, Texture* dst );
+   void uploadBufferToTex( const Buffer* src, Texture* dst ) const;
 
   private:
    // The updating and binding of descriptor sets is deferred all the way until we do a draw call.
@@ -160,7 +160,6 @@ class CommandBuffer final
    std::vector<VkSemaphore> m_semsToSignal;
 
    cyd::QueueUsageFlag m_usage   = cyd::QueueUsage::UNKNOWN;
-   cyd::ImageLayout m_prevLayout = cyd::ImageLayout::UNDEFINED;
    bool m_isRecording            = false;
    bool m_wasSubmitted           = false;
    VkCommandBuffer m_vkCmdBuffer = nullptr;

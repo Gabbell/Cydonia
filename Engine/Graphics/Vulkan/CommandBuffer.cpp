@@ -75,8 +75,6 @@ void CommandBuffer::release()
       m_boundPipLayout.reset();
       m_boundRenderPass.reset();
 
-      m_prevLayout = cyd::ImageLayout::UNDEFINED;
-
       vkDestroyFence( m_pDevice->getVKDevice(), m_vkFence, nullptr );
       vkFreeCommandBuffers(
           m_pDevice->getVKDevice(), m_pPool->getVKCommandPool(), 1, &m_vkCmdBuffer );
@@ -365,10 +363,9 @@ void CommandBuffer::_prepareDescriptorSets()
       const VkSampler vkSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
 
       VkDescriptorImageInfo imageInfo = {};
-      // By the point we bind this texture, it should have transferred to this layout
-      imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-      imageInfo.imageView   = entry.texture->getVKImageView();
-      imageInfo.sampler     = vkSampler;
+      imageInfo.imageLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      imageInfo.imageView             = entry.texture->getVKImageView();
+      imageInfo.sampler               = vkSampler;
       imageInfos.push_back( imageInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
@@ -452,7 +449,7 @@ void CommandBuffer::copyBuffer( const Buffer* src, const Buffer* dst ) const
    vkCmdCopyBuffer( m_vkCmdBuffer, src->getVKBuffer(), dst->getVKBuffer(), 1, &copyRegion );
 }
 
-void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst )
+void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst ) const
 {
    CYDASSERT(
        src->getSize() == dst->getSize() &&
@@ -461,8 +458,8 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst )
    // Transition image layout to transfer destination optimal
    VkImageMemoryBarrier barrier            = {};
    barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-   barrier.oldLayout                       = TypeConversions::cydToVkImageLayout( m_prevLayout );
-   barrier.newLayout                       = VK_IMAGE_LAYOUT_GENERAL;
+   barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
+   barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
    barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
    barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
    barrier.image                           = dst->getVKImage();
@@ -486,9 +483,6 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst )
        1,
        &barrier );
 
-   // Updating current image layout
-   m_prevLayout = cyd::ImageLayout::GENERAL;
-
    // Copying data from buffer to texture
    VkBufferImageCopy region               = {};
    region.bufferOffset                    = 0;
@@ -498,11 +492,34 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst )
    region.imageSubresource.mipLevel       = 0;
    region.imageSubresource.baseArrayLayer = 0;
    region.imageSubresource.layerCount     = 1;
-   region.imageOffset                     = { 0, 0, 0 };
-   region.imageExtent                     = { dst->getWidth(), dst->getHeight(), 1 };
+   region.imageOffset                     = {0, 0, 0};
+   region.imageExtent                     = {dst->getWidth(), dst->getHeight(), 1};
 
    vkCmdCopyBufferToImage(
-       m_vkCmdBuffer, src->getVKBuffer(), dst->getVKImage(), VK_IMAGE_LAYOUT_GENERAL, 1, &region );
+       m_vkCmdBuffer,
+       src->getVKBuffer(),
+       dst->getVKImage(),
+       VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+       1,
+       &region );
+
+   // Transition image layout to shader read optimal
+   barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+   barrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+   barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+   barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+   vkCmdPipelineBarrier(
+       m_vkCmdBuffer,
+       VK_PIPELINE_STAGE_TRANSFER_BIT,
+       VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
+       0,
+       0,
+       nullptr,
+       0,
+       nullptr,
+       1,
+       &barrier );
 }
 
 void CommandBuffer::submit()
