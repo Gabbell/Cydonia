@@ -12,7 +12,8 @@
 
 #include <ECS/Components/TransformComponent.h>
 #include <ECS/Components/MotionComponent.h>
-#include <ECS/Components/RenderableComponent.h>
+#include <ECS/Components/PhongRenderableComponent.h>
+#include <ECS/Components/PBRRenderableComponent.h>
 #include <ECS/SharedComponents/CameraComponent.h>
 #include <ECS/SharedComponents/InputComponent.h>
 
@@ -59,24 +60,27 @@ void VKSandbox::preLoop()
    ECS::Assign<CameraComponent>( player );
 
    // Creating some renderable entities
-   const EntityHandle sphere = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>(
-       sphere, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f ), glm::identity<glm::quat>() );
-   ECS::Assign<RenderableComponent>(
-       sphere, "Assets/Meshes/sphere.obj", "Assets/Textures/PBR/layered-rock1/" );
+   const EntityHandle helmet = ECS::CreateEntity();
+   ECS::Assign<TransformComponent>( helmet, glm::vec3( 0.0f, 0.0f, 0.0f ) );
+   ECS::Assign<PBRRenderableComponent>( helmet, "MandalorianHelmet" );
 
-   // const EntityHandle plane = ECS::CreateEntity();
-   // ECS::Assign<TransformComponent>( plane, glm::vec3( 0.0f, -20.0f, 0.0f ) );
-   // ECS::Assign<RenderableComponent>( plane, vertices );
+   const EntityHandle plane = ECS::CreateEntity();
+   ECS::Assign<TransformComponent>( plane, glm::vec3( 0.0f, -10.0f, 0.0f ) );
+   ECS::Assign<PhongRenderableComponent>( plane, vertices );
 }
 
-void VKSandbox::tick( double deltaS ) { ECS::Tick( deltaS ); }
+void VKSandbox::tick( double deltaS )
+{
+   GRIS::PrepareFrame();
+   ECS::Tick( deltaS );
+   GRIS::PresentFrame();
+}
 
-void VKSandbox::postLoop() {}
-
-VKSandbox::~VKSandbox()
+void VKSandbox::postLoop()
 {
    ECS::Uninitialize();
    GRIS::UninitRenderBackend();
 }
+
+VKSandbox::~VKSandbox() = default;
 }

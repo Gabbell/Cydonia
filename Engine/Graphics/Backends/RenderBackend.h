@@ -54,12 +54,15 @@ class RenderBackend
 
    // Resources
    // ==============================================================================================
+   virtual TextureHandle createTexture( const TextureDescription& desc ) = 0;
+   virtual TextureHandle createTexture(
+       CmdListHandle transferList,
+       const TextureDescription& desc,
+       const std::string& path ) = 0;
    virtual TextureHandle createTexture(
        CmdListHandle transferList,
        const TextureDescription& desc,
        const void* pTexels ) = 0;
-
-   virtual TextureHandle createTexture( const TextureDescription& desc ) = 0;
 
    virtual VertexBufferHandle createVertexBuffer(
        CmdListHandle transferList,
@@ -84,7 +87,8 @@ class RenderBackend
 
    // Drawing
    // ==============================================================================================
-   virtual void beginRenderSwapchain( CmdListHandle cmdList, bool hasDepth ) = 0;
+   virtual void prepareFrame()                                              = 0;
+   virtual void beginRenderSwapchain( CmdListHandle cmdList, bool wantDepth ) = 0;
    virtual void beginRenderTargets(
        CmdListHandle cmdList,
        const RenderPassInfo& renderPassInfo,

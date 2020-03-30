@@ -39,9 +39,10 @@ class Texture final
    uint32_t getHeight() const noexcept { return m_height; }
    const VkImage& getVKImage() const noexcept { return m_vkImage; }
    const VkImageView& getVKImageView() const noexcept { return m_vkImageView; }
-   bool inUse() const { return m_inUse; }
+   bool inUse() const { return m_useCount > 0; }
 
-   void setUnused() { m_inUse = false; }
+   void incUse() { m_useCount++; }
+   void decUse() { m_useCount--; }
 
   private:
    void _createImage();
@@ -61,6 +62,6 @@ class Texture final
    VkImageView m_vkImageView = nullptr;
    VkDeviceMemory m_vkMemory = nullptr;
 
-   bool m_inUse = false;
+   uint32_t m_useCount = 0;
 };
 }

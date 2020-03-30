@@ -177,42 +177,50 @@ void CommandBuffer::bindPipeline( const cyd::PipelineInfo& info )
    m_boundPipInfo   = std::make_unique<cyd::PipelineInfo>( info );
 }
 
-void CommandBuffer::bindVertexBuffer( const Buffer* vertexBuffer ) const
+void CommandBuffer::bindVertexBuffer( Buffer* vertexBuffer ) const
 {
-   VkBuffer vertexBuffers[] = { vertexBuffer->getVKBuffer() };
-   VkDeviceSize offsets[]   = { 0 };
+   VkBuffer vertexBuffers[] = {vertexBuffer->getVKBuffer()};
+   VkDeviceSize offsets[]   = {0};
    vkCmdBindVertexBuffers( m_vkCmdBuffer, 0, 1, vertexBuffers, offsets );
+
+   vertexBuffer->incUse();
 }
 
-void CommandBuffer::bindIndexBuffer( const Buffer* indexBuffer, cyd::IndexType type )
+void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, cyd::IndexType type ) const
 {
    vkCmdBindIndexBuffer(
        m_vkCmdBuffer, indexBuffer->getVKBuffer(), 0, TypeConversions::cydToVkIndexType( type ) );
+
+   indexBuffer->incUse();
 }
 
-void CommandBuffer::bindBuffer( const Buffer* buffer, uint32_t set, uint32_t binding )
+void CommandBuffer::bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
 {
    // Will need to update this buffer's descriptor set before next draw
    m_buffersToUpdate.emplace_back( buffer, set, binding );
+
+   buffer->incUse();
 }
 
-void CommandBuffer::bindTexture( const Texture* texture, uint32_t set, uint32_t binding )
+void CommandBuffer::bindTexture( Texture* texture, uint32_t set, uint32_t binding )
 {
    // Will need to update this texture's descriptor set before next draw
    m_texturesToUpdate.emplace_back( texture, set, binding );
+
+   texture->incUse();
 }
 
 void CommandBuffer::setViewport( const cyd::Rectangle& viewport ) const
 {
    VkViewport vkViewport = {
-       viewport.offsetX, viewport.offsetY, viewport.width, viewport.height, 0.0f, 1.0f };
+       viewport.offsetX, viewport.offsetY, viewport.width, viewport.height, 0.0f, 1.0f};
    vkCmdSetViewport( m_vkCmdBuffer, 0, 1, &vkViewport );
 }
 
 void CommandBuffer::beginPass( Swapchain& swapchain, bool hasDepth )
 {
    swapchain.initFramebuffers( hasDepth );
-   swapchain.acquireImage( this );
+   swapchain.acquireImage();
 
    VkRenderPass renderPass = swapchain.getCurrentRenderPass();
    CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
@@ -226,12 +234,12 @@ void CommandBuffer::beginPass( Swapchain& swapchain, bool hasDepth )
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass.value();
    passBeginInfo.framebuffer           = swapchain.getCurrentFramebuffer();
-   passBeginInfo.renderArea.offset     = { 0, 0 };
+   passBeginInfo.renderArea.offset     = {0, 0};
    passBeginInfo.renderArea.extent     = swapchain.getVKExtent();
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
-   clearValues[1]                          = { 1.0f, 0 };
+   clearValues[0]                          = {0.0f, 0.0f, 0.0f, 1.0f};
+   clearValues[1]                          = {1.0f, 0};
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -288,12 +296,12 @@ void CommandBuffer::beginPass(
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass.value();
    passBeginInfo.framebuffer           = vkFramebuffer;
-   passBeginInfo.renderArea.offset     = { 0, 0 };
-   passBeginInfo.renderArea.extent     = { commonWidth, commonHeight };
+   passBeginInfo.renderArea.offset     = {0, 0};
+   passBeginInfo.renderArea.extent     = {commonWidth, commonHeight};
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
-   clearValues[1]                          = { 1.0f, 0 };
+   clearValues[0]                          = {0.0f, 0.0f, 0.0f, 1.0f};
+   clearValues[1]                          = {1.0f, 0};
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -316,7 +324,7 @@ VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t
    VkDescriptorSet vkDescSet =
        m_pDevice->getDescriptorPool().allocate( m_boundPipInfo->pipLayout.descSets[set] );
 
-   m_descSets.push_back( { set, vkDescSet } );
+   m_descSets.push_back( {set, vkDescSet} );
 
    m_boundSets[set] = vkDescSet;
    return vkDescSet;
@@ -529,7 +537,7 @@ void CommandBuffer::submit()
    submitInfo.commandBufferCount = 1;
    submitInfo.pCommandBuffers    = &m_vkCmdBuffer;
 
-   VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT };
+   VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
    submitInfo.waitSemaphoreCount     = static_cast<uint32_t>( m_semsToWait.size() );
    submitInfo.pWaitSemaphores        = m_semsToWait.data();
    submitInfo.pWaitDstStageMask      = waitStages;
@@ -539,17 +547,10 @@ void CommandBuffer::submit()
    const VkQueue* queue = m_pDevice->getQueueFromFamily( m_pPool->getFamilyIndex() );
    CYDASSERT( queue && "CommandBuffer: Could not find queue to submit to" );
 
-   if( m_wasSubmitted )
-   {
-      // CPU Lock
-      vkWaitForFences( m_pDevice->getVKDevice(), 1, &m_vkFence, true, 0 );
-      vkResetFences( m_pDevice->getVKDevice(), 1, &m_vkFence );
-   }
-
    vkQueueSubmit( *queue, 1, &submitInfo, m_vkFence );
    m_wasSubmitted = true;
 
    m_semsToWait.clear();
    m_semsToSignal.clear();
 }
-}  // namespace vk
+}

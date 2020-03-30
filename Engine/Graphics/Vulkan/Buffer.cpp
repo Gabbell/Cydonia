@@ -16,7 +16,11 @@ void Buffer::acquire(
    m_pDevice    = &device;
    m_size       = size;
    m_memoryType = memoryType;
-   m_inUse      = true;
+
+   CYDASSERT(
+       m_useCount == 0 && "Buffer: Use count was not 0. This buffer was probably not released" );
+
+   m_useCount = 1;
 
    VkBufferCreateInfo bufferInfo = {};
    bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -60,16 +64,16 @@ void Buffer::release()
 {
    if( m_pDevice )
    {
-      m_size       = 0;
-      m_memoryType = 0;
-      m_inUse      = false;
-
       vkDestroyBuffer( m_pDevice->getVKDevice(), m_vkBuffer, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
-      m_pDevice  = nullptr;
-      m_vkBuffer = nullptr;
-      m_vkMemory = nullptr;
+      m_size       = 0;
+      m_memoryType = 0;
+      m_pDevice    = nullptr;
+      m_vkBuffer   = nullptr;
+      m_vkMemory   = nullptr;
+
+      m_useCount = 0;
    }
 }
 

@@ -278,7 +278,7 @@ void Device::cleanup()
    // Cleaning up textures
    for( auto& texture : m_textures )
    {
-      if( !texture.inUse() )
+      if( texture.getVKImage() && !texture.inUse() )
       {
          texture.release();
       }
@@ -287,7 +287,7 @@ void Device::cleanup()
    // Cleaning up device buffers
    for( auto& buffer : m_buffers )
    {
-      if( !buffer.inUse() )
+      if( buffer.getVKBuffer() && !buffer.inUse() )
       {
          buffer.release();
       }

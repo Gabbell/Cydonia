@@ -34,5 +34,5 @@ void main()
    gl_Position = proj * view * vec4( fragPos, 1.0 );
 
    outTexCoord = inTexCoord;
-   outNormal   = vec3( model * vec4( inNormal, 1.0 ) );
+   outNormal   = normalize( inNormal );
 }

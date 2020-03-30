@@ -25,15 +25,18 @@
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
     <ClCompile Include="Applications\VKSandbox.cpp" />
-    <ClCompile Include="ECS\Components\RenderableComponent.cpp" />
     <ClCompile Include="Handles\HandleManager.cpp" />
     <ClCompile Include="ECS\ECS.cpp" />
     <ClCompile Include="ECS\Systems\MovementSystem.cpp" />
     <ClCompile Include="ECS\Systems\PlayerMoveSystem.cpp" />
     <ClCompile Include="ECS\Systems\InputSystem.cpp" />
     <ClCompile Include="ECS\Systems\CameraSystem.cpp" />
-    <ClCompile Include="ECS\Systems\PhongRenderSystem.cpp" />
     <ClCompile Include="Graphics\ShaderConstants.cpp" />
+    <ClCompile Include="Graphics\Transforms.cpp" />
+    <ClCompile Include="Graphics\GraphicsIO.cpp" />
+    <ClCompile Include="ECS\Components\PBRRenderableComponent.cpp" />
+    <ClCompile Include="ECS\Components\PhongRenderableComponent.cpp" />
+    <ClCompile Include="ECS\RenderPipelines.cpp" />
     <ClCompile Include="ECS\Systems\RenderSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -84,7 +87,6 @@
     <ClInclude Include="Applications\VKSandbox.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\ComponentTypes.h" />
-    <ClInclude Include="ECS\Components\RenderableComponent.h" />
     <ClInclude Include="ECS\Components\TransformComponent.h" />
     <ClInclude Include="ECS\Entities\Entity.h" />
     <ClInclude Include="Handles\Handle.h" />
@@ -102,9 +104,15 @@
     <ClInclude Include="ECS\SharedComponents\CameraComponent.h" />
     <ClInclude Include="ECS\SharedComponents\SharedComponentType.h" />
     <ClInclude Include="ECS\Systems\CameraSystem.h" />
-    <ClInclude Include="ECS\Systems\PhongRenderSystem.h" />
     <ClInclude Include="Graphics\ShaderConstants.h" />
+    <ClInclude Include="Graphics\Transforms.h" />
+    <ClInclude Include="Graphics\GraphicsIO.h" />
+    <ClInclude Include="ECS\Components\PBRRenderableComponent.h" />
+    <ClInclude Include="ECS\Components\PhongRenderableComponent.h" />
+    <ClInclude Include="ECS\RenderPipelines.h" />
     <ClInclude Include="ECS\Systems\RenderSystem.h" />
+    <ClInclude Include="ECS\Components\RenderableComponent.h" />
+    <ClInclude Include="ECS\Components\RenderableTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

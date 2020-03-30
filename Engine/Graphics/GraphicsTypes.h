@@ -84,7 +84,9 @@ enum class PixelFormat
 {
    BGRA8_UNORM,
    RGBA8_SRGB,
-   D32_SFLOAT,
+   RGBA16F_SFLOAT,
+   RGBA32F_SFLOAT,
+   D32_SFLOAT
 };
 
 enum class ColorSpace
@@ -207,10 +209,10 @@ struct Vertex
 struct ShaderResourceInfo
 {
    bool operator==( const ShaderResourceInfo& other ) const;
-   uint32_t set;
-   uint32_t binding;
-   ShaderStageFlag stages;
    ShaderResourceType type;
+   ShaderStageFlag stages;
+   uint32_t binding;
+   uint32_t set;
 };
 
 struct Attachment

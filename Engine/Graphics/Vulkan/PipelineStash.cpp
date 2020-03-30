@@ -70,7 +70,7 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
       descSetLayoutBinding.stageFlags      = TypeConversions::cydToVkShaderStages( object.stages );
       descSetLayoutBinding.pImmutableSamplers = nullptr;
 
-      descSetLayoutBindings.push_back( std::move( descSetLayoutBinding ) );
+      descSetLayoutBindings.push_back( descSetLayoutBinding );
    }
 
    VkDescriptorSetLayoutCreateInfo layoutInfo = {};
@@ -103,7 +103,7 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
       vkRange.offset              = static_cast<uint32_t>( range.offset );
       vkRange.size                = static_cast<uint32_t>( range.size );
 
-      vkRanges.push_back( std::move( vkRange ) );
+      vkRanges.push_back(  vkRange );
    }
 
    std::vector<VkDescriptorSetLayout> descSetLayouts;

@@ -66,11 +66,11 @@ class CommandBuffer final
 
    // Bindings
    // =============================================================================================
-   void bindVertexBuffer( const Buffer* vertexBuf ) const;
-   void bindIndexBuffer( const Buffer* indexBuf, cyd::IndexType type );
+   void bindVertexBuffer( Buffer* vertexBuf ) const;
+   void bindIndexBuffer( Buffer* indexBuf, cyd::IndexType type ) const;
    void bindPipeline( const cyd::PipelineInfo& info );
-   void bindBuffer( const Buffer* buffer, uint32_t set, uint32_t binding );
-   void bindTexture( const Texture* texture, uint32_t set, uint32_t binding );
+   void bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
+   void bindTexture( Texture* texture, uint32_t set, uint32_t binding );
    void updatePushConstants( const cyd::PushConstantRange& range, const void* pData );
 
    // Render Pass

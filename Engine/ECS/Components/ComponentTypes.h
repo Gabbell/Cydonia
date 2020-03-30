@@ -9,13 +9,16 @@ namespace cyd
 // All entity component types.
 enum class ComponentType : uint8_t
 {
+   // Scene
+   // ==============================================================================================
    TRANSFORM = 0,
-   RENDERABLE,
-   MOTION,
    CAMERA,
    CONTROLLER,
-   POINT_LIGHT,
-   DIRECTIONAL_LIGHT,
+   RENDERABLE,
+
+   // Physics
+   // ==============================================================================================
+   MOTION,
 
    COUNT  // Keep at the end
 };

@@ -24,7 +24,7 @@ class InputSystem final : public CommonSystem<InputComponent>
 {
   public:
    InputSystem() = delete;
-   InputSystem( const Window& window ) : m_window( window ) {}
+   explicit InputSystem( const Window& window ) : m_window( window ) {}
    NON_COPIABLE( InputSystem )
    virtual ~InputSystem() = default;
 

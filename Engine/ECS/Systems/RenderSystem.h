@@ -20,8 +20,12 @@ class RenderSystem final : public CommonSystem<TransformComponent, RenderableCom
    virtual ~RenderSystem() = default;
 
    bool init() override;
-   void uninit() override{};
+   void uninit() override;
 
    void tick( double deltaS ) override;
+
+  private:
+   UniformBufferHandle envVertexBuffer;
+   UniformBufferHandle envFragmentBuffer;
 };
 }

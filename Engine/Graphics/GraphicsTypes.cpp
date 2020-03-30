@@ -50,7 +50,7 @@ bool DescriptorSetLayoutInfo::operator==( const DescriptorSetLayoutInfo& other )
 
 bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const
 {
-   return ranges == other.ranges;
+   return ranges == other.ranges && descSets == other.descSets;
 }
 
 bool PipelineInfo::operator==( const PipelineInfo& other ) const

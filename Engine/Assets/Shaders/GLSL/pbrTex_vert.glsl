@@ -27,18 +27,18 @@ layout( location = 0 ) out vec3 outTexCoord;
 layout( location = 1 ) out vec3 outNormal;
 layout( location = 2 ) out vec3 fragPos;
 
-const float heightModulator = 1.0;
+const float heightModulator = 0.0;
 
 // =================================================================================================
 
 void main()
 {
    fragPos     = vec3( model * vec4( inPosition, 1.0 ) );  // World coordinates
-   vec3 normal = normalize( mat3( model ) * inNormal );
+   vec3 normal = normalize( inNormal );
 
-   // Pulling UP
+   // Applying height map modulation
    float heightValue = texture( heightMap, inTexCoord.xy ).r;
-   fragPos += heightModulator * normal * heightValue;
+   fragPos += ( heightModulator * normal * heightValue );
 
    gl_Position = proj * view * vec4( fragPos, 1.0 );
 

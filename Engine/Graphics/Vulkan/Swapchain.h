@@ -18,6 +18,7 @@ FWDHANDLE( VkFramebuffer );
 FWDHANDLE( VkRenderPass );
 FWDHANDLE( VkSemaphore );
 FWDHANDLE( VkDeviceMemory );
+FWDHANDLE( VkFence );
 struct VkSurfaceFormatKHR;
 struct VkExtent2D;
 enum VkPresentModeKHR;
@@ -41,10 +42,6 @@ class Swapchain final
    NON_COPIABLE( Swapchain )
    ~Swapchain();
 
-   void initFramebuffers( bool hasDepth );
-   void acquireImage( const CommandBuffer* buffer );
-   void present();
-
    // For render pass begin info
    const VkExtent2D& getVKExtent() const { return *m_extent; }
    VkFramebuffer getCurrentFramebuffer() const { return m_frameBuffers[m_currentFrame]; }
@@ -55,6 +52,10 @@ class Swapchain final
    const VkSemaphore& getSemToWait() const noexcept { return m_availableSems[m_currentFrame]; }
    const VkSemaphore& getSemToSignal() const noexcept { return m_renderDoneSems[m_currentFrame]; }
 
+   void initFramebuffers( bool wantDepth );
+   void acquireImage();
+   void present();
+
   private:
    void _createSwapchain( const cyd::SwapchainInfo& info );
    void _createImageViews();
@@ -64,6 +65,7 @@ class Swapchain final
    // Used to create the swapchain
    Device& m_device;
    const Surface& m_surface;
+   cyd::SwapchainInfo m_info;
 
    bool m_hasDepth = false;
    cyd::Attachment m_colorPresentation;
@@ -74,7 +76,9 @@ class Swapchain final
    uint32_t m_imageIndex = 0;
    std::vector<VkImageView> m_imageViews;
    std::vector<VkImage> m_images;
+
    std::vector<VkFramebuffer> m_frameBuffers;
+   
    VkImageView m_depthImageView;
    VkImage m_depthImage;
    VkDeviceMemory m_depthImageMemory;
@@ -82,7 +86,6 @@ class Swapchain final
    uint32_t m_currentFrame = 0;
    std::vector<VkSemaphore> m_availableSems;
    std::vector<VkSemaphore> m_renderDoneSems;
-   const CommandBuffer* m_inFlightCmdBuffer = nullptr;
 
    VkSwapchainKHR m_vkSwapchain = nullptr;
 

@@ -66,12 +66,17 @@ class VKRenderBackend final : public RenderBackend
 
    // Resources
    // ==============================================================================================
+   TextureHandle createTexture( const TextureDescription& desc ) override;
+
+   TextureHandle createTexture(
+       CmdListHandle transferList,
+       const TextureDescription& desc,
+       const std::string& path ) override;
+
    TextureHandle createTexture(
        CmdListHandle transferList,
        const TextureDescription& desc,
        const void* pTexels ) override;
-
-   TextureHandle createTexture( const TextureDescription& desc ) override;
 
    VertexBufferHandle createVertexBuffer(
        CmdListHandle transferList,
@@ -96,7 +101,8 @@ class VKRenderBackend final : public RenderBackend
 
    // Drawing
    // ==============================================================================================
-   void beginRenderSwapchain( CmdListHandle cmdList, bool hasDepth ) override;
+   void prepareFrame() override;
+   void beginRenderSwapchain( CmdListHandle cmdList, bool wantDepth ) override;
    void beginRenderTargets(
        CmdListHandle cmdList,
        const RenderPassInfo& renderPassInfo,

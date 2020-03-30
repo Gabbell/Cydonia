@@ -28,7 +28,7 @@ const float specularStrength = 0.5;
 
 vec3 calcLightContribution( int index, vec3 normal )
 {
-   vec3 lightColor = vec3( lightColors[index] );
+   vec3 lightColor = vec3( lightColors[index] ) / 255.0;
 
    // Ambient
    vec3 ambient = ambientStrength * lightColor;

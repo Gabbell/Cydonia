@@ -2,51 +2,40 @@
 
 #include <ECS/Components/BaseComponent.h>
 
-#include <ECS/Components/ComponentTypes.h>
-
 #include <Handles/Handle.h>
+
+#include <ECS/Components/ComponentTypes.h>
+#include <ECS/Components/RenderableTypes.h>
 
 #include <vector>
 #include <string>
 
+/*
+This class is the base class for different types of renderables. You must inherit from this class
+for the render system to be able to see the entity. This component is also abstract so you cannot
+create entities with it. You need to use a renderable component with a pipeline attached (Phong,
+PBR, etc.)
+*/
 namespace cyd
 {
-struct Vertex;
-
-class RenderableComponent final : public BaseComponent
+class RenderableComponent : public BaseComponent
 {
   public:
-   RenderableComponent() = default;
-
-   // For Phong renderables with vertex data
-   RenderableComponent( const std::vector<Vertex>& vertices );
-
-   // For Phong renderables with a persistent mesh
-   RenderableComponent( const std::string& meshPath );
-
-   // For PBR renderables
-   RenderableComponent( const std::string& meshPath, const std::string& pbrPath );
-
-   COPIABLE( RenderableComponent );
-
+   COPIABLE( RenderableComponent )
    virtual ~RenderableComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
-   bool init() override { return true; }
-   void uninit() override;
+   RenderableType type = RenderableType::UNKNOWN;
 
    // TODO Duplicate renderable data like mesh or textures should point to the same handle
    VertexBufferHandle vertexBuffer;
    IndexBufferHandle indexBuffer;
-   uint32_t indexCount;
-   uint32_t vertexCount;
+   uint32_t indexCount  = 0;
+   uint32_t vertexCount = 0;
 
-   TextureHandle albedo;
-   TextureHandle normalMap;
-   TextureHandle metallicMap;
-   TextureHandle roughnessMap;
-   TextureHandle ambientOcclusionMap;
-   TextureHandle heightMap;
+  protected:
+   RenderableComponent() = default;
+   RenderableComponent( RenderableType aType ) : type( aType ) {}
 };
 }

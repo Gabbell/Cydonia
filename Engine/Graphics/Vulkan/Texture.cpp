@@ -17,33 +17,38 @@ void Texture::acquire( const Device& device, const cyd::TextureDescription& desc
    m_type    = desc.type;
    m_format  = desc.format;
    m_usage   = desc.usage;
-   m_inUse   = true;
 
    _createImage();
    _allocateMemory();
    _createImageView();
+
+   CYDASSERT(
+       m_useCount == 0 &&
+       "Texture: Texture use count not 0. This texture was probably not released" );
+
+   m_useCount = 1;
 }
 
 void Texture::release()
 {
    if( m_pDevice )
    {
-      m_size   = 0;
-      m_width  = 0;
-      m_height = 0;
-      m_type   = cyd::ImageType::TEXTURE_2D;
-      m_format = cyd::PixelFormat::RGBA8_SRGB;
-      m_usage  = 0;
-      m_inUse  = false;
-
       vkDestroyImageView( m_pDevice->getVKDevice(), m_vkImageView, nullptr );
       vkDestroyImage( m_pDevice->getVKDevice(), m_vkImage, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
+      m_size        = 0;
+      m_width       = 0;
+      m_height      = 0;
+      m_type        = cyd::ImageType::TEXTURE_2D;
+      m_format      = cyd::PixelFormat::RGBA8_SRGB;
+      m_usage       = 0;
       m_pDevice     = nullptr;
       m_vkImageView = nullptr;
       m_vkImage     = nullptr;
       m_vkMemory    = nullptr;
+
+      m_useCount = 0;
    }
 }
 

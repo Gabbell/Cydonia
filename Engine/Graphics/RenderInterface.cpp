@@ -108,13 +108,20 @@ void UpdateConstantBuffer(
 // =================================================================================================
 // Resources
 //
+TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
+
+TextureHandle
+CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const std::string& path )
+{
+   return b->createTexture( transferList, desc, path );
+}
+
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
 {
    return b->createTexture( transferList, desc, pTexels );
 }
 
-TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
 
 VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
@@ -159,9 +166,11 @@ void DestroyUniformBuffer( UniformBufferHandle bufferHandle )
 // =================================================================================================
 // Drawing
 //
-void BeginRenderPassSwapchain( CmdListHandle cmdList, bool hasDepth )
+void PrepareFrame() { b->prepareFrame(); }
+
+void BeginRenderPassSwapchain( CmdListHandle cmdList, bool wantDepth )
 {
-   b->beginRenderSwapchain( cmdList, hasDepth );
+   b->beginRenderSwapchain( cmdList, wantDepth );
 }
 
 void BeginRenderPassTargets(

@@ -55,9 +55,13 @@ void UpdateConstantBuffer(
     const void* pData );
 
 // Resources
+TextureHandle CreateTexture( const TextureDescription& desc );
+TextureHandle CreateTexture(
+    CmdListHandle transferList,
+    const TextureDescription& desc,
+    const std::string& path );
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels );
-TextureHandle CreateTexture( const TextureDescription& desc );
 VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
     uint32_t count,
@@ -78,7 +82,8 @@ void DestroyIndexBuffer( IndexBufferHandle bufferHandle );
 void DestroyUniformBuffer( UniformBufferHandle bufferHandle );
 
 // Drawing
-void BeginRenderPassSwapchain( CmdListHandle cmdList, bool hasDepth = false );
+void PrepareFrame();
+void BeginRenderPassSwapchain( CmdListHandle cmdList, bool wantDepth = false );
 void BeginRenderPassTargets(
     CmdListHandle cmdList,
     const RenderPassInfo& renderPassInfo,

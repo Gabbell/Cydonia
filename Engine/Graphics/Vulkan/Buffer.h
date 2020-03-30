@@ -37,11 +37,12 @@ class Buffer final
 
    size_t getSize() const noexcept { return m_size; }
    VkBuffer getVKBuffer() const noexcept { return m_vkBuffer; }
-   bool inUse() const { return m_inUse; }
+   bool inUse() const { return m_useCount > 0; }
 
-   void setUnused() { m_inUse = false; }
+   void incUse() { m_useCount++; }
+   void decUse() { m_useCount--; }
 
-   void copy( const void* pData, size_t offset, size_t side );
+   void copy( const void* pData, size_t offset, size_t size );
 
   private:
    void _mapMemory();
@@ -58,7 +59,7 @@ class Buffer final
    VkBuffer m_vkBuffer       = nullptr;
    VkDeviceMemory m_vkMemory = nullptr;
    cyd::MemoryTypeFlag m_memoryType;
-   
-   bool m_inUse = false;
+
+   uint32_t m_useCount = 0;
 };
 }

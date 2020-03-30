@@ -345,7 +345,7 @@ void Swapchain::initFramebuffers( bool hasDepth )
    }
 }
 
-void Swapchain::acquireImage( const CommandBuffer* buffer )
+void Swapchain::acquireImage()
 {
    vkAcquireNextImageKHR(
        m_device.getVKDevice(),
@@ -354,8 +354,6 @@ void Swapchain::acquireImage( const CommandBuffer* buffer )
        m_availableSems[m_currentFrame],
        VK_NULL_HANDLE,
        &m_imageIndex );
-
-   m_inFlightCmdBuffer = buffer;
 }
 
 void Swapchain::present()
