@@ -9,7 +9,7 @@
 // ================================================================================================
 // Forwards
 // ================================================================================================
-namespace cyd
+namespace CYD
 {
 class Entity;
 }
@@ -17,7 +17,7 @@ class Entity;
 // ================================================================================================
 // Definition
 // ================================================================================================
-namespace cyd
+namespace CYD
 {
 class BaseSystem
 {
@@ -72,9 +72,9 @@ class CommonSystem : public BaseSystem
       }
    }
 
-   void onEntityUnassigned( const Entity& /*entity*/ ) override final
+   void onEntityUnassigned( const Entity& entity ) override final
    {
-      //
+      m_components.erase( entity.getHandle() );
    }
 
   protected:

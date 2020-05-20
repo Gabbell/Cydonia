@@ -15,7 +15,7 @@ RenderPassStash::RenderPassStash( const Device& device ) : m_device( device )
    _createDefaultRenderPasses();
 }
 
-VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
+VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderPassInfo& info )
 {
    // Find
    const auto it = m_renderPasses.find( info );
@@ -43,7 +43,7 @@ VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
 
       switch( attachment.type )
       {
-         case cyd::AttachmentType::COLOR_PRESENTATION:
+         case CYD::AttachmentType::COLOR_PRESENTATION:
          {
             VkAttachmentReference presentationAttachmentRef = {};
             presentationAttachmentRef.attachment            = 0;
@@ -54,7 +54,7 @@ VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
             break;
          }
-         case cyd::AttachmentType::COLOR:
+         case CYD::AttachmentType::COLOR:
          {
             VkAttachmentReference colorAttachmentRef = {};
             colorAttachmentRef.attachment            = 0;
@@ -65,7 +65,7 @@ VkRenderPass RenderPassStash::findOrCreate( const cyd::RenderPassInfo& info )
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
             break;
          }
-         case cyd::AttachmentType::DEPTH_STENCIL:
+         case CYD::AttachmentType::DEPTH_STENCIL:
          {
             VkAttachmentReference depthAttachmentRef = {};
             depthAttachmentRef.attachment            = 1;

@@ -13,7 +13,7 @@
 namespace vk
 {
 DeviceHerder::DeviceHerder(
-    const cyd::Window& window,
+    const CYD::Window& window,
     const Instance& instance,
     const Surface& surface )
     : m_instance( instance ), m_window( window ), m_surface( surface )

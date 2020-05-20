@@ -1,11 +1,9 @@
-#include <Applications/VKSandbox.h>
+#include <Applications/VKOceanDemo.h>
 
 int main()
 {
    {
-      cyd::VKSandbox app;
-
-      app.init( 1920, 1080, "VKSandbox" );
+      CYD::VKOceanDemo app( 1920, 1080, "GARBAGIO" );
       app.startLoop();
    }
 

@@ -27,13 +27,13 @@ class RenderPassStash final
    explicit RenderPassStash( const Device& device );
    ~RenderPassStash();
 
-   VkRenderPass findOrCreate( const cyd::RenderPassInfo& info );
+   VkRenderPass findOrCreate( const CYD::RenderPassInfo& info );
 
   private:
    void _createDefaultRenderPasses();
 
    const Device& m_device;
 
-   std::unordered_map<cyd::RenderPassInfo, VkRenderPass> m_renderPasses;
+   std::unordered_map<CYD::RenderPassInfo, VkRenderPass> m_renderPasses;
 };
 }

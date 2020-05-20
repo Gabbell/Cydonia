@@ -124,7 +124,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -148,7 +148,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -169,24 +169,33 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Applications\Application.cpp" />
+    <ClCompile Include="Applications\VKOceanDemo.cpp" />
     <ClCompile Include="Applications\VKSandbox.cpp" />
-    <ClCompile Include="ECS\Components\PBRRenderableComponent.cpp" />
-    <ClCompile Include="ECS\Components\PhongRenderableComponent.cpp" />
-    <ClCompile Include="ECS\ECS.cpp" />
+    <ClCompile Include="Applications\VKShaderViewer.cpp" />
+    <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
+    <ClCompile Include="ECS\Components\Rendering\MeshComponent.cpp" />
+    <ClCompile Include="ECS\Components\Rendering\PBRRenderableComponent.cpp" />
+    <ClCompile Include="ECS\Components\Rendering\PhongRenderableComponent.cpp" />
+    <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="ECS\RenderPipelines.cpp" />
-    <ClCompile Include="ECS\Systems\CameraSystem.cpp" />
-    <ClCompile Include="ECS\Systems\InputSystem.cpp" />
-    <ClCompile Include="ECS\Systems\MovementSystem.cpp" />
-    <ClCompile Include="ECS\Systems\PlayerMoveSystem.cpp" />
-    <ClCompile Include="ECS\Systems\RenderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Input\InputSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Physics\MovementSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Physics\PlayerMoveSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Procedural\FFTOceanSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\RenderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Scene\CameraSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Scene\LightSystem.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
     <ClCompile Include="Graphics\GraphicsIO.cpp" />
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
+    <ClCompile Include="Graphics\MeshGeneration.cpp" />
+    <ClCompile Include="Graphics\Pipelines.cpp" />
     <ClCompile Include="Graphics\RenderInterface.cpp" />
     <ClCompile Include="Graphics\Scene\Frustum.cpp" />
     <ClCompile Include="Graphics\ShaderConstants.cpp" />
     <ClCompile Include="Graphics\Transforms.cpp" />
+    <ClCompile Include="Graphics\Vulkan\BarriersHelper.cpp" />
     <ClCompile Include="Graphics\Vulkan\Buffer.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandPool.cpp" />
@@ -208,42 +217,63 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Applications\Application.h" />
+    <ClInclude Include="Applications\VKOceanDemo.h" />
     <ClInclude Include="Applications\VKSandbox.h" />
+    <ClInclude Include="Applications\VKShaderViewer.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Common\Include.h" />
     <ClInclude Include="Common\Vulkan.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
-    <ClInclude Include="ECS\Components\MotionComponent.h" />
-    <ClInclude Include="ECS\Components\PBRRenderableComponent.h" />
-    <ClInclude Include="ECS\Components\PhongRenderableComponent.h" />
-    <ClInclude Include="ECS\Components\RenderableComponent.h" />
-    <ClInclude Include="ECS\Components\RenderableTypes.h" />
-    <ClInclude Include="ECS\ECS.h" />
+    <ClInclude Include="ECS\Components\DirectionalLightComponent.h" />
+    <ClInclude Include="ECS\Components\LightComponent.h" />
+    <ClInclude Include="ECS\Components\Lights\DirectionalLightComponent.h" />
+    <ClInclude Include="ECS\Components\Lights\LightComponent.h" />
+    <ClInclude Include="ECS\Components\Lights\LightTypes.h" />
+    <ClInclude Include="ECS\Components\Lights\PointLightComponent.h" />
+    <ClInclude Include="ECS\Components\LightTypes.h" />
+    <ClInclude Include="ECS\Components\Physics\MotionComponent.h" />
+    <ClInclude Include="ECS\Components\Procedural\FFTOceanComponent.h" />
+    <ClInclude Include="ECS\Components\Renderables\RenderableTypes.h" />
+    <ClInclude Include="ECS\Components\Rendering\CustomRenderableComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\MeshComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\PBRRenderableComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\PhongRenderableComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\RenderableComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\RenderableTypes.h" />
+    <ClInclude Include="ECS\Components\Transforms\TransformComponent.h" />
+    <ClInclude Include="ECS\EntityManager.h" />
     <ClInclude Include="ECS\Components\ComponentPool.h" />
     <ClInclude Include="ECS\Components\ComponentTypes.h" />
-    <ClInclude Include="ECS\Components\TransformComponent.h" />
     <ClInclude Include="ECS\Entities\Entity.h" />
     <ClInclude Include="ECS\Entity.h" />
     <ClInclude Include="ECS\RenderPipelines.h" />
     <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
     <ClInclude Include="ECS\SharedComponents\CameraComponent.h" />
     <ClInclude Include="ECS\SharedComponents\InputComponent.h" />
+    <ClInclude Include="ECS\SharedComponents\SceneComponent.h" />
     <ClInclude Include="ECS\SharedComponents\SharedComponentType.h" />
     <ClInclude Include="ECS\Systems\CameraSystem.h" />
     <ClInclude Include="ECS\Systems\CommonSystem.h" />
-    <ClInclude Include="ECS\Systems\InputSystem.h" />
-    <ClInclude Include="ECS\Systems\MovementSystem.h" />
-    <ClInclude Include="ECS\Systems\PlayerMoveSystem.h" />
-    <ClInclude Include="ECS\Systems\RenderSystem.h" />
+    <ClInclude Include="ECS\Systems\Input\InputSystem.h" />
+    <ClInclude Include="ECS\Systems\LightSystem.h" />
+    <ClInclude Include="ECS\Systems\Physics\MovementSystem.h" />
+    <ClInclude Include="ECS\Systems\Physics\PlayerMoveSystem.h" />
+    <ClInclude Include="ECS\Systems\Procedural\FFTOceanSystem.h" />
+    <ClInclude Include="ECS\Systems\Rendering\RenderSystem.h" />
+    <ClInclude Include="ECS\Systems\Scene\CameraSystem.h" />
+    <ClInclude Include="ECS\Systems\Scene\LightSystem.h" />
     <ClInclude Include="Graphics\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
     <ClInclude Include="Graphics\Buffer.h" />
     <ClInclude Include="Graphics\GraphicsIO.h" />
     <ClInclude Include="Graphics\GraphicsTypes.h" />
+    <ClInclude Include="Graphics\MeshGeneration.h" />
+    <ClInclude Include="Graphics\Pipelines.h" />
     <ClInclude Include="Graphics\RenderInterface.h" />
     <ClInclude Include="Graphics\Scene\Frustum.h" />
     <ClInclude Include="Graphics\ShaderConstants.h" />
     <ClInclude Include="Graphics\Transforms.h" />
+    <ClInclude Include="Graphics\Vulkan\BarriersHelper.h" />
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandPool.h" />

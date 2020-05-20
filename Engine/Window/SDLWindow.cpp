@@ -16,7 +16,7 @@ static void handleSDLError()
    CYDASSERT( !error );
 }
 
-bool cyd::Window::init( uint32_t width, uint32_t height, const std::string& title )
+bool CYD::Window::init( uint32_t width, uint32_t height, const std::string& title )
 {
    m_extent = {width, height};
 
@@ -65,10 +65,10 @@ bool cyd::Window::init( uint32_t width, uint32_t height, const std::string& titl
        linkedVersion.patch );
 }
 
-bool cyd::Window::uninit()
+bool CYD::Window::uninit()
 {
    SDL_DestroyWindow( m_sdlWindow );
    SDL_Quit();
 }
 
-cyd::Window::~Window() { uninit(); }
+CYD::Window::~Window() { uninit(); }

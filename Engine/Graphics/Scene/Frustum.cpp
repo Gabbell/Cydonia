@@ -1,6 +1,6 @@
 #include <Graphics/Scene/Frustum.h>
 
-namespace cyd
+namespace CYD
 {
 Frustum::Frustum() {}
 }

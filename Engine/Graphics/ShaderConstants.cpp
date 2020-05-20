@@ -2,7 +2,7 @@
 
 #include <algorithm>
 
-namespace cyd
+namespace CYD
 {
 const ShaderConstants::Entry* ShaderConstants::getEntry( const std::string& shaderName ) const
 {

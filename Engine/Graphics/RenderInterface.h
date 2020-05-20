@@ -7,9 +7,11 @@
 // =================================================================================================
 // Graphics Rendering Interface Subsystem
 // =================================================================================================
-namespace cyd
+namespace CYD
 {
 class Window;
+struct GraphicsPipelineInfo;
+struct ComputePipelineInfo;
 
 enum API
 {
@@ -37,14 +39,17 @@ void DestroyCommandList( CmdListHandle cmdList );
 
 // Pipeline Specification
 void SetViewport( CmdListHandle cmdList, const Rectangle& viewport );
-void BindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo );
+void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo );
+void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo );
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
 template <class T>
 void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding );
+void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding );
+void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, uint32_t set, uint32_t binding );
 void BindUniformBuffer(
     CmdListHandle cmdList,
-    UniformBufferHandle bufferHandle,
+    BufferHandle bufferHandle,
     uint32_t set,
     uint32_t binding );
 void UpdateConstantBuffer(
@@ -55,7 +60,7 @@ void UpdateConstantBuffer(
     const void* pData );
 
 // Resources
-TextureHandle CreateTexture( const TextureDescription& desc );
+TextureHandle CreateTexture( CmdListHandle transferList, const TextureDescription& desc );
 TextureHandle CreateTexture(
     CmdListHandle transferList,
     const TextureDescription& desc,
@@ -69,9 +74,9 @@ VertexBufferHandle CreateVertexBuffer(
     const void* pVertices );
 IndexBufferHandle
 CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices );
-UniformBufferHandle CreateUniformBuffer( size_t size );
+BufferHandle CreateUniformBuffer( size_t size );
 void CopyToUniformBuffer(
-    UniformBufferHandle bufferHandle,
+    BufferHandle bufferHandle,
     const void* pData,
     size_t offset,
     size_t size );
@@ -79,7 +84,7 @@ void CopyToUniformBuffer(
 void DestroyTexture( TextureHandle texHandle );
 void DestroyVertexBuffer( VertexBufferHandle bufferHandle );
 void DestroyIndexBuffer( IndexBufferHandle bufferHandle );
-void DestroyUniformBuffer( UniformBufferHandle bufferHandle );
+void DestroyUniformBuffer( BufferHandle bufferHandle );
 
 // Drawing
 void PrepareFrame();
@@ -91,6 +96,7 @@ void BeginRenderPassTargets(
 void EndRenderPass( CmdListHandle cmdList );
 void DrawVertices( CmdListHandle cmdList, uint32_t vertexCount );
 void DrawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount );
+void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
 void PresentFrame();
 }
 }

@@ -16,7 +16,7 @@ FWDHANDLE( VkDevice );
 FWDHANDLE( VkPhysicalDevice );
 struct VkPhysicalDeviceProperties;
 
-namespace cyd
+namespace CYD
 {
 class Window;
 struct TextureDescription;
@@ -46,7 +46,7 @@ class Device final
 {
   public:
    Device(
-       const cyd::Window& window,
+       const CYD::Window& window,
        const Instance& instance,
        const Surface& surface,
        const VkPhysicalDevice& physDevice,
@@ -55,15 +55,15 @@ class Device final
 
    // Interface
    // =============================================================================================
-   Swapchain* createSwapchain( const cyd::SwapchainInfo& scInfo );
-   CommandBuffer* createCommandBuffer( cyd::QueueUsageFlag usage, bool presentable = false );
+   Swapchain* createSwapchain( const CYD::SwapchainInfo& scInfo );
+   CommandBuffer* createCommandBuffer( CYD::QueueUsageFlag usage, bool presentable = false );
 
    // Buffer creation function
    Buffer* createVertexBuffer( size_t size );
    Buffer* createIndexBuffer( size_t size );
    Buffer* createStagingBuffer( size_t size );
    Buffer* createUniformBuffer( size_t size );
-   Texture* createTexture( const cyd::TextureDescription& desc );
+   Texture* createTexture( const CYD::TextureDescription& desc );
 
    void cleanup();  // Clean up unused resources
 
@@ -71,7 +71,7 @@ class Device final
    const VkPhysicalDevice& getPhysicalDevice() const noexcept { return m_physDevice; }
    const VkDevice& getVKDevice() const noexcept { return m_vkDevice; }
    const VkQueue* getQueueFromFamily( uint32_t familyIndex ) const;
-   const VkQueue* getQueueFromUsage( cyd::QueueUsageFlag usage, bool supportsPresentation = false )
+   const VkQueue* getQueueFromUsage( CYD::QueueUsageFlag usage, bool supportsPresentation = false )
        const;
 
    Swapchain* getSwapchain() const { return m_swapchain.get(); }
@@ -97,13 +97,13 @@ class Device final
    void _createDescriptorPool();
 
    // Common buffer function
-   Buffer* _createBuffer( size_t size, cyd::BufferUsageFlag usage, cyd::MemoryTypeFlag memoryType );
+   Buffer* _createBuffer( size_t size, CYD::BufferUsageFlag usage, CYD::MemoryTypeFlag memoryType );
    void _destroyBuffer( Buffer* buffer );
 
    // =============================================================================================
    // Private Members
    // =============================================================================================
-   const cyd::Window& m_window;
+   const CYD::Window& m_window;
 
    const Instance& m_instance;
    const Surface& m_surface;
@@ -123,7 +123,7 @@ class Device final
       std::vector<VkQueue> queues;
       uint32_t index           = 0;
       uint32_t queueCount      = 0;
-      cyd::QueueUsageFlag type = 0;
+      CYD::QueueUsageFlag type = 0;
       bool supportsPresent     = false;
    };
    std::vector<QueueFamily> m_queueFamilies;

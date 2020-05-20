@@ -7,7 +7,7 @@
 // ================================================================================================
 // Definition
 // ================================================================================================
-namespace cyd
+namespace CYD
 {
 class BaseComponent;
 }
@@ -15,13 +15,15 @@ class BaseComponent;
 // ================================================================================================
 // Definition
 // ================================================================================================
-namespace cyd
+namespace CYD
 {
 class BaseComponentPool
 {
   public:
    NON_COPIABLE( BaseComponentPool )
    virtual ~BaseComponentPool() = default;
+
+   virtual void releaseComponent( int32_t poolIdx ) = 0;
 
   protected:
    BaseComponentPool() = default;
@@ -32,14 +34,9 @@ class ComponentPool final : public BaseComponentPool
 {
   public:
    ComponentPool() = default;
+
    NON_COPIABLE( ComponentPool )
-   virtual ~ComponentPool()
-   {
-      for( auto& component : m_components )
-      {
-         component.uninit();
-      }
-   }
+   virtual ~ComponentPool() = default;
 
    static constexpr size_t INVALID_POOL_IDX = std::numeric_limits<size_t>::max();
 
@@ -53,8 +50,9 @@ class ComponentPool final : public BaseComponentPool
          if( !m_slots[i] )
          {
             // A free slot was found
-            m_components[i] = Component( std::forward<Args>( args )... );
-            m_components[i].init();
+            m_components[i].init( std::forward<Args>( args )... );
+
+            m_components[i].setPoolIndex( i );
 
             m_slots[i] = true;
             return &m_components[i];
@@ -65,9 +63,13 @@ class ComponentPool final : public BaseComponentPool
       return nullptr;
    }
 
-   void releaseComponent()
+   void releaseComponent( int32_t poolIdx ) override
    {
-      //
+      CYDASSERT( poolIdx >= 0 && "ComponentPool: Trying to release an invalid component" );
+
+      m_components[poolIdx].uninit();
+
+      m_slots[poolIdx] = false;  // Freeing slot
    }
 
   private:

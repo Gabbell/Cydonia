@@ -3,6 +3,8 @@
 #include <Common/Assert.h>
 #include <Common/Vulkan.h>
 
+
+#include <Graphics/Pipelines.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
 
@@ -13,7 +15,7 @@ namespace vk
 CommandPool::CommandPool(
     const Device& device,
     uint32_t familyIndex,
-    cyd::QueueUsageFlag type,
+    CYD::QueueUsageFlag type,
     bool supportsPresentation )
     : m_pDevice( &device ),
       m_type( type ),
@@ -38,7 +40,7 @@ void CommandPool::_createCommandPool()
    CYDASSERT( result == VK_SUCCESS && "CommandPool: Could not create command pool" );
 }
 
-CommandBuffer* CommandPool::createCommandBuffer()
+CommandBuffer* CommandPool::createCommandBuffer( CYD::QueueUsageFlag usage )
 {
    // Check to see if we have a free spot for a command buffer. Either one that has never been
    // allocated (no VK command buffer handle) or one that is completed.
@@ -51,7 +53,7 @@ CommandBuffer* CommandPool::createCommandBuffer()
    {
       // We found a completed command buffer that can be replaced
       it->release();
-      it->acquire( *m_pDevice, *this, m_type );
+      it->acquire( *m_pDevice, *this, usage );
       return &*it;
    }
 

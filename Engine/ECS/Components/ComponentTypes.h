@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace cyd
+namespace CYD
 {
 // TODO Make these available at the game layer. Should be able to create custom components
 
@@ -14,7 +14,10 @@ enum class ComponentType : uint8_t
    TRANSFORM = 0,
    CAMERA,
    CONTROLLER,
+   MESH,
    RENDERABLE,
+   LIGHT,
+   OCEAN,
 
    // Physics
    // ==============================================================================================

@@ -3,6 +3,8 @@
 #include <Common/Assert.h>
 #include <Common/Vulkan.h>
 
+#include <Graphics/Pipelines.h>
+
 #include <Graphics/Vulkan/CommandPool.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/PipelineStash.h>
@@ -18,10 +20,12 @@
 
 namespace vk
 {
+static constexpr uint32_t INITIAL_RESOURCE_TO_UPDATE_COUNT = 32;
+
 void CommandBuffer::acquire(
     const Device& device,
     const CommandPool& pool,
-    cyd::QueueUsageFlag usage )
+    CYD::QueueUsageFlag usage )
 {
    m_pDevice = &device;
    m_pPool   = &pool;
@@ -42,6 +46,9 @@ void CommandBuffer::acquire(
 
    result = vkCreateFence( m_pDevice->getVKDevice(), &fenceInfo, nullptr, &m_vkFence );
    CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create fence" );
+
+   m_buffersToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
+   m_texturesToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
 }
 
 void CommandBuffer::release()
@@ -143,7 +150,7 @@ void CommandBuffer::reset()
    m_descSets.clear();
 }
 
-void CommandBuffer::updatePushConstants( const cyd::PushConstantRange& range, const void* pData )
+void CommandBuffer::updatePushConstants( const CYD::PushConstantRange& range, const void* pData )
 {
    CYDASSERT( m_boundPipLayout.has_value() && "CommandBuffer: No currently bound pipeline layout" );
 
@@ -156,7 +163,7 @@ void CommandBuffer::updatePushConstants( const cyd::PushConstantRange& range, co
        pData );
 }
 
-void CommandBuffer::bindPipeline( const cyd::PipelineInfo& info )
+void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
 {
    CYDASSERT(
        m_boundRenderPass.has_value() &&
@@ -174,19 +181,35 @@ void CommandBuffer::bindPipeline( const cyd::PipelineInfo& info )
    vkCmdBindPipeline( m_vkCmdBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pipeline );
    m_boundPip       = pipeline;
    m_boundPipLayout = pipLayout;
-   m_boundPipInfo   = std::make_unique<cyd::PipelineInfo>( info );
+   m_boundPipInfo   = std::make_unique<CYD::GraphicsPipelineInfo>( info );
+}
+
+void CommandBuffer::bindPipeline( const CYD::ComputePipelineInfo& info )
+{
+   VkPipeline pipeline = m_pDevice->getPipelineStash().findOrCreate( info );
+
+   VkPipelineLayout pipLayout = m_pDevice->getPipelineStash().findOrCreate( info.pipLayout );
+
+   CYDASSERT(
+       pipeline && pipLayout &&
+       "CommandBuffer: Could not find or create pipeline in pipeline stash" );
+
+   vkCmdBindPipeline( m_vkCmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline );
+   m_boundPip       = pipeline;
+   m_boundPipLayout = pipLayout;
+   m_boundPipInfo   = std::make_unique<CYD::ComputePipelineInfo>( info );
 }
 
 void CommandBuffer::bindVertexBuffer( Buffer* vertexBuffer ) const
 {
-   VkBuffer vertexBuffers[] = {vertexBuffer->getVKBuffer()};
-   VkDeviceSize offsets[]   = {0};
+   VkBuffer vertexBuffers[] = { vertexBuffer->getVKBuffer() };
+   VkDeviceSize offsets[]   = { 0 };
    vkCmdBindVertexBuffers( m_vkCmdBuffer, 0, 1, vertexBuffers, offsets );
 
    vertexBuffer->incUse();
 }
 
-void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, cyd::IndexType type ) const
+void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, CYD::IndexType type ) const
 {
    vkCmdBindIndexBuffer(
        m_vkCmdBuffer, indexBuffer->getVKBuffer(), 0, TypeConversions::cydToVkIndexType( type ) );
@@ -197,7 +220,15 @@ void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, cyd::IndexType type ) 
 void CommandBuffer::bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
 {
    // Will need to update this buffer's descriptor set before next draw
-   m_buffersToUpdate.emplace_back( buffer, set, binding );
+   m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::STORAGE, set, binding );
+
+   buffer->incUse();
+}
+
+void CommandBuffer::bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
+{
+   // Will need to update this buffer's descriptor set before next draw
+   m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::UNIFORM, set, binding );
 
    buffer->incUse();
 }
@@ -205,15 +236,25 @@ void CommandBuffer::bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
 void CommandBuffer::bindTexture( Texture* texture, uint32_t set, uint32_t binding )
 {
    // Will need to update this texture's descriptor set before next draw
-   m_texturesToUpdate.emplace_back( texture, set, binding );
+   m_texturesToUpdate.emplace_back(
+       texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, set, binding );
 
    texture->incUse();
 }
 
-void CommandBuffer::setViewport( const cyd::Rectangle& viewport ) const
+void CommandBuffer::bindImage( Texture* texture, uint32_t set, uint32_t binding )
+{
+   // Will need to update this image descriptor set before next draw
+   m_texturesToUpdate.emplace_back( texture, CYD::ShaderResourceType::STORAGE_IMAGE, set, binding );
+
+   // TODO Eventually we will need more info when binding an image (level for mipmaps for example)
+   texture->incUse();
+}
+
+void CommandBuffer::setViewport( const CYD::Rectangle& viewport ) const
 {
    VkViewport vkViewport = {
-       viewport.offsetX, viewport.offsetY, viewport.width, viewport.height, 0.0f, 1.0f};
+       viewport.offsetX, viewport.offsetY, viewport.width, viewport.height, 0.0f, 1.0f };
    vkCmdSetViewport( m_vkCmdBuffer, 0, 1, &vkViewport );
 }
 
@@ -234,12 +275,12 @@ void CommandBuffer::beginPass( Swapchain& swapchain, bool hasDepth )
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass.value();
    passBeginInfo.framebuffer           = swapchain.getCurrentFramebuffer();
-   passBeginInfo.renderArea.offset     = {0, 0};
+   passBeginInfo.renderArea.offset     = { 0, 0 };
    passBeginInfo.renderArea.extent     = swapchain.getVKExtent();
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = {0.0f, 0.0f, 0.0f, 1.0f};
-   clearValues[1]                          = {1.0f, 0};
+   clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
+   clearValues[1]                          = { 1.0f, 0 };
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -248,7 +289,7 @@ void CommandBuffer::beginPass( Swapchain& swapchain, bool hasDepth )
 }
 
 void CommandBuffer::beginPass(
-    const cyd::RenderPassInfo& renderPassInfo,
+    const CYD::RenderPassInfo& renderPassInfo,
     const std::vector<const Texture*>& textures )
 {
    VkRenderPass renderPass = m_pDevice->getRenderPassStash().findOrCreate( renderPassInfo );
@@ -296,12 +337,12 @@ void CommandBuffer::beginPass(
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass.value();
    passBeginInfo.framebuffer           = vkFramebuffer;
-   passBeginInfo.renderArea.offset     = {0, 0};
-   passBeginInfo.renderArea.extent     = {commonWidth, commonHeight};
+   passBeginInfo.renderArea.offset     = { 0, 0 };
+   passBeginInfo.renderArea.extent     = { commonWidth, commonHeight };
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = {0.0f, 0.0f, 0.0f, 1.0f};
-   clearValues[1]                          = {1.0f, 0};
+   clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
+   clearValues[1]                          = { 1.0f, 0 };
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -321,16 +362,16 @@ VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t
    }
 
    // Adding this descriptor set to the list of all tracked descriptor set in this command buffer
-   VkDescriptorSet vkDescSet =
+   const VkDescriptorSet vkDescSet =
        m_pDevice->getDescriptorPool().allocate( m_boundPipInfo->pipLayout.descSets[set] );
 
-   m_descSets.push_back( {set, vkDescSet} );
+   m_descSets.push_back( { set, vkDescSet } );
 
    m_boundSets[set] = vkDescSet;
    return vkDescSet;
 }
 
-void CommandBuffer::_prepareDescriptorSets()
+void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
 {
    // We do not care about any of the descriptor sets before this index
    const size_t prevSize = m_descSets.size();
@@ -359,7 +400,7 @@ void CommandBuffer::_prepareDescriptorSets()
       descriptorWrite.dstSet               = _findOrAllocateDescSet( prevSize, entry.set );
       descriptorWrite.dstBinding           = entry.binding;
       descriptorWrite.dstArrayElement      = 0;
-      descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+      descriptorWrite.descriptorType       = TypeConversions::cydToVkDescriptorType( entry.type );
       descriptorWrite.descriptorCount      = 1;
       descriptorWrite.pBufferInfo          = &bufferInfos.back();
 
@@ -371,9 +412,19 @@ void CommandBuffer::_prepareDescriptorSets()
       const VkSampler vkSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
 
       VkDescriptorImageInfo imageInfo = {};
-      imageInfo.imageLayout           = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-      imageInfo.imageView             = entry.texture->getVKImageView();
-      imageInfo.sampler               = vkSampler;
+
+      // Determine layout based on descriptor type
+      switch( entry.type )
+      {
+         case CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER:
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            break;
+         default:  // Includes images which need to be in general layout for load/store operations
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+      }
+
+      imageInfo.imageView = entry.texture->getVKImageView();
+      imageInfo.sampler   = vkSampler;
       imageInfos.push_back( imageInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
@@ -381,7 +432,7 @@ void CommandBuffer::_prepareDescriptorSets()
       descriptorWrite.dstSet               = _findOrAllocateDescSet( prevSize, entry.set );
       descriptorWrite.dstBinding           = entry.binding;
       descriptorWrite.dstArrayElement      = 0;
-      descriptorWrite.descriptorType       = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+      descriptorWrite.descriptorType       = TypeConversions::cydToVkDescriptorType( entry.type );
       descriptorWrite.descriptorCount      = 1;
       descriptorWrite.pImageInfo           = &imageInfos.back();
 
@@ -397,9 +448,22 @@ void CommandBuffer::_prepareDescriptorSets()
        nullptr );
 
    // Binding the descriptor sets we want for this draw (expensive apparently)
+   VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+   switch( pipType )
+   {
+      case CYD::PipelineType::GRAPHICS:
+         bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+         break;
+      case CYD::PipelineType::COMPUTE:
+         bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
+         break;
+      default:
+         CYDASSERT( !"CommandBuffer: Could not determine pipeline bind point for descriptors" );
+   }
+
    vkCmdBindDescriptorSets(
        m_vkCmdBuffer,
-       VK_PIPELINE_BIND_POINT_GRAPHICS,
+       bindPoint,
        m_boundPipLayout.value(),
        0,
        static_cast<uint32_t>( m_boundPipInfo->pipLayout.descSets.size() ),  // Must be this
@@ -414,12 +478,14 @@ void CommandBuffer::_prepareDescriptorSets()
 void CommandBuffer::draw( size_t vertexCount )
 {
    CYDASSERT(
-       m_usage & cyd::QueueUsage::GRAPHICS &&
+       m_usage & CYD::QueueUsage::GRAPHICS &&
        "CommandBuffer: Command buffer does not support graphics usage" );
 
-   CYDASSERT( m_boundPipInfo && "CommandBuffer: Cannot draw because no pipeline was bound" );
+   CYDASSERT(
+       m_boundPip && m_boundPipInfo && ( m_boundPipInfo->type == CYD::PipelineType::GRAPHICS ) &&
+       "CommandBuffer: Cannot draw because no pipeline was bound" );
 
-   _prepareDescriptorSets();
+   _prepareDescriptorSets( CYD::PipelineType::GRAPHICS );
 
    vkCmdDraw( m_vkCmdBuffer, static_cast<uint32_t>( vertexCount ), 1, 0, 0 );
 }
@@ -427,14 +493,31 @@ void CommandBuffer::draw( size_t vertexCount )
 void CommandBuffer::drawIndexed( size_t indexCount )
 {
    CYDASSERT(
-       m_usage & cyd::QueueUsage::GRAPHICS &&
+       m_usage & CYD::QueueUsage::GRAPHICS &&
        "CommandBuffer: Command Buffer does not support graphics usage" );
 
-   CYDASSERT( m_boundPipInfo && "CommandBuffer: Cannot draw because no pipeline was bound" );
+   CYDASSERT(
+       m_boundPip && m_boundPipInfo && ( m_boundPipInfo->type == CYD::PipelineType::GRAPHICS ) &&
+       "CommandBuffer: Cannot draw because no pipeline was bound" );
 
-   _prepareDescriptorSets();
+   _prepareDescriptorSets( CYD::PipelineType::GRAPHICS );
 
    vkCmdDrawIndexed( m_vkCmdBuffer, static_cast<uint32_t>( indexCount ), 1, 0, 0, 0 );
+}
+
+void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
+{
+   CYDASSERT(
+       m_usage & CYD::QueueUsage::COMPUTE &&
+       "CommandBuffer: Command Buffer does not support compute usage" );
+
+   CYDASSERT(
+       m_boundPip && m_boundPipInfo && m_boundPipInfo->type == CYD::PipelineType::COMPUTE &&
+       "CommandBuffer: Cannot dispatch because no proper pipeline was bound" );
+
+   _prepareDescriptorSets( CYD::PipelineType::COMPUTE );
+
+   vkCmdDispatch( m_vkCmdBuffer, workX, workY, workZ );
 }
 
 void CommandBuffer::endPass() const
@@ -463,34 +546,6 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst ) const
        src->getSize() == dst->getSize() &&
        "CommandBuffer: Source and destination sizes are not the same" );
 
-   // Transition image layout to transfer destination optimal
-   VkImageMemoryBarrier barrier            = {};
-   barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-   barrier.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
-   barrier.newLayout                       = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-   barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-   barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-   barrier.image                           = dst->getVKImage();
-   barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-   barrier.subresourceRange.baseMipLevel   = 0;
-   barrier.subresourceRange.levelCount     = 1;
-   barrier.subresourceRange.baseArrayLayer = 0;
-   barrier.subresourceRange.layerCount     = 1;
-   barrier.srcAccessMask                   = 0;
-   barrier.dstAccessMask                   = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-   vkCmdPipelineBarrier(
-       m_vkCmdBuffer,
-       VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-       VK_PIPELINE_STAGE_TRANSFER_BIT,
-       0,
-       0,
-       nullptr,
-       0,
-       nullptr,
-       1,
-       &barrier );
-
    // Copying data from buffer to texture
    VkBufferImageCopy region               = {};
    region.bufferOffset                    = 0;
@@ -510,24 +565,6 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst ) const
        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
        1,
        &region );
-
-   // Transition image layout to shader read optimal
-   barrier.oldLayout     = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-   barrier.newLayout     = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-   barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-   barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-   vkCmdPipelineBarrier(
-       m_vkCmdBuffer,
-       VK_PIPELINE_STAGE_TRANSFER_BIT,
-       VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT,
-       0,
-       0,
-       nullptr,
-       0,
-       nullptr,
-       1,
-       &barrier );
 }
 
 void CommandBuffer::submit()
@@ -537,12 +574,25 @@ void CommandBuffer::submit()
    submitInfo.commandBufferCount = 1;
    submitInfo.pCommandBuffers    = &m_vkCmdBuffer;
 
-   VkPipelineStageFlags waitStages[] = {VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT};
-   submitInfo.waitSemaphoreCount     = static_cast<uint32_t>( m_semsToWait.size() );
-   submitInfo.pWaitSemaphores        = m_semsToWait.data();
-   submitInfo.pWaitDstStageMask      = waitStages;
-   submitInfo.signalSemaphoreCount   = static_cast<uint32_t>( m_semsToSignal.size() );
-   submitInfo.pSignalSemaphores      = m_semsToSignal.data();
+   VkPipelineStageFlags waitStages = 0;
+   if( m_usage & CYD::QueueUsage::GRAPHICS )
+   {
+      waitStages |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+   }
+   if( m_usage & CYD::QueueUsage::TRANSFER )
+   {
+      waitStages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+   }
+   if( m_usage & CYD::QueueUsage::COMPUTE )
+   {
+      waitStages |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+   }
+
+   submitInfo.waitSemaphoreCount   = static_cast<uint32_t>( m_semsToWait.size() );
+   submitInfo.pWaitSemaphores      = m_semsToWait.data();
+   submitInfo.pWaitDstStageMask    = &waitStages;
+   submitInfo.signalSemaphoreCount = static_cast<uint32_t>( m_semsToSignal.size() );
+   submitInfo.pSignalSemaphores    = m_semsToSignal.data();
 
    const VkQueue* queue = m_pDevice->getQueueFromFamily( m_pPool->getFamilyIndex() );
    CYDASSERT( queue && "CommandBuffer: Could not find queue to submit to" );

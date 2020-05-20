@@ -7,7 +7,7 @@
 // ================================================================================================
 FWDHANDLE( VkSurfaceKHR );
 
-namespace cyd
+namespace CYD
 {
 class Window;
 }
@@ -25,13 +25,13 @@ namespace vk
 class Surface final
 {
   public:
-   Surface( const cyd::Window& window, const Instance& instance );
+   Surface( const CYD::Window& window, const Instance& instance );
    ~Surface();
 
    const VkSurfaceKHR& getVKSurface() const { return m_vkSurface; }
 
   private:
-   const cyd::Window& m_window;
+   const CYD::Window& m_window;
 
    const Instance& m_instance;
 

@@ -5,16 +5,16 @@
 // ================================================================================================
 // Definition
 // ================================================================================================
-namespace cyd
+namespace CYD
 {
 enum class HandleType : uint32_t
 {
    // Graphics
-   CMDLIST       = 0,
-   VERTEXBUFFER  = 1,
-   INDEXBUFFER   = 2,
-   TEXTURE       = 3,
-   UNIFORMBUFFER = 4
+   CMDLIST      = 0,
+   VERTEXBUFFER = 1,
+   INDEXBUFFER  = 2,
+   TEXTURE      = 3,
+   BUFFER       = 4
 };
 
 struct Handle
@@ -40,10 +40,9 @@ struct Handle
    uint32_t _type : 5;
 };
 
-using CmdListHandle       = Handle;
-using VertexBufferHandle  = Handle;
-using IndexBufferHandle   = Handle;
-using TextureHandle       = Handle;
-using UniformBufferHandle = Handle;
-
+using CmdListHandle      = Handle;
+using VertexBufferHandle = Handle;
+using IndexBufferHandle  = Handle;
+using TextureHandle      = Handle;
+using BufferHandle       = Handle;
 }

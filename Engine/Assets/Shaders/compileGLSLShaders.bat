@@ -1,21 +1,28 @@
 @echo ============== COMPILING ALL SHADERS ==============
 
 @echo Compiling Default Shaders
-glslc -fshader-stage=vert GLSL/passthrough_vert.glsl -o Compiled/passthrough_vert.spv
+glslc GLSL/PASSTHROUGH.vert -o Compiled/PASSTHROUGH_VERT.spv
+glslc GLSL/PASSTHROUGH.frag -o Compiled/PASSTHROUGH_FRAG.spv
 
-glslc -fshader-stage=vert GLSL/default_vert.glsl -o Compiled/default_vert.spv
-glslc -fshader-stage=frag GLSL/default_frag.glsl -o Compiled/default_frag.spv
+:: Render Pipelines
+glslc GLSL/DEFAULT.vert -o Compiled/DEFAULT_VERT.spv
+glslc GLSL/DEFAULT.frag -o Compiled/DEFAULT_FRAG.spv
 
-glslc -fshader-stage=vert GLSL/defaultTex_vert.glsl -o Compiled/defaultTex_vert.spv
-glslc -fshader-stage=frag GLSL/defaultTex_frag.glsl -o Compiled/defaultTex_frag.spv
+glslc GLSL/DEFAULT_TEX.vert -o Compiled/DEFAULT_TEX_VERT.spv
+glslc GLSL/DEFAULT_TEX.frag -o Compiled/DEFAULT_TEX_FRAG.spv
 
-glslc -fshader-stage=vert GLSL/phongTex_vert.glsl -o Compiled/phongTex_vert.spv
-glslc -fshader-stage=frag GLSL/phongTex_frag.glsl -o Compiled/phongTex_frag.spv
+glslc GLSL/PHONG_TEX.vert -o Compiled/PHONG_TEX_VERT.spv
+glslc GLSL/PHONG_TEX.frag -o Compiled/PHONG_TEX_FRAG.spv
 
-glslc -fshader-stage=vert GLSL/pbrTex_vert.glsl -o Compiled/pbrTex_vert.spv
-glslc -fshader-stage=frag GLSL/pbrTex_frag.glsl -o Compiled/pbrTex_frag.spv
+glslc GLSL/PBR_TEX.vert -o Compiled/PBR_TEX_VERT.spv
+glslc GLSL/PBR_TEX.frag -o Compiled/PBR_TEX_FRAG.spv
 
-glslc -fshader-stage=frag GLSL/proteanclouds_frag.glsl -o Compiled/proteanclouds_frag.spv
+:: Compute
+glslc GLSL/FFTOCEAN_SPECTRA.comp -o Compiled/FFTOCEAN_SPECTRA_COMP.spv
+glslc GLSL/HEIGHT_MODULATION.comp -o Compiled/HEIGHT_MODULATION_COMP.spv
+
+:: Others
+glslc GLSL/PROTEANCLOUDS.frag -o Compiled/PROTEANCLOUDS_FRAG.spv
 
 @echo ============== COMPILING DONE ==============
 pause

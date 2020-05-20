@@ -1,6 +1,6 @@
 #include <Graphics/GraphicsTypes.h>
 
-namespace cyd
+namespace CYD
 {
 bool Vertex::operator==( const Vertex& other ) const
 {
@@ -51,12 +51,6 @@ bool DescriptorSetLayoutInfo::operator==( const DescriptorSetLayoutInfo& other )
 bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const
 {
    return ranges == other.ranges && descSets == other.descSets;
-}
-
-bool PipelineInfo::operator==( const PipelineInfo& other ) const
-{
-   return pipLayout == other.pipLayout && drawPrim == other.drawPrim &&
-          polyMode == other.polyMode && extent == other.extent && shaders == other.shaders;
 }
 
 bool SamplerInfo::operator==( const SamplerInfo& other ) const

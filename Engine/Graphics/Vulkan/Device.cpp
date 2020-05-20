@@ -26,7 +26,7 @@ static constexpr uint32_t MAX_TEXTURE_COUNT = 512;
 namespace vk
 {
 Device::Device(
-    const cyd::Window& window,
+    const CYD::Window& window,
     const Instance& instance,
     const Surface& surface,
     const VkPhysicalDevice& physDevice,
@@ -62,20 +62,20 @@ void Device::_populateQueueFamilies()
 
    for( uint32_t i = 0; i < queueFamilies.size(); ++i )
    {
-      cyd::QueueUsageFlag type = 0;
+      CYD::QueueUsageFlag type = 0;
 
       VkQueueFlags vkQueueType = queueFamilies[i].queueFlags;
       if( vkQueueType & VK_QUEUE_GRAPHICS_BIT )
       {
-         type |= static_cast<uint32_t>( cyd::QueueUsage::GRAPHICS );
+         type |= static_cast<uint32_t>( CYD::QueueUsage::GRAPHICS );
       }
       if( vkQueueType & VK_QUEUE_COMPUTE_BIT )
       {
-         type |= static_cast<uint32_t>( cyd::QueueUsage::COMPUTE );
+         type |= static_cast<uint32_t>( CYD::QueueUsage::COMPUTE );
       }
       if( vkQueueType & VK_QUEUE_TRANSFER_BIT )
       {
-         type |= static_cast<uint32_t>( cyd::QueueUsage::TRANSFER );
+         type |= static_cast<uint32_t>( CYD::QueueUsage::TRANSFER );
       }
 
       VkBool32 supportsPresent = false;
@@ -158,7 +158,7 @@ void Device::_createDescriptorPool() { m_descPool = std::make_unique<DescriptorP
 // =================================================================================================
 // Command buffers
 
-CommandBuffer* Device::createCommandBuffer( cyd::QueueUsageFlag usage, bool presentable )
+CommandBuffer* Device::createCommandBuffer( CYD::QueueUsageFlag usage, bool presentable )
 {
    // TODO Implement support for EXACT type so that we can possibly send work (like transfer for
    // example) to another queue family
@@ -175,7 +175,7 @@ CommandBuffer* Device::createCommandBuffer( cyd::QueueUsageFlag usage, bool pres
    if( it != m_commandPools.end() )
    {
       // Found an adequate command pool
-      cmdBuffer = ( *it )->createCommandBuffer();
+      cmdBuffer = ( *it )->createCommandBuffer( usage );
    }
 
    return cmdBuffer;
@@ -185,7 +185,7 @@ CommandBuffer* Device::createCommandBuffer( cyd::QueueUsageFlag usage, bool pres
 // Device buffers
 
 Buffer*
-Device::_createBuffer( size_t size, cyd::BufferUsageFlag usage, cyd::MemoryTypeFlag memoryType )
+Device::_createBuffer( size_t size, CYD::BufferUsageFlag usage, CYD::MemoryTypeFlag memoryType )
 {
    // Check to see if we have a free spot for a buffer.
    auto it = std::find_if(
@@ -207,8 +207,8 @@ Buffer* Device::createVertexBuffer( size_t size )
 {
    return _createBuffer(
        size,
-       cyd::BufferUsage::TRANSFER_DST | cyd::BufferUsage::VERTEX,
-       cyd::MemoryType::DEVICE_LOCAL );
+       CYD::BufferUsage::TRANSFER_DST | CYD::BufferUsage::VERTEX,
+       CYD::MemoryType::DEVICE_LOCAL );
 }
 
 Buffer* Device::createIndexBuffer( size_t size )
@@ -216,27 +216,27 @@ Buffer* Device::createIndexBuffer( size_t size )
    // TODO Support for uint16 and uint32
    return _createBuffer(
        size,
-       cyd::BufferUsage::TRANSFER_DST | cyd::BufferUsage::INDEX,
-       cyd::MemoryType::DEVICE_LOCAL );
+       CYD::BufferUsage::TRANSFER_DST | CYD::BufferUsage::INDEX,
+       CYD::MemoryType::DEVICE_LOCAL );
 }
 
 Buffer* Device::createStagingBuffer( size_t size )
 {
    return _createBuffer(
        size,
-       cyd::BufferUsage::TRANSFER_SRC,
-       cyd::MemoryType::HOST_VISIBLE | cyd::MemoryType::HOST_COHERENT );
+       CYD::BufferUsage::TRANSFER_SRC,
+       CYD::MemoryType::HOST_VISIBLE | CYD::MemoryType::HOST_COHERENT );
 }
 
 Buffer* Device::createUniformBuffer( size_t size )
 {
    return _createBuffer(
        size,
-       cyd::BufferUsage::TRANSFER_DST | cyd::BufferUsage::UNIFORM,
-       cyd::MemoryType::HOST_VISIBLE | cyd::MemoryType::HOST_COHERENT );
+       CYD::BufferUsage::TRANSFER_DST | CYD::BufferUsage::UNIFORM,
+       CYD::MemoryType::HOST_VISIBLE | CYD::MemoryType::HOST_COHERENT );
 }
 
-Texture* Device::createTexture( const cyd::TextureDescription& desc )
+Texture* Device::createTexture( const CYD::TextureDescription& desc )
 {
    // Check to see if we have a free spot for a texture.
    auto it = std::find_if( m_textures.rbegin(), m_textures.rend(), []( Texture& texture ) {
@@ -259,7 +259,7 @@ Texture* Device::createTexture( const cyd::TextureDescription& desc )
 // =================================================================================================
 // Swapchain
 
-Swapchain* Device::createSwapchain( const cyd::SwapchainInfo& scInfo )
+Swapchain* Device::createSwapchain( const CYD::SwapchainInfo& scInfo )
 {
    CYDASSERT( !m_swapchain.get() && "Device: Swapchain already created" );
 
@@ -309,7 +309,7 @@ const VkQueue* Device::getQueueFromFamily( uint32_t familyIndex ) const
    return nullptr;
 }
 
-const VkQueue* Device::getQueueFromUsage( cyd::QueueUsageFlag usage, bool supportsPresentation )
+const VkQueue* Device::getQueueFromUsage( CYD::QueueUsageFlag usage, bool supportsPresentation )
     const
 {
    const auto it = std::find_if(

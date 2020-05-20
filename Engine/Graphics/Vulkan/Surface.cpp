@@ -11,7 +11,7 @@
 
 namespace vk
 {
-Surface::Surface( const cyd::Window& window, const Instance& instance )
+Surface::Surface( const CYD::Window& window, const Instance& instance )
     : m_window( window ), m_instance( instance )
 {
    VkResult result = glfwCreateWindowSurface(

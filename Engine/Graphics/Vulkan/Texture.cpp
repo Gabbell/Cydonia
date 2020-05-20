@@ -8,7 +8,7 @@
 
 namespace vk
 {
-void Texture::acquire( const Device& device, const cyd::TextureDescription& desc )
+void Texture::acquire( const Device& device, const CYD::TextureDescription& desc )
 {
    m_pDevice = &device;
    m_size    = desc.size;
@@ -17,6 +17,7 @@ void Texture::acquire( const Device& device, const cyd::TextureDescription& desc
    m_type    = desc.type;
    m_format  = desc.format;
    m_usage   = desc.usage;
+   m_stages  = desc.stages;
 
    _createImage();
    _allocateMemory();
@@ -37,12 +38,14 @@ void Texture::release()
       vkDestroyImage( m_pDevice->getVKDevice(), m_vkImage, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
-      m_size        = 0;
-      m_width       = 0;
-      m_height      = 0;
-      m_type        = cyd::ImageType::TEXTURE_2D;
-      m_format      = cyd::PixelFormat::RGBA8_SRGB;
-      m_usage       = 0;
+      m_size   = 0;
+      m_width  = 0;
+      m_height = 0;
+      m_type   = CYD::ImageType::TEXTURE_2D;
+      m_format = CYD::PixelFormat::RGBA8_SRGB;
+      m_usage  = 0;
+      m_stages = 0;
+
       m_pDevice     = nullptr;
       m_vkImageView = nullptr;
       m_vkImage     = nullptr;
@@ -60,13 +63,13 @@ void Texture::_createImage()
 
    switch( m_type )
    {
-      case cyd::ImageType::TEXTURE_1D:
+      case CYD::ImageType::TEXTURE_1D:
          imageInfo.imageType = VK_IMAGE_TYPE_1D;
          break;
-      case cyd::ImageType::TEXTURE_2D:
+      case CYD::ImageType::TEXTURE_2D:
          imageInfo.imageType = VK_IMAGE_TYPE_2D;
          break;
-      case cyd::ImageType::TEXTURE_3D:
+      case CYD::ImageType::TEXTURE_3D:
          imageInfo.imageType = VK_IMAGE_TYPE_3D;
          break;
    }
@@ -80,27 +83,27 @@ void Texture::_createImage()
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
-   if( m_usage & cyd::ImageUsage::TRANSFER_SRC )
+   if( m_usage & CYD::ImageUsage::TRANSFER_SRC )
    {
       imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
    }
-   if( m_usage & cyd::ImageUsage::TRANSFER_DST )
+   if( m_usage & CYD::ImageUsage::TRANSFER_DST )
    {
       imageInfo.usage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
    }
-   if( m_usage & cyd::ImageUsage::SAMPLED )
+   if( m_usage & CYD::ImageUsage::SAMPLED )
    {
       imageInfo.usage |= VK_IMAGE_USAGE_SAMPLED_BIT;
    }
-   if( m_usage & cyd::ImageUsage::STORAGE )
+   if( m_usage & CYD::ImageUsage::STORAGE )
    {
       imageInfo.usage |= VK_IMAGE_USAGE_STORAGE_BIT;
    }
-   if( m_usage & cyd::ImageUsage::COLOR )
+   if( m_usage & CYD::ImageUsage::COLOR )
    {
       imageInfo.usage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
    }
-   if( m_usage & cyd::ImageUsage::DEPTH_STENCIL )
+   if( m_usage & CYD::ImageUsage::DEPTH_STENCIL )
    {
       imageInfo.usage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
    }
@@ -129,9 +132,9 @@ void Texture::_allocateMemory()
    vkBindImageMemory( m_pDevice->getVKDevice(), m_vkImage, m_vkMemory, 0 );
 }
 
-static VkImageAspectFlagBits getAspectBit( cyd::PixelFormat format )
+static VkImageAspectFlagBits getAspectBit( CYD::PixelFormat format )
 {
-   if( format == cyd::PixelFormat::D32_SFLOAT )
+   if( format == CYD::PixelFormat::D32_SFLOAT )
    {
       return VK_IMAGE_ASPECT_DEPTH_BIT;
    }

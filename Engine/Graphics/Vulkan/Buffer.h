@@ -4,6 +4,8 @@
 
 #include <Graphics/GraphicsTypes.h>
 
+#include <cstdint>
+
 // ================================================================================================
 // Forwards
 // ================================================================================================
@@ -31,8 +33,8 @@ class Buffer final
    void acquire(
        const Device& device,
        size_t size,
-       cyd::BufferUsageFlag usage,
-       cyd::MemoryTypeFlag memoryType );
+       CYD::BufferUsageFlag usage,
+       CYD::MemoryTypeFlag memoryType );
    void release();
 
    size_t getSize() const noexcept { return m_size; }
@@ -58,7 +60,7 @@ class Buffer final
    size_t m_size             = 0;
    VkBuffer m_vkBuffer       = nullptr;
    VkDeviceMemory m_vkMemory = nullptr;
-   cyd::MemoryTypeFlag m_memoryType;
+   CYD::MemoryTypeFlag m_memoryType;
 
    uint32_t m_useCount = 0;
 };

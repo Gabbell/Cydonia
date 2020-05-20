@@ -4,7 +4,7 @@
 
 #include <cstddef>
 
-namespace cyd
+namespace CYD
 {
 HandleManager::HandleEntry::HandleEntry()
     : _nextFreeIndex( 0 ), _counter( 1 ), _active( 0 ), _endOfList( 0 ), _entry( nullptr )

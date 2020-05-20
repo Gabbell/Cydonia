@@ -36,7 +36,7 @@ static VkShaderStageFlagBits shaderTypeToVKShaderStage( Shader::Type shaderType 
    }
 }
 
-const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSetLayoutInfo& info )
+const VkDescriptorSetLayout PipelineStash::findOrCreate( const CYD::DescriptorSetLayoutInfo& info )
 {
    // Creating the descriptor set layout
    const auto layoutIt = m_descSetLayouts.find( info );
@@ -53,19 +53,7 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
       // TODO Add UBO arrays
       VkDescriptorSetLayoutBinding descSetLayoutBinding = {};
       descSetLayoutBinding.binding                      = object.binding;
-
-      switch( object.type )
-      {
-         case cyd::ShaderResourceType::UNIFORM:
-            descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-            break;
-         case cyd::ShaderResourceType::COMBINED_IMAGE_SAMPLER:
-            descSetLayoutBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-            break;
-         default:
-            CYDASSERT( !"PipelineStash: Descriptor type not yet implemented" );
-      }
-
+      descSetLayoutBinding.descriptorType  = TypeConversions::cydToVkDescriptorType( object.type );
       descSetLayoutBinding.descriptorCount = 1;  // For arrays
       descSetLayoutBinding.stageFlags      = TypeConversions::cydToVkShaderStages( object.stages );
       descSetLayoutBinding.pImmutableSamplers = nullptr;
@@ -86,7 +74,7 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate( const cyd::DescriptorSe
    return m_descSetLayouts.insert( { info, descSetLayout } ).first->second;
 }
 
-const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInfo& info )
+const VkPipelineLayout PipelineStash::findOrCreate( const CYD::PipelineLayoutInfo& info )
 {
    const auto layoutIt = m_pipLayouts.find( info );
    if( layoutIt != m_pipLayouts.end() )
@@ -103,7 +91,7 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
       vkRange.offset              = static_cast<uint32_t>( range.offset );
       vkRange.size                = static_cast<uint32_t>( range.size );
 
-      vkRanges.push_back(  vkRange );
+      vkRanges.push_back( vkRange );
    }
 
    std::vector<VkDescriptorSetLayout> descSetLayouts;
@@ -131,13 +119,81 @@ const VkPipelineLayout PipelineStash::findOrCreate( const cyd::PipelineLayoutInf
    return m_pipLayouts.insert( { info, pipLayout } ).first->second;
 }
 
+const VkPipeline PipelineStash::findOrCreate( const CYD::ComputePipelineInfo& info )
+{
+   // Attempting to find pipeline
+   const auto pipIt = m_computePipelines.find( info );
+   if( pipIt != m_computePipelines.end() )
+   {
+      return pipIt->second;
+   }
+
+   VkResult result;
+
+   // Building shader constants
+   const CYD::ShaderConstants::Entry* entry = info.constants.getEntry( info.shader );
+
+   VkSpecializationInfo specInfo = {};
+   std::vector<VkSpecializationMapEntry> specMapEntries;
+
+   if( entry )
+   {
+      // This shader has at least one constant
+      const CYD::ShaderConstants::InfoMap& constantInfos = entry->getConstantInfos();
+
+      size_t prevSize = specMapEntries.size();
+
+      for( const auto& constantInfo : constantInfos )
+      {
+         VkSpecializationMapEntry specMapEntry = {};
+         specMapEntry.constantID               = constantInfo.first;
+         specMapEntry.offset                   = constantInfo.second.offset;
+         specMapEntry.size                     = constantInfo.second.size;
+         specMapEntries.push_back( specMapEntry );
+      }
+
+      specInfo.mapEntryCount = static_cast<uint32_t>( specMapEntries.size() );
+      specInfo.pMapEntries   = &specMapEntries[prevSize];
+      specInfo.dataSize      = entry->getDataSize();
+      specInfo.pData         = entry->getData();
+   }
+
+   const Shader* shader = m_shaderStash->getShader( info.shader );
+
+   VkPipelineShaderStageCreateInfo stageInfo = {};
+   stageInfo.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+   stageInfo.stage                           = shaderTypeToVKShaderStage( shader->getType() );
+   stageInfo.module                          = shader->getModule();
+   stageInfo.pName                           = "main";
+   stageInfo.pSpecializationInfo             = &specInfo;
+
+   // Pipeline layout
+   VkPipelineLayout pipLayout = findOrCreate( info.pipLayout );
+
+   VkComputePipelineCreateInfo pipelineInfo = {};
+   pipelineInfo.sType                       = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+   pipelineInfo.pNext                       = nullptr;
+   pipelineInfo.flags                       = 0;
+   pipelineInfo.stage                       = stageInfo;
+   pipelineInfo.layout                      = pipLayout;
+   pipelineInfo.basePipelineHandle          = nullptr;
+   pipelineInfo.basePipelineIndex           = -1;
+
+   VkPipeline pipeline;
+   result = vkCreateComputePipelines(
+       m_device.getVKDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline );
+   CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create compute pipeline" );
+
+   return m_computePipelines.insert( { info, pipeline } ).first->second;
+}
+
 const VkPipeline PipelineStash::findOrCreate(
-    const cyd::PipelineInfo& info,
+    const CYD::GraphicsPipelineInfo& info,
     VkRenderPass renderPass )
 {
    // Attempting to find pipeline
-   const auto pipIt = m_pipelines.find( info );
-   if( pipIt != m_pipelines.end() )
+   const auto pipIt = m_graphicsPipelines.find( info );
+   if( pipIt != m_graphicsPipelines.end() )
    {
       return pipIt->second;
    }
@@ -159,12 +215,12 @@ const VkPipeline PipelineStash::findOrCreate(
 
       // Building shader constants
       VkSpecializationInfo* pSpecInfo          = nullptr;
-      const cyd::ShaderConstants::Entry* entry = info.constants.getEntry( shaderName );
+      const CYD::ShaderConstants::Entry* entry = info.constants.getEntry( shaderName );
 
       if( entry )
       {
          // This shader has at least one constant
-         const cyd::ShaderConstants::InfoMap& constantInfos = entry->getConstantInfos();
+         const CYD::ShaderConstants::InfoMap& constantInfos = entry->getConstantInfos();
 
          size_t prevSize = specMapEntries.size();
 
@@ -203,7 +259,7 @@ const VkPipeline PipelineStash::findOrCreate(
    // TODO Instancing
    VkVertexInputBindingDescription vertexBindingDesc = {};
    vertexBindingDesc.binding                         = 0;
-   vertexBindingDesc.stride                          = sizeof( cyd::Vertex );
+   vertexBindingDesc.stride                          = sizeof( CYD::Vertex );
    vertexBindingDesc.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
 
    // Vertex attributes
@@ -213,25 +269,25 @@ const VkPipeline PipelineStash::findOrCreate(
    attributeDescs[0].binding  = 0;
    attributeDescs[0].location = 0;
    attributeDescs[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-   attributeDescs[0].offset   = offsetof( cyd::Vertex, pos );
+   attributeDescs[0].offset   = offsetof( CYD::Vertex, pos );
 
    // Color
    attributeDescs[1].binding  = 0;
    attributeDescs[1].location = 1;
    attributeDescs[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
-   attributeDescs[1].offset   = offsetof( cyd::Vertex, col );
+   attributeDescs[1].offset   = offsetof( CYD::Vertex, col );
 
    // Texture Coordinates
    attributeDescs[3].binding  = 0;
    attributeDescs[3].location = 2;
    attributeDescs[3].format   = VK_FORMAT_R32G32B32_SFLOAT;
-   attributeDescs[3].offset   = offsetof( cyd::Vertex, uv );
+   attributeDescs[3].offset   = offsetof( CYD::Vertex, uv );
 
    // Normals
    attributeDescs[2].binding  = 0;
    attributeDescs[2].location = 3;
    attributeDescs[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
-   attributeDescs[2].offset   = offsetof( cyd::Vertex, normal );
+   attributeDescs[2].offset   = offsetof( CYD::Vertex, normal );
 
    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -348,14 +404,18 @@ const VkPipeline PipelineStash::findOrCreate(
    VkPipeline pipeline;
    result = vkCreateGraphicsPipelines(
        m_device.getVKDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline );
-   CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create default pipeline" );
+   CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create graphics pipeline" );
 
-   return m_pipelines.insert( { info, pipeline } ).first->second;
+   return m_graphicsPipelines.insert( { info, pipeline } ).first->second;
 }
 
 PipelineStash::~PipelineStash()
 {
-   for( const auto& pipeline : m_pipelines )
+   for( const auto& pipeline : m_graphicsPipelines )
+   {
+      vkDestroyPipeline( m_device.getVKDevice(), pipeline.second, nullptr );
+   }
+   for( const auto& pipeline : m_computePipelines )
    {
       vkDestroyPipeline( m_device.getVKDevice(), pipeline.second, nullptr );
    }

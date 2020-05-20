@@ -10,7 +10,7 @@ namespace vk
 {
 SamplerStash::SamplerStash( const Device& device ) : m_device( device ) {}
 
-const VkSampler SamplerStash::findOrCreate( const cyd::SamplerInfo& info )
+const VkSampler SamplerStash::findOrCreate( const CYD::SamplerInfo& info )
 {
    const auto it = m_samplers.find( info );
    if( it != m_samplers.end() )

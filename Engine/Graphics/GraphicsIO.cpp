@@ -12,8 +12,10 @@
 
 #include <unordered_map>
 
-namespace cyd
+namespace CYD
 {
+static const std::string MESH_PATH = "Assets/Meshes/";
+
 void GraphicsIO::LoadMesh(
     const std::string& path,
     std::vector<Vertex>& vertices,
@@ -24,8 +26,8 @@ void GraphicsIO::LoadMesh(
    std::vector<tinyobj::material_t> materials;
    std::string warn, err;
 
-   bool res =
-       tinyobj::LoadObj( &attrib, &shapes, &materials, &warn, &err, ( path + ".obj" ).c_str() );
+   bool res = tinyobj::LoadObj(
+       &attrib, &shapes, &materials, &warn, &err, ( MESH_PATH + path + ".obj" ).c_str() );
    CYDASSERT( res && "Model loading failed" );
 
    vertices.reserve( shapes[0].mesh.num_face_vertices.size() );
@@ -85,12 +87,16 @@ void* GraphicsIO::LoadImage( const TextureDescription& desc, const std::string& 
          imageSize = width * height * sizeof( uint32_t );  // TODO Format to pixel size function
    }
 
+   if( !imageData )
+   {
+      // Could not load image, returning nullptr
+      return nullptr;
+   }
+
    if( imageSize != desc.size || static_cast<uint32_t>( width ) != desc.width ||
        static_cast<uint32_t>( height ) != desc.height )
    {
       CYDASSERT( !"GraphicsIO: Mismatch with texture description and actual image" );
-      FreeImage( imageData );
-      return nullptr;
    }
 
    return imageData;

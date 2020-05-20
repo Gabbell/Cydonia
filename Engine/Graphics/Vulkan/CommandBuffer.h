@@ -29,6 +29,13 @@ class Buffer;
 class Texture;
 }
 
+namespace CYD
+{
+struct PipelineInfo;
+struct GraphicsPipelineInfo;
+struct ComputePipelineInfo;
+}
+
 // ================================================================================================
 // Definition
 // ================================================================================================
@@ -43,7 +50,7 @@ class CommandBuffer final
 
    // Allocation and Deallocation
    // =============================================================================================
-   void acquire( const Device& device, const CommandPool& pool, cyd::QueueUsageFlag usage );
+   void acquire( const Device& device, const CommandPool& pool, CYD::QueueUsageFlag usage );
    void release();
 
    // Getters
@@ -67,28 +74,35 @@ class CommandBuffer final
    // Bindings
    // =============================================================================================
    void bindVertexBuffer( Buffer* vertexBuf ) const;
-   void bindIndexBuffer( Buffer* indexBuf, cyd::IndexType type ) const;
-   void bindPipeline( const cyd::PipelineInfo& info );
+   void bindIndexBuffer( Buffer* indexBuf, CYD::IndexType type ) const;
+   void bindPipeline( const CYD::GraphicsPipelineInfo& info );
+   void bindPipeline( const CYD::ComputePipelineInfo& info );
    void bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
+   void bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
    void bindTexture( Texture* texture, uint32_t set, uint32_t binding );
-   void updatePushConstants( const cyd::PushConstantRange& range, const void* pData );
+   void bindImage( Texture* texture, uint32_t set, uint32_t binding );
+   void updatePushConstants( const CYD::PushConstantRange& range, const void* pData );
 
    // Render Pass
    // =============================================================================================
    void beginPass( Swapchain& swapchain, bool hasDepth );
    void beginPass(
-       const cyd::RenderPassInfo& renderPassInfo,
+       const CYD::RenderPassInfo& renderPassInfo,
        const std::vector<const Texture*>& textures );
    void endPass() const;
 
    // Dynamic State
    // =============================================================================================
-   void setViewport( const cyd::Rectangle& viewport ) const;
+   void setViewport( const CYD::Rectangle& viewport ) const;
 
    // Drawing
    // =============================================================================================
    void draw( size_t vertexCount );
    void drawIndexed( size_t indexCount );
+
+   // Compute
+   // =============================================================================================
+   void dispatch( uint32_t workX, uint32_t workY, uint32_t workZ );
 
    // Transfers
    // =============================================================================================
@@ -101,7 +115,7 @@ class CommandBuffer final
    // were bound to the command buffer since the last draw call. This ensures that we do not create
    // unnecessary descriptor sets and that we only update and bind what is needed for the next draw.
    VkDescriptorSet _findOrAllocateDescSet( size_t prevSize, uint32_t set );
-   void _prepareDescriptorSets();
+   void _prepareDescriptorSets( CYD::PipelineType pipType );
 
    const Device* m_pDevice    = nullptr;
    const CommandPool* m_pPool = nullptr;
@@ -115,8 +129,9 @@ class CommandBuffer final
    std::vector<VkFramebuffer> m_curFramebuffers;
 
    // MSVC's implementation of the move assignment/constructor for unordered_map is not noexcept.
-   // This prevents us from using unordered_maps in STL containers properly. Wtf why.
-   std::unique_ptr<cyd::PipelineInfo> m_boundPipInfo;
+   // This prevents us from using unordered_maps (from ShaderConstants) in STL containers properly.
+   // Wtf why.
+   std::unique_ptr<CYD::PipelineInfo> m_boundPipInfo;
 
    // Currently bound descriptor sets
    static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 32;
@@ -133,11 +148,16 @@ class CommandBuffer final
    // Used for deferred updating and binding of descriptor sets before a draw command
    struct BufferUpdateInfo
    {
-      BufferUpdateInfo( const Buffer* buffer, uint32_t set, uint32_t binding )
-          : buffer( buffer ), set( set ), binding( binding )
+      BufferUpdateInfo(
+          const Buffer* buffer,
+          CYD::ShaderResourceType type,
+          uint32_t set,
+          uint32_t binding )
+          : buffer( buffer ), type( type ), set( set ), binding( binding )
       {
       }
       const Buffer* buffer;
+      CYD::ShaderResourceType type;
       uint32_t set;
       uint32_t binding;
    };
@@ -145,11 +165,16 @@ class CommandBuffer final
 
    struct TextureUpdateInfo
    {
-      TextureUpdateInfo( const Texture* texture, uint32_t set, uint32_t binding )
-          : texture( texture ), set( set ), binding( binding )
+      TextureUpdateInfo(
+          const Texture* texture,
+          CYD::ShaderResourceType type,
+          uint32_t set,
+          uint32_t binding )
+          : texture( texture ), type( type ), set( set ), binding( binding )
       {
       }
       const Texture* texture;
+      CYD::ShaderResourceType type;
       uint32_t set;
       uint32_t binding;
    };
@@ -159,7 +184,7 @@ class CommandBuffer final
    std::vector<VkSemaphore> m_semsToWait;
    std::vector<VkSemaphore> m_semsToSignal;
 
-   cyd::QueueUsageFlag m_usage   = cyd::QueueUsage::UNKNOWN;
+   CYD::QueueUsageFlag m_usage   = CYD::QueueUsage::UNKNOWN;
    bool m_isRecording            = false;
    bool m_wasSubmitted           = false;
    VkCommandBuffer m_vkCmdBuffer = nullptr;

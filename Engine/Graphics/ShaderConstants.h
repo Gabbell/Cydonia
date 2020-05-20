@@ -7,7 +7,7 @@
 #include <unordered_map>
 #include <vector>
 
-namespace cyd
+namespace CYD
 {
 class ShaderConstants final
 {

@@ -38,7 +38,7 @@ namespace vk
 class Swapchain final
 {
   public:
-   Swapchain( Device& device, const Surface& surface, const cyd::SwapchainInfo& info );
+   Swapchain( Device& device, const Surface& surface, const CYD::SwapchainInfo& info );
    NON_COPIABLE( Swapchain )
    ~Swapchain();
 
@@ -57,7 +57,7 @@ class Swapchain final
    void present();
 
   private:
-   void _createSwapchain( const cyd::SwapchainInfo& info );
+   void _createSwapchain( const CYD::SwapchainInfo& info );
    void _createImageViews();
    void _createDepthResources();
    void _createSyncObjects();
@@ -65,11 +65,11 @@ class Swapchain final
    // Used to create the swapchain
    Device& m_device;
    const Surface& m_surface;
-   cyd::SwapchainInfo m_info;
+   CYD::SwapchainInfo m_info;
 
    bool m_hasDepth = false;
-   cyd::Attachment m_colorPresentation;
-   cyd::Attachment m_depthPresentation;
+   CYD::Attachment m_colorPresentation;
+   CYD::Attachment m_depthPresentation;
    VkRenderPass m_vkRenderPass = nullptr;
 
    uint32_t m_imageCount = 0;
@@ -83,6 +83,7 @@ class Swapchain final
    VkImage m_depthImage;
    VkDeviceMemory m_depthImageMemory;
 
+   bool m_ready            = false;  // Used to determine if we acquired an image before presenting
    uint32_t m_currentFrame = 0;
    std::vector<VkSemaphore> m_availableSems;
    std::vector<VkSemaphore> m_renderDoneSems;

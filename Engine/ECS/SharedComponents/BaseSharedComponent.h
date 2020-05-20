@@ -2,7 +2,7 @@
 
 #include <Common/Include.h>
 
-namespace cyd
+namespace CYD
 {
 class BaseSharedComponent
 {

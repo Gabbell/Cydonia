@@ -3,6 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/Pipelines.h>
 
 #include <memory>
 #include <unordered_map>
@@ -29,20 +30,27 @@ namespace vk
 class PipelineStash final
 {
   public:
+   PipelineStash() = delete;
+   NON_COPIABLE( PipelineStash )
    explicit PipelineStash( const Device& device );
    ~PipelineStash();
 
-   const VkDescriptorSetLayout findOrCreate( const cyd::DescriptorSetLayoutInfo& info );
-   const VkPipeline findOrCreate( const cyd::PipelineInfo& info, VkRenderPass renderPass );
-   const VkPipelineLayout findOrCreate( const cyd::PipelineLayoutInfo& info );
+   const VkDescriptorSetLayout findOrCreate( const CYD::DescriptorSetLayoutInfo& info );
+
+   const VkPipelineLayout findOrCreate( const CYD::PipelineLayoutInfo& info );
+
+   const VkPipeline findOrCreate( const CYD::GraphicsPipelineInfo& info, VkRenderPass renderPass );
+   const VkPipeline findOrCreate( const CYD::ComputePipelineInfo& info );
 
   private:
    const Device& m_device;
 
    std::unique_ptr<ShaderStash> m_shaderStash;
 
-   std::unordered_map<cyd::DescriptorSetLayoutInfo, VkDescriptorSetLayout> m_descSetLayouts;
-   std::unordered_map<cyd::PipelineLayoutInfo, VkPipelineLayout> m_pipLayouts;
-   std::unordered_map<cyd::PipelineInfo, VkPipeline> m_pipelines;
+   std::unordered_map<CYD::DescriptorSetLayoutInfo, VkDescriptorSetLayout> m_descSetLayouts;
+   std::unordered_map<CYD::PipelineLayoutInfo, VkPipelineLayout> m_pipLayouts;
+   
+   std::unordered_map<CYD::GraphicsPipelineInfo, VkPipeline> m_graphicsPipelines;
+   std::unordered_map<CYD::ComputePipelineInfo, VkPipeline> m_computePipelines;
 };
 }

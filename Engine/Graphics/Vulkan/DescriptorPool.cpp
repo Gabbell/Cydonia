@@ -12,13 +12,23 @@ namespace vk
 {
 DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
 {
-   std::array<VkDescriptorPoolSize, 2> poolSizes = {};
+   std::array<VkDescriptorPoolSize, 5> poolSizes = {};
 
+   // TODO Make more descriptor pools based on differnent types?
    poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
    poolSizes[0].descriptorCount = 32;
 
-   poolSizes[1].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+   poolSizes[1].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
    poolSizes[1].descriptorCount = 32;
+
+   poolSizes[2].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+   poolSizes[2].descriptorCount = 32;
+
+   poolSizes[3].type            = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+   poolSizes[3].descriptorCount = 32;
+
+   poolSizes[4].type            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+   poolSizes[4].descriptorCount = 32;
 
    VkDescriptorPoolCreateInfo poolInfo = {};
    poolInfo.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -33,7 +43,7 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
    CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Could not create descriptor pool" );
 }
 
-VkDescriptorSet DescriptorPool::allocate( const cyd::DescriptorSetLayoutInfo& layout ) const
+VkDescriptorSet DescriptorPool::allocate( const CYD::DescriptorSetLayoutInfo& layout ) const
 {
    const VkDescriptorSetLayout vkDescSetLayout = m_device.getPipelineStash().findOrCreate( layout );
 

@@ -4,7 +4,7 @@
 
 #include <Window/GLFWWindow.h>
 
-namespace cyd
+namespace CYD
 {
 // =================================================================================================
 // Implementation

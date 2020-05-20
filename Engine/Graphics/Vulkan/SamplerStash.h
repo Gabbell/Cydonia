@@ -27,10 +27,10 @@ class SamplerStash final
    SamplerStash( const Device& device );
    ~SamplerStash();
 
-   const VkSampler findOrCreate( const cyd::SamplerInfo& info );
+   const VkSampler findOrCreate( const CYD::SamplerInfo& info );
 
   private:
    const Device& m_device;
-   std::unordered_map<cyd::SamplerInfo, VkSampler> m_samplers;
+   std::unordered_map<CYD::SamplerInfo, VkSampler> m_samplers;
 };
 }

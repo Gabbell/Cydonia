@@ -4,7 +4,7 @@
 
 #include <cstdio>
 
-namespace cyd::GRIS
+namespace CYD::GRIS
 {
 static RenderBackend* b = nullptr;
 
@@ -59,7 +59,12 @@ void SetViewport( CmdListHandle cmdList, const Rectangle& viewport )
    b->setViewport( cmdList, viewport );
 }
 
-void BindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo )
+void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo )
+{
+   b->bindPipeline( cmdList, pipInfo );
+}
+
+void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )
 {
    b->bindPipeline( cmdList, pipInfo );
 }
@@ -86,9 +91,19 @@ void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, 
    b->bindTexture( cmdList, texHandle, set, binding );
 }
 
+void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
+{
+   b->bindImage( cmdList, texHandle, set, binding );
+}
+
+void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, uint32_t set, uint32_t binding )
+{
+   b->bindBuffer( cmdList, bufferHandle, set, binding );
+}
+
 void BindUniformBuffer(
     CmdListHandle cmdList,
-    UniformBufferHandle bufferHandle,
+    BufferHandle bufferHandle,
     uint32_t set,
     uint32_t binding )
 {
@@ -108,7 +123,10 @@ void UpdateConstantBuffer(
 // =================================================================================================
 // Resources
 //
-TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
+TextureHandle CreateTexture( CmdListHandle transferList, const TextureDescription& desc )
+{
+   return b->createTexture( transferList, desc );
+}
 
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const std::string& path )
@@ -121,7 +139,6 @@ CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const
 {
    return b->createTexture( transferList, desc, pTexels );
 }
-
 
 VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
@@ -138,13 +155,9 @@ CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndi
    return b->createIndexBuffer( transferList, count, pIndices );
 }
 
-UniformBufferHandle CreateUniformBuffer( size_t size ) { return b->createUniformBuffer( size ); }
+BufferHandle CreateUniformBuffer( size_t size ) { return b->createUniformBuffer( size ); }
 
-void CopyToUniformBuffer(
-    UniformBufferHandle bufferHandle,
-    const void* pData,
-    size_t offset,
-    size_t size )
+void CopyToUniformBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
 {
    return b->copyToUniformBuffer( bufferHandle, pData, offset, size );
 }
@@ -158,10 +171,7 @@ void DestroyVertexBuffer( VertexBufferHandle bufferHandle )
 
 void DestroyIndexBuffer( IndexBufferHandle bufferHandle ) { b->destroyIndexBuffer( bufferHandle ); }
 
-void DestroyUniformBuffer( UniformBufferHandle bufferHandle )
-{
-   b->destroyUniformBuffer( bufferHandle );
-}
+void DestroyUniformBuffer( BufferHandle bufferHandle ) { b->destroyUniformBuffer( bufferHandle ); }
 
 // =================================================================================================
 // Drawing
@@ -191,6 +201,11 @@ void DrawVertices( CmdListHandle cmdList, uint32_t vertexCount )
 void DrawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount )
 {
    b->drawVerticesIndexed( cmdList, indexCount );
+}
+
+void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )
+{
+   b->dispatch( cmdList, workX, workY, workZ );
 }
 
 void PresentFrame() { b->presentFrame(); }

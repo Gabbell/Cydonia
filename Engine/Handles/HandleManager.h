@@ -4,7 +4,7 @@
 
 #include <cstdint>
 
-namespace cyd
+namespace CYD
 {
 class HandleManager
 {

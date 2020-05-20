@@ -10,7 +10,7 @@
 // ================================================================================================
 FWDHANDLE( VkPhysicalDevice );
 
-namespace cyd
+namespace CYD
 {
 class Window;
 }
@@ -31,7 +31,7 @@ namespace vk
 class DeviceHerder final
 {
   public:
-   DeviceHerder( const cyd::Window& window, const Instance& instance, const Surface& surface );
+   DeviceHerder( const CYD::Window& window, const Instance& instance, const Surface& surface );
    ~DeviceHerder();
 
    // Main device is always the first one for now
@@ -48,7 +48,7 @@ class DeviceHerder final
    // =============================================================================================
    // Private Variables
    // =============================================================================================
-   const cyd::Window& m_window;
+   const CYD::Window& m_window;
 
    std::vector<const char*> m_extensions;
 

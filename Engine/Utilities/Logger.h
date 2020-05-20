@@ -1,6 +1,6 @@
 #pragma once
 
-namespace cyd
+namespace CYD
 {
 class Logger
 {
@@ -8,4 +8,4 @@ class Logger
    Logger();
    ~Logger();
 };
-}  // namespace cyd
+}  // namespace CYD

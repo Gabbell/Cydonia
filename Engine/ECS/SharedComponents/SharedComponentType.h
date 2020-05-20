@@ -2,7 +2,7 @@
 
 #include <cstdint>
 
-namespace cyd
+namespace CYD
 {
 // TODO Make these available at the game layer. Should be able to create custom components
 

@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Graphics/ShaderConstants.h>
-
 #include <Common/Include.h>
 
 #include <glm/glm.hpp>
@@ -10,7 +8,7 @@
 #include <string>
 #include <vector>
 
-namespace cyd
+namespace CYD
 {
 // ================================================================================================
 // Types & Enums
@@ -62,6 +60,8 @@ enum MemoryType : Flag
 };
 using MemoryTypeFlag = Flag;
 
+namespace ShaderStage
+{
 enum ShaderStage : Flag
 {
    VERTEX_STAGE        = 1 << 0,
@@ -71,7 +71,14 @@ enum ShaderStage : Flag
    ALL_GRAPHICS_STAGES = 1 << 4,
    ALL_STAGES          = 1 << 5
 };
+}
 using ShaderStageFlag = Flag;
+
+enum class PipelineType
+{
+   GRAPHICS,
+   COMPUTE
+};
 
 enum class IndexType
 {
@@ -87,6 +94,18 @@ enum class PixelFormat
    RGBA16F_SFLOAT,
    RGBA32F_SFLOAT,
    D32_SFLOAT
+};
+
+enum class ImageLayout
+{
+   UNKNOWN,
+   GENERAL,
+   COLOR_ATTACHMENT,
+   DEPTH_ATTACHMENT,
+   SHADER_READ,
+   TRANSFER_SRC,
+   TRANSFER_DST,
+   PRESENT_SRC
 };
 
 enum class ColorSpace
@@ -149,7 +168,10 @@ enum class ImageType
 enum class ShaderResourceType
 {
    UNIFORM,
-   COMBINED_IMAGE_SAMPLER
+   STORAGE,
+   COMBINED_IMAGE_SAMPLER,
+   STORAGE_IMAGE,
+   SAMPLED_IMAGE
 };
 
 enum class Filter
@@ -176,9 +198,10 @@ struct TextureDescription
    size_t size;
    uint32_t width;
    uint32_t height;
-   ImageType type;
-   PixelFormat format;
-   ImageUsageFlag usage;
+   ImageType type;          // 1D, 2D, 3D...
+   PixelFormat format;      // The texture's pixel format
+   ImageUsageFlag usage;    // How this image will be used
+   ShaderStageFlag stages;  // Stages where this texture is accessed
 };
 
 struct Extent
@@ -264,17 +287,6 @@ struct PipelineLayoutInfo
    std::vector<DescriptorSetLayoutInfo> descSets;
 };
 
-struct PipelineInfo
-{
-   bool operator==( const PipelineInfo& other ) const;
-   std::vector<std::string> shaders;
-   ShaderConstants constants;
-   PipelineLayoutInfo pipLayout;
-   DrawPrimitive drawPrim;
-   PolygonMode polyMode;
-   Extent extent;
-};
-
 struct SwapchainInfo
 {
    Extent extent;
@@ -288,9 +300,9 @@ struct SwapchainInfo
 // Hashing Functions
 
 template <>
-struct std::hash<cyd::Vertex>
+struct std::hash<CYD::Vertex>
 {
-   size_t operator()( const cyd::Vertex& vertex ) const noexcept
+   size_t operator()( const CYD::Vertex& vertex ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, vertex.pos.x );
@@ -308,9 +320,9 @@ struct std::hash<cyd::Vertex>
 };
 
 template <>
-struct std::hash<cyd::Extent>
+struct std::hash<CYD::Extent>
 {
-   size_t operator()( const cyd::Extent& extent ) const noexcept
+   size_t operator()( const CYD::Extent& extent ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, extent.width );
@@ -320,9 +332,9 @@ struct std::hash<cyd::Extent>
 };
 
 template <>
-struct std::hash<cyd::Attachment>
+struct std::hash<CYD::Attachment>
 {
-   size_t operator()( const cyd::Attachment& attachment ) const noexcept
+   size_t operator()( const CYD::Attachment& attachment ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, attachment.format );
@@ -335,9 +347,9 @@ struct std::hash<cyd::Attachment>
 };
 
 template <>
-struct std::hash<cyd::ShaderResourceInfo>
+struct std::hash<CYD::ShaderResourceInfo>
 {
-   size_t operator()( const cyd::ShaderResourceInfo& shaderObject ) const noexcept
+   size_t operator()( const CYD::ShaderResourceInfo& shaderObject ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, shaderObject.type );
@@ -348,9 +360,9 @@ struct std::hash<cyd::ShaderResourceInfo>
 };
 
 template <>
-struct std::hash<cyd::PushConstantRange>
+struct std::hash<CYD::PushConstantRange>
 {
-   size_t operator()( const cyd::PushConstantRange& range ) const noexcept
+   size_t operator()( const CYD::PushConstantRange& range ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, range.stages );
@@ -361,11 +373,11 @@ struct std::hash<cyd::PushConstantRange>
 };
 
 template <>
-struct std::hash<cyd::RenderPassInfo>
+struct std::hash<CYD::RenderPassInfo>
 {
-   size_t operator()( const cyd::RenderPassInfo& renderPass ) const noexcept
+   size_t operator()( const CYD::RenderPassInfo& renderPass ) const noexcept
    {
-      const std::vector<cyd::Attachment>& attachments = renderPass.attachments;
+      const std::vector<CYD::Attachment>& attachments = renderPass.attachments;
 
       size_t seed = 0;
       for( const auto& attachment : attachments )
@@ -377,9 +389,9 @@ struct std::hash<cyd::RenderPassInfo>
 };
 
 template <>
-struct std::hash<cyd::DescriptorSetLayoutInfo>
+struct std::hash<CYD::DescriptorSetLayoutInfo>
 {
-   size_t operator()( const cyd::DescriptorSetLayoutInfo& descSetLayoutInfo ) const noexcept
+   size_t operator()( const CYD::DescriptorSetLayoutInfo& descSetLayoutInfo ) const noexcept
    {
       size_t seed = 0;
       for( const auto& ubo : descSetLayoutInfo.shaderResources )
@@ -391,9 +403,9 @@ struct std::hash<cyd::DescriptorSetLayoutInfo>
 };
 
 template <>
-struct std::hash<cyd::PipelineLayoutInfo>
+struct std::hash<CYD::PipelineLayoutInfo>
 {
-   size_t operator()( const cyd::PipelineLayoutInfo& pipLayoutInfo ) const noexcept
+   size_t operator()( const CYD::PipelineLayoutInfo& pipLayoutInfo ) const noexcept
    {
       size_t seed = 0;
       for( const auto& range : pipLayoutInfo.ranges )
@@ -405,30 +417,9 @@ struct std::hash<cyd::PipelineLayoutInfo>
 };
 
 template <>
-struct std::hash<cyd::PipelineInfo>
+struct std::hash<CYD::SamplerInfo>
 {
-   size_t operator()( const cyd::PipelineInfo& pipInfo ) const noexcept
-   {
-      const std::vector<std::string>& shaders = pipInfo.shaders;
-
-      size_t seed = 0;
-      hashCombine( seed, pipInfo.pipLayout );
-      hashCombine( seed, pipInfo.drawPrim );
-      hashCombine( seed, pipInfo.polyMode );
-      hashCombine( seed, pipInfo.extent );
-      for( const auto& shader : shaders )
-      {
-         hashCombine( seed, shader );
-      }
-
-      return seed;
-   }
-};
-
-template <>
-struct std::hash<cyd::SamplerInfo>
-{
-   size_t operator()( const cyd::SamplerInfo& samplerInfo ) const noexcept
+   size_t operator()( const CYD::SamplerInfo& samplerInfo ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, samplerInfo.useAnisotropy );

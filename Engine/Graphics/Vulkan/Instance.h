@@ -10,7 +10,7 @@
 FWDHANDLE( VkInstance );
 FWDHANDLE( VkDebugUtilsMessengerEXT );
 
-namespace cyd
+namespace CYD
 {
 class Window;
 }
@@ -23,7 +23,7 @@ namespace vk
 class Instance final
 {
   public:
-   explicit Instance( const cyd::Window& window );
+   explicit Instance( const CYD::Window& window );
    NON_COPIABLE( Instance )
    ~Instance();
 
@@ -42,7 +42,7 @@ class Instance final
    // =============================================================================================
    std::vector<const char*> m_layers;
 
-   const cyd::Window& m_window;
+   const CYD::Window& m_window;
 
    VkInstance m_vkInstance                   = nullptr;
    VkDebugUtilsMessengerEXT m_debugMessenger = nullptr;

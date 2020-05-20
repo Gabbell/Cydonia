@@ -1,8 +1,8 @@
 #include "Logger.h"
 
-namespace cyd
+namespace CYD
 {
 Logger::Logger() {}
 
 Logger::~Logger() {}
-}  // namespace cyd
+}  // namespace CYD

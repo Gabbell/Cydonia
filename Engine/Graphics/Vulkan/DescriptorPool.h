@@ -25,7 +25,7 @@ class DescriptorPool final
    explicit DescriptorPool( const Device& device );
    ~DescriptorPool();
 
-   VkDescriptorSet allocate( const cyd::DescriptorSetLayoutInfo& layout ) const;
+   VkDescriptorSet allocate( const CYD::DescriptorSetLayoutInfo& layout ) const;
    void free( const VkDescriptorSet& descSet ) const;
 
   private:

@@ -31,16 +31,17 @@ class TypeConversions final
    NON_COPIABLE( TypeConversions )
    ~TypeConversions() = delete;
 
-   static VkIndexType cydToVkIndexType( cyd::IndexType type );
-   static VkFormat cydToVkFormat( cyd::PixelFormat format );
-   static VkColorSpaceKHR cydToVkSpace( cyd::ColorSpace space );
-   static VkAttachmentLoadOp cydToVkOp( cyd::LoadOp op );
-   static VkAttachmentStoreOp cydToVkOp( cyd::StoreOp op );
-   static VkPrimitiveTopology cydToVkDrawPrim( cyd::DrawPrimitive prim );
-   static VkPolygonMode cydToVkPolyMode( cyd::PolygonMode polyMode );
-   static uint32_t cydToVkShaderStages( cyd::ShaderStageFlag stages );
-   static VkDescriptorType cydToVkDescriptorType( cyd::ShaderResourceType type );
-   static VkFilter cydToVkFilter( cyd::Filter filter );
-   static VkSamplerAddressMode cydToVkAddressMode( cyd::AddressMode mode );
+   static VkIndexType cydToVkIndexType( CYD::IndexType type );
+   static VkFormat cydToVkFormat( CYD::PixelFormat format );
+   static VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space );
+   static VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op );
+   static VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op );
+   static VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim );
+   static VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode );
+   static uint32_t cydToVkShaderStages( CYD::ShaderStageFlag stages );
+   static VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type );
+   static VkFilter cydToVkFilter( CYD::Filter filter );
+   static VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode );
+   static VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout );
 };
 }

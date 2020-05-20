@@ -3,7 +3,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-namespace cyd::Transform
+namespace CYD::Transform
 {
 void rotate( glm::quat& rotation, float pitch, float yaw, float roll );
 void rotateLocal( glm::quat& rotation, float pitch, float yaw, float roll );

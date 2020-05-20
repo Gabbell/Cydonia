@@ -16,19 +16,19 @@ static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
 
 namespace vk
 {
-Swapchain::Swapchain( Device& device, const Surface& surface, const cyd::SwapchainInfo& info )
+Swapchain::Swapchain( Device& device, const Surface& surface, const CYD::SwapchainInfo& info )
     : m_device( device ), m_surface( surface )
 {
    // Initializing attachments
    m_colorPresentation.format  = info.format;
-   m_colorPresentation.loadOp  = cyd::LoadOp::CLEAR;
-   m_colorPresentation.storeOp = cyd::StoreOp::STORE;
-   m_colorPresentation.type    = cyd::AttachmentType::COLOR_PRESENTATION;
+   m_colorPresentation.loadOp  = CYD::LoadOp::CLEAR;
+   m_colorPresentation.storeOp = CYD::StoreOp::STORE;
+   m_colorPresentation.type    = CYD::AttachmentType::COLOR_PRESENTATION;
 
-   m_depthPresentation.format  = cyd::PixelFormat::D32_SFLOAT;
-   m_depthPresentation.loadOp  = cyd::LoadOp::CLEAR;
-   m_depthPresentation.storeOp = cyd::StoreOp::DONT_CARE;
-   m_depthPresentation.type    = cyd::AttachmentType::DEPTH_STENCIL;
+   m_depthPresentation.format  = CYD::PixelFormat::D32_SFLOAT;
+   m_depthPresentation.loadOp  = CYD::LoadOp::CLEAR;
+   m_depthPresentation.storeOp = CYD::StoreOp::DONT_CARE;
+   m_depthPresentation.type    = CYD::AttachmentType::DEPTH_STENCIL;
 
    _createSwapchain( info );
    _createImageViews();
@@ -48,7 +48,7 @@ static uint32_t chooseImageCount( const VkSurfaceCapabilitiesKHR& caps )
    return imageCount;
 }
 
-static VkExtent2D chooseExtent( const cyd::Extent& extent, const VkSurfaceCapabilitiesKHR& caps )
+static VkExtent2D chooseExtent( const CYD::Extent& extent, const VkSurfaceCapabilitiesKHR& caps )
 {
    if( caps.currentExtent.width != UINT32_MAX )
    {
@@ -69,8 +69,8 @@ static VkExtent2D chooseExtent( const cyd::Extent& extent, const VkSurfaceCapabi
 }
 
 static VkSurfaceFormatKHR chooseFormat(
-    cyd::PixelFormat format,
-    cyd::ColorSpace space,
+    CYD::PixelFormat format,
+    CYD::ColorSpace space,
     const VkPhysicalDevice& physDevice,
     const VkSurfaceKHR& vkSurface )
 {
@@ -104,7 +104,7 @@ static VkSurfaceFormatKHR chooseFormat(
 }
 
 static VkPresentModeKHR choosePresentMode(
-    cyd::PresentMode mode,
+    CYD::PresentMode mode,
     const VkPhysicalDevice& physDevice,
     const VkSurfaceKHR& vkSurface )
 {
@@ -123,16 +123,16 @@ static VkPresentModeKHR choosePresentMode(
    VkPresentModeKHR desiredMode;
    switch( mode )
    {
-      case cyd::PresentMode::FIFO:
+      case CYD::PresentMode::FIFO:
          desiredMode = VK_PRESENT_MODE_FIFO_KHR;
          break;
-      case cyd::PresentMode::FIFO_RELAXED:
+      case CYD::PresentMode::FIFO_RELAXED:
          desiredMode = VK_PRESENT_MODE_FIFO_RELAXED_KHR;
          break;
-      case cyd::PresentMode::IMMEDIATE:
+      case CYD::PresentMode::IMMEDIATE:
          desiredMode = VK_PRESENT_MODE_IMMEDIATE_KHR;
          break;
-      case cyd::PresentMode::MAILBOX:
+      case CYD::PresentMode::MAILBOX:
          desiredMode = VK_PRESENT_MODE_MAILBOX_KHR;
          break;
       default:
@@ -149,7 +149,7 @@ static VkPresentModeKHR choosePresentMode(
    return presentModes[0];
 }
 
-void Swapchain::_createSwapchain( const cyd::SwapchainInfo& info )
+void Swapchain::_createSwapchain( const CYD::SwapchainInfo& info )
 {
    const VkDevice& vkDevice           = m_device.getVKDevice();
    const VkPhysicalDevice& physDevice = m_device.getPhysicalDevice();
@@ -302,7 +302,7 @@ void Swapchain::initFramebuffers( bool hasDepth )
    // If we are switching from depth on/off or never initialized the render pass
    if( ( hasDepth != m_hasDepth ) || !( m_vkRenderPass ) )
    {
-      cyd::RenderPassInfo renderPassInfo = {};
+      CYD::RenderPassInfo renderPassInfo = {};
 
       renderPassInfo.attachments.push_back( m_colorPresentation );
 
@@ -354,11 +354,17 @@ void Swapchain::acquireImage()
        m_availableSems[m_currentFrame],
        VK_NULL_HANDLE,
        &m_imageIndex );
+
+   m_ready = true;
 }
 
 void Swapchain::present()
 {
-   const VkQueue* presentQueue = m_device.getQueueFromUsage( cyd::QueueUsage::GRAPHICS, true );
+   CYDASSERT(
+       m_ready &&
+       "Swapchain: No image was acquired before presenting. Are you rendering to the swapchain?" );
+
+   const VkQueue* presentQueue = m_device.getQueueFromUsage( CYD::QueueUsage::GRAPHICS, true );
    if( presentQueue )
    {
       VkSwapchainKHR swapChains[]    = { m_vkSwapchain };
@@ -374,6 +380,8 @@ void Swapchain::present()
 
       vkQueuePresentKHR( *presentQueue, &presentInfo );
       m_currentFrame = ( m_currentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
+
+      m_ready = false;
    }
    else
    {

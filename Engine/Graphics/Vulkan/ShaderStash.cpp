@@ -7,7 +7,6 @@
 #include <filesystem>
 
 // Hard-coded shader directories
-static constexpr char RAW_SHADER_DIR[]      = "Assets/Shaders/Raw/";
 static constexpr char COMPILED_SHADER_DIR[] = "Assets/Shaders/Compiled/";
 
 namespace vk

@@ -9,7 +9,7 @@
 // =================================================================================================
 // Forwards
 // =================================================================================================
-namespace cyd
+namespace CYD
 {
 class Window;
 class VKRenderBackendImp;
@@ -18,7 +18,7 @@ class VKRenderBackendImp;
 // =================================================================================================
 // Definition
 // =================================================================================================
-namespace cyd
+namespace CYD
 {
 class VKRenderBackend final : public RenderBackend
 {
@@ -43,7 +43,8 @@ class VKRenderBackend final : public RenderBackend
    // Pipeline Specification
    // ==============================================================================================
    void setViewport( CmdListHandle cmdList, const Rectangle& viewport ) override;
-   void bindPipeline( CmdListHandle cmdList, const PipelineInfo& pipInfo ) override;
+   void bindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo ) override;
+   void bindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo ) override;
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) override;
    void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
        override;
@@ -52,9 +53,16 @@ class VKRenderBackend final : public RenderBackend
        TextureHandle texHandle,
        uint32_t set,
        uint32_t binding ) override;
+   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
+       override;
+   void bindBuffer(
+       CmdListHandle cmdList,
+       BufferHandle bufferHandle,
+       uint32_t set,
+       uint32_t binding ) override;
    void bindUniformBuffer(
        CmdListHandle cmdList,
-       UniformBufferHandle bufferHandle,
+       BufferHandle bufferHandle,
        uint32_t set,
        uint32_t binding ) override;
    void updateConstantBuffer(
@@ -66,7 +74,8 @@ class VKRenderBackend final : public RenderBackend
 
    // Resources
    // ==============================================================================================
-   TextureHandle createTexture( const TextureDescription& desc ) override;
+   TextureHandle createTexture( CmdListHandle transferList, const TextureDescription& desc )
+       override;
 
    TextureHandle createTexture(
        CmdListHandle transferList,
@@ -87,9 +96,9 @@ class VKRenderBackend final : public RenderBackend
    IndexBufferHandle
    createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) override;
 
-   UniformBufferHandle createUniformBuffer( size_t size ) override;
+   BufferHandle createUniformBuffer( size_t size ) override;
    void copyToUniformBuffer(
-       UniformBufferHandle bufferHandle,
+       BufferHandle bufferHandle,
        const void* pData,
        size_t offset,
        size_t size ) override;
@@ -97,7 +106,7 @@ class VKRenderBackend final : public RenderBackend
    void destroyTexture( TextureHandle texHandle ) override;
    void destroyVertexBuffer( VertexBufferHandle bufferHandle ) override;
    void destroyIndexBuffer( IndexBufferHandle bufferHandle ) override;
-   void destroyUniformBuffer( UniformBufferHandle bufferHandle ) override;
+   void destroyUniformBuffer( BufferHandle bufferHandle ) override;
 
    // Drawing
    // ==============================================================================================
@@ -110,6 +119,7 @@ class VKRenderBackend final : public RenderBackend
    void endRenderPass( CmdListHandle cmdList ) override;
    void drawVertices( CmdListHandle cmdList, uint32_t vertexCount ) override;
    void drawVerticesIndexed( CmdListHandle cmdList, uint32_t indexCount ) override;
+   void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
    void presentFrame() override;
 
   private:

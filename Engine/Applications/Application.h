@@ -9,7 +9,7 @@
 // =================================================================================================
 // Forwards
 // =================================================================================================
-namespace cyd
+namespace CYD
 {
 class Window;
 }
@@ -17,16 +17,14 @@ class Window;
 // =================================================================================================
 // Definition
 // =================================================================================================
-namespace cyd
+namespace CYD
 {
 class Application
 {
   public:
-   Application();
+   Application( uint32_t width, uint32_t height, const std::string& title );
    NON_COPIABLE( Application )
    virtual ~Application();
-
-   virtual bool init( uint32_t width, uint32_t height, const std::string& title );
 
    void startLoop();
 

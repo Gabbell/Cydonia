@@ -4,7 +4,7 @@
 
 #include <glm/glm.hpp>
 
-namespace cyd
+namespace CYD
 {
 class InputComponent final : public BaseSharedComponent
 {

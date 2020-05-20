@@ -5,15 +5,12 @@
 #include <chrono>
 #include <memory>
 
-namespace cyd
+namespace CYD
 {
-Application::Application() = default;
-
-bool Application::init( uint32_t width, uint32_t height, const std::string& title )
+Application::Application( uint32_t width, uint32_t height, const std::string& title )
 {
    m_window = std::make_unique<Window>();
-
-   return m_window->init( width, height, title );
+   m_window->init( width, height, title );
 }
 
 void Application::startLoop()

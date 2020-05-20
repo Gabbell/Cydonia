@@ -89,7 +89,7 @@ void destroyDebugUtilsMessengerEXT(
 
 namespace vk
 {
-Instance::Instance( const cyd::Window& window ) : m_window( window )
+Instance::Instance( const CYD::Window& window ) : m_window( window )
 {
    _createVKInstance();
    _createDebugMessenger();

@@ -5,7 +5,7 @@
 
 #include <GLFW/glfw3.h>
 
-namespace cyd
+namespace CYD
 {
 bool Window::init( uint32_t width, uint32_t height, const std::string& title )
 {

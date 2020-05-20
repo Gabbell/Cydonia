@@ -10,8 +10,8 @@ namespace vk
 void Buffer::acquire(
     const Device& device,
     size_t size,
-    cyd::BufferUsageFlag usage,
-    cyd::MemoryTypeFlag memoryType )
+    CYD::BufferUsageFlag usage,
+    CYD::MemoryTypeFlag memoryType )
 {
    m_pDevice    = &device;
    m_size       = size;
@@ -26,27 +26,27 @@ void Buffer::acquire(
    bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
    bufferInfo.size               = m_size;
 
-   if( usage & cyd::BufferUsage::UNIFORM )
+   if( usage & CYD::BufferUsage::UNIFORM )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
    }
-   if( usage & cyd::BufferUsage::STORAGE )
+   if( usage & CYD::BufferUsage::STORAGE )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
    }
-   if( usage & cyd::BufferUsage::TRANSFER_SRC )
+   if( usage & CYD::BufferUsage::TRANSFER_SRC )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
    }
-   if( usage & cyd::BufferUsage::TRANSFER_DST )
+   if( usage & CYD::BufferUsage::TRANSFER_DST )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
    }
-   if( usage & cyd::BufferUsage::INDEX )
+   if( usage & CYD::BufferUsage::INDEX )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
    }
-   if( usage & cyd::BufferUsage::VERTEX )
+   if( usage & CYD::BufferUsage::VERTEX )
    {
       bufferInfo.usage |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
    }
@@ -79,7 +79,7 @@ void Buffer::release()
 
 void Buffer::copy( const void* pData, size_t offset, size_t size )
 {
-   if( !( m_memoryType & cyd::MemoryType::HOST_VISIBLE ) )
+   if( !( m_memoryType & CYD::MemoryType::HOST_VISIBLE ) )
    {
       CYDASSERT( !"Buffer: Cannot copy to buffer, buffer memory not host visible" );
       return;
@@ -98,7 +98,7 @@ void Buffer::copy( const void* pData, size_t offset, size_t size )
 
 void Buffer::_mapMemory()
 {
-   if( !( m_memoryType & cyd::MemoryType::HOST_VISIBLE ) )
+   if( !( m_memoryType & CYD::MemoryType::HOST_VISIBLE ) )
    {
       CYDASSERT( !"Buffer: Cannot map memory, buffer memory not host visible" );
       return;
@@ -112,7 +112,7 @@ void Buffer::_mapMemory()
 
 void Buffer::_unmapMemory()
 {
-   if( !( m_memoryType & cyd::MemoryType::HOST_VISIBLE ) )
+   if( !( m_memoryType & CYD::MemoryType::HOST_VISIBLE ) )
    {
       CYDASSERT( !"Buffer: Cannot unmap memory, buffer memory not host visible" );
       return;
@@ -132,15 +132,15 @@ void Buffer::_allocateMemory()
    vkGetBufferMemoryRequirements( m_pDevice->getVKDevice(), m_vkBuffer, &memRequirements );
 
    VkMemoryPropertyFlags memoryProperty = 0;
-   if( m_memoryType & cyd::MemoryType::DEVICE_LOCAL )
+   if( m_memoryType & CYD::MemoryType::DEVICE_LOCAL )
    {
       memoryProperty |= VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
    }
-   if( m_memoryType & cyd::MemoryType::HOST_VISIBLE )
+   if( m_memoryType & CYD::MemoryType::HOST_VISIBLE )
    {
       memoryProperty |= VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT;
    }
-   if( m_memoryType & cyd::MemoryType::HOST_COHERENT )
+   if( m_memoryType & CYD::MemoryType::HOST_COHERENT )
    {
       memoryProperty |= VK_MEMORY_PROPERTY_HOST_COHERENT_BIT;
    }

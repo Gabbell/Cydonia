@@ -1,6 +1,6 @@
 #include <Graphics/Transforms.h>
 
-namespace cyd::Transform
+namespace CYD::Transform
 {
 void rotate( glm::quat& rotation, float pitch, float yaw, float roll )
 {

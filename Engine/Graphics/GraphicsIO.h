@@ -4,7 +4,7 @@
 #include <string>
 #include <vector>
 
-namespace cyd
+namespace CYD
 {
 struct Vertex;
 struct TextureDescription;

@@ -30,16 +30,16 @@ class CommandPool final
    CommandPool(
        const Device& device,
        uint32_t familyIndex,
-       cyd::QueueUsageFlag usage,
+       CYD::QueueUsageFlag usage,
        bool supportsPresentation );
    MOVABLE( CommandPool )
    ~CommandPool();
 
    const VkCommandPool& getVKCommandPool() const { return m_vkPool; }
 
-   CommandBuffer* createCommandBuffer();
- 
-   cyd::QueueUsageFlag getType() const noexcept { return m_type; }
+   CommandBuffer* createCommandBuffer( CYD::QueueUsageFlag usage );
+
+   CYD::QueueUsageFlag getType() const noexcept { return m_type; }
    uint32_t getFamilyIndex() const noexcept { return m_familyIndex; }
    bool supportsPresentation() const noexcept { return m_supportsPresentation; }
 
@@ -54,7 +54,7 @@ class CommandPool final
 
    VkCommandPool m_vkPool = nullptr;
 
-   cyd::QueueUsageFlag m_type;
+   CYD::QueueUsageFlag m_type;
    uint32_t m_familyIndex      = 0;
    bool m_supportsPresentation = false;
 };

@@ -16,15 +16,15 @@ Shader::Shader( const Device& device, const std::string& shaderPath )
    size_t dotIndex  = m_shaderPath.find_last_of( "." );
    std::string type = m_shaderPath.substr( dotIndex - 4, 4 );
 
-   if( type == "vert" )
+   if( type == "VERT" )
    {
       m_type = Type::VERTEX;
    }
-   else if( type == "frag" )
+   else if( type == "FRAG" )
    {
       m_type = Type::FRAGMENT;
    }
-   else if( type == "comp" )
+   else if( type == "COMP" )
    {
       m_type = Type::COMPUTE;
    }
