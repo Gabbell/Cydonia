@@ -12,6 +12,7 @@ Take a look at the engine master branch project if you want to know what's on my
 * An application class that can be expanded to create your own game-loop-based thingies.
 * A rendering interface that can be expanded with multiple different backends (the Vulkan one is my priority).
 * An incline towards data-oriented design. This includes an ECS used for rendering, input management and a bunch of other stuff... potentially.
+* Compute-ish capabilities
 * My tears, blood AND sweat.
 * A really crude windowing system.
 * An attempt at PBR
