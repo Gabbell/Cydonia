@@ -22,9 +22,9 @@ void RenderSystem::tick( double deltaS )
    const CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
    const SceneComponent& scene   = ECS::GetSharedComponent<SceneComponent>();
 
-   GRIS::CopyToUniformBuffer( viewProjectionBuffer, &camera.vp, 0, sizeof( camera.vp ) );
-   GRIS::CopyToUniformBuffer( cameraPosBuffer, &camera.pos, 0, sizeof( camera.pos ) );
-   GRIS::CopyToUniformBuffer( lightsBuffer, &scene.dirLight, 0, sizeof( scene.dirLight ) );
+   GRIS::CopyToBuffer( viewProjectionBuffer, &camera.vp, 0, sizeof( camera.vp ) );
+   GRIS::CopyToBuffer( cameraPosBuffer, &camera.pos, 0, sizeof( camera.pos ) );
+   GRIS::CopyToBuffer( lightsBuffer, &scene.dirLight, 0, sizeof( scene.dirLight ) );
 
    GRIS::BindUniformBuffer( cmdList, viewProjectionBuffer, ENV_VIEW, 0 );
    GRIS::BindUniformBuffer( cmdList, cameraPosBuffer, ENV_VIEW, 1 );
@@ -48,26 +48,11 @@ void RenderSystem::tick( double deltaS )
                                     glm::scale( glm::mat4( 1.0f ), transform.scaling ) *
                                     glm::toMat4( transform.rotation );
 
-      const RenderableComponent* renderable = std::get<RenderableComponent*>( compPair.second );
-      switch( renderable->getType() )
-      {
-         case RenderableType::DEFAULT:
-            DefaultPipeline::Render( cmdList, modelMatrix, renderable );
-            break;
-         case RenderableType::CUSTOM:
-            CustomPipeline::Render( cmdList, deltaS, renderable );
-            break;
-         case RenderableType::PHONG:
-            PhongPipeline::Render( cmdList, modelMatrix, renderable );
-            break;
-         case RenderableType::PBR:
-            PBRPipeline::Render( cmdList, modelMatrix, renderable );
-            break;
-         default:
-            CYDASSERT( !"Unknown renderable type" );
-      }
-
       const MeshComponent& mesh = *std::get<MeshComponent*>( compPair.second );
+      const RenderableComponent* renderable = std::get<RenderableComponent*>( compPair.second );
+
+      RenderPipelines::Prepare( cmdList, deltaS, modelMatrix, renderable );
+
       GRIS::BindVertexBuffer( cmdList, mesh.vertexBuffer );
 
       const bool hasIndexBuffer = ( mesh.indexBuffer != Handle::INVALID_HANDLE );
@@ -110,8 +95,8 @@ bool RenderSystem::init()
 
 void RenderSystem::uninit()
 {
-   GRIS::DestroyUniformBuffer( lightsBuffer );
-   GRIS::DestroyUniformBuffer( cameraPosBuffer );
-   GRIS::DestroyUniformBuffer( viewProjectionBuffer );
+   GRIS::DestroyBuffer( lightsBuffer );
+   GRIS::DestroyBuffer( cameraPosBuffer );
+   GRIS::DestroyBuffer( viewProjectionBuffer );
 }
 }

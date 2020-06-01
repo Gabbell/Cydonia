@@ -97,16 +97,16 @@ class VKRenderBackend final : public RenderBackend
    createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) override;
 
    BufferHandle createUniformBuffer( size_t size ) override;
-   void copyToUniformBuffer(
-       BufferHandle bufferHandle,
-       const void* pData,
-       size_t offset,
-       size_t size ) override;
+
+   BufferHandle createBuffer( size_t size ) override;
+
+   void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
+       override;
 
    void destroyTexture( TextureHandle texHandle ) override;
    void destroyVertexBuffer( VertexBufferHandle bufferHandle ) override;
    void destroyIndexBuffer( IndexBufferHandle bufferHandle ) override;
-   void destroyUniformBuffer( BufferHandle bufferHandle ) override;
+   void destroyBuffer( BufferHandle bufferHandle ) override;
 
    // Drawing
    // ==============================================================================================

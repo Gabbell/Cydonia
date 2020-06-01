@@ -15,7 +15,7 @@
 
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 #include <ECS/Components/Rendering/MeshComponent.h>
-#include <ECS/Components/Rendering/PhongRenderableComponent.h>
+#include <ECS/Components/Rendering/CustomRenderableComponent.h>
 #include <ECS/Components/Transforms/TransformComponent.h>
 
 #include <ECS/SharedComponents/InputComponent.h>
@@ -37,23 +37,37 @@ void VKOceanDemo::preLoop()
    ECS::AddSystem<PlayerMoveSystem>();
    ECS::AddSystem<MovementSystem>();
    ECS::AddSystem<CameraSystem>();
-   ECS::AddSystem<LightSystem>();
    ECS::AddSystem<FFTOceanSystem>();
    ECS::AddSystem<RenderSystem>();
+
+   // Creating player entity
+   const EntityHandle player = ECS::CreateEntity();
+   ECS::Assign<InputComponent>( player );
+   ECS::Assign<TransformComponent>( player, glm::vec3( 0.0f, 0.0f, 0.0f ) );
+   ECS::Assign<MotionComponent>( player );
+   ECS::Assign<CameraComponent>( player );
 
    std::vector<Vertex> gridVerts;
    std::vector<uint32_t> gridIndices;
    MeshGen::Grid( 256, 256, gridVerts, gridIndices );
 
    const EntityHandle ocean = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( ocean, glm::vec3( 0.0f, -10.0f, 0.0f ) );
+   ECS::Assign<TransformComponent>( ocean, glm::vec3( 0.0f, 0.0f, 0.0f ) );
    ECS::Assign<MeshComponent>( ocean, gridVerts, gridIndices );
-   ECS::Assign<FFTOceanComponent>( ocean, 256, 1000, 4, 40.0f, 1.0f, 1.0f );
-   ECS::Assign<PhongRenderableComponent>( ocean );
+   ECS::Assign<FFTOceanComponent>( ocean, 256, 1000, 10.0f, 40.0f, 1.0f, 0.0f );
+   ECS::Assign<RenderableComponent>( ocean );
 }
 
 void VKOceanDemo::tick( double deltaS )
 {
+   static uint32_t frames = 0;
+   frames++;
+   if( frames > 50 )
+   {
+      printf( "FPS: %f\n", 1.0 / deltaS );
+      frames = 0;
+   }
+
    GRIS::PrepareFrame();
    ECS::Tick( deltaS );
    GRIS::PresentFrame();

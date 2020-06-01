@@ -28,10 +28,14 @@ VkFormat TypeConversions::cydToVkFormat( CYD::PixelFormat format )
          return VK_FORMAT_B8G8R8A8_UNORM;
       case CYD::PixelFormat::RGBA8_SRGB:
          return VK_FORMAT_R8G8B8A8_SRGB;
-      case CYD::PixelFormat::RGBA16F_SFLOAT:
+      case CYD::PixelFormat::RGBA16F:
          return VK_FORMAT_R16G16B16A16_SFLOAT;
-      case CYD::PixelFormat::RGBA32F_SFLOAT:
+      case CYD::PixelFormat::RGBA32F:
          return VK_FORMAT_R32G32B32A32_SFLOAT;
+      case CYD::PixelFormat::RG32F:
+         return VK_FORMAT_R32G32_SFLOAT;
+      case CYD::PixelFormat::R32F:
+         return VK_FORMAT_R32_SFLOAT;
       case CYD::PixelFormat::D32_SFLOAT:
          return VK_FORMAT_D32_SFLOAT;
       default:

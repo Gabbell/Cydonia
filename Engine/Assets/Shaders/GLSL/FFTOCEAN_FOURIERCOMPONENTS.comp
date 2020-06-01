@@ -1,0 +1,98 @@
+#version 450
+#define PI 3.1415926535897932384626433832795
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform OceanParameters
+{
+   uint resolution;
+   uint horizontalDimension;
+   uint pingpong;
+   uint direction;
+   uint stage;
+   uint componentMask;
+   float amplitude;
+   float gravity;
+   float windSpeed;
+   float windDirX;
+   float windDirZ;
+   float time;
+};
+
+layout( set = 0, binding = 0, rgba32f ) writeonly uniform image2D tilde_hkt_dy;
+layout( set = 0, binding = 1, rgba32f ) writeonly uniform image2D tilde_hkt_dx;
+layout( set = 0, binding = 2, rgba32f ) writeonly uniform image2D tilde_hkt_dz;
+
+layout( set = 0, binding = 3, rgba32f ) readonly uniform image2D spectrum1;  // ~h0(k)
+layout( set = 0, binding = 4, rgba32f ) readonly uniform image2D spectrum2;  // ~h0(-k)
+
+struct complex
+{
+   float real;
+   float im;
+};
+
+complex mul( complex c0, complex c1 )
+{
+   complex c;
+   c.real = c0.real * c1.real - c0.im * c1.im;
+   c.im   = c0.real * c1.im + c0.im * c1.real;
+   return c;
+}
+
+complex add( complex c0, complex c1 )
+{
+   complex c;
+   c.real = c0.real + c1.real;
+   c.im   = c0.im + c1.im;
+   return c;
+}
+
+complex conj( complex c ) { return complex( c.real, -c.im ); }
+
+void main()
+{
+   const vec2 x = vec2( gl_GlobalInvocationID.xy ) - float( resolution ) / 2.0;
+
+   // Wave vector or the direction of the wave
+   const vec2 waveVector =
+       vec2( 2.0 * PI * x.x / horizontalDimension, 2.0 * PI * x.y / horizontalDimension );
+
+   const float magnitude = max( length( waveVector ), 0.00001 );
+
+   // Omega
+   const float w = sqrt( gravity * magnitude );
+
+   const float cos_wt = cos( w * time );
+   const float sin_wt = sin( w * time );
+
+   // Euler formula
+   const complex exp_iwt     = complex( cos_wt, sin_wt );
+   const complex exp_iwt_inv = complex( cos_wt, -sin_wt );
+
+   const vec2 spectrum1Values = imageLoad( spectrum1, ivec2( gl_GlobalInvocationID.xy ) ).rg;
+   const vec2 spectrum2Values = imageLoad( spectrum2, ivec2( gl_GlobalInvocationID.xy ) ).rg;
+
+   const complex fourierComp     = complex( spectrum1Values.x, spectrum1Values.y );
+   const complex fourierCompConj = conj( complex( spectrum2Values.x, spectrum2Values.y ) );
+
+   // dy
+   const complex hkt_dy = add( mul( fourierComp, exp_iwt ), mul( fourierCompConj, exp_iwt_inv ) );
+
+   // dx
+   const complex dx     = complex( 0.0, -waveVector.x / magnitude );
+   const complex hkt_dx = mul( dx, hkt_dy );
+
+   // dz
+   const complex dy     = complex( 0.0, -waveVector.y / magnitude );
+   const complex hkt_dz = mul( dy, hkt_dy );
+
+   imageStore(
+       tilde_hkt_dy, ivec2( gl_GlobalInvocationID.xy ), vec4( hkt_dy.real, hkt_dy.im, 0.0, 1.0 ) );
+
+   imageStore(
+       tilde_hkt_dx, ivec2( gl_GlobalInvocationID.xy ), vec4( hkt_dx.real, hkt_dx.im, 0.0, 1.0 ) );
+
+   imageStore(
+       tilde_hkt_dz, ivec2( gl_GlobalInvocationID.xy ), vec4( hkt_dz.real, hkt_dz.im, 0.0, 1.0 ) );
+}

@@ -1,0 +1,62 @@
+#version 450
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform OceanParameters
+{
+   uint resolution;
+   uint horizontalDimension;
+   uint pingpong;
+   uint direction;
+   uint stage;
+   uint componentMask;
+   float amplitude;
+   float gravity;
+   float windSpeed;
+   float windDirX;
+   float windDirZ;
+   float time;
+};
+
+layout( set = 0, binding = 0, rgba32f ) restrict uniform image2D displacement;
+layout( set = 0, binding = 1, rg32f ) readonly uniform image2D pingpong0;
+layout( set = 0, binding = 2, rg32f ) readonly uniform image2D pingpong1;
+
+void main()
+{
+   const ivec2 x = ivec2( gl_GlobalInvocationID.xy );
+
+   const float perms[] = {1.0, -1.0};
+   const uint index    = int( mod( ( int( x.x + x.y ) ), 2 ) );
+   const float perm    = perms[index];
+
+   // The components we want to change
+   const vec4 mask =
+       vec4( componentMask >> 3 & 0x1, componentMask >> 2 & 0x1, componentMask >> 1 & 0x1, 1.0 );
+
+   // All the components we don't want to change
+   const vec4 negMask = vec4(
+       ~( componentMask >> 3 ) & 0x1,
+       ~( componentMask >> 2 ) & 0x1,
+       ~( componentMask >> 1 ) & 0x1,
+       1.0 );
+
+   if( pingpong == 0 )
+   {
+      const float h     = imageLoad( pingpong0, x ).r;
+      const float value = perm * ( h / float( resolution * resolution ) );
+
+      const vec4 prev = imageLoad( displacement, x );
+
+      imageStore( displacement, x, ( negMask * prev ) + ( mask * value ) );
+   }
+   else if( pingpong == 1 )
+   {
+      const float h     = imageLoad( pingpong1, x ).r;
+      const float value = perm * ( h / float( resolution * resolution ) );
+
+      const vec4 prev = imageLoad( displacement, x );
+
+      imageStore( displacement, x, ( negMask * prev ) + ( mask * value ) );
+   }
+}

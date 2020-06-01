@@ -8,4 +8,10 @@
       <UniqueIdentifier>{02534dac-1104-45dc-a0ab-c6239d00901b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
+  <ItemGroup>
+    <None Include=".clang-format" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Algorithms\BitManipulation.h" />
+  </ItemGroup>
 </Project>

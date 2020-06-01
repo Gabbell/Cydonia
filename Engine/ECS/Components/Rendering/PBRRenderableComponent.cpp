@@ -17,9 +17,9 @@ bool PBRRenderableComponent::init( const std::string& modelName )
 
    // TODO don't use rgba8_srgb for every texture
    TextureDescription texDesc = {};
-   texDesc.size               = texDesc.width * texDesc.height * sizeof( uint32_t );
    texDesc.width              = 4096;
    texDesc.height             = 4096;
+   texDesc.size               = texDesc.width * texDesc.height * sizeof( uint32_t );
    texDesc.type               = ImageType::TEXTURE_2D;
    texDesc.format             = PixelFormat::RGBA8_SRGB;
    texDesc.usage              = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;

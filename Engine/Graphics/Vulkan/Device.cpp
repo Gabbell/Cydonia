@@ -236,6 +236,14 @@ Buffer* Device::createUniformBuffer( size_t size )
        CYD::MemoryType::HOST_VISIBLE | CYD::MemoryType::HOST_COHERENT );
 }
 
+Buffer* Device::createBuffer( size_t size )
+{
+   return _createBuffer(
+       size,
+       CYD::BufferUsage::TRANSFER_DST | CYD::BufferUsage::STORAGE,
+       CYD::MemoryType::HOST_VISIBLE | CYD::MemoryType::HOST_COHERENT );
+}
+
 Texture* Device::createTexture( const CYD::TextureDescription& desc )
 {
    // Check to see if we have a free spot for a texture.

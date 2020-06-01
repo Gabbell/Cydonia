@@ -357,16 +357,20 @@ class VKRenderBackendImp
       return m_coreHandles.add( uniformBuffer, HandleType::BUFFER );
    }
 
-   void copyToUniformBuffer(
-       BufferHandle bufferHandle,
-       const void* pData,
-       size_t offset,
-       size_t size ) const
+   BufferHandle createBuffer( size_t size )
+   {
+      const auto deviceBuffer = m_mainDevice->createBuffer( size );
+
+      return m_coreHandles.add( deviceBuffer, HandleType::BUFFER );
+   }
+
+   void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
+       const
    {
       if( bufferHandle != Handle::INVALID_HANDLE )
       {
-         auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-         uniformBuffer->copy( pData, offset, size );
+         auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+         buffer->copy( pData, offset, size );
       }
    }
 
@@ -394,7 +398,7 @@ class VKRenderBackendImp
       }
    }
 
-   void destroyUniformBuffer( BufferHandle bufferHandle )
+   void destroyBuffer( BufferHandle bufferHandle )
    {
       if( bufferHandle != Handle::INVALID_HANDLE )
       {
@@ -636,13 +640,15 @@ BufferHandle VKRenderBackend::createUniformBuffer( size_t size )
    return _imp->createUniformBuffer( size );
 }
 
-void VKRenderBackend::copyToUniformBuffer(
+BufferHandle VKRenderBackend::createBuffer( size_t size ) { return _imp->createBuffer( size ); }
+
+void VKRenderBackend::copyToBuffer(
     BufferHandle bufferHandle,
     const void* pData,
     size_t offset,
     size_t size )
 {
-   _imp->copyToUniformBuffer( bufferHandle, pData, offset, size );
+   _imp->copyToBuffer( bufferHandle, pData, offset, size );
 }
 
 void VKRenderBackend::destroyTexture( TextureHandle texHandle )
@@ -660,9 +666,9 @@ void VKRenderBackend::destroyIndexBuffer( IndexBufferHandle bufferHandle )
    _imp->destroyIndexBuffer( bufferHandle );
 }
 
-void VKRenderBackend::destroyUniformBuffer( BufferHandle bufferHandle )
+void VKRenderBackend::destroyBuffer( BufferHandle bufferHandle )
 {
-   _imp->destroyUniformBuffer( bufferHandle );
+   _imp->destroyBuffer( bufferHandle );
 }
 
 void VKRenderBackend::prepareFrame() { _imp->prepareFrame(); }

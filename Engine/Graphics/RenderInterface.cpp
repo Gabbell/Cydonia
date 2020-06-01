@@ -157,9 +157,11 @@ CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndi
 
 BufferHandle CreateUniformBuffer( size_t size ) { return b->createUniformBuffer( size ); }
 
-void CopyToUniformBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
+BufferHandle CreateBuffer( size_t size ) { return b->createBuffer( size ); }
+
+void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
 {
-   return b->copyToUniformBuffer( bufferHandle, pData, offset, size );
+   return b->copyToBuffer( bufferHandle, pData, offset, size );
 }
 
 void DestroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }
@@ -171,7 +173,7 @@ void DestroyVertexBuffer( VertexBufferHandle bufferHandle )
 
 void DestroyIndexBuffer( IndexBufferHandle bufferHandle ) { b->destroyIndexBuffer( bufferHandle ); }
 
-void DestroyUniformBuffer( BufferHandle bufferHandle ) { b->destroyUniformBuffer( bufferHandle ); }
+void DestroyBuffer( BufferHandle bufferHandle ) { b->destroyBuffer( bufferHandle ); }
 
 // =================================================================================================
 // Drawing

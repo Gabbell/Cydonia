@@ -247,7 +247,7 @@ const VkPipeline PipelineStash::findOrCreate(
       // Building shader stage
       VkPipelineShaderStageCreateInfo stageInfo = {};
       stageInfo.sType               = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-      stageInfo.stage               = shaderTypeToVKShaderStage( shader->getType() );
+       stageInfo.stage               = shaderTypeToVKShaderStage( shader->getType() );
       stageInfo.module              = shader->getModule();
       stageInfo.pName               = "main";
       stageInfo.pSpecializationInfo = pSpecInfo;

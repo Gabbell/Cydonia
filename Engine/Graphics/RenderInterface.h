@@ -75,16 +75,13 @@ VertexBufferHandle CreateVertexBuffer(
 IndexBufferHandle
 CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices );
 BufferHandle CreateUniformBuffer( size_t size );
-void CopyToUniformBuffer(
-    BufferHandle bufferHandle,
-    const void* pData,
-    size_t offset,
-    size_t size );
+BufferHandle CreateBuffer( size_t size );
+void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size );
 
 void DestroyTexture( TextureHandle texHandle );
 void DestroyVertexBuffer( VertexBufferHandle bufferHandle );
 void DestroyIndexBuffer( IndexBufferHandle bufferHandle );
-void DestroyUniformBuffer( BufferHandle bufferHandle );
+void DestroyBuffer( BufferHandle bufferHandle );
 
 // Drawing
 void PrepareFrame();

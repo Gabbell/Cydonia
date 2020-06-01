@@ -17,7 +17,7 @@ layout( set = 0, binding = 1 ) uniform Alpha
 // =================================================================================================
 layout( set = 1, binding = 0 ) uniform sampler2D texSampler;
 
-layout( location = 0 ) in vec3 inTexCoord;
+layout( location = 0 ) in vec3 inTexCoords;
 layout( location = 1 ) in vec3 inNormal;
 layout( location = 2 ) in vec3 fragPos;
 
@@ -54,7 +54,7 @@ vec3 calcLightContribution( int i, vec3 normal )
 void main()
 {
    vec3 norm         = normalize( inNormal );
-   vec3 sampledColor = vec3( texture( texSampler, inTexCoord.xy ) );
+   vec3 sampledColor = vec3( texture( texSampler, inTexCoords.xy ) );
 
    vec3 lightContributions = vec3( 0.0, 0.0, 0.0 );
    for( int i = 0; i < MAX_LIGHTS; ++i )

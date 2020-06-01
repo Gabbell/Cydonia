@@ -20,13 +20,18 @@ namespace CYD
 class RenderableComponent : public BaseComponent
 {
   public:
-   RenderableComponent() = default;
+   RenderableComponent();
    MOVABLE( RenderableComponent )
-   virtual ~RenderableComponent() = default;
+   virtual ~RenderableComponent();
+
+   bool init();
+   void uninit() override;
 
    RenderableType getType() const noexcept { return type; }
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
+
+   TextureHandle displacement;
 
   protected:
    explicit RenderableComponent( RenderableType aType ) : type( aType ) {}

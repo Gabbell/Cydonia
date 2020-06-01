@@ -124,7 +124,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -148,7 +148,7 @@
       <WarningLevel>Level4</WarningLevel>
       <PrecompiledHeader>
       </PrecompiledHeader>
-      <Optimization>Disabled</Optimization>
+      <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
@@ -176,6 +176,7 @@
     <ClCompile Include="ECS\Components\Rendering\MeshComponent.cpp" />
     <ClCompile Include="ECS\Components\Rendering\PBRRenderableComponent.cpp" />
     <ClCompile Include="ECS\Components\Rendering\PhongRenderableComponent.cpp" />
+    <ClCompile Include="ECS\Components\Rendering\RenderableComponent.cpp" />
     <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="ECS\RenderPipelines.cpp" />
     <ClCompile Include="ECS\Systems\Input\InputSystem.cpp" />

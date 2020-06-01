@@ -63,6 +63,7 @@ class Device final
    Buffer* createIndexBuffer( size_t size );
    Buffer* createStagingBuffer( size_t size );
    Buffer* createUniformBuffer( size_t size );
+   Buffer* createBuffer( size_t size );
    Texture* createTexture( const CYD::TextureDescription& desc );
 
    void cleanup();  // Clean up unused resources

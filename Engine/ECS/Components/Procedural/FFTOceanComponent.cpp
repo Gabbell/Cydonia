@@ -9,18 +9,18 @@ namespace CYD
 bool FFTOceanComponent::init(
     uint32_t resolution,
     uint32_t horizontalDimension,
-    uint32_t A,
+    float amplitude,
     float windSpeed,
     float windDirX,
     float windDirZ )
 {
-   spectraGenInfo.resolution          = resolution;
-   spectraGenInfo.horizontalDimension = horizontalDimension;
-   spectraGenInfo.A                   = A;
-   spectraGenInfo.gravity             = PHYSICS::GRAV_ACCELERATION_CONSTANT;
-   spectraGenInfo.windSpeed           = windSpeed;
-   spectraGenInfo.windDirX            = windDirX;
-   spectraGenInfo.windDirZ            = windDirZ;
+   parameters.resolution          = resolution;
+   parameters.horizontalDimension = horizontalDimension;
+   parameters.amplitude           = amplitude;
+   parameters.gravity             = PHYSICS::GRAV_ACCELERATION_CONSTANT;
+   parameters.windSpeed           = windSpeed;
+   parameters.windDirX            = windDirX;
+   parameters.windDirZ            = windDirZ;
 
    return true;
 }
@@ -30,8 +30,11 @@ void FFTOceanComponent::uninit()
    GRIS::DestroyTexture( spectrum1 );
    GRIS::DestroyTexture( spectrum2 );
    GRIS::DestroyTexture( butterflyTexture );
-   GRIS::DestroyTexture( fourierComponents );
-   GRIS::DestroyTexture( heightField );
+   GRIS::DestroyBuffer( bitReversedIndices );
+
+   GRIS::DestroyTexture( fourierComponentsY );
+   GRIS::DestroyTexture( fourierComponentsX );
+   GRIS::DestroyTexture( fourierComponentsZ );
 }
 
 FFTOceanComponent::~FFTOceanComponent() { FFTOceanComponent::uninit(); }

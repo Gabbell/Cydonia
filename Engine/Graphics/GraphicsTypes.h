@@ -91,8 +91,10 @@ enum class PixelFormat
 {
    BGRA8_UNORM,
    RGBA8_SRGB,
-   RGBA16F_SFLOAT,
-   RGBA32F_SFLOAT,
+   RGBA16F,
+   RGBA32F,
+   RG32F,
+   R32F,
    D32_SFLOAT
 };
 

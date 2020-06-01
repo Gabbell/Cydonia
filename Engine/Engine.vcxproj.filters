@@ -47,6 +47,7 @@
     <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
     <ClCompile Include="Applications\VKOceanDemo.cpp" />
     <ClCompile Include="Graphics\Vulkan\BarriersHelper.cpp" />
+    <ClCompile Include="ECS\Components\Rendering\RenderableComponent.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Assets">

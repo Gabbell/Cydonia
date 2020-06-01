@@ -78,7 +78,7 @@ void* GraphicsIO::LoadImage( const TextureDescription& desc, const std::string& 
    void* imageData = nullptr;
    switch( desc.format )
    {
-      case PixelFormat::RGBA32F_SFLOAT:
+      case PixelFormat::RGBA32F:
          imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
          imageSize = width * height * sizeof( float ) * 4;
          break;

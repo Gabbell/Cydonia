@@ -3,6 +3,7 @@
 #include <ECS/Components/Rendering/RenderableComponent.h>
 
 #include <string>
+#include <vector>
 
 namespace CYD
 {
@@ -10,13 +11,13 @@ class CustomRenderableComponent final : public RenderableComponent
 {
   public:
    CustomRenderableComponent() = default;
-   CustomRenderableComponent( std::string fragShader )
-       : RenderableComponent( RenderableType::CUSTOM ), fragShader( std::move( fragShader ) )
+   CustomRenderableComponent( const std::vector<std::string>& shaders )
+       : RenderableComponent( RenderableType::CUSTOM ), shaders( std::move( shaders ) )
    {
    }
    MOVABLE( CustomRenderableComponent )
    virtual ~CustomRenderableComponent();
 
-   std::string fragShader;
+   std::vector<std::string> shaders;
 };
 }

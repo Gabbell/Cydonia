@@ -87,16 +87,16 @@ class RenderBackend
    createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) = 0;
 
    virtual BufferHandle createUniformBuffer( size_t size ) = 0;
-   virtual void copyToUniformBuffer(
-       BufferHandle bufferHandle,
-       const void* pData,
-       size_t offset,
-       size_t size ) = 0;
+
+   virtual BufferHandle createBuffer( size_t size ) = 0;
+
+   virtual void
+   copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size ) = 0;
 
    virtual void destroyTexture( TextureHandle texHandle )              = 0;
    virtual void destroyVertexBuffer( VertexBufferHandle bufferHandle ) = 0;
    virtual void destroyIndexBuffer( IndexBufferHandle bufferHandle )   = 0;
-   virtual void destroyUniformBuffer( BufferHandle bufferHandle )      = 0;
+   virtual void destroyBuffer( BufferHandle bufferHandle )      = 0;
 
    // Drawing
    // ==============================================================================================

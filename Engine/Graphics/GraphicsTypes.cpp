@@ -25,7 +25,8 @@ bool PushConstantRange::operator==( const PushConstantRange& other ) const
 
 bool ShaderResourceInfo::operator==( const ShaderResourceInfo& other ) const
 {
-   return stages == other.stages && binding == other.binding;
+   return type == other.type && stages == other.stages && binding == other.binding &&
+          set == other.set;
 }
 
 bool RenderPassInfo::operator==( const RenderPassInfo& other ) const

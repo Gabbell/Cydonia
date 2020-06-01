@@ -37,7 +37,7 @@ void Render( CmdListHandle cmdList, const double deltaS, const RenderableCompone
    const CustomRenderableComponent& customRenderable =
        *static_cast<const CustomRenderableComponent*>( renderable );
 
-   pipInfo.shaders[1] = customRenderable.fragShader;
+   pipInfo.shaders = customRenderable.shaders;
 
    GRIS::BindPipeline( cmdList, pipInfo );
    GRIS::UpdateConstantBuffer(
@@ -48,30 +48,36 @@ void Render( CmdListHandle cmdList, const double deltaS, const RenderableCompone
 namespace DefaultPipeline
 {
 static GraphicsPipelineInfo pipInfo;
-static constexpr char VERTEX_SHADER[]   = "DEFAULT_VERT";
+static constexpr char VERTEX_SHADER[]   = "DEFAULT_DISPLACEMENT_VERT";
 static constexpr char FRAGMENT_SHADER[] = "DEFAULT_FRAG";
 
-void Initialize()
+static void Initialize()
 {
-   pipInfo.pipLayout.descSets.push_back( environmentSet );  // Set 0
+   DescriptorSetLayoutInfo displacementSet;
 
-   const PushConstantRange modelConstant = {
-       ShaderStage::VERTEX_STAGE, 0, 3 * sizeof( glm::mat4 ) };
+   const ShaderResourceInfo texInfo = {
+       ShaderResourceType::STORAGE_IMAGE, ShaderStage::VERTEX_STAGE, 0};
+
+   displacementSet.shaderResources.push_back( texInfo );
+
+   pipInfo.pipLayout.descSets.push_back( environmentSet );   // Set 0
+   pipInfo.pipLayout.descSets.push_back( displacementSet );  // Set 1
+
+   const PushConstantRange modelConstant = {ShaderStage::VERTEX_STAGE, 0, 3 * sizeof( glm::mat4 )};
 
    pipInfo.pipLayout.ranges.push_back( modelConstant );
 
    pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
-   pipInfo.extent   = { 1920, 1080 };  // TODO yikes
-   pipInfo.polyMode = PolygonMode::FILL;
-   pipInfo.shaders  = { VERTEX_SHADER, FRAGMENT_SHADER };
+   pipInfo.extent   = {1920, 1080};  // TODO yikes
+   pipInfo.polyMode = PolygonMode::LINE;
+   pipInfo.shaders  = {VERTEX_SHADER, FRAGMENT_SHADER};
 }
 
-void Render(
-    CmdListHandle cmdList,
-    const glm::mat4& modelMatrix,
-    const RenderableComponent* /*renderable*/ )
+static void
+Render( CmdListHandle cmdList, const glm::mat4& modelMatrix, const RenderableComponent* renderable )
 {
    GRIS::BindPipeline( cmdList, pipInfo );
+   GRIS::BindImage( cmdList, renderable->displacement, 1, 0 );
    GRIS::UpdateConstantBuffer(
        cmdList, ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 ), &modelMatrix );
 }
@@ -80,19 +86,20 @@ void Render(
 namespace PhongPipeline
 {
 static GraphicsPipelineInfo pipInfo;
+static constexpr uint32_t MATERIAL      = 1;  // Material set
 static constexpr char VERTEX_SHADER[]   = "PHONG_TEX_VERT";
 static constexpr char FRAGMENT_SHADER[] = "PHONG_TEX_FRAG";
 
-void Initialize()
+static void Initialize()
 {
    DescriptorSetLayoutInfo materialSet;
 
    const ShaderResourceInfo texInfo = {
-       ShaderResourceType::COMBINED_IMAGE_SAMPLER, ShaderStage::FRAGMENT_STAGE, 0 };
+       ShaderResourceType::COMBINED_IMAGE_SAMPLER, ShaderStage::FRAGMENT_STAGE, 0};
 
    materialSet.shaderResources.push_back( texInfo );
 
-   const PushConstantRange modelConstant = { ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 ) };
+   const PushConstantRange modelConstant = {ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 )};
 
    pipInfo.pipLayout.descSets.push_back( environmentSet );  // Set 0
    pipInfo.pipLayout.descSets.push_back( materialSet );     // Set 1
@@ -100,15 +107,13 @@ void Initialize()
    pipInfo.pipLayout.ranges.push_back( modelConstant );
 
    pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
-   pipInfo.extent   = { 1920, 1080 };  // TODO yikes
+   pipInfo.extent   = {1920, 1080};  // TODO yikes
    pipInfo.polyMode = PolygonMode::FILL;
-   pipInfo.shaders  = { VERTEX_SHADER, FRAGMENT_SHADER };
+   pipInfo.shaders  = {VERTEX_SHADER, FRAGMENT_SHADER};
 }
 
-void Render(
-    CmdListHandle cmdList,
-    const glm::mat4& modelMatrix,
-    const RenderableComponent* renderable )
+static void
+Render( CmdListHandle cmdList, const glm::mat4& modelMatrix, const RenderableComponent* renderable )
 {
    const PhongRenderableComponent& phongRenderable =
        *static_cast<const PhongRenderableComponent*>( renderable );
@@ -123,15 +128,16 @@ void Render(
 namespace PBRPipeline
 {
 static GraphicsPipelineInfo pipInfo;
+static constexpr uint32_t MATERIAL      = 1;  // Material set
 static constexpr char VERTEX_SHADER[]   = "PBR_TEX_VERT";
 static constexpr char FRAGMENT_SHADER[] = "PBR_TEX_FRAG";
 
-void Initialize()
+static void Initialize()
 {
    DescriptorSetLayoutInfo materialSet;
 
    ShaderResourceInfo texInfo = {
-       ShaderResourceType::COMBINED_IMAGE_SAMPLER, ShaderStage::FRAGMENT_STAGE, MATERIAL };
+       ShaderResourceType::COMBINED_IMAGE_SAMPLER, ShaderStage::FRAGMENT_STAGE, MATERIAL};
 
    // PBR Maps
    // Albedo, normal, metallic, roughness, ambient occlusion
@@ -145,7 +151,7 @@ void Initialize()
    texInfo.stages  = ShaderStage::VERTEX_STAGE;
    materialSet.shaderResources.push_back( texInfo );  // Heightmap
 
-   const PushConstantRange modelRange = { ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 ) };
+   const PushConstantRange modelRange = {ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 )};
 
    pipInfo.pipLayout.descSets.push_back( environmentSet );  // Set 0
    pipInfo.pipLayout.descSets.push_back( materialSet );     // Set 1
@@ -153,15 +159,13 @@ void Initialize()
    pipInfo.pipLayout.ranges.push_back( modelRange );
 
    pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
-   pipInfo.extent   = { 1920, 1080 };  // TODO yikes
+   pipInfo.extent   = {1920, 1080};  // TODO yikes
    pipInfo.polyMode = PolygonMode::FILL;
-   pipInfo.shaders  = { VERTEX_SHADER, FRAGMENT_SHADER };
+   pipInfo.shaders  = {VERTEX_SHADER, FRAGMENT_SHADER};
 }
 
-void Render(
-    CmdListHandle cmdList,
-    const glm::mat4& modelMatrix,
-    const RenderableComponent* renderable )
+static void
+Render( CmdListHandle cmdList, const glm::mat4& modelMatrix, const RenderableComponent* renderable )
 {
    const PBRRenderableComponent& pbrRenderable =
        *static_cast<const PBRRenderableComponent*>( renderable );
@@ -197,11 +201,11 @@ namespace RenderPipelines
 bool Initialize()
 {
    const ShaderResourceInfo viewProjectionInfo = {
-       ShaderResourceType::UNIFORM, ShaderStage::VERTEX_STAGE, 0 };
+       ShaderResourceType::UNIFORM, ShaderStage::VERTEX_STAGE, 0};
    const ShaderResourceInfo positionInfo = {
-       ShaderResourceType::UNIFORM, ShaderStage::FRAGMENT_STAGE, 1 };
+       ShaderResourceType::UNIFORM, ShaderStage::FRAGMENT_STAGE, 1};
    const ShaderResourceInfo lightInfo = {
-       ShaderResourceType::UNIFORM, ShaderStage::FRAGMENT_STAGE, 2 };
+       ShaderResourceType::UNIFORM, ShaderStage::FRAGMENT_STAGE, 2};
 
    environmentSet.shaderResources.push_back( viewProjectionInfo );
    environmentSet.shaderResources.push_back( positionInfo );
@@ -213,6 +217,31 @@ bool Initialize()
    PBRPipeline::Initialize();
 
    return true;
+}
+
+void Prepare(
+    CmdListHandle cmdList,
+    const double deltaS,
+    const glm::mat4& modelMatrix,
+    const RenderableComponent* renderable )
+{
+   switch( renderable->getType() )
+   {
+      case RenderableType::DEFAULT:
+         DefaultPipeline::Render( cmdList, modelMatrix, renderable );
+         break;
+      case RenderableType::CUSTOM:
+         CustomPipeline::Render( cmdList, deltaS, renderable );
+         break;
+      case RenderableType::PHONG:
+         PhongPipeline::Render( cmdList, modelMatrix, renderable );
+         break;
+      case RenderableType::PBR:
+         PBRPipeline::Render( cmdList, modelMatrix, renderable );
+         break;
+      default:
+         CYDASSERT( !"Unknown renderable type" );
+   }
 }
 }
 }

@@ -4,7 +4,7 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Rendering/MeshComponent.h>
+#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 
 // ================================================================================================
@@ -15,7 +15,7 @@ This system is used to generate an ocean height field for entities that have an 
 */
 namespace CYD
 {
-class FFTOceanSystem final : public CommonSystem<MeshComponent, FFTOceanComponent>
+class FFTOceanSystem final : public CommonSystem<RenderableComponent, FFTOceanComponent>
 {
   public:
    FFTOceanSystem() = default;
