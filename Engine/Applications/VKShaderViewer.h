@@ -4,6 +4,8 @@
 
 #include <Applications/Application.h>
 
+#include <string>
+
 // ================================================================================================
 // Definition
 // ================================================================================================
@@ -24,6 +26,6 @@ class VKShaderViewer final : public Application
    void tick( double deltaS ) override;
 
   private:
-   std::string m_fragShader;
+   const std::string m_fragShader;
 };
 }

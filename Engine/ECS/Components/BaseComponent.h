@@ -3,6 +3,8 @@
 #include <Common/Include.h>
 #include <Common/Assert.h>
 
+#include <ECS/Components/ComponentTypes.h>
+
 #include <cstdint>
 
 namespace CYD
@@ -30,6 +32,9 @@ class BaseComponent
       m_poolIdx = poolIdx;
    }
    int32_t getPoolIndex() const noexcept { return m_poolIdx; }
+
+   // Every component has an unknown subtype until it is explicitly defined
+   static constexpr ComponentType SUBTYPE = ComponentType::UNKNOWN;
 
   protected:
    BaseComponent() = default;

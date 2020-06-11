@@ -5,8 +5,6 @@
 #include <ECS/EntityManager.h>
 #include <ECS/RenderPipelines.h>
 
-#include <ECS/Components/Rendering/RenderableTypes.h>
-
 #include <ECS/SharedComponents/CameraComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
@@ -22,12 +20,14 @@ void RenderSystem::tick( double deltaS )
    const CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
    const SceneComponent& scene   = ECS::GetSharedComponent<SceneComponent>();
 
+   // Camera
    GRIS::CopyToBuffer( viewProjectionBuffer, &camera.vp, 0, sizeof( camera.vp ) );
    GRIS::CopyToBuffer( cameraPosBuffer, &camera.pos, 0, sizeof( camera.pos ) );
-   GRIS::CopyToBuffer( lightsBuffer, &scene.dirLight, 0, sizeof( scene.dirLight ) );
-
    GRIS::BindUniformBuffer( cmdList, viewProjectionBuffer, ENV_VIEW, 0 );
    GRIS::BindUniformBuffer( cmdList, cameraPosBuffer, ENV_VIEW, 1 );
+
+   // Scene
+   GRIS::CopyToBuffer( lightsBuffer, &scene.dirLight, 0, sizeof( scene.dirLight ) );
    GRIS::BindUniformBuffer( cmdList, lightsBuffer, ENV_VIEW, 2 );
 
    GRIS::StartRecordingCommandList( cmdList );
@@ -48,11 +48,10 @@ void RenderSystem::tick( double deltaS )
                                     glm::scale( glm::mat4( 1.0f ), transform.scaling ) *
                                     glm::toMat4( transform.rotation );
 
-      const MeshComponent& mesh = *std::get<MeshComponent*>( compPair.second );
       const RenderableComponent* renderable = std::get<RenderableComponent*>( compPair.second );
-
       RenderPipelines::Prepare( cmdList, deltaS, modelMatrix, renderable );
 
+      const MeshComponent& mesh = *std::get<MeshComponent*>( compPair.second );
       GRIS::BindVertexBuffer( cmdList, mesh.vertexBuffer );
 
       const bool hasIndexBuffer = ( mesh.indexBuffer != Handle::INVALID_HANDLE );

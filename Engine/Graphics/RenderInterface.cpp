@@ -134,6 +134,14 @@ CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const
    return b->createTexture( transferList, desc, path );
 }
 
+TextureHandle CreateTexture(
+    CmdListHandle transferList,
+    const TextureDescription& desc,
+    const std::vector<std::string>& paths )
+{
+   return b->createTexture( transferList, desc, paths );
+}
+
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
 {

@@ -94,14 +94,14 @@ class Entity final
    // Accessors
    // ==============================================================================================
    template <class Component>
-   Component* getComponent() const
+   const Component* getComponent() const
    {
       if constexpr( std::is_base_of_v<BaseComponent, Component> )
       {
          auto it = m_components.find( Component::TYPE );
          if( it != m_components.end() )
          {
-            return it->second;
+            return static_cast<Component*>( it->second );
          }
          return nullptr;
       }
@@ -110,7 +110,7 @@ class Entity final
          auto it = m_sharedComponents.find( SharedComponent::TYPE );
          if( it != m_sharedComponents.end() )
          {
-            return it->second;
+            return static_cast<Component*>( it->second );
          }
          return nullptr;
       }
@@ -118,8 +118,6 @@ class Entity final
       {
          static_assert( !"Entity: Trying to get an invalid component" );
       }
-
-      return nullptr;
    }
 
    using ComponentsMap       = std::unordered_map<ComponentType, BaseComponent*>;

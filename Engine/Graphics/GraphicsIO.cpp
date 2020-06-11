@@ -93,7 +93,7 @@ void* GraphicsIO::LoadImage( const TextureDescription& desc, const std::string& 
       return nullptr;
    }
 
-   if( imageSize != desc.size || static_cast<uint32_t>( width ) != desc.width ||
+   if( imageSize != ( desc.size / desc.layers ) || static_cast<uint32_t>( width ) != desc.width ||
        static_cast<uint32_t>( height ) != desc.height )
    {
       CYDASSERT( !"GraphicsIO: Mismatch with texture description and actual image" );

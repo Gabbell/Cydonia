@@ -12,14 +12,11 @@ static constexpr TextureDescription placeholderDesc = {
     sizeof( placeholderData ),
     2,  // width
     2,  // height
+    1,
     ImageType::TEXTURE_2D,
     PixelFormat::BGRA8_UNORM,
     ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED,
     ShaderStage::FRAGMENT_STAGE};
-
-PhongRenderableComponent::PhongRenderableComponent() : RenderableComponent( RenderableType::PHONG )
-{
-}
 
 bool PhongRenderableComponent::init()
 {

@@ -85,6 +85,11 @@ class VKRenderBackend final : public RenderBackend
    TextureHandle createTexture(
        CmdListHandle transferList,
        const TextureDescription& desc,
+       const std::vector<std::string>& paths ) override;
+
+   TextureHandle createTexture(
+       CmdListHandle transferList,
+       const TextureDescription& desc,
        const void* pTexels ) override;
 
    VertexBufferHandle createVertexBuffer(

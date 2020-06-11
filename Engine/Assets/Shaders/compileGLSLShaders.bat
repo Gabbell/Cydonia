@@ -1,12 +1,16 @@
 @echo ============== COMPILING ALL SHADERS ==============
 
 @echo Compiling Default Shaders
+
 glslc GLSL/PASSTHROUGH.vert -o Compiled/PASSTHROUGH_VERT.spv
 glslc GLSL/PASSTHROUGH.frag -o Compiled/PASSTHROUGH_FRAG.spv
 
 :: Render Pipelines
 glslc GLSL/DEFAULT.vert -o Compiled/DEFAULT_VERT.spv
 glslc GLSL/DEFAULT.frag -o Compiled/DEFAULT_FRAG.spv
+
+glslc GLSL/SKYBOX.vert -o Compiled/SKYBOX_VERT.spv
+glslc GLSL/SKYBOX.frag -o Compiled/SKYBOX_FRAG.spv
 
 glslc GLSL/DEFAULT_DISPLACEMENT.vert -o Compiled/DEFAULT_DISPLACEMENT_VERT.spv
 

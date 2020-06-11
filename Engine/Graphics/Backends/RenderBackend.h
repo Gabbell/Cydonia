@@ -75,6 +75,10 @@ class RenderBackend
    virtual TextureHandle createTexture(
        CmdListHandle transferList,
        const TextureDescription& desc,
+       const std::vector<std::string>& paths ) = 0;
+   virtual TextureHandle createTexture(
+       CmdListHandle transferList,
+       const TextureDescription& desc,
        const void* pTexels ) = 0;
 
    virtual VertexBufferHandle createVertexBuffer(

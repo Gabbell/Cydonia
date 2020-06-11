@@ -65,6 +65,10 @@ TextureHandle CreateTexture(
     CmdListHandle transferList,
     const TextureDescription& desc,
     const std::string& path );
+TextureHandle CreateTexture(
+    CmdListHandle transferList,
+    const TextureDescription& desc,
+    const std::vector<std::string>& paths );
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels );
 VertexBufferHandle CreateVertexBuffer(

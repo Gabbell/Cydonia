@@ -14,6 +14,7 @@ void Texture::acquire( const Device& device, const CYD::TextureDescription& desc
    m_size    = desc.size;
    m_width   = desc.width;
    m_height  = desc.height;
+   m_layers  = desc.layers;
    m_type    = desc.type;
    m_format  = desc.format;
    m_usage   = desc.usage;
@@ -41,6 +42,7 @@ void Texture::release()
       m_size   = 0;
       m_width  = 0;
       m_height = 0;
+      m_layers = 1;
       m_type   = CYD::ImageType::TEXTURE_2D;
       m_format = CYD::PixelFormat::RGBA8_SRGB;
       m_usage  = 0;
@@ -74,11 +76,17 @@ void Texture::_createImage()
          break;
    }
 
+   // TODO A 6-layer image is always "promoted" to a cube map
+   if( m_layers == 6 )
+   {
+      imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
+   }
+
    imageInfo.extent.width  = m_width;
    imageInfo.extent.height = m_height;
    imageInfo.extent.depth  = 1;
    imageInfo.mipLevels     = 1;
-   imageInfo.arrayLayers   = 1;
+   imageInfo.arrayLayers   = m_layers;
    imageInfo.format        = TypeConversions::cydToVkFormat( m_format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -147,7 +155,34 @@ void Texture::_createImageView()
    VkImageViewCreateInfo viewInfo           = {};
    viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image                           = m_vkImage;
-   viewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
+
+   if( m_width > 0 )
+   {
+      if( m_height > 0 )
+      {
+         if( m_layers == 6 )
+         {
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+         }
+         else if( m_layers > 1 )
+         {
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
+         }
+         else
+         {
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+         }
+      }
+      else
+      {
+         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_1D;
+      }
+   }
+   else
+   {
+      CYDASSERT( !"Texture: Could not determine image view type" );
+   }
+
    viewInfo.format                          = TypeConversions::cydToVkFormat( m_format );
    viewInfo.subresourceRange.aspectMask     = getAspectBit( m_format );
    viewInfo.subresourceRange.baseMipLevel   = 0;

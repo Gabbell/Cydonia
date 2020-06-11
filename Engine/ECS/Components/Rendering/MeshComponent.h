@@ -25,6 +25,7 @@ class MeshComponent : public BaseComponent
    MOVABLE( MeshComponent )
    virtual ~MeshComponent();
 
+   bool init() { return true; }
    bool init( const std::vector<Vertex>& vertices );
    bool init( const std::string& meshPath );
    bool init( const std::vector<Vertex>& vertices, const std::vector<uint32_t>& indices );

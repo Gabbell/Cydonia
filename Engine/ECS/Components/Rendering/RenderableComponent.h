@@ -5,8 +5,6 @@
 #include <Handles/Handle.h>
 
 #include <ECS/Components/ComponentTypes.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
-#include <ECS/Components/Rendering/RenderableTypes.h>
 
 // ================================================================================================
 // Definition
@@ -20,22 +18,17 @@ namespace CYD
 class RenderableComponent : public BaseComponent
 {
   public:
-   RenderableComponent();
+   RenderableComponent() = default;
    MOVABLE( RenderableComponent )
    virtual ~RenderableComponent();
 
    bool init();
    void uninit() override;
 
-   RenderableType getType() const noexcept { return type; }
+   virtual ComponentType getType() const { return TYPE; }
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
    TextureHandle displacement;
-
-  protected:
-   explicit RenderableComponent( RenderableType aType ) : type( aType ) {}
-
-   RenderableType type = RenderableType::DEFAULT;
 };
 }

@@ -197,13 +197,14 @@ enum class AddressMode
 
 struct TextureDescription
 {
-   size_t size;
-   uint32_t width;
-   uint32_t height;
-   ImageType type;          // 1D, 2D, 3D...
-   PixelFormat format;      // The texture's pixel format
-   ImageUsageFlag usage;    // How this image will be used
-   ShaderStageFlag stages;  // Stages where this texture is accessed
+   size_t size            = 0;
+   uint32_t width         = 0;
+   uint32_t height        = 0;
+   uint32_t layers        = 1;
+   ImageType type         = ImageType::TEXTURE_2D;  // 1D, 2D, 3D...
+   PixelFormat format     = PixelFormat::RGBA32F;   // The texture's pixel format
+   ImageUsageFlag usage   = 0;                      // How this image will be used
+   ShaderStageFlag stages = 0;                      // Stages where this texture is accessed
 };
 
 struct Extent

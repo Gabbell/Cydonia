@@ -11,7 +11,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <vector>
 
 // ================================================================================================
@@ -30,7 +29,7 @@ class Window final
    Window() = default;
    ~Window();
 
-   bool init( uint32_t width, uint32_t height, const std::string& title );
+   bool init( uint32_t width, uint32_t height, const char* title );
 
    bool isRunning() const;
    const Extent& getExtent() const noexcept { return m_extent; }
@@ -38,8 +37,6 @@ class Window final
    std::vector<const char*> getExtensionsFromGLFW() const noexcept { return m_extensions; };
 
   private:
-   const std::string m_title = "Default Title";
-
    std::vector<const char*> m_extensions;
 
    // Window is the owner of this GLFWwindow

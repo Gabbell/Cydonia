@@ -9,7 +9,7 @@ namespace CYD
 // All singleton component types (shared across systems)
 enum class SharedComponentType : uint8_t
 {
-   INPUT = 0,
+   INPUT,
    CAMERA,
    SCENE,
    COUNT  //  Keep at the end

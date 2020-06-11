@@ -44,6 +44,18 @@ EntityHandle CreateEntity()
    return handle;
 }
 
+const Entity* GetEntity( EntityHandle handle )
+{
+   const auto it = detail::entities.find( handle );
+   if( it == detail::entities.end() )
+   {
+      CYDASSERT( !"Tried to get an entity that does not exist" );
+      return nullptr;
+   }
+
+   return &it->second;
+}
+
 void RemoveEntity( EntityHandle handle )
 {
    const auto it = detail::entities.find( handle );

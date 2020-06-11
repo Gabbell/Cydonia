@@ -30,7 +30,7 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::ImageLa
    barrier.subresourceRange.baseMipLevel   = 0;
    barrier.subresourceRange.levelCount     = 1;
    barrier.subresourceRange.baseArrayLayer = 0;
-   barrier.subresourceRange.layerCount     = 1;
+   barrier.subresourceRange.layerCount     = texture->getLayers();
 
    // These paremeters are dynamic based on the current command buffer and texture state
    VkPipelineStageFlags srcPipelineStage = 0;

@@ -15,7 +15,7 @@ namespace CYD
 class VKSandbox final : public Application
 {
   public:
-   VKSandbox( uint32_t width, uint32_t height, const std::string& title );
+   VKSandbox( uint32_t width, uint32_t height, const char* title );
    NON_COPIABLE( VKSandbox )
    ~VKSandbox() override;
 

@@ -7,7 +7,7 @@
 
 namespace CYD
 {
-bool Window::init( uint32_t width, uint32_t height, const std::string& title )
+bool Window::init( uint32_t width, uint32_t height, const char* title )
 {
    if( !glfwInit() )
    {
@@ -23,7 +23,7 @@ bool Window::init( uint32_t width, uint32_t height, const std::string& title )
 
    // Creating GLFWwindow
    glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );  // Tell GLFW we do not need a GL context
-   m_glfwWindow = glfwCreateWindow( width, height, title.c_str(), nullptr, nullptr );
+   m_glfwWindow = glfwCreateWindow( width, height, title, nullptr, nullptr );
    CYDASSERT_AND_RETURN( m_glfwWindow && "Could not create GLFW window", false );
 
    // Populating extensions

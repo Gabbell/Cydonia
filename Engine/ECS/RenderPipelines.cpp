@@ -6,6 +6,7 @@
 #include <ECS/Components/Rendering/CustomRenderableComponent.h>
 #include <ECS/Components/Rendering/PhongRenderableComponent.h>
 #include <ECS/Components/Rendering/PBRRenderableComponent.h>
+#include <ECS/Components/Rendering/SkyboxRenderableComponent.h>
 
 namespace CYD
 {
@@ -37,7 +38,7 @@ void Render( CmdListHandle cmdList, const double deltaS, const RenderableCompone
    const CustomRenderableComponent& customRenderable =
        *static_cast<const CustomRenderableComponent*>( renderable );
 
-   pipInfo.shaders = customRenderable.shaders;
+   pipInfo.shaders = {customRenderable.vertShader, customRenderable.fragShader};
 
    GRIS::BindPipeline( cmdList, pipInfo );
    GRIS::UpdateConstantBuffer(
@@ -196,6 +197,49 @@ Render( CmdListHandle cmdList, const glm::mat4& modelMatrix, const RenderableCom
 }
 }
 
+namespace SkyboxPipeline
+{
+static GraphicsPipelineInfo pipInfo;
+static constexpr char VERTEX_SHADER[]   = "DEFAULT_TEX_VERT";
+static constexpr char FRAGMENT_SHADER[] = "SKYBOX_FRAG";
+
+static void Initialize()
+{
+   DescriptorSetLayoutInfo cubemapSet;
+
+   ShaderResourceInfo cubemapInfo = {
+       ShaderResourceType::COMBINED_IMAGE_SAMPLER, ShaderStage::FRAGMENT_STAGE, 0, 1};
+
+   cubemapSet.shaderResources.push_back( cubemapInfo );  // Cubemap
+
+   const PushConstantRange modelRange = {ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 )};
+
+   pipInfo.pipLayout.descSets.push_back( environmentSet );  // Set 0
+   pipInfo.pipLayout.descSets.push_back( cubemapSet );      // Set 1
+
+   pipInfo.pipLayout.ranges.push_back( modelRange );
+
+   pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
+   pipInfo.extent   = {1920, 1080};  // TODO yikes
+   pipInfo.polyMode = PolygonMode::FILL;
+   pipInfo.shaders  = {VERTEX_SHADER, FRAGMENT_SHADER};
+}
+
+static void
+Render( CmdListHandle cmdList, const glm::mat4& modelMatrix, const RenderableComponent* renderable )
+{
+   const SkyboxRenderableComponent& skyboxRenderable =
+       *static_cast<const SkyboxRenderableComponent*>( renderable );
+
+   GRIS::BindPipeline( cmdList, pipInfo );
+
+   GRIS::BindTexture( cmdList, skyboxRenderable.cubemap, 1, 0 );
+
+   GRIS::UpdateConstantBuffer(
+       cmdList, ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 ), &modelMatrix );
+}
+}
+
 namespace RenderPipelines
 {
 bool Initialize()
@@ -215,7 +259,8 @@ bool Initialize()
    DefaultPipeline::Initialize();
    PhongPipeline::Initialize();
    PBRPipeline::Initialize();
-
+   SkyboxPipeline::Initialize();
+   
    return true;
 }
 
@@ -227,17 +272,20 @@ void Prepare(
 {
    switch( renderable->getType() )
    {
-      case RenderableType::DEFAULT:
+      case ComponentType::RENDERABLE:
          DefaultPipeline::Render( cmdList, modelMatrix, renderable );
          break;
-      case RenderableType::CUSTOM:
+      case ComponentType::RENDERABLE_CUSTOM:
          CustomPipeline::Render( cmdList, deltaS, renderable );
          break;
-      case RenderableType::PHONG:
+      case ComponentType::RENDERABLE_PHONG:
          PhongPipeline::Render( cmdList, modelMatrix, renderable );
          break;
-      case RenderableType::PBR:
+      case ComponentType::RENDERABLE_PBR:
          PBRPipeline::Render( cmdList, modelMatrix, renderable );
+         break;
+      case ComponentType::RENDERABLE_SKYBOX:
+         SkyboxPipeline::Render( cmdList, modelMatrix, renderable );
          break;
       default:
          CYDASSERT( !"Unknown renderable type" );

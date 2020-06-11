@@ -7,8 +7,6 @@ namespace CYD
 {
 static const std::string PBR_PATH = "Assets/Textures/PBR/";
 
-PBRRenderableComponent::PBRRenderableComponent() : RenderableComponent( RenderableType::PBR ) {}
-
 bool PBRRenderableComponent::init( const std::string& modelName )
 {
    const CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER );
@@ -17,8 +15,8 @@ bool PBRRenderableComponent::init( const std::string& modelName )
 
    // TODO don't use rgba8_srgb for every texture
    TextureDescription texDesc = {};
-   texDesc.width              = 4096;
-   texDesc.height             = 4096;
+   texDesc.width              = 2048;
+   texDesc.height             = 2048;
    texDesc.size               = texDesc.width * texDesc.height * sizeof( uint32_t );
    texDesc.type               = ImageType::TEXTURE_2D;
    texDesc.format             = PixelFormat::RGBA8_SRGB;

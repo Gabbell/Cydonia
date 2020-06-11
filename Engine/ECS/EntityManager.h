@@ -48,6 +48,7 @@ void Tick( double deltaS );
 // Entity management
 // ================================================================================================
 EntityHandle CreateEntity();
+const Entity* GetEntity( EntityHandle handle );
 void RemoveEntity( EntityHandle handle );
 
 // Shared component accessor
@@ -87,12 +88,28 @@ void Assign( EntityHandle handle, Args&&... args )
 
    Component* pComponent = nullptr;
 
+
    // Fetching component from adequate pool
    if constexpr( std::is_base_of_v<BaseComponent, Component> )
    {
+      // Index of the component pool
+      size_t componentPoolIdx = static_cast<size_t>( ComponentType::UNKNOWN );
+      if constexpr( Component::SUBTYPE == ComponentType::UNKNOWN )
+      {
+         componentPoolIdx = static_cast<size_t>( Component::TYPE );
+      }
+      else
+      {
+         componentPoolIdx = static_cast<size_t>( Component::SUBTYPE );
+      }
+
+      CYDASSERT(
+          componentPoolIdx != static_cast<size_t>( ComponentType::UNKNOWN ) &&
+          "ECS: Component pool index is unknown" );
+
       // Component is a normal component
       ComponentPool<Component>*& pPool =
-          (ComponentPool<Component>*&)detail::components[size_t( Component::TYPE )];
+          (ComponentPool<Component>*&)detail::components[componentPoolIdx];
       if( !pPool )
       {
          // Pool has never been created, create it
@@ -103,8 +120,11 @@ void Assign( EntityHandle handle, Args&&... args )
    }
    else if constexpr( std::is_base_of_v<BaseSharedComponent, Component> )
    {
+      // Index of the component pool
+      const size_t componentPoolIdx = static_cast<size_t>( Component::TYPE );
+
       // Component is a shared component
-      pComponent = static_cast<Component*>( detail::sharedComponents[size_t( Component::TYPE )] );
+      pComponent = static_cast<Component*>( detail::sharedComponents[componentPoolIdx] );
    }
    else
    {

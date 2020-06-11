@@ -279,6 +279,55 @@ class VKRenderBackendImp
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
 
+   TextureHandle createTexture(
+       CmdListHandle transferList,
+       const TextureDescription& desc,
+       const std::vector<std::string>& paths )
+   {
+      CYDASSERT(
+          paths.size() <= desc.layers &&
+          "VKRenderBackend:: Number of textures could not fit in number of layers " );
+
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+
+      vk::Buffer* staging = m_mainDevice->createStagingBuffer( desc.size );
+
+      const uint32_t layerSize = desc.size / desc.layers;
+
+      for( uint32_t i = 0; i < paths.size(); ++i )
+      {
+         void* imageData = GraphicsIO::LoadImage( desc, paths[i] );
+
+         if( !imageData )
+         {
+            return Handle();
+         }
+
+         staging->copy( imageData, i * layerSize, layerSize );
+         GraphicsIO::FreeImage( imageData );
+      }
+
+      m_cmdListDeps[transferList].emplace_back( staging );
+
+      // Uploading to GPU
+      vk::Texture* texture = m_mainDevice->createTexture( desc );
+
+      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::TRANSFER_DST );
+
+      cmdBuffer->uploadBufferToTex( staging, texture );
+
+      if( desc.stages == ShaderStage::FRAGMENT_STAGE )
+      {
+         vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::SHADER_READ );
+      }
+      else
+      {
+         vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::GENERAL );
+      }
+
+      return m_coreHandles.add( texture, HandleType::TEXTURE );
+   }
+
    TextureHandle
    createTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
    {
@@ -608,6 +657,14 @@ TextureHandle VKRenderBackend::createTexture(
     const std::string& path )
 {
    return _imp->createTexture( transferList, desc, path );
+}
+
+TextureHandle VKRenderBackend::createTexture(
+    CmdListHandle transferList,
+    const TextureDescription& desc,
+    const std::vector<std::string>& paths )
+{
+   return _imp->createTexture( transferList, desc, paths );
 }
 
 TextureHandle VKRenderBackend::createTexture(
