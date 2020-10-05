@@ -1,7 +1,5 @@
 #include <ECS/EntityManager.h>
 
-#include <ECS/RenderPipelines.h>
-
 #include <ECS/Components/BaseComponent.h>
 
 #include <ECS/SharedComponents/InputComponent.h>
@@ -13,11 +11,9 @@ namespace CYD::ECS
 bool Initialize()
 {
    // Initializing shared components
-   detail::sharedComponents[size_t( SharedComponentType::INPUT )]  = new InputComponent();
-   detail::sharedComponents[size_t( SharedComponentType::CAMERA )] = new CameraComponent();
-   detail::sharedComponents[size_t( SharedComponentType::SCENE )]  = new SceneComponent();
-
-   RenderPipelines::Initialize();
+   detail::sharedComponents[(size_t)SharedComponentType::INPUT]  = new InputComponent();
+   detail::sharedComponents[(size_t)SharedComponentType::CAMERA] = new CameraComponent();
+   detail::sharedComponents[(size_t)SharedComponentType::SCENE]  = new SceneComponent();
 
    return true;
 }
@@ -71,7 +67,7 @@ void RemoveEntity( EntityHandle handle )
    for( const auto& component : entity.getComponents() )
    {
       // Remove from pool
-      detail::components[size_t( component.first )]->releaseComponent(
+      detail::components[(size_t)component.first]->releaseComponent(
           component.second->getPoolIndex() );
    }
 
@@ -96,7 +92,6 @@ void Uninitialize()
    }
    for( auto& system : detail::systems )
    {
-      system->uninit();
       delete system;
    }
 }

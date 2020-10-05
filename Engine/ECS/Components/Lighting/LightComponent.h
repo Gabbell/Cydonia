@@ -16,20 +16,15 @@ namespace CYD
 class LightComponent : public BaseComponent
 {
   public:
-   COPIABLE( LightComponent )
+   LightComponent() = default;
+   COPIABLE( LightComponent );
    virtual ~LightComponent() = default;
-
-   virtual ComponentType getType() const { return TYPE; }
 
    static constexpr ComponentType TYPE = ComponentType::LIGHT;
 
-   bool init() { return true; }
-   void uninit() override {}
-
-   glm::vec4 color = glm::vec4( 1.0f );
-   bool enabled    = false;
-
-  protected:
-   LightComponent() = default;
+   glm::vec4 position  = glm::vec4( 0.0f );
+   glm::vec4 direction = glm::vec4( 0.0f );
+   glm::vec4 color     = glm::vec4( 1.0f );
+   bool enabled        = false;
 };
 }

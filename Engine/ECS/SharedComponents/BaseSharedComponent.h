@@ -7,7 +7,7 @@ namespace CYD
 class BaseSharedComponent
 {
   public:
-   NON_COPIABLE( BaseSharedComponent )
+   NON_COPIABLE( BaseSharedComponent );
    virtual ~BaseSharedComponent() = default;
 
   protected:

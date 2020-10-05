@@ -30,7 +30,7 @@ class Entity final
   public:
    Entity() = default;
    Entity( EntityHandle handle ) : m_handle( handle ) {}
-   MOVABLE( Entity )
+   MOVABLE( Entity );
    ~Entity() = default;
 
    EntityHandle getHandle() const noexcept { return m_handle; }

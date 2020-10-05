@@ -27,7 +27,7 @@ class Buffer final
 {
   public:
    Buffer() = default;
-   MOVABLE( Buffer )
+   MOVABLE( Buffer );
    ~Buffer();
 
    void acquire(

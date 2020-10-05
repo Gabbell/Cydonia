@@ -19,11 +19,8 @@ class FFTOceanSystem final : public CommonSystem<RenderableComponent, FFTOceanCo
 {
   public:
    FFTOceanSystem() = default;
-   NON_COPIABLE( FFTOceanSystem )
+   NON_COPIABLE( FFTOceanSystem );
    virtual ~FFTOceanSystem() = default;
-
-   bool init() override;
-   void uninit() override;
 
    void tick( double deltaS ) override;
 };

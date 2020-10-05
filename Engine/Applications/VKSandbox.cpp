@@ -1,83 +1,27 @@
 #include <Applications/VKSandbox.h>
 
 #include <Graphics/RenderInterface.h>
-#include <Graphics/MeshGeneration.h>
 
-#include <ECS/EntityManager.h>
-
+#include <ECS/Systems/Lighting/LightSystem.h>
 #include <ECS/Systems/Input/InputSystem.h>
 #include <ECS/Systems/Physics/PlayerMoveSystem.h>
-#include <ECS/Systems/Physics/MovementSystem.h>
-#include <ECS/Systems/Rendering/RenderSystem.h>
+#include <ECS/Systems/Physics/MotionSystem.h>
+#include <ECS/Systems/Rendering/ForwardRenderSystem.h>
 #include <ECS/Systems/Scene/CameraSystem.h>
-#include <ECS/Systems/Lighting/LightSystem.h>
-#include <ECS/Systems/Behaviour/EntityFollowSystem.h>
-#include <ECS/Systems/Procedural/FFTOceanSystem.h>
 
-#include <ECS/Components/Lighting/DirectionalLightComponent.h>
+#include <ECS/Components/Lighting/LightComponent.h>
 #include <ECS/Components/Physics/MotionComponent.h>
 #include <ECS/Components/Rendering/MeshComponent.h>
-#include <ECS/Components/Rendering/PBRRenderableComponent.h>
-#include <ECS/Components/Rendering/SkyboxRenderableComponent.h>
+#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/Components/Behaviour/EntityFollowComponent.h>
-
-#include <ECS/Components/Procedural/FFTOceanComponent.h>
 
 #include <ECS/SharedComponents/CameraComponent.h>
 #include <ECS/SharedComponents/InputComponent.h>
 
+#include <ECS/EntityManager.h>
+
 namespace CYD
 {
-static const std::vector<Vertex> skyboxVertices = {
-    // FT
-    {{{-100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
-     {{-100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, -1.0f}},
-     {{100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}},
-     {{100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}},
-     {{100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, -1.0f}},
-     {{-100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
-
-     // LF
-     {{-100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-     {{-100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, -1.0f}},
-     {{-100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
-     {{-100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
-     {{-100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
-     {{-100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-
-     // RT
-     {{100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}},
-     {{100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}},
-     {{100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}},
-     {{100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}},
-     {{100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, -1.0f}},
-     {{100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}},
-
-     // BK
-     {{-100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-     {{-100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}},
-     {{100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}},
-     {{100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}},
-     {{100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}},
-     {{-100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-
-     // UP
-     {{-100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}},
-     {{100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, -1.0f}},
-     {{100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-     {{100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, -1.0f, 1.0f}},
-     {{-100.0f, 100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, 1.0f}},
-     {{-100.0f, 100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, -1.0f, -1.0f}},
-
-     // DN
-     {{-100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, -1.0f}},
-     {{-100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}},
-     {{100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
-     {{100.0f, -100.0f, -100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, -1.0f}},
-     {{-100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {-1.0f, 1.0f, 1.0f}},
-     {{100.0f, -100.0f, 100.0f}, {1.0f, 1.0f, 1.0f, 1.0f}, {1.0f, 1.0f, 1.0f}}}};
-
 VKSandbox::VKSandbox( uint32_t width, uint32_t height, const char* title )
     : Application( width, height, title )
 {
@@ -88,54 +32,34 @@ VKSandbox::VKSandbox( uint32_t width, uint32_t height, const char* title )
 
 void VKSandbox::preLoop()
 {
-   // ==============================================================================================
-   // Systems
-   // This order is the order in which the systems will be ticked
    ECS::AddSystem<InputSystem>( *m_window );
    ECS::AddSystem<CameraSystem>();
-
    ECS::AddSystem<PlayerMoveSystem>();
-   ECS::AddSystem<MovementSystem>();
-   ECS::AddSystem<EntityFollowSystem>();
-
+   ECS::AddSystem<MotionSystem>();
    ECS::AddSystem<LightSystem>();
-   ECS::AddSystem<FFTOceanSystem>();
-   
-   ECS::AddSystem<RenderSystem>();
+   ECS::AddSystem<ForwardRenderSystem>();
 
-   // ==============================================================================================
-   // Entities
+   // Creating player entity
    const EntityHandle player = ECS::CreateEntity();
    ECS::Assign<InputComponent>( player );
-   ECS::Assign<TransformComponent>( player, glm::vec3( 0.0f, 0.0f, 50.0f ) );
+   ECS::Assign<TransformComponent>( player, glm::vec3( 0.0f, 0.0f, 200.0f ) );
    ECS::Assign<MotionComponent>( player );
    ECS::Assign<CameraComponent>( player );
 
    const EntityHandle sun = ECS::CreateEntity();
    ECS::Assign<TransformComponent>( sun );
-   ECS::Assign<DirectionalLightComponent>( sun );
+   ECS::Assign<LightComponent>( sun );
 
-   // Creating some renderable entities
-   const EntityHandle mandalorian = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( mandalorian );
-   ECS::Assign<MeshComponent>( mandalorian, "MandalorianHelmet" );
-   ECS::Assign<PBRRenderableComponent>( mandalorian, "MandalorianHelmet" );
+   for( uint32_t i = 0; i < 64; ++i )
+   {
+      const float x = ( ( ( i / 8 ) % 8 ) * 50.0f ) - ( 4 * 50.0f );
+      const float y = ( ( i % 8 ) * 50.0f ) - ( 4 * 50.0f );
 
-   std::vector<Vertex> gridVerts;
-   std::vector<uint32_t> gridIndices;
-   MeshGen::Grid( 256, 256, gridVerts, gridIndices );
-
-   const EntityHandle ocean = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( ocean, glm::vec3( 0.0f, 0.0f, 0.0f ) );
-   ECS::Assign<MeshComponent>( ocean, gridVerts, gridIndices );
-   ECS::Assign<FFTOceanComponent>( ocean, 256, 1000, 10.0f, 40.0f, 1.0f, 0.0f );
-   ECS::Assign<RenderableComponent>( ocean );
-
-   const EntityHandle skybox = ECS::CreateEntity();
-   ECS::Assign<TransformComponent>( skybox );
-   ECS::Assign<MeshComponent>( skybox, skyboxVertices );
-   ECS::Assign<EntityFollowComponent>( skybox, player );
-   ECS::Assign<SkyboxRenderableComponent>( skybox, "DEBUG" );
+      const EntityHandle rock = ECS::CreateEntity();
+      ECS::Assign<TransformComponent>( rock, glm::vec3( x, y, 0.0f ) );
+      ECS::Assign<MeshComponent>( rock, "sphere" );
+      ECS::Assign<RenderableComponent>( rock, StaticPipelines::Type::PBR, "PBR/layered-rock1" );
+   }
 }
 
 void VKSandbox::tick( double deltaS )

@@ -19,6 +19,7 @@ FWDHANDLE( VkPipelineLayout );
 FWDHANDLE( VkRenderPass );
 FWDHANDLE( VkDescriptorSet );
 FWDHANDLE( VkFramebuffer );
+FWDHANDLE( VkSampler );
 
 namespace vk
 {
@@ -45,7 +46,7 @@ class CommandBuffer final
 {
   public:
    CommandBuffer() = default;
-   MOVABLE( CommandBuffer )
+   MOVABLE( CommandBuffer );
    ~CommandBuffer() = default;
 
    // Allocation and Deallocation
@@ -93,7 +94,8 @@ class CommandBuffer final
 
    // Dynamic State
    // =============================================================================================
-   void setViewport( const CYD::Rectangle& viewport ) const;
+   void setViewport( const CYD::Viewport& viewport ) const;
+   void setScissor( const CYD::Rectangle& scissor ) const;
 
    // Drawing
    // =============================================================================================
@@ -189,5 +191,6 @@ class CommandBuffer final
    bool m_wasSubmitted           = false;
    VkCommandBuffer m_vkCmdBuffer = nullptr;
    VkFence m_vkFence             = nullptr;
+   VkSampler m_defaultSampler    = nullptr;
 };
 }

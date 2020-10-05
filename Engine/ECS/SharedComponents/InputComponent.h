@@ -10,7 +10,7 @@ class InputComponent final : public BaseSharedComponent
 {
 public:
    InputComponent() = default;
-   NON_COPIABLE( InputComponent )
+   NON_COPIABLE( InputComponent );
    virtual ~InputComponent() = default;
 
    static constexpr SharedComponentType TYPE = SharedComponentType::INPUT;

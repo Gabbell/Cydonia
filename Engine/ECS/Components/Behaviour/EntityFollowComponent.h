@@ -17,15 +17,9 @@ class EntityFollowComponent : public BaseComponent
 {
   public:
    EntityFollowComponent() = default;
-   MOVABLE( EntityFollowComponent )
+   EntityFollowComponent( EntityHandle followedEntity ) : entity( followedEntity ) {}
+   MOVABLE( EntityFollowComponent );
    virtual ~EntityFollowComponent() = default;
-
-   bool init( EntityHandle followedEntity )
-   {
-      entity = followedEntity;
-      return true;
-   }
-   void uninit() override {}
 
    static constexpr ComponentType TYPE = ComponentType::ENTITY_FOLLOW;
 

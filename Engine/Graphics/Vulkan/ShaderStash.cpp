@@ -7,15 +7,16 @@
 #include <filesystem>
 
 // Hard-coded shader directories
-static constexpr char COMPILED_SHADER_DIR[] = "Assets/Shaders/Compiled/";
+static constexpr char SPIRV_SHADER_DIR[] = "Data/Shaders/SPIR-V/";
 
 namespace vk
 {
 ShaderStash::ShaderStash( const Device& device ) : _device( device ) { _initializeAllShaders(); }
+ShaderStash::~ShaderStash() = default;
 
 void ShaderStash::_initializeAllShaders()
 {
-   auto directory = std::filesystem::directory_iterator( COMPILED_SHADER_DIR );
+   auto directory = std::filesystem::directory_iterator( SPIRV_SHADER_DIR );
    CYDASSERT( directory->exists() && "ShaderStash: Could not find compiled shader directory" );
 
    for( const auto& entry : directory )
@@ -26,9 +27,9 @@ void ShaderStash::_initializeAllShaders()
    }
 }
 
-const Shader* ShaderStash::getShader( std::string shaderName )
+const Shader* ShaderStash::getShader( const std::string& shaderName )
 {
-   auto it = _shaders.find( COMPILED_SHADER_DIR + shaderName + ".spv" );
+   auto it = _shaders.find( SPIRV_SHADER_DIR + shaderName + ".spv" );
    if( it != _shaders.end() )
    {
       return it->second.get();
@@ -36,6 +37,4 @@ const Shader* ShaderStash::getShader( std::string shaderName )
    CYDASSERT( !"ShaderStash: Could not find shader in herder" );
    return nullptr;
 }
-
-ShaderStash::~ShaderStash() {}
 }

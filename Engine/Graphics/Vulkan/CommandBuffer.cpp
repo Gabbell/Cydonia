@@ -3,7 +3,7 @@
 #include <Common/Assert.h>
 #include <Common/Vulkan.h>
 
-#include <Graphics/Pipelines.h>
+#include <Graphics/PipelineInfos.h>
 
 #include <Graphics/Vulkan/CommandPool.h>
 #include <Graphics/Vulkan/Device.h>
@@ -47,6 +47,8 @@ void CommandBuffer::acquire(
    result = vkCreateFence( m_pDevice->getVKDevice(), &fenceInfo, nullptr, &m_vkFence );
    CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create fence" );
 
+   m_defaultSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
+
    m_buffersToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
    m_texturesToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
 }
@@ -60,10 +62,16 @@ void CommandBuffer::release()
       m_wasSubmitted = false;
 
       // Clearing tracked descriptor sets
-      for( const auto& descSetInfo : m_descSets )
+      std::vector<VkDescriptorSet> vkDescSets;
+      vkDescSets.reserve( m_descSets.size() );
+
+      for( const auto& descSet : m_descSets )
       {
-         m_pDevice->getDescriptorPool().free( descSetInfo.vkDescSet );
+         vkDescSets.push_back( descSet.vkDescSet );
       }
+
+      m_pDevice->getDescriptorPool().free(
+          vkDescSets.data(), static_cast<uint32_t>( vkDescSets.size() ) );
 
       // Clearing accumulated framebuffers
       for( const auto& framebuffer : m_curFramebuffers )
@@ -86,10 +94,11 @@ void CommandBuffer::release()
       vkFreeCommandBuffers(
           m_pDevice->getVKDevice(), m_pPool->getVKCommandPool(), 1, &m_vkCmdBuffer );
 
-      m_vkCmdBuffer = nullptr;
-      m_vkFence     = nullptr;
-      m_pDevice     = nullptr;
-      m_pPool       = nullptr;
+      m_defaultSampler = nullptr;
+      m_vkCmdBuffer    = nullptr;
+      m_vkFence        = nullptr;
+      m_pDevice        = nullptr;
+      m_pPool          = nullptr;
    }
 }
 
@@ -251,11 +260,22 @@ void CommandBuffer::bindImage( Texture* texture, uint32_t set, uint32_t binding 
    texture->incUse();
 }
 
-void CommandBuffer::setViewport( const CYD::Rectangle& viewport ) const
+void CommandBuffer::setViewport( const CYD::Viewport& viewport ) const
 {
-   VkViewport vkViewport = {
-       viewport.offsetX, viewport.offsetY, viewport.width, viewport.height, 0.0f, 1.0f };
+   VkViewport vkViewport = {viewport.offsetX,
+                            viewport.offsetY,
+                            viewport.width,
+                            viewport.height,
+                            viewport.minDepth,
+                            viewport.maxDepth};
    vkCmdSetViewport( m_vkCmdBuffer, 0, 1, &vkViewport );
+}
+
+void CommandBuffer::setScissor( const CYD::Rectangle& scissor ) const
+{
+   VkRect2D vkScissor = {
+       scissor.offset.x, scissor.offset.y, scissor.extent.width, scissor.extent.height};
+   vkCmdSetScissor( m_vkCmdBuffer, 0, 1, &vkScissor );
 }
 
 void CommandBuffer::beginPass( Swapchain& swapchain, bool hasDepth )
@@ -409,8 +429,6 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
 
    for( const auto& entry : m_texturesToUpdate )
    {
-      const VkSampler vkSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
-
       VkDescriptorImageInfo imageInfo = {};
 
       // Determine layout based on descriptor type
@@ -424,7 +442,7 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
       }
 
       imageInfo.imageView = entry.texture->getVKImageView();
-      imageInfo.sampler   = vkSampler;
+      imageInfo.sampler   = m_defaultSampler;
       imageInfos.push_back( imageInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};

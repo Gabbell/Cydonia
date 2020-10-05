@@ -33,7 +33,7 @@ class Window
    bool init( uint32_t width, uint32_t height, const std::string& title );
    bool uninit();
 
-   const Extent& getExtent() const noexcept { return _extent; }
+   const Extent2D& getExtent2D() const noexcept { return _extent; }
    SDL_Window* getSDLWindow() const noexcept { return _sdlWindow; }
    std::vector<const char*> getExtensionsFromSDL() const noexcept { return _extensions; };
 
@@ -46,6 +46,6 @@ class Window
    SDL_Window* m_sdlWindow = nullptr;
 
    // Dimensions
-   Extent m_extent = {0, 0};
+   Extent2D m_extent = {0, 0};
 };
 }

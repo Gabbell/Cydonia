@@ -1,7 +1,7 @@
 #include <ECS/Systems/Procedural/FFTOceanSystem.h>
 
 #include <Graphics/RenderInterface.h>
-#include <Graphics/Pipelines.h>
+#include <Graphics/PipelineInfos.h>
 
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 
@@ -279,13 +279,13 @@ void FFTOceanSystem::tick( double deltaS )
       GRIS::EndRecordingCommandList( cmdList );
 
       GRIS::SubmitCommandList( cmdList );
-      GRIS::WaitOnCommandList( cmdList );
+      GRIS::WaitOnCommandList( cmdList ); // TODO BAD
 
       GRIS::DestroyCommandList( cmdList );
    }
 }
 
-bool FFTOceanSystem::init()
+bool FFTOceanSystem::FFTOceanSystem()
 {
    // FFT Ocean parameters push constant range. This push constant is used in every FFTOCEAN shaders
    const PushConstantRange oceanParamsRange = {
@@ -401,6 +401,4 @@ bool FFTOceanSystem::init()
 
    return true;
 }
-
-void FFTOceanSystem::uninit() {}
 }

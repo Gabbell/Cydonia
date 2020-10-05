@@ -4,10 +4,9 @@
 
 #include <Window/GLFWWindow.h>
 
-#include <Handles/HandleManager.h>
-
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/GraphicsIO.h>
+#include <Graphics/Utility/GraphicsIO.h>
+#include <Graphics/Handles/ResourceHandleManager.h>
 #include <Graphics/Vulkan/Instance.h>
 #include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/DeviceHerder.h>
@@ -100,10 +99,16 @@ class VKRenderBackendImp
       m_coreHandles.remove( cmdList );
    }
 
-   void setViewport( CmdListHandle cmdList, const Rectangle& viewport ) const
+   void setViewport( CmdListHandle cmdList, const Viewport& viewport ) const
    {
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       cmdBuffer->setViewport( viewport );
+   }
+
+   void setScissor( CmdListHandle cmdList, const Rectangle& scissor ) const
+   {
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->setScissor( scissor );
    }
 
    void bindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo ) const
@@ -120,7 +125,7 @@ class VKRenderBackendImp
 
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) const
    {
-      if( bufferHandle == Handle::INVALID_HANDLE )
+      if( !bufferHandle )
       {
          CYDASSERT( !"VKRenderBackend: Tried to bind an invalid vertex buffer" );
          return;
@@ -135,7 +140,7 @@ class VKRenderBackendImp
    void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
        const
    {
-      if( bufferHandle == Handle::INVALID_HANDLE )
+      if( !bufferHandle )
       {
          CYDASSERT( !"VKRenderBackend: Tried to bind an invalid index buffer" );
          return;
@@ -153,7 +158,7 @@ class VKRenderBackendImp
        uint32_t set,
        uint32_t binding ) const
    {
-      if( texHandle == Handle::INVALID_HANDLE )
+      if( !texHandle )
       {
          CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
          return;
@@ -168,7 +173,7 @@ class VKRenderBackendImp
    void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
        const
    {
-      if( texHandle == Handle::INVALID_HANDLE )
+      if( !texHandle )
       {
          CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
          return;
@@ -292,7 +297,7 @@ class VKRenderBackendImp
 
       vk::Buffer* staging = m_mainDevice->createStagingBuffer( desc.size );
 
-      const uint32_t layerSize = desc.size / desc.layers;
+      const size_t layerSize = desc.size / desc.layers;
 
       for( uint32_t i = 0; i < paths.size(); ++i )
       {
@@ -416,7 +421,7 @@ class VKRenderBackendImp
    void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
        const
    {
-      if( bufferHandle != Handle::INVALID_HANDLE )
+      if( bufferHandle )
       {
          auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
          buffer->copy( pData, offset, size );
@@ -425,7 +430,7 @@ class VKRenderBackendImp
 
    void destroyTexture( TextureHandle texHandle )
    {
-      if( texHandle != Handle::INVALID_HANDLE )
+      if( texHandle )
       {
          m_coreHandles.remove( texHandle );
       }
@@ -433,7 +438,7 @@ class VKRenderBackendImp
 
    void destroyVertexBuffer( VertexBufferHandle bufferHandle )
    {
-      if( bufferHandle != Handle::INVALID_HANDLE )
+      if( bufferHandle )
       {
          m_coreHandles.remove( bufferHandle );
       }
@@ -441,7 +446,7 @@ class VKRenderBackendImp
 
    void destroyIndexBuffer( IndexBufferHandle bufferHandle )
    {
-      if( bufferHandle != Handle::INVALID_HANDLE )
+      if( bufferHandle )
       {
          m_coreHandles.remove( bufferHandle );
       }
@@ -449,7 +454,7 @@ class VKRenderBackendImp
 
    void destroyBuffer( BufferHandle bufferHandle )
    {
-      if( bufferHandle != Handle::INVALID_HANDLE )
+      if( bufferHandle )
       {
          m_coreHandles.remove( bufferHandle );
       }
@@ -516,8 +521,6 @@ class VKRenderBackendImp
    vk::Swapchain* m_mainSwapchain = nullptr;
 
    HandleManager m_coreHandles;
-
-   std::vector<unsigned char*> m_dataToFree;
 
    // Used to store intermediate buffers like staging buffers to be able to flag them as unused once
    // the command list is getting destroyed
@@ -629,9 +632,14 @@ void VKRenderBackend::bindUniformBuffer(
    _imp->bindUniformBuffer( cmdList, bufferHandle, set, binding );
 }
 
-void VKRenderBackend::setViewport( CmdListHandle cmdList, const Rectangle& viewport )
+void VKRenderBackend::setViewport( CmdListHandle cmdList, const Viewport& viewport )
 {
    _imp->setViewport( cmdList, viewport );
+}
+
+void VKRenderBackend::setScissor( CmdListHandle cmdList, const Rectangle& scissor )
+{
+   _imp->setScissor( cmdList, scissor );
 }
 
 void VKRenderBackend::updateConstantBuffer(

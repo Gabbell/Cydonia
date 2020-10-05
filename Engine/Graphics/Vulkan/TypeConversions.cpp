@@ -3,9 +3,9 @@
 #include <Common/Assert.h>
 #include <Common/Vulkan.h>
 
-namespace vk
+namespace vk::TypeConversions
 {
-VkIndexType TypeConversions::cydToVkIndexType( CYD::IndexType type )
+VkIndexType cydToVkIndexType( CYD::IndexType type )
 {
    switch( type )
    {
@@ -13,14 +13,12 @@ VkIndexType TypeConversions::cydToVkIndexType( CYD::IndexType type )
          return VK_INDEX_TYPE_UINT16;
       case CYD::IndexType::UNSIGNED_INT32:
          return VK_INDEX_TYPE_UINT32;
-      default:
-         CYDASSERT( !"Types: Index type not supported" );
    }
 
    return VK_INDEX_TYPE_UINT16;
 }
 
-VkFormat TypeConversions::cydToVkFormat( CYD::PixelFormat format )
+VkFormat cydToVkFormat( CYD::PixelFormat format )
 {
    switch( format )
    {
@@ -38,27 +36,23 @@ VkFormat TypeConversions::cydToVkFormat( CYD::PixelFormat format )
          return VK_FORMAT_R32_SFLOAT;
       case CYD::PixelFormat::D32_SFLOAT:
          return VK_FORMAT_D32_SFLOAT;
-      default:
-         CYDASSERT( !"Types: Pixel format not supported" );
    }
 
    return VK_FORMAT_B8G8R8A8_UNORM;
 }
 
-VkColorSpaceKHR TypeConversions::cydToVkSpace( CYD::ColorSpace space )
+VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space )
 {
    switch( space )
    {
       case CYD::ColorSpace::SRGB_NONLINEAR:
          return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-      default:
-         CYDASSERT( !"Types: Color space not supported" );
    }
 
    return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 }
 
-VkAttachmentLoadOp TypeConversions::cydToVkOp( CYD::LoadOp op )
+VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op )
 {
    switch( op )
    {
@@ -68,13 +62,12 @@ VkAttachmentLoadOp TypeConversions::cydToVkOp( CYD::LoadOp op )
          return VK_ATTACHMENT_LOAD_OP_LOAD;
       case CYD::LoadOp::DONT_CARE:
          return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-      default:
-         CYDASSERT( !"Types: Load operator not supported" );
    }
+
    return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
-VkAttachmentStoreOp TypeConversions::cydToVkOp( CYD::StoreOp op )
+VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op )
 {
    switch( op )
    {
@@ -82,13 +75,12 @@ VkAttachmentStoreOp TypeConversions::cydToVkOp( CYD::StoreOp op )
          return VK_ATTACHMENT_STORE_OP_STORE;
       case CYD::StoreOp::DONT_CARE:
          return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-      default:
-         CYDASSERT( !"Types: Store operator not supported" );
    }
+
    return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
-VkPrimitiveTopology TypeConversions::cydToVkDrawPrim( CYD::DrawPrimitive prim )
+VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim )
 {
    switch( prim )
    {
@@ -102,13 +94,12 @@ VkPrimitiveTopology TypeConversions::cydToVkDrawPrim( CYD::DrawPrimitive prim )
          return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
       case CYD::DrawPrimitive::TRIANGLE_STRIPS:
          return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-      default:
-         CYDASSERT( !"Types: Draw primitive not supported" );
    }
+
    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
-VkPolygonMode TypeConversions::cydToVkPolyMode( CYD::PolygonMode polyMode )
+VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode )
 {
    switch( polyMode )
    {
@@ -118,13 +109,12 @@ VkPolygonMode TypeConversions::cydToVkPolyMode( CYD::PolygonMode polyMode )
          return VK_POLYGON_MODE_LINE;
       case CYD::PolygonMode::POINT:
          return VK_POLYGON_MODE_POINT;
-      default:
-         CYDASSERT( !"Types: Polygon mode not supported" );
    }
+
    return VK_POLYGON_MODE_FILL;
 }
 
-VkShaderStageFlags TypeConversions::cydToVkShaderStages( CYD::ShaderStageFlag stages )
+VkShaderStageFlags cydToVkShaderStages( CYD::ShaderStageFlag stages )
 {
    VkShaderStageFlags vkStages = 0;
    if( stages & CYD::ShaderStage::VERTEX_STAGE )
@@ -150,7 +140,7 @@ VkShaderStageFlags TypeConversions::cydToVkShaderStages( CYD::ShaderStageFlag st
    return vkStages;
 }
 
-VkDescriptorType TypeConversions::cydToVkDescriptorType( CYD::ShaderResourceType type )
+VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type )
 {
    switch( type )
    {
@@ -164,15 +154,12 @@ VkDescriptorType TypeConversions::cydToVkDescriptorType( CYD::ShaderResourceType
          return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
       case CYD::ShaderResourceType::SAMPLED_IMAGE:
          return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-
-      default:
-         CYDASSERT( !"Types: Descriptor type not supported" );
    }
 
    return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 }
 
-VkFilter TypeConversions::cydToVkFilter( CYD::Filter filter )
+VkFilter cydToVkFilter( CYD::Filter filter )
 {
    switch( filter )
    {
@@ -182,14 +169,12 @@ VkFilter TypeConversions::cydToVkFilter( CYD::Filter filter )
          return VK_FILTER_LINEAR;
       case CYD::Filter::CUBIC:
          return VK_FILTER_CUBIC_IMG;
-      default:
-         CYDASSERT( !"Types: Filter type not supported" );
    }
 
    return VK_FILTER_LINEAR;
 }
 
-VkSamplerAddressMode TypeConversions::cydToVkAddressMode( CYD::AddressMode mode )
+VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode )
 {
    switch( mode )
    {
@@ -203,14 +188,12 @@ VkSamplerAddressMode TypeConversions::cydToVkAddressMode( CYD::AddressMode mode 
          return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
       case CYD::AddressMode::MIRROR_CLAMP_TO_EDGE:
          return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-      default:
-         CYDASSERT( !"Types: Address mode not supported" );
    }
 
    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
-VkImageLayout TypeConversions::cydToVkImageLayout( CYD::ImageLayout layout )
+VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout )
 {
    switch( layout )
    {
@@ -230,11 +213,8 @@ VkImageLayout TypeConversions::cydToVkImageLayout( CYD::ImageLayout layout )
          return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
       case CYD::ImageLayout::SHADER_READ:
          return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-      default:
-         CYDASSERT( !"Types: Image layout not supported" );
    }
 
    return VK_IMAGE_LAYOUT_UNDEFINED;
 }
-
 }

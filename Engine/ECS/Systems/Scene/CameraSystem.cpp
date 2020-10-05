@@ -11,7 +11,7 @@ void CameraSystem::tick( double /*deltaS*/ )
 {
    if( m_components.size() > 1 )
    {
-      CYDASSERT( !"Attempting to attach camera to more than one entity" );
+      CYDASSERT( !"CameraSystem: Attempting to attach camera to more than one entity" );
       return;
    }
 
@@ -27,17 +27,16 @@ void CameraSystem::tick( double /*deltaS*/ )
                        glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling ) *
                        glm::translate( glm::mat4( 1.0f ), -transform.position );
 
-      switch( m_projMode )
+      switch( camera.projMode )
       {
-         case ProjectionMode::PERSPECTIVE:
-            camera.vp.proj =
-                glm::perspectiveZO( glm::radians( m_fov ), m_aspectRatio, m_near, m_far );
+         case CameraComponent::ProjectionMode::PERSPECTIVE:
+            camera.vp.proj = glm::perspectiveZO(
+                glm::radians( camera.fov ), camera.aspectRatio, camera.near, camera.far );
             break;
-         case ProjectionMode::ORTHOGRAPHIC:
-            camera.vp.proj = glm::orthoZO( m_left, m_right, m_bottom, m_top, m_near, m_far );
+         case CameraComponent::ProjectionMode::ORTHOGRAPHIC:
+            camera.vp.proj = glm::orthoZO(
+                camera.left, camera.right, camera.bottom, camera.top, camera.near, camera.far );
             break;
-         default:
-            CYDASSERT( !"Unrecognized camera projection mode" );
       }
    }
 }

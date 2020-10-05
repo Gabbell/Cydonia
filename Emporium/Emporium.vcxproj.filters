@@ -13,5 +13,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Algorithms\BitManipulation.h" />
+    <ClInclude Include="Graph\NodeGraph.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Graph\NodeGraph.cpp" />
   </ItemGroup>
 </Project>

@@ -28,7 +28,7 @@ class Texture final
 {
   public:
    Texture() = default;
-   MOVABLE( Texture )
+   MOVABLE( Texture );
    ~Texture() = default;
 
    void acquire( const Device& device, const CYD::TextureDescription& desc );

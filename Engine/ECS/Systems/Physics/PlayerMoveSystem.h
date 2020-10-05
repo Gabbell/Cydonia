@@ -18,14 +18,12 @@ class PlayerMoveSystem final
 {
   public:
    PlayerMoveSystem() = default;
-   NON_COPIABLE( PlayerMoveSystem )
+   NON_COPIABLE( PlayerMoveSystem );
    virtual ~PlayerMoveSystem() = default;
 
    static constexpr float MOVE_SPEED = 20.0f;
    static constexpr float MOUSE_SENS = 0.001f;
 
-   bool init() override { return true; };
-   void uninit() override{};
    void tick( double deltaS ) override;
 };
 }

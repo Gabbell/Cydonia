@@ -39,7 +39,7 @@ class Swapchain final
 {
   public:
    Swapchain( Device& device, const Surface& surface, const CYD::SwapchainInfo& info );
-   NON_COPIABLE( Swapchain )
+   NON_COPIABLE( Swapchain );
    ~Swapchain();
 
    // For render pass begin info

@@ -10,7 +10,7 @@ class SceneComponent final : public BaseSharedComponent
 {
   public:
    SceneComponent() = default;
-   NON_COPIABLE( SceneComponent )
+   NON_COPIABLE( SceneComponent );
    virtual ~SceneComponent() = default;
 
    static constexpr SharedComponentType TYPE = SharedComponentType::SCENE;
@@ -21,12 +21,5 @@ class SceneComponent final : public BaseSharedComponent
       glm::vec4 direction;
       glm::vec4 color;
    } dirLight = {};
-
-   struct PointLightUBO
-   {
-      glm::vec4 enabled;
-      glm::vec4 position;
-      glm::vec4 color;
-   } pointLight = {};
 };
 }

@@ -20,7 +20,7 @@ namespace CYD
 class BaseComponentPool
 {
   public:
-   NON_COPIABLE( BaseComponentPool )
+   NON_COPIABLE( BaseComponentPool );
    virtual ~BaseComponentPool() = default;
 
    virtual void releaseComponent( int32_t poolIdx ) = 0;
@@ -35,7 +35,7 @@ class ComponentPool final : public BaseComponentPool
   public:
    ComponentPool() = default;
 
-   NON_COPIABLE( ComponentPool )
+   NON_COPIABLE( ComponentPool );
    virtual ~ComponentPool() = default;
 
    static constexpr size_t INVALID_POOL_IDX = std::numeric_limits<size_t>::max();
@@ -50,7 +50,7 @@ class ComponentPool final : public BaseComponentPool
          if( !m_slots[i] )
          {
             // A free slot was found
-            m_components[i].init( std::forward<Args>( args )... );
+            m_components[i] = Component( std::forward<Args>( args )... );
 
             m_components[i].setPoolIndex( i );
 
@@ -66,8 +66,6 @@ class ComponentPool final : public BaseComponentPool
    void releaseComponent( int32_t poolIdx ) override
    {
       CYDASSERT( poolIdx >= 0 && "ComponentPool: Trying to release an invalid component" );
-
-      m_components[poolIdx].uninit();
 
       m_slots[poolIdx] = false;  // Freeing slot
    }

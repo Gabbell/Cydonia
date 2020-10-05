@@ -330,7 +330,7 @@ const VkPipeline PipelineStash::findOrCreate(
    rasterizer.rasterizerDiscardEnable = VK_FALSE;
    rasterizer.polygonMode             = TypeConversions::cydToVkPolyMode( info.polyMode );
    rasterizer.lineWidth               = 1.0f;
-   rasterizer.cullMode                = VK_CULL_MODE_NONE;
+   rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
    rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
    rasterizer.depthBiasEnable         = VK_FALSE;
 
@@ -361,7 +361,8 @@ const VkPipeline PipelineStash::findOrCreate(
    VkPipelineLayout pipLayout = findOrCreate( info.pipLayout );
 
    // Dynamic state
-   std::vector<VkDynamicState> dynamicStates = { VK_DYNAMIC_STATE_VIEWPORT };
+   std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT,
+                                                VK_DYNAMIC_STATE_SCISSOR};
 
    VkPipelineDynamicStateCreateInfo dynamicCreateInfo = {};
    dynamicCreateInfo.sType             = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;

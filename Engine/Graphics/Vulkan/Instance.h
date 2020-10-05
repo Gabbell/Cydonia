@@ -24,7 +24,7 @@ class Instance final
 {
   public:
    explicit Instance( const CYD::Window& window );
-   NON_COPIABLE( Instance )
+   NON_COPIABLE( Instance );
    ~Instance();
 
    const VkInstance& getVKInstance() const { return m_vkInstance; }

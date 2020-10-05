@@ -24,7 +24,7 @@ class ShaderStash final
    ~ShaderStash();
 
    // Shader names are unique. Shader types are inferred from file name
-   const Shader* getShader( std::string shaderName );
+   const Shader* getShader( const std::string& shaderName );
 
   private:
    void _initializeAllShaders();

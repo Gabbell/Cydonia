@@ -1,8 +1,8 @@
 #pragma once
 
 #include <Graphics/GraphicsTypes.h>
-
-#include <Handles/Handle.h>
+#include <Graphics/StaticPipelines.h>
+#include <Graphics/Handles/ResourceHandle.h>
 
 // =================================================================================================
 // Graphics Rendering Interface Subsystem
@@ -17,7 +17,8 @@ enum API
 {
    VK,
    D3D12,
-   GL
+   GL,
+   MTL
 };
 
 namespace GRIS
@@ -37,10 +38,15 @@ void ResetCommandList( CmdListHandle cmdList );
 void WaitOnCommandList( CmdListHandle cmdList );
 void DestroyCommandList( CmdListHandle cmdList );
 
+// TODO Render pass abstraction
+
 // Pipeline Specification
-void SetViewport( CmdListHandle cmdList, const Rectangle& viewport );
+// TODO Dynamic depth? Some APIs may have different min/max depth conventions
+void SetViewport( CmdListHandle cmdList, const Viewport& viewport );
+void SetScissor( CmdListHandle cmdList, const Rectangle& scissor );
 void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo );
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo );
+void BindPipeline( CmdListHandle cmdList, StaticPipelines::Type pipType );
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
 template <class T>
 void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );

@@ -32,7 +32,7 @@ class CommandPool final
        uint32_t familyIndex,
        CYD::QueueUsageFlag usage,
        bool supportsPresentation );
-   MOVABLE( CommandPool )
+   MOVABLE( CommandPool );
    ~CommandPool();
 
    const VkCommandPool& getVKCommandPool() const { return m_vkPool; }
@@ -49,7 +49,7 @@ class CommandPool final
    const Device* m_pDevice = nullptr;
 
    // Command Buffer Pool
-   static constexpr uint32_t MAX_CMD_BUFFERS_IN_FLIGHT = 5;
+   static constexpr uint32_t MAX_CMD_BUFFERS_IN_FLIGHT = 16;
    std::vector<CommandBuffer> m_cmdBuffers;
 
    VkCommandPool m_vkPool = nullptr;

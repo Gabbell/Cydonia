@@ -3,7 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Pipelines.h>
+#include <Graphics/PipelineInfos.h>
 
 #include <memory>
 #include <unordered_map>
@@ -31,7 +31,7 @@ class PipelineStash final
 {
   public:
    PipelineStash() = delete;
-   NON_COPIABLE( PipelineStash )
+   NON_COPIABLE( PipelineStash );
    explicit PipelineStash( const Device& device );
    ~PipelineStash();
 
