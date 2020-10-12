@@ -2,9 +2,8 @@
 
 #include <Common/Include.h>
 
-#include <Handles/Handle.h>
-
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/Handles/ResourceHandle.h>
 
 namespace CYD
 {
@@ -15,7 +14,7 @@ class RenderBackend
 {
   public:
    RenderBackend() = default;
-   NON_COPIABLE( RenderBackend )
+   NON_COPIABLE( RenderBackend );
    virtual ~RenderBackend() = default;
 
    virtual void cleanup() = 0;
@@ -33,7 +32,8 @@ class RenderBackend
 
    // Pipeline Specification
    // ==============================================================================================
-   virtual void setViewport( CmdListHandle cmdList, const Rectangle& viewport )            = 0;
+   virtual void setViewport( CmdListHandle cmdList, const Viewport& viewport )             = 0;
+   virtual void setScissor( CmdListHandle cmdList, const Rectangle& scissor )              = 0;
    virtual void bindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo ) = 0;
    virtual void bindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )  = 0;
    virtual void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) = 0;
@@ -100,7 +100,7 @@ class RenderBackend
    virtual void destroyTexture( TextureHandle texHandle )              = 0;
    virtual void destroyVertexBuffer( VertexBufferHandle bufferHandle ) = 0;
    virtual void destroyIndexBuffer( IndexBufferHandle bufferHandle )   = 0;
-   virtual void destroyBuffer( BufferHandle bufferHandle )      = 0;
+   virtual void destroyBuffer( BufferHandle bufferHandle )             = 0;
 
    // Drawing
    // ==============================================================================================

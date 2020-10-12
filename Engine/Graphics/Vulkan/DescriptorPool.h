@@ -27,6 +27,7 @@ class DescriptorPool final
 
    VkDescriptorSet allocate( const CYD::DescriptorSetLayoutInfo& layout ) const;
    void free( const VkDescriptorSet& descSet ) const;
+   void free( const VkDescriptorSet* descSets, const uint32_t count ) const;
 
   private:
    const Device& m_device;

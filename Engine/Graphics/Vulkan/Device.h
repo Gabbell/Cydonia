@@ -3,7 +3,6 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Handles/HandleManager.h>
 
 #include <memory>
 #include <vector>
@@ -85,7 +84,7 @@ class Device final
    // Support
    uint32_t findMemoryType( uint32_t typeFilter, uint32_t properties ) const;
    bool supportsPresentation() const;
-   uint32_t maxPushConstantsSize() const;
+   const VkPhysicalDeviceProperties* getProperties() const { return m_physProps.get(); }
 
   private:
    // =============================================================================================

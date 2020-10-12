@@ -19,9 +19,6 @@ class MotionComponent final : public BaseComponent
    COPIABLE( MotionComponent );
    virtual ~MotionComponent() = default;
 
-   bool init() { return true; }
-   void uninit() override {}
-
    static constexpr ComponentType TYPE = ComponentType::MOTION;
 
    glm::vec3 velocity     = glm::vec3( 0.0f );

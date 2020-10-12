@@ -48,7 +48,7 @@ static uint32_t chooseImageCount( const VkSurfaceCapabilitiesKHR& caps )
    return imageCount;
 }
 
-static VkExtent2D chooseExtent( const CYD::Extent& extent, const VkSurfaceCapabilitiesKHR& caps )
+static VkExtent2D chooseExtent( const CYD::Extent2D& extent, const VkSurfaceCapabilitiesKHR& caps )
 {
    if( caps.currentExtent.width != UINT32_MAX )
    {

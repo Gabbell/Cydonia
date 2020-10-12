@@ -207,19 +207,33 @@ struct TextureDescription
    ShaderStageFlag stages = 0;                      // Stages where this texture is accessed
 };
 
-struct Extent
+struct Extent2D
 {
-   bool operator==( const Extent& other ) const;
+   bool operator==( const Extent2D& other ) const;
    uint32_t width  = 0;
    uint32_t height = 0;
 };
 
+struct Offset2D
+{
+   int32_t x = 0;
+   int32_t y = 0;
+};
+
 struct Rectangle
 {
-   float offsetX;
-   float offsetY;
-   float width;
-   float height;
+   Offset2D offset;
+   Extent2D extent;
+};
+
+struct Viewport
+{
+   float offsetX  = 0.0f;
+   float offsetY  = 0.0f;
+   float width    = 0.0f;
+   float height   = 0.0f;
+   float minDepth = 0.0f;
+   float maxDepth = 1.0f;
 };
 
 struct Vertex
@@ -292,7 +306,7 @@ struct PipelineLayoutInfo
 
 struct SwapchainInfo
 {
-   Extent extent;
+   Extent2D extent;
    PixelFormat format;
    ColorSpace space;
    PresentMode mode;
@@ -323,9 +337,9 @@ struct std::hash<CYD::Vertex>
 };
 
 template <>
-struct std::hash<CYD::Extent>
+struct std::hash<CYD::Extent2D>
 {
-   size_t operator()( const CYD::Extent& extent ) const noexcept
+   size_t operator()( const CYD::Extent2D& extent ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, extent.width );

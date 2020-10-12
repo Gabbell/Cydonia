@@ -7,7 +7,7 @@ bool Vertex::operator==( const Vertex& other ) const
    return pos == other.pos && col == other.col && uv == other.uv;
 }
 
-bool Extent::operator==( const Extent& other ) const
+bool Extent2D::operator==( const Extent2D& other ) const
 {
    return width == other.width && height == other.height;
 }

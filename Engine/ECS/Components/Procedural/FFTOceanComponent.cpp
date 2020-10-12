@@ -6,7 +6,7 @@
 
 namespace CYD
 {
-bool FFTOceanComponent::init(
+FFTOceanComponent::FFTOceanComponent(
     uint32_t resolution,
     uint32_t horizontalDimension,
     float amplitude,
@@ -21,11 +21,9 @@ bool FFTOceanComponent::init(
    parameters.windSpeed           = windSpeed;
    parameters.windDirX            = windDirX;
    parameters.windDirZ            = windDirZ;
-
-   return true;
 }
 
-void FFTOceanComponent::uninit()
+FFTOceanComponent::~FFTOceanComponent()
 {
    GRIS::DestroyTexture( spectrum1 );
    GRIS::DestroyTexture( spectrum2 );
@@ -36,6 +34,4 @@ void FFTOceanComponent::uninit()
    GRIS::DestroyTexture( fourierComponentsX );
    GRIS::DestroyTexture( fourierComponentsZ );
 }
-
-FFTOceanComponent::~FFTOceanComponent() { FFTOceanComponent::uninit(); }
 }

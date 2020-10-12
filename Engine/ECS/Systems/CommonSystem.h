@@ -22,11 +22,8 @@ namespace CYD
 class BaseSystem
 {
   public:
-   NON_COPIABLE( BaseSystem )
+   NON_COPIABLE( BaseSystem );
    virtual ~BaseSystem() = default;
-
-   virtual bool init()   = 0;
-   virtual void uninit() = 0;
 
    virtual bool hasToTick() const noexcept = 0;
    virtual void tick( double deltaS )      = 0;
@@ -46,7 +43,7 @@ class CommonSystem : public BaseSystem
           std::is_base_of_v<BaseSharedComponent, Components>)&&... ) );
 
   public:
-   NON_COPIABLE( CommonSystem )
+   NON_COPIABLE( CommonSystem );
    virtual ~CommonSystem() = default;
 
    // If the system is not watching any entity, no need to tick

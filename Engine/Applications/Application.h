@@ -22,7 +22,7 @@ class Application
 {
   public:
    Application( uint32_t width, uint32_t height, const char* title );
-   NON_COPIABLE( Application )
+   NON_COPIABLE( Application );
    virtual ~Application();
 
    void startLoop();

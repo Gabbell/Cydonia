@@ -14,28 +14,40 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
 {
    std::array<VkDescriptorPoolSize, 5> poolSizes = {};
 
-   // TODO Make more descriptor pools based on differnent types?
+   const auto& limits = m_device.getProperties()->limits;
+
+   const uint32_t maxDescriptorSetUniformBuffers = limits.maxDescriptorSetUniformBuffers;
+   const uint32_t maxDescriptorSetStorageBuffers = limits.maxDescriptorSetStorageBuffers;
+   const uint32_t maxDescriptorSetSampledImages  = limits.maxDescriptorSetSampledImages;
+   const uint32_t maxDescriptorSetStorageImages  = limits.maxDescriptorSetStorageImages;
+   const uint32_t maxDescriptorSetSamplers       = limits.maxDescriptorSetSamplers;
+
+   const uint32_t totalDescriptorSets =
+       maxDescriptorSetUniformBuffers + maxDescriptorSetStorageBuffers +
+       maxDescriptorSetSampledImages + maxDescriptorSetStorageImages + maxDescriptorSetSamplers;
+
+   // TODO Make more descriptor pools based on different types?
    poolSizes[0].type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-   poolSizes[0].descriptorCount = 32;
+   poolSizes[0].descriptorCount = maxDescriptorSetUniformBuffers;
 
    poolSizes[1].type            = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-   poolSizes[1].descriptorCount = 32;
+   poolSizes[1].descriptorCount = maxDescriptorSetStorageBuffers;
 
    poolSizes[2].type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-   poolSizes[2].descriptorCount = 32;
+   poolSizes[2].descriptorCount = maxDescriptorSetSamplers;
 
    poolSizes[3].type            = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-   poolSizes[3].descriptorCount = 32;
+   poolSizes[3].descriptorCount = maxDescriptorSetStorageImages;
 
    poolSizes[4].type            = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-   poolSizes[4].descriptorCount = 32;
+   poolSizes[4].descriptorCount = maxDescriptorSetSampledImages;
 
    VkDescriptorPoolCreateInfo poolInfo = {};
    poolInfo.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
    poolInfo.flags                      = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
    poolInfo.poolSizeCount              = static_cast<uint32_t>( poolSizes.size() );
    poolInfo.pPoolSizes                 = poolSizes.data();
-   poolInfo.maxSets                    = 32;
+   poolInfo.maxSets                    = totalDescriptorSets;
 
    VkResult result =
        vkCreateDescriptorPool( m_device.getVKDevice(), &poolInfo, nullptr, &m_vkDescPool );
@@ -63,6 +75,11 @@ VkDescriptorSet DescriptorPool::allocate( const CYD::DescriptorSetLayoutInfo& la
 void DescriptorPool::free( const VkDescriptorSet& descSet ) const
 {
    vkFreeDescriptorSets( m_device.getVKDevice(), m_vkDescPool, 1, &descSet );
+}
+
+void DescriptorPool::free( const VkDescriptorSet* descSets, const uint32_t count ) const
+{
+   vkFreeDescriptorSets( m_device.getVKDevice(), m_vkDescPool, count, descSets );
 }
 
 DescriptorPool::~DescriptorPool()

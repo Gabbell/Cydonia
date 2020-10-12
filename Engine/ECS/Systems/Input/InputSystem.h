@@ -23,13 +23,10 @@ namespace CYD
 class InputSystem final : public CommonSystem<InputComponent>
 {
   public:
-   InputSystem() = delete;
-   explicit InputSystem( const Window& window ) : m_window( window ) {}
-   NON_COPIABLE( InputSystem )
+   explicit InputSystem( const Window& window );
+   NON_COPIABLE( InputSystem );
    virtual ~InputSystem() = default;
 
-   bool init() override;
-   void uninit() override{};
    void tick( double deltaS ) override;
 
   private:

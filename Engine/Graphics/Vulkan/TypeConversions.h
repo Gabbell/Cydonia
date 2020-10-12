@@ -1,7 +1,5 @@
 #pragma once
 
-#include <Common/Include.h>
-
 #include <Graphics/GraphicsTypes.h>
 
 // ================================================================================================
@@ -22,26 +20,18 @@ enum VkSamplerAddressMode;
 // ================================================================================================
 // Definition
 // ================================================================================================
-namespace vk
+namespace vk::TypeConversions
 {
-class TypeConversions final
-{
-  public:
-   TypeConversions() = delete;
-   NON_COPIABLE( TypeConversions )
-   ~TypeConversions() = delete;
-
-   static VkIndexType cydToVkIndexType( CYD::IndexType type );
-   static VkFormat cydToVkFormat( CYD::PixelFormat format );
-   static VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space );
-   static VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op );
-   static VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op );
-   static VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim );
-   static VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode );
-   static uint32_t cydToVkShaderStages( CYD::ShaderStageFlag stages );
-   static VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type );
-   static VkFilter cydToVkFilter( CYD::Filter filter );
-   static VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode );
-   static VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout );
-};
+VkIndexType cydToVkIndexType( CYD::IndexType type );
+VkFormat cydToVkFormat( CYD::PixelFormat format );
+VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space );
+VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op );
+VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op );
+VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim );
+VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode );
+uint32_t cydToVkShaderStages( CYD::ShaderStageFlag stages );
+VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type );
+VkFilter cydToVkFilter( CYD::Filter filter );
+VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode );
+VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout );
 }

@@ -19,25 +19,11 @@ void LightSystem::tick( double deltaS )
    for( const auto& compPair : m_components )
    {
       const TransformComponent& transform = *std::get<TransformComponent*>( compPair.second );
+      const LightComponent& light         = *std::get<LightComponent*>( compPair.second );
 
-      const LightComponent* light = std::get<LightComponent*>( compPair.second );
-      switch( light->getType() )
-      {
-         case ComponentType::LIGHT_DIRECTIONAL:
-            scene.dirLight.enabled   = glm::vec4( true, false, false, false );
-            scene.dirLight.direction = transform.rotation * glm::vec4( 0.0f, y, z, 1.0f );
-            scene.dirLight.color     = light->color;
-            break;
-         case ComponentType::LIGHT_POINT:
-            scene.pointLight.enabled  = glm::vec4( true, false, false, false );
-            scene.pointLight.position = glm::vec4( transform.position, 1.0f );
-            scene.pointLight.color    = light->color;
-            break;
-         case ComponentType::LIGHT_SPOTLIGHT:
-            break;
-         default:
-            CYDASSERT( !"Unknown light type" );
-      }
+      scene.dirLight.enabled   = glm::vec4( true, false, false, false );
+      scene.dirLight.direction = transform.rotation * glm::vec4( 0.0f, y, z, 1.0f );
+      scene.dirLight.color     = light.color;
    }
 }
 }

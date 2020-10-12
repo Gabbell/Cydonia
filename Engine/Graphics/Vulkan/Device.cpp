@@ -364,11 +364,6 @@ bool Device::supportsPresentation() const
    return false;
 }
 
-uint32_t Device::maxPushConstantsSize() const
-{
-   return m_physProps ? m_physProps->limits.maxPushConstantsSize : 0;
-}
-
 Device::~Device()
 {
    vkDeviceWaitIdle( m_vkDevice );

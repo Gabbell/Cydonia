@@ -4,7 +4,7 @@
 
 #include <Common/Include.h>
 
-#include <Handles/Handle.h>
+#include <Graphics/Handles/ResourceHandle.h>
 
 // =================================================================================================
 // Forwards
@@ -24,7 +24,7 @@ class VKRenderBackend final : public RenderBackend
 {
   public:
    VKRenderBackend( const Window& window );
-   NON_COPIABLE( VKRenderBackend )
+   NON_COPIABLE( VKRenderBackend );
    virtual ~VKRenderBackend();
 
    void cleanup() override;
@@ -42,7 +42,8 @@ class VKRenderBackend final : public RenderBackend
 
    // Pipeline Specification
    // ==============================================================================================
-   void setViewport( CmdListHandle cmdList, const Rectangle& viewport ) override;
+   void setViewport( CmdListHandle cmdList, const Viewport& viewport ) override;
+   void setScissor( CmdListHandle cmdList, const Rectangle& scissor ) override;
    void bindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo ) override;
    void bindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo ) override;
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) override;

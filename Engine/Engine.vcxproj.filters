@@ -23,51 +23,26 @@
     <ClCompile Include="Window\GLFWWindow.cpp" />
     <ClCompile Include="Graphics\RenderInterface.cpp" />
     <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
-    <ClCompile Include="Graphics\GraphicsTypes.cpp" />
     <ClCompile Include="Applications\VKSandbox.cpp" />
-    <ClCompile Include="Handles\HandleManager.cpp" />
-    <ClCompile Include="Graphics\ShaderConstants.cpp" />
-    <ClCompile Include="Graphics\Transforms.cpp" />
-    <ClCompile Include="Graphics\GraphicsIO.cpp" />
-    <ClCompile Include="ECS\RenderPipelines.cpp" />
     <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="ECS\Systems\Scene\CameraSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Rendering\RenderSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Physics\MovementSystem.cpp" />
     <ClCompile Include="ECS\Systems\Physics\PlayerMoveSystem.cpp" />
     <ClCompile Include="ECS\Systems\Input\InputSystem.cpp" />
-    <ClCompile Include="Applications\VKShaderViewer.cpp" />
-    <ClCompile Include="ECS\Components\Rendering\MeshComponent.cpp" />
-    <ClCompile Include="ECS\Components\Rendering\PBRRenderableComponent.cpp" />
-    <ClCompile Include="ECS\Components\Rendering\PhongRenderableComponent.cpp" />
-    <ClCompile Include="Graphics\MeshGeneration.cpp" />
-    <ClCompile Include="Graphics\Pipelines.cpp" />
-    <ClCompile Include="ECS\Systems\Procedural\FFTOceanSystem.cpp" />
     <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
-    <ClCompile Include="Applications\VKOceanDemo.cpp" />
     <ClCompile Include="Graphics\Vulkan\BarriersHelper.cpp" />
-    <ClCompile Include="ECS\Components\Rendering\RenderableComponent.cpp" />
-    <ClCompile Include="ECS\Components\Rendering\SkyboxRenderableComponent.cpp" />
-    <ClCompile Include="Applications\VKPBRDemo.cpp" />
     <ClCompile Include="ECS\Systems\Behaviour\EntityFollowSystem.cpp" />
     <ClCompile Include="ECS\Systems\Lighting\LightSystem.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Filter Include="Assets">
-      <UniqueIdentifier>{2b4dffad-970a-4583-8416-0719b2e8c5ee}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Models">
-      <UniqueIdentifier>{b3ea86e4-cd39-421f-8aa4-10cec4daa3a8}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Shaders">
-      <UniqueIdentifier>{5d32043e-0894-43a9-9795-2b712273a321}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Shaders\Raw">
-      <UniqueIdentifier>{f54c063a-f317-42a5-8eca-b4d5a16f9337}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Assets\Shaders\Compiled">
-      <UniqueIdentifier>{88ab3131-9f77-4d62-af23-db77449126a8}</UniqueIdentifier>
-    </Filter>
+    <ClCompile Include="Graphics\Utility\GraphicsIO.cpp" />
+    <ClCompile Include="Graphics\Utility\MeshGeneration.cpp" />
+    <ClCompile Include="Graphics\Utility\Transforms.cpp" />
+    <ClCompile Include="Graphics\Handles\ResourceHandleManager.cpp" />
+    <ClCompile Include="Graphics\GraphicsTypes.cpp" />
+    <ClCompile Include="Graphics\PipelineInfos.cpp" />
+    <ClCompile Include="Graphics\StaticPipelines.cpp" />
+    <ClCompile Include="ECS\Systems\Physics\MotionSystem.cpp" />
+    <ClCompile Include="Graphics\RenderGraph.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\ForwardRenderSystem.cpp" />
+    <ClCompile Include="Graphics\Utility\ShaderConstants.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
@@ -86,7 +61,6 @@
     <ClInclude Include="Graphics\Vulkan\Swapchain.h" />
     <ClInclude Include="Graphics\Vulkan\Texture.h" />
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
-    <ClInclude Include="Graphics\Buffer.h" />
     <ClInclude Include="Graphics\RenderInterface.h" />
     <ClInclude Include="Graphics\Scene\Frustum.h" />
     <ClInclude Include="Common\Vulkan.h" />
@@ -96,13 +70,10 @@
     <ClInclude Include="Window\GLFWWindow.h" />
     <ClInclude Include="Graphics\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
-    <ClInclude Include="Graphics\GraphicsTypes.h" />
     <ClInclude Include="Applications\VKSandbox.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\ComponentTypes.h" />
-    <ClInclude Include="ECS\Entities\Entity.h" />
     <ClInclude Include="Handles\Handle.h" />
-    <ClInclude Include="Handles\HandleManager.h" />
     <ClInclude Include="ECS\Components\ComponentPool.h" />
     <ClInclude Include="ECS\Systems\CommonSystem.h" />
     <ClInclude Include="ECS\EntityManager.h" />
@@ -111,41 +82,36 @@
     <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
     <ClInclude Include="ECS\SharedComponents\CameraComponent.h" />
     <ClInclude Include="ECS\SharedComponents\SharedComponentType.h" />
-    <ClInclude Include="ECS\Systems\CameraSystem.h" />
-    <ClInclude Include="Graphics\ShaderConstants.h" />
-    <ClInclude Include="Graphics\Transforms.h" />
-    <ClInclude Include="Graphics\GraphicsIO.h" />
-    <ClInclude Include="ECS\RenderPipelines.h" />
     <ClInclude Include="ECS\SharedComponents\SceneComponent.h" />
     <ClInclude Include="ECS\Components\Transforms\TransformComponent.h" />
-    <ClInclude Include="ECS\Components\Renderables\RenderableTypes.h" />
     <ClInclude Include="ECS\Components\Physics\MotionComponent.h" />
     <ClInclude Include="ECS\Systems\Scene\CameraSystem.h" />
-    <ClInclude Include="ECS\Systems\Rendering\RenderSystem.h" />
-    <ClInclude Include="ECS\Systems\Physics\MovementSystem.h" />
     <ClInclude Include="ECS\Systems\Physics\PlayerMoveSystem.h" />
     <ClInclude Include="ECS\Systems\Input\InputSystem.h" />
     <ClInclude Include="ECS\Components\Procedural\FFTOceanComponent.h" />
-    <ClInclude Include="Applications\VKShaderViewer.h" />
-    <ClInclude Include="ECS\Components\Rendering\RenderableTypes.h" />
-    <ClInclude Include="ECS\Components\Rendering\CustomRenderableComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\MeshComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\PBRRenderableComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\PhongRenderableComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\RenderableComponent.h" />
-    <ClInclude Include="Graphics\MeshGeneration.h" />
-    <ClInclude Include="Graphics\Pipelines.h" />
-    <ClInclude Include="ECS\Systems\Procedural\FFTOceanSystem.h" />
-    <ClInclude Include="Applications\VKOceanDemo.h" />
     <ClInclude Include="Graphics\Vulkan\BarriersHelper.h" />
-    <ClInclude Include="ECS\Components\Rendering\SkyboxRenderableComponent.h" />
-    <ClInclude Include="Applications\VKPBRDemo.h" />
     <ClInclude Include="ECS\Systems\Behaviour\EntityFollowSystem.h" />
     <ClInclude Include="ECS\Components\Behaviour\EntityFollowComponent.h" />
     <ClInclude Include="ECS\Components\Lighting\PointLightComponent.h" />
     <ClInclude Include="ECS\Components\Lighting\DirectionalLightComponent.h" />
     <ClInclude Include="ECS\Components\Lighting\LightComponent.h" />
     <ClInclude Include="ECS\Systems\Lighting\LightSystem.h" />
+    <ClInclude Include="Graphics\Utility\GraphicsIO.h" />
+    <ClInclude Include="Graphics\Utility\MeshGeneration.h" />
+    <ClInclude Include="Graphics\Utility\Transforms.h" />
+    <ClInclude Include="Graphics\Handles\ResourceHandle.h" />
+    <ClInclude Include="Graphics\Handles\ResourceHandleManager.h" />
+    <ClInclude Include="Graphics\GraphicsTypes.h" />
+    <ClInclude Include="Graphics\PipelineInfos.h" />
+    <ClInclude Include="Graphics\Utility\ShaderReflection.h" />
+    <ClInclude Include="Graphics\StaticPipelines.h" />
+    <ClInclude Include="ECS\Systems\Physics\MotionSystem.h" />
+    <ClInclude Include="Graph\Node.h" />
+    <ClInclude Include="Graphics\RenderGraph.h" />
+    <ClInclude Include="ECS\Systems\Rendering\ForwardRenderSystem.h" />
+    <ClInclude Include="ECS\Components\Rendering\MeshComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\RenderableComponent.h" />
+    <ClInclude Include="Graphics\Utility\ShaderConstants.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

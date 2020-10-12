@@ -23,8 +23,8 @@ namespace ECS
 namespace detail
 {
 using Entities         = std::unordered_map<EntityHandle, Entity>;
-using Components       = std::array<BaseComponentPool*, size_t( ComponentType::COUNT )>;
-using SharedComponents = std::array<BaseSharedComponent*, size_t( SharedComponentType::COUNT )>;
+using Components       = std::array<BaseComponentPool*, (size_t)ComponentType::COUNT>;
+using SharedComponents = std::array<BaseSharedComponent*, (size_t)SharedComponentType::COUNT>;
 using Systems          = std::vector<BaseSystem*>;
 
 // All entities currently managed by the manager (all entities in the world)
@@ -54,11 +54,11 @@ void RemoveEntity( EntityHandle handle );
 // Shared component accessor
 // ================================================================================================
 template <
-    class Component,
-    typename = std::enable_if_t<std::is_base_of_v<BaseSharedComponent, Component>>>
-Component& GetSharedComponent()
+    class SharedComponent,
+    typename = std::enable_if_t<std::is_base_of_v<BaseSharedComponent, SharedComponent>>>
+SharedComponent& GetSharedComponent()
 {
-   return *static_cast<Component*>( detail::sharedComponents[size_t( Component::TYPE )] );
+   return *static_cast<SharedComponent*>( detail::sharedComponents[(size_t)SharedComponent::TYPE] );
 }
 
 // Adding system
@@ -69,9 +69,7 @@ template <
     typename = std::enable_if_t<std::is_base_of_v<BaseSystem, System>>>
 void AddSystem( Args&&... args )
 {
-   System* system = new System( std::forward<Args>( args )... );
-   system->init();
-   detail::systems.emplace_back( system );
+   detail::systems.emplace_back( new System( std::forward<Args>( args )... ) );
 }
 
 // Component assignment
@@ -88,20 +86,11 @@ void Assign( EntityHandle handle, Args&&... args )
 
    Component* pComponent = nullptr;
 
-
    // Fetching component from adequate pool
    if constexpr( std::is_base_of_v<BaseComponent, Component> )
    {
       // Index of the component pool
-      size_t componentPoolIdx = static_cast<size_t>( ComponentType::UNKNOWN );
-      if constexpr( Component::SUBTYPE == ComponentType::UNKNOWN )
-      {
-         componentPoolIdx = static_cast<size_t>( Component::TYPE );
-      }
-      else
-      {
-         componentPoolIdx = static_cast<size_t>( Component::SUBTYPE );
-      }
+      size_t componentPoolIdx = static_cast<size_t>( Component::TYPE );
 
       CYDASSERT(
           componentPoolIdx != static_cast<size_t>( ComponentType::UNKNOWN ) &&
@@ -156,7 +145,7 @@ void Unassign( EntityHandle handle )
    {
       // Component is a normal component
       ComponentPool<Component>*& pPool =
-          (ComponentPool<Component>*&)detail::components[size_t( Component::TYPE )];
+          (ComponentPool<Component>*&)detail::components[(size_t)Component::TYPE];
 
       // Deallocate it from the pool
       pPool->releaseComponent( it->second.getComponent() );
@@ -177,5 +166,5 @@ void Unassign( EntityHandle handle )
       system->onEntityUnassigned( it->second );
    }
 }
-}  
+}
 }

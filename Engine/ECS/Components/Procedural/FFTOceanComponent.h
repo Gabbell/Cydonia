@@ -1,10 +1,9 @@
 #pragma once
 
 #include <ECS/Components/BaseComponent.h>
-
 #include <ECS/Components/ComponentTypes.h>
 
-#include <Handles/Handle.h>
+#include <Graphics/Handles/ResourceHandle.h>
 
 namespace CYD
 {
@@ -12,18 +11,15 @@ class FFTOceanComponent : public BaseComponent
 {
   public:
    FFTOceanComponent() = default;
-   COPIABLE( FFTOceanComponent )
-   virtual ~FFTOceanComponent();
-
-   bool init(
+   FFTOceanComponent(
        uint32_t resolution,
        uint32_t horizontalDimension,
        float amplitude,
        float windSpeed,
        float windDirX,
        float windDirZ );
-
-   void uninit() override;
+   COPIABLE( FFTOceanComponent );
+   virtual ~FFTOceanComponent();
 
    static constexpr ComponentType TYPE = ComponentType::OCEAN;
 

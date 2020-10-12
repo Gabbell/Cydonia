@@ -9,7 +9,7 @@
 
 namespace CYD
 {
-bool InputSystem::init()
+InputSystem::InputSystem( const Window& window ) : m_window( window )
 {
    // Settings instance of input interpreter to this window
    // TODO Maybe there's a better way to do this?
@@ -35,8 +35,6 @@ bool InputSystem::init()
    glfwSetKeyCallback( m_window.getGLFWwindow(), mainKeyCallback );
    glfwSetCursorPosCallback( m_window.getGLFWwindow(), mainCursorCallback );
    glfwSetMouseButtonCallback( m_window.getGLFWwindow(), mainMouseCallback );
-
-   return true;
 }
 
 void InputSystem::tick( double /*deltaS*/ )

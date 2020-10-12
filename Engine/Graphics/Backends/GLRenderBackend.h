@@ -22,7 +22,7 @@ class GLRenderBackend final : public RenderBackend
 {
   public:
    GLRenderBackend( const Window& window );
-   NON_COPIABLE( GLRenderBackend )
+   NON_COPIABLE( GLRenderBackend );
    virtual ~GLRenderBackend();
 
    void cleanup() override;

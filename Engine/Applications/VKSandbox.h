@@ -16,7 +16,7 @@ class VKSandbox final : public Application
 {
   public:
    VKSandbox( uint32_t width, uint32_t height, const char* title );
-   NON_COPIABLE( VKSandbox )
+   NON_COPIABLE( VKSandbox );
    ~VKSandbox() override;
 
   protected:

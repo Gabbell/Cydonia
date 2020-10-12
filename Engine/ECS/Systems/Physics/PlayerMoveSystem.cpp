@@ -2,7 +2,7 @@
 
 #include <ECS/EntityManager.h>
 
-#include <Graphics/Transforms.h>
+#include <Graphics/Utility/Transforms.h>
 
 #include <glm/glm.hpp>
 
@@ -21,8 +21,8 @@ void PlayerMoveSystem::tick( double /*deltaS*/ )
       {
          glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
 
-         Transform::rotateLocal( transform.rotation, rotationAngles.y, 0, 0 );
-         Transform::rotate( transform.rotation, 0, rotationAngles.x, 0 );
+         Transform::RotateLocal( transform.rotation, rotationAngles.y, 0, 0 );
+         Transform::Rotate( transform.rotation, 0, rotationAngles.x, 0 );
       }
 
       // Resetting player velocity to not accumulate velocity over time
@@ -47,7 +47,7 @@ void PlayerMoveSystem::tick( double /*deltaS*/ )
          delta.x -= MOVE_SPEED;
       }
 
-      Transform::translateLocal( motion.velocity, transform.rotation, delta );
+      Transform::TranslateLocal( motion.velocity, transform.rotation, delta );
 
       glm::vec3 elevation( 0.0f );
       if( input.goingUp )
@@ -59,7 +59,7 @@ void PlayerMoveSystem::tick( double /*deltaS*/ )
          elevation.y -= MOVE_SPEED;
       }
 
-      Transform::translate( motion.velocity, elevation );
+      Transform::Translate( motion.velocity, elevation );
    }
 }
 }

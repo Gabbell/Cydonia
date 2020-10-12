@@ -1,5 +1,9 @@
 #include <Graphics/RenderInterface.h>
 
+#include <Common/Assert.h>
+
+#include <Graphics/StaticPipelines.h>
+#include <Graphics/PipelineInfos.h>
 #include <Graphics/Backends/VKRenderBackend.h>
 
 #include <cstdio>
@@ -11,12 +15,17 @@ static RenderBackend* b = nullptr;
 // =================================================================================================
 // Initialization
 //
+static void CommonInit() { StaticPipelines::Initialize(); }
+
 template <>
 bool InitRenderBackend<VK>( const Window& window )
 {
    printf( "======= Initializing Vulkan Rendering Backend =======\n" );
    delete b;
    b = new VKRenderBackend( window );
+
+   CommonInit();
+
    return true;
 }
 
@@ -25,12 +34,18 @@ bool InitRenderBackend<GL>( const Window& )
 {
    printf( "======= OpenGL Rendering Backend Not Yet Implemented =======\n" );
    delete b;
+
+   CommonInit();
+
    return false;
 }
 
 void UninitRenderBackend()
 {
    printf( "======= Reports of my death have been greatly exaggerated =======\n" );
+
+   StaticPipelines::Uninitialize();
+
    delete b;
 }
 
@@ -54,9 +69,14 @@ void DestroyCommandList( CmdListHandle cmdList ) { b->destroyCommandList( cmdLis
 // =================================================================================================
 // Pipeline Specification
 //
-void SetViewport( CmdListHandle cmdList, const Rectangle& viewport )
+void SetViewport( CmdListHandle cmdList, const Viewport& viewport )
 {
    b->setViewport( cmdList, viewport );
+}
+
+void SetScissor( CmdListHandle cmdList, const Rectangle& scissor )
+{
+   b->setScissor( cmdList, scissor );
 }
 
 void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo )
@@ -67,6 +87,28 @@ void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo )
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )
 {
    b->bindPipeline( cmdList, pipInfo );
+}
+
+void BindPipeline( CmdListHandle cmdList, StaticPipelines::Type pipType )
+{
+   const PipelineInfo* pPipInfo = StaticPipelines::Get( pipType );
+
+   if( pPipInfo )
+   {
+      switch( pPipInfo->type )
+      {
+         case PipelineType::GRAPHICS:
+            b->bindPipeline( cmdList, *static_cast<const GraphicsPipelineInfo*>( pPipInfo ) );
+            break;
+         case PipelineType::COMPUTE:
+            b->bindPipeline( cmdList, *static_cast<const ComputePipelineInfo*>( pPipInfo ) );
+            break;
+      }
+   }
+   else
+   {
+      CYDASSERT( !"RenderInterface: Could not find static pipeline" );
+   }
 }
 
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
