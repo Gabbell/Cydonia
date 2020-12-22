@@ -16,7 +16,7 @@ layout( set = 0, binding = 0 ) uniform Alpha
 
 // =================================================================================================
 
-layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
+layout( set = 2, binding = 5 ) uniform sampler2D height;
 
 // Inputs
 layout( location = 0 ) in vec3 inPosition;
@@ -39,7 +39,7 @@ void main()
    vec3 normal = normalize( inNormal );
 
    // Applying height map modulation
-   float heightValue = texture( heightMap, inTexCoord.xy ).r;
+   float heightValue = texture( height, inTexCoord.xy ).r;
    fragPos += ( heightModulator * normal * heightValue );
 
    gl_Position = proj * view * vec4( fragPos, 1.0 );

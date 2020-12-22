@@ -55,7 +55,7 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
    CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Could not create descriptor pool" );
 }
 
-VkDescriptorSet DescriptorPool::allocate( const CYD::DescriptorSetLayoutInfo& layout ) const
+VkDescriptorSet DescriptorPool::allocate( const CYD::ShaderSetLayoutInfo& layout ) const
 {
    const VkDescriptorSetLayout vkDescSetLayout = m_device.getPipelineStash().findOrCreate( layout );
 
@@ -77,9 +77,9 @@ void DescriptorPool::free( const VkDescriptorSet& descSet ) const
    vkFreeDescriptorSets( m_device.getVKDevice(), m_vkDescPool, 1, &descSet );
 }
 
-void DescriptorPool::free( const VkDescriptorSet* descSets, const uint32_t count ) const
+void DescriptorPool::free( const VkDescriptorSet* shaderSets, const uint32_t count ) const
 {
-   vkFreeDescriptorSets( m_device.getVKDevice(), m_vkDescPool, count, descSets );
+   vkFreeDescriptorSets( m_device.getVKDevice(), m_vkDescPool, count, shaderSets );
 }
 
 DescriptorPool::~DescriptorPool()

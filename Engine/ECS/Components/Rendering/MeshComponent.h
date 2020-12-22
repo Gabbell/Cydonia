@@ -4,8 +4,9 @@
 
 #include <ECS/Components/ComponentTypes.h>
 
+#include <Graphics/Handles/ResourceHandle.h>
+
 #include <string_view>
-#include <vector>
 
 // ================================================================================================
 // Definition
@@ -16,17 +17,22 @@ namespace CYD
 {
 struct Vertex;
 
-class MeshComponent : public BaseComponent
+class MeshComponent final : public BaseComponent
 {
   public:
    MeshComponent() = default;
-   explicit MeshComponent( std::string_view assetName ) : asset( assetName ) {}
+   explicit MeshComponent( const std::string_view assetName ) : asset( assetName ) {}
    COPIABLE( MeshComponent );
    virtual ~MeshComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::MESH;
 
-   // Path of the mesh asset
    std::string_view asset;
+
+   // Mesh buffer handles and params
+   VertexBufferHandle vertexBuffer;
+   IndexBufferHandle indexBuffer;
+   uint32_t vertexCount = 0;
+   uint32_t indexCount  = 0;
 };
 }

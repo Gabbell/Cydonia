@@ -10,11 +10,11 @@ namespace CYD
 {
 void PlayerMoveSystem::tick( double /*deltaS*/ )
 {
-   for( const auto& compPair : m_components )
+   for( const auto& entityEntry : m_entities )
    {
       const InputComponent& input   = ECS::GetSharedComponent<InputComponent>();
-      TransformComponent& transform = *std::get<TransformComponent*>( compPair.second );
-      MotionComponent& motion       = *std::get<MotionComponent*>( compPair.second );
+      TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
+      MotionComponent& motion       = *std::get<MotionComponent*>( entityEntry.arch );
 
       // Modifying the transform component directly for rotation
       if( input.rotating )

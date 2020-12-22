@@ -14,10 +14,10 @@ dirLights;
 // Material properties
 // =================================================================================================
 layout( set = 1, binding = 0 ) uniform sampler2D albedo;
-layout( set = 1, binding = 1 ) uniform sampler2D normalMap;
-layout( set = 1, binding = 2 ) uniform sampler2D metallicMap;
-layout( set = 1, binding = 3 ) uniform sampler2D roughnessMap;
-layout( set = 1, binding = 4 ) uniform sampler2D aoMap;
+layout( set = 1, binding = 1 ) uniform sampler2D normals;
+layout( set = 1, binding = 2 ) uniform sampler2D metalness;
+layout( set = 1, binding = 3 ) uniform sampler2D roughness;
+layout( set = 1, binding = 4 ) uniform sampler2D ambientOcclusion;
 
 layout( location = 0 ) in vec3 inTexCoord;
 layout( location = 1 ) in vec3 inNormal;
@@ -87,7 +87,7 @@ vec3 Uncharted2Tonemap( vec3 col )
 // =================================================================================================
 vec3 getNormalFromMap()
 {
-   vec3 tangentNormal = texture( normalMap, inTexCoord.xy ).xyz;  // * 2.0 - 1.0;
+   vec3 tangentNormal = texture( normals, inTexCoord.xy ).xyz;  // * 2.0 - 1.0;
 
    vec3 Q1  = dFdx( fragPos );
    vec3 Q2  = dFdy( fragPos );
@@ -106,9 +106,9 @@ vec3 getNormalFromMap()
 void main()
 {
    const vec3 albedo     = texture( albedo, inTexCoord.xy ).rgb;
-   const float metallic  = texture( metallicMap, inTexCoord.xy ).r;
-   const float roughness = texture( roughnessMap, inTexCoord.xy ).r;
-   const float ao        = texture( aoMap, inTexCoord.xy ).r;
+   const float metallic  = texture( metalness, inTexCoord.xy ).r;
+   const float roughness = texture( roughness, inTexCoord.xy ).r;
+   const float ao        = texture( ambientOcclusion, inTexCoord.xy ).r;
 
    const vec3 N = getNormalFromMap();
    const vec3 V = normalize( vec3( viewPos ) - fragPos );

@@ -19,7 +19,7 @@ class NodeGraph
    virtual ~NodeGraph()                         = default;
 
    // Resets the whole graph
-   virtual void reset();
+   void reset();
 
   protected:
    struct Node
@@ -36,10 +36,10 @@ class NodeGraph
    void _depthFirstSearch( NodeHandle root );
    void _breathFirstSearch( NodeHandle root );
 
-  private:
    // This function is called for each node visited during the different types of graph searches
    virtual void _interpretNode( NodeHandle handle, const Node* node );
 
+  private:
    static constexpr uint32_t MAX_AMOUNT_NODES = 512;  // Increase this if needed
    static constexpr NodeHandle ROOT_INDEX     = 0;
    std::array<std::unique_ptr<Node>, MAX_AMOUNT_NODES> m_nodes;  // Graph nodes in contiguous memory

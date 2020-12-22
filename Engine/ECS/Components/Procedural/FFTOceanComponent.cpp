@@ -2,7 +2,7 @@
 
 #include <Common/PhysicsConstants.h>
 
-#include <Graphics/RenderInterface.h>
+#include <Graphics/GRIS/RenderInterface.h>
 
 namespace CYD
 {

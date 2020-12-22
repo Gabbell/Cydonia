@@ -4,9 +4,11 @@
 
 #include <glm/glm.hpp>
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <vector>
+#include <map>
 
 namespace CYD
 {
@@ -246,22 +248,13 @@ struct Vertex
    glm::vec3 normal;
 };
 
-struct ShaderResourceInfo
-{
-   bool operator==( const ShaderResourceInfo& other ) const;
-   ShaderResourceType type;
-   ShaderStageFlag stages;
-   uint32_t binding;
-   uint32_t set;
-};
-
 struct Attachment
 {
    bool operator==( const Attachment& other ) const;
-   PixelFormat format;
-   LoadOp loadOp;
-   StoreOp storeOp;
-   AttachmentType type;
+   PixelFormat format  = PixelFormat::BGRA8_UNORM;
+   AttachmentType type = AttachmentType::COLOR;
+   LoadOp loadOp       = LoadOp::DONT_CARE;
+   StoreOp storeOp     = StoreOp::DONT_CARE;
 };
 
 struct PushConstantRange
@@ -285,23 +278,32 @@ struct SamplerInfo
    AddressMode addressMode = AddressMode::REPEAT;
 };
 
-struct RenderPassInfo
+struct RenderTargetsInfo
 {
-   bool operator==( const RenderPassInfo& other ) const;
+   bool operator==( const RenderTargetsInfo& other ) const;
    std::vector<Attachment> attachments;
 };
 
-struct DescriptorSetLayoutInfo
+struct ShaderBindingInfo
 {
-   bool operator==( const DescriptorSetLayoutInfo& other ) const;
-   std::vector<ShaderResourceInfo> shaderResources;
+   bool operator==( const ShaderBindingInfo& other ) const;
+   std::string name;
+   ShaderResourceType type;
+   ShaderStageFlag stages;
+   uint32_t binding;
+};
+
+struct ShaderSetLayoutInfo
+{
+   bool operator==( const ShaderSetLayoutInfo& other ) const;
+   std::vector<ShaderBindingInfo> shaderBindings;
 };
 
 struct PipelineLayoutInfo
 {
    bool operator==( const PipelineLayoutInfo& other ) const;
    std::vector<PushConstantRange> ranges;
-   std::vector<DescriptorSetLayoutInfo> descSets;
+   std::map<uint32_t, ShaderSetLayoutInfo> shaderSets;
 };
 
 struct SwapchainInfo
@@ -364,9 +366,9 @@ struct std::hash<CYD::Attachment>
 };
 
 template <>
-struct std::hash<CYD::ShaderResourceInfo>
+struct std::hash<CYD::ShaderBindingInfo>
 {
-   size_t operator()( const CYD::ShaderResourceInfo& shaderObject ) const noexcept
+   size_t operator()( const CYD::ShaderBindingInfo& shaderObject ) const noexcept
    {
       size_t seed = 0;
       hashCombine( seed, shaderObject.type );
@@ -390,28 +392,29 @@ struct std::hash<CYD::PushConstantRange>
 };
 
 template <>
-struct std::hash<CYD::RenderPassInfo>
+struct std::hash<CYD::RenderTargetsInfo>
 {
-   size_t operator()( const CYD::RenderPassInfo& renderPass ) const noexcept
+   size_t operator()( const CYD::RenderTargetsInfo& targetsInfo ) const noexcept
    {
-      const std::vector<CYD::Attachment>& attachments = renderPass.attachments;
+      const std::vector<CYD::Attachment>& attachments = targetsInfo.attachments;
 
       size_t seed = 0;
       for( const auto& attachment : attachments )
       {
          hashCombine( seed, attachment );
       }
+
       return seed;
    }
 };
 
 template <>
-struct std::hash<CYD::DescriptorSetLayoutInfo>
+struct std::hash<CYD::ShaderSetLayoutInfo>
 {
-   size_t operator()( const CYD::DescriptorSetLayoutInfo& descSetLayoutInfo ) const noexcept
+   size_t operator()( const CYD::ShaderSetLayoutInfo& descSetLayoutInfo ) const noexcept
    {
       size_t seed = 0;
-      for( const auto& ubo : descSetLayoutInfo.shaderResources )
+      for( const auto& ubo : descSetLayoutInfo.shaderBindings )
       {
          hashCombine( seed, ubo );
       }

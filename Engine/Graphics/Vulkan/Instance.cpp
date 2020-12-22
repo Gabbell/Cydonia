@@ -143,7 +143,7 @@ void Instance::_createVKInstance()
    appInfo.engineVersion      = 1;
    appInfo.apiVersion         = VK_API_VERSION_1_1;
 
-   // Use validation layers if this is a debug build
+   // Use these validation layers if this is a debug build
 #if defined( _DEBUG )
    m_layers.push_back( "VK_LAYER_LUNARG_standard_validation" );
    CYDASSERT( checkValidationLayerSupport( m_layers ) );

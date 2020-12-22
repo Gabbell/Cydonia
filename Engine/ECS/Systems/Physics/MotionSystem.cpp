@@ -6,10 +6,10 @@ namespace CYD
 {
 void MotionSystem::tick( double deltaS )
 {
-   for( const auto& compPair : m_components )
+   for( const auto& entityEntry : m_entities )
    {
-      TransformComponent& transform = *std::get<TransformComponent*>( compPair.second );
-      const MotionComponent& motion = *std::get<MotionComponent*>( compPair.second );
+      TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
+      const MotionComponent& motion = *std::get<MotionComponent*>( entityEntry.arch );
 
       Transform::Translate( transform.position, motion.velocity * static_cast<float>( deltaS ) );
    }

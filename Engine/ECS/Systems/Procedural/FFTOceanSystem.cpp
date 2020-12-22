@@ -127,10 +127,10 @@ static void computeDisplacement(
 
 void FFTOceanSystem::tick( double deltaS )
 {
-   for( const auto& compPair : m_components )
+   for( const auto& entityEntry : m_entities )
    {
-      RenderableComponent& renderable = *std::get<RenderableComponent*>( compPair.second );
-      FFTOceanComponent& ocean        = *std::get<FFTOceanComponent*>( compPair.second );
+      RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
+      FFTOceanComponent& ocean        = *std::get<FFTOceanComponent*>( entityEntry.arch );
 
       // Updating time elapsed
       ocean.parameters.time += static_cast<float>( deltaS );

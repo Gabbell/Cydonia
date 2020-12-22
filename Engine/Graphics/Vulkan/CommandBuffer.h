@@ -76,21 +76,30 @@ class CommandBuffer final
    // =============================================================================================
    void bindVertexBuffer( Buffer* vertexBuf ) const;
    void bindIndexBuffer( Buffer* indexBuf, CYD::IndexType type ) const;
+
    void bindPipeline( const CYD::GraphicsPipelineInfo& info );
    void bindPipeline( const CYD::ComputePipelineInfo& info );
-   void bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
-   void bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
+
    void bindTexture( Texture* texture, uint32_t set, uint32_t binding );
    void bindImage( Texture* texture, uint32_t set, uint32_t binding );
+   void bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
+   void bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
+
+   void bindTexture( Texture* texture, const std::string_view name );
+   void bindImage( Texture* texture, const std::string_view name );
+   void bindBuffer( Buffer* buffer, const std::string_view name );
+   void bindUniformBuffer( Buffer* buffer, const std::string_view name );
+
    void updatePushConstants( const CYD::PushConstantRange& range, const void* pData );
 
-   // Render Pass
+   // Rendering scope
    // =============================================================================================
-   void beginPass( Swapchain& swapchain, bool hasDepth );
-   void beginPass(
-       const CYD::RenderPassInfo& renderPassInfo,
-       const std::vector<const Texture*>& textures );
-   void endPass() const;
+   void beginRendering( Swapchain& swapchain, bool hasDepth );
+   void beginRendering(
+       const CYD::RenderTargetsInfo& targetsInfo,
+       const std::vector<const Texture*>& targets );
+   void nextPass() const;
+   void endRendering() const;
 
    // Dynamic State
    // =============================================================================================
@@ -99,8 +108,8 @@ class CommandBuffer final
 
    // Drawing
    // =============================================================================================
-   void draw( size_t vertexCount );
-   void drawIndexed( size_t indexCount );
+   void draw( size_t vertexCount, size_t firstVertex );
+   void drawIndexed( size_t indexCount, size_t firstIndex );
 
    // Compute
    // =============================================================================================
@@ -125,7 +134,10 @@ class CommandBuffer final
    // Info on the currently bound pipeline
    std::optional<VkPipeline> m_boundPip;
    std::optional<VkPipelineLayout> m_boundPipLayout;
+
    std::optional<VkRenderPass> m_boundRenderPass;
+   std::optional<CYD::RenderTargetsInfo> m_boundTargetsInfo;
+   uint32_t m_currentSubpass = 0;
 
    // To keep in scope for destruction
    std::vector<VkFramebuffer> m_curFramebuffers;
@@ -136,7 +148,7 @@ class CommandBuffer final
    std::unique_ptr<CYD::PipelineInfo> m_boundPipInfo;
 
    // Currently bound descriptor sets
-   static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 32;
+   static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 8;
    std::array<VkDescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> m_boundSets;
 
    // All descriptor sets linked to this command buffer
@@ -148,39 +160,23 @@ class CommandBuffer final
    std::vector<DescriptorSetInfo> m_descSets;
 
    // Used for deferred updating and binding of descriptor sets before a draw command
-   struct BufferUpdateInfo
+   template <class T>
+   struct BindingInfo
    {
-      BufferUpdateInfo(
-          const Buffer* buffer,
-          CYD::ShaderResourceType type,
-          uint32_t set,
-          uint32_t binding )
-          : buffer( buffer ), type( type ), set( set ), binding( binding )
+      BindingInfo( const T* resource, CYD::ShaderResourceType type, uint32_t set, uint32_t binding )
+          : resource( resource ), type( type ), set( set ), binding( binding )
       {
       }
-      const Buffer* buffer;
+      const T* resource;
       CYD::ShaderResourceType type;
       uint32_t set;
       uint32_t binding;
    };
-   std::vector<BufferUpdateInfo> m_buffersToUpdate;
+   using BufferBindingInfo  = BindingInfo<Buffer>;
+   using TextureBindingInfo = BindingInfo<Texture>;
 
-   struct TextureUpdateInfo
-   {
-      TextureUpdateInfo(
-          const Texture* texture,
-          CYD::ShaderResourceType type,
-          uint32_t set,
-          uint32_t binding )
-          : texture( texture ), type( type ), set( set ), binding( binding )
-      {
-      }
-      const Texture* texture;
-      CYD::ShaderResourceType type;
-      uint32_t set;
-      uint32_t binding;
-   };
-   std::vector<TextureUpdateInfo> m_texturesToUpdate;
+   std::vector<BufferBindingInfo> m_buffersToUpdate;
+   std::vector<TextureBindingInfo> m_texturesToUpdate;
 
    // Syncing
    std::vector<VkSemaphore> m_semsToWait;

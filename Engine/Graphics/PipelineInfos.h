@@ -3,7 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Utility/ShaderConstants.h>
+#include <Graphics/ShaderConstants.h>
 
 #include <string>
 #include <vector>

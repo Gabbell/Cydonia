@@ -9,7 +9,7 @@
 
 namespace CYD
 {
-class CameraSystem : public CommonSystem<TransformComponent, CameraComponent>
+class CameraSystem final : public CommonSystem<TransformComponent, CameraComponent>
 {
   public:
    CameraSystem() = default;

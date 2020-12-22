@@ -21,8 +21,6 @@
     <ClCompile Include="Graphics\Scene\Frustum.cpp" />
     <ClCompile Include="Applications\Application.cpp" />
     <ClCompile Include="Window\GLFWWindow.cpp" />
-    <ClCompile Include="Graphics\RenderInterface.cpp" />
-    <ClCompile Include="Graphics\Backends\VKRenderBackend.cpp" />
     <ClCompile Include="Applications\VKSandbox.cpp" />
     <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="ECS\Systems\Scene\CameraSystem.cpp" />
@@ -31,18 +29,27 @@
     <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
     <ClCompile Include="Graphics\Vulkan\BarriersHelper.cpp" />
     <ClCompile Include="ECS\Systems\Behaviour\EntityFollowSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Lighting\LightSystem.cpp" />
     <ClCompile Include="Graphics\Utility\GraphicsIO.cpp" />
     <ClCompile Include="Graphics\Utility\MeshGeneration.cpp" />
     <ClCompile Include="Graphics\Utility\Transforms.cpp" />
     <ClCompile Include="Graphics\Handles\ResourceHandleManager.cpp" />
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
     <ClCompile Include="Graphics\PipelineInfos.cpp" />
-    <ClCompile Include="Graphics\StaticPipelines.cpp" />
     <ClCompile Include="ECS\Systems\Physics\MotionSystem.cpp" />
-    <ClCompile Include="Graphics\RenderGraph.cpp" />
-    <ClCompile Include="ECS\Systems\Rendering\ForwardRenderSystem.cpp" />
-    <ClCompile Include="Graphics\Utility\ShaderConstants.cpp" />
+    <ClCompile Include="Graphics\RenderPipelines.cpp" />
+    <ClCompile Include="Graphics\GRIS\RenderInterface.cpp" />
+    <ClCompile Include="ECS\Systems\Lighting\LightUpdateSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\PBRRenderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\SkyboxSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Lighting\ShadowMapSystem.cpp" />
+    <ClCompile Include="Graphics\GRIS\Backends\GLRenderBackend.cpp" />
+    <ClCompile Include="Graphics\GRIS\Backends\VKRenderBackend.cpp" />
+    <ClCompile Include="ECS\SharedComponents\CameraComponent.cpp" />
+    <ClCompile Include="ECS\SharedComponents\SceneComponent.cpp" />
+    <ClCompile Include="ECS\Systems\Resources\MaterialLoaderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Resources\MeshLoaderSystem.cpp" />
+    <ClCompile Include="Graphics\AssetStash.cpp" />
+    <ClCompile Include="Graphics\ShaderConstants.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
@@ -61,15 +68,12 @@
     <ClInclude Include="Graphics\Vulkan\Swapchain.h" />
     <ClInclude Include="Graphics\Vulkan\Texture.h" />
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
-    <ClInclude Include="Graphics\RenderInterface.h" />
     <ClInclude Include="Graphics\Scene\Frustum.h" />
     <ClInclude Include="Common\Vulkan.h" />
     <ClInclude Include="Common\Include.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Applications\Application.h" />
     <ClInclude Include="Window\GLFWWindow.h" />
-    <ClInclude Include="Graphics\Backends\RenderBackend.h" />
-    <ClInclude Include="Graphics\Backends\VKRenderBackend.h" />
     <ClInclude Include="Applications\VKSandbox.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\ComponentTypes.h" />
@@ -95,7 +99,6 @@
     <ClInclude Include="ECS\Components\Lighting\PointLightComponent.h" />
     <ClInclude Include="ECS\Components\Lighting\DirectionalLightComponent.h" />
     <ClInclude Include="ECS\Components\Lighting\LightComponent.h" />
-    <ClInclude Include="ECS\Systems\Lighting\LightSystem.h" />
     <ClInclude Include="Graphics\Utility\GraphicsIO.h" />
     <ClInclude Include="Graphics\Utility\MeshGeneration.h" />
     <ClInclude Include="Graphics\Utility\Transforms.h" />
@@ -104,14 +107,25 @@
     <ClInclude Include="Graphics\GraphicsTypes.h" />
     <ClInclude Include="Graphics\PipelineInfos.h" />
     <ClInclude Include="Graphics\Utility\ShaderReflection.h" />
-    <ClInclude Include="Graphics\StaticPipelines.h" />
     <ClInclude Include="ECS\Systems\Physics\MotionSystem.h" />
     <ClInclude Include="Graph\Node.h" />
-    <ClInclude Include="Graphics\RenderGraph.h" />
-    <ClInclude Include="ECS\Systems\Rendering\ForwardRenderSystem.h" />
     <ClInclude Include="ECS\Components\Rendering\MeshComponent.h" />
     <ClInclude Include="ECS\Components\Rendering\RenderableComponent.h" />
-    <ClInclude Include="Graphics\Utility\ShaderConstants.h" />
+    <ClInclude Include="Graphics\RenderPipelines.h" />
+    <ClInclude Include="Graphics\GRIS\RenderInterface.h" />
+    <ClInclude Include="ECS\Systems\Lighting\LightUpdateSystem.h" />
+    <ClInclude Include="ECS\Systems\Rendering\PBRRenderSystem.h" />
+    <ClInclude Include="ECS\Systems\Rendering\SkyboxSystem.h" />
+    <ClInclude Include="ECS\Systems\Lighting\ShadowMapSystem.h" />
+    <ClInclude Include="ECS\Components\Rendering\MaterialComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\SkyboxComponent.h" />
+    <ClInclude Include="Graphics\GRIS\Backends\GLRenderBackend.h" />
+    <ClInclude Include="Graphics\GRIS\Backends\RenderBackend.h" />
+    <ClInclude Include="Graphics\GRIS\Backends\VKRenderBackend.h" />
+    <ClInclude Include="ECS\Systems\Resources\MaterialLoaderSystem.h" />
+    <ClInclude Include="ECS\Systems\Resources\MeshLoaderSystem.h" />
+    <ClInclude Include="Graphics\AssetStash.h" />
+    <ClInclude Include="Graphics\ShaderConstants.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

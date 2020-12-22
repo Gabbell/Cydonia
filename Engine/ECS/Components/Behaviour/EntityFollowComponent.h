@@ -13,7 +13,7 @@ another entity will have the target entity's position.
 */
 namespace CYD
 {
-class EntityFollowComponent : public BaseComponent
+class EntityFollowComponent final : public BaseComponent
 {
   public:
    EntityFollowComponent() = default;

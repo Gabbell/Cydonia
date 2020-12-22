@@ -7,7 +7,7 @@
 
 namespace CYD
 {
-class FFTOceanComponent : public BaseComponent
+class FFTOceanComponent final : public BaseComponent
 {
   public:
    FFTOceanComponent() = default;

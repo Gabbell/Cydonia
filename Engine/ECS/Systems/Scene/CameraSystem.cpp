@@ -1,5 +1,7 @@
 #include <ECS/Systems/Scene/CameraSystem.h>
 
+#include <Graphics/GRIS/RenderInterface.h>
+
 #include <ECS/EntityManager.h>
 #include <ECS/SharedComponents/CameraComponent.h>
 
@@ -9,19 +11,19 @@ namespace CYD
 {
 void CameraSystem::tick( double /*deltaS*/ )
 {
-   if( m_components.size() > 1 )
+   if( m_entities.size() > 1 )
    {
-      CYDASSERT( !"CameraSystem: Attempting to attach camera to more than one entity" );
+      CYDASSERT( !"CameraSystem: Attaching camera to more than one entity not supported" );
       return;
    }
 
    CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
 
-   for( const auto& compPair : m_components )
+   for( const auto& entityEntry : m_entities )
    {
-      const TransformComponent& transform = *std::get<TransformComponent*>( compPair.second );
+      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
 
-      camera.pos = glm::vec4( transform.position, 1.0f );
+      camera.position = glm::vec4( transform.position, 1.0f );
 
       camera.vp.view = glm::toMat4( glm::conjugate( transform.rotation ) ) *
                        glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling ) *
@@ -39,5 +41,20 @@ void CameraSystem::tick( double /*deltaS*/ )
             break;
       }
    }
+
+   // Updating UBOs
+   CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER );
+
+   GRIS::StartRecordingCommandList( transferList );
+
+   GRIS::CopyToBuffer(
+       camera.viewProjBuffer, &camera.vp, 0, sizeof( CameraComponent::ViewProjection ) );
+   GRIS::CopyToBuffer( camera.positionBuffer, &camera.position, 0, sizeof( glm::vec4 ) );
+
+   GRIS::EndRecordingCommandList( transferList );
+
+   GRIS::SubmitCommandList( transferList );
+   GRIS::WaitOnCommandList( transferList );
+   GRIS::DestroyCommandList( transferList );
 }
 }

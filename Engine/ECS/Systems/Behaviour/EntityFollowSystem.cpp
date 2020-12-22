@@ -6,10 +6,10 @@ namespace CYD
 {
 void EntityFollowSystem::tick( double /*deltaS*/ )
 {
-   for( const auto& compPair : m_components )
+   for( const auto& entityEntry : m_entities )
    {
-      const EntityFollowComponent& follow = *std::get<EntityFollowComponent*>( compPair.second );
-      TransformComponent& transform       = *std::get<TransformComponent*>( compPair.second );
+      const EntityFollowComponent& follow = *std::get<EntityFollowComponent*>( entityEntry.arch );
+      TransformComponent& transform       = *std::get<TransformComponent*>( entityEntry.arch );
 
       // Getting the position of the followed entity and setting the current entity's position to it
       const Entity* followedEntity = ECS::GetEntity( follow.entity );

@@ -57,7 +57,7 @@ static VkExtent2D chooseExtent( const CYD::Extent2D& extent, const VkSurfaceCapa
    else
    {
       // Use the window extent
-      VkExtent2D actualExtent = { extent.width, extent.height };
+      VkExtent2D actualExtent = {extent.width, extent.height};
 
       actualExtent.width =
           std::clamp( actualExtent.width, caps.minImageExtent.width, caps.maxImageExtent.width );
@@ -302,16 +302,16 @@ void Swapchain::initFramebuffers( bool hasDepth )
    // If we are switching from depth on/off or never initialized the render pass
    if( ( hasDepth != m_hasDepth ) || !( m_vkRenderPass ) )
    {
-      CYD::RenderPassInfo renderPassInfo = {};
+      CYD::RenderTargetsInfo renderTargetsInfo = {};
 
-      renderPassInfo.attachments.push_back( m_colorPresentation );
+      renderTargetsInfo.attachments.push_back( m_colorPresentation );
 
       if( hasDepth )
       {
-         renderPassInfo.attachments.push_back( m_depthPresentation );
+         renderTargetsInfo.attachments.push_back( m_depthPresentation );
       }
 
-      VkRenderPass renderPass = m_device.getRenderPassStash().findOrCreate( renderPassInfo );
+      VkRenderPass renderPass = m_device.getRenderPassStash().findOrCreate( renderTargetsInfo );
       CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
 
       m_vkRenderPass = renderPass;
@@ -367,8 +367,8 @@ void Swapchain::present()
    const VkQueue* presentQueue = m_device.getQueueFromUsage( CYD::QueueUsage::GRAPHICS, true );
    if( presentQueue )
    {
-      VkSwapchainKHR swapChains[]    = { m_vkSwapchain };
-      VkSemaphore signalSemaphores[] = { m_renderDoneSems[m_currentFrame] };
+      VkSwapchainKHR swapChains[]    = {m_vkSwapchain};
+      VkSemaphore signalSemaphores[] = {m_renderDoneSems[m_currentFrame]};
 
       VkPresentInfoKHR presentInfo   = {};
       presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;

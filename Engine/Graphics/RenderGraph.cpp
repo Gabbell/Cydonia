@@ -9,10 +9,6 @@ namespace CYD
 {
 RenderGraph::RenderGraph()
 {
-   m_meshes.reserve( INITIAL_AMOUNT_RESOURCES );
-   m_materials.reserve( INITIAL_AMOUNT_RESOURCES );
-   m_buffers.reserve( INITIAL_AMOUNT_RESOURCES );
-
    m_viewBuffer  = GRIS::CreateUniformBuffer( sizeof( View ) );
    m_lightBuffer = GRIS::CreateUniformBuffer( sizeof( Light ) );
 }
@@ -20,26 +16,28 @@ RenderGraph::RenderGraph()
 RenderGraph::~RenderGraph()
 {
    // Go through all handles and destroy them
-
    GRIS::DestroyBuffer( m_lightBuffer );
    GRIS::DestroyBuffer( m_viewBuffer );
 }
 
+void RenderGraph::addPass(const PassInfo& info)
+{
+  
+}
+
 void RenderGraph::add3DRenderable(
     const glm::mat4& modelMatrix,
-    StaticPipelines::Type pipType,
+    const std::string_view pipName,
     const std::string_view materialPath,
     const std::string_view meshPath )
 {
-   const uint32_t pipIdx = static_cast<uint32_t>( pipType );
-
-   Renderable3D& renderable = m_renderables[pipIdx][m_renderableCounts[pipIdx]++];
+   Renderable3D& renderable = m_renderables[pipName][m_renderableCounts[pipName]++];
    renderable.modelMatrix   = modelMatrix;
    renderable.materialPath  = materialPath;
    renderable.meshPath      = meshPath;
 }
 
-void RenderGraph::addView(
+void RenderGraph::addSceneView(
     const std::string_view name,
     const glm::vec4& position,
     const glm::mat4& view,
@@ -48,7 +46,7 @@ void RenderGraph::addView(
    auto it = m_views.find( name );
    if( it != m_views.end() )
    {
-      CYDASSERT( !"RenderGraph: Overwriting an already existing view. Forgot to reset?" );
+      CYDASSERT( !"RenderGraph: Overwriting an already existing view. Forgot to reset scene?" );
       return;
    }
 
@@ -58,7 +56,7 @@ void RenderGraph::addView(
    newView.projectionMatrix = proj;
 }
 
-void RenderGraph::addLight(
+void RenderGraph::addSceneLight(
     const glm::vec4& enabled,
     const glm::vec4& direction,
     const glm::vec4& color )
@@ -68,58 +66,63 @@ void RenderGraph::addLight(
    m_light.color     = color;
 }
 
-void RenderGraph::setViewport( float offsetX, float offsetY, float width, float height )
+void RenderGraph::setViewport(
+    float offsetX,
+    float offsetY,
+    float width,
+    float height,
+    bool flippedY )
 {
-   m_viewport = Viewport{offsetX, offsetY, width, height};  // ...Default minDepth and maxDepth
+   // ...Default minDepth and maxDepth
+   if( flippedY )
+   {
+      m_viewport = Viewport{ offsetX, height, width, -height };
+   }
+   else
+   {
+      m_viewport = Viewport{ offsetX, offsetY, width, height };
+   }
 }
 
 void RenderGraph::setScissor( int32_t offsetX, int32_t offsetY, uint32_t width, uint32_t height )
 {
-   m_scissor = Rectangle{offsetX, offsetY, width, height};
+   m_scissor = Rectangle{ offsetX, offsetY, width, height };
 }
 
-void RenderGraph::reset()
+void RenderGraph::resetScene()
 {
    NodeGraph::reset();
 
    m_renderableCounts = {};
-
    m_views.clear();
 }
 
 bool RenderGraph::compile()
 {
-   const CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER );
+   bool success = true;
 
-   GRIS::StartRecordingCommandList( transferList );
-
-   bool neededTransfer = false;
-
-   for( uint32_t pipIdx = 0; pipIdx < (uint32_t)StaticPipelines::Type::COUNT; ++pipIdx )
+   for( const auto& renderableArray : m_renderables )
    {
-      const uint32_t renderableCount = m_renderableCounts[pipIdx];
+      const std::string_view pipName = renderableArray.first;
+
+      const uint32_t renderableCount = m_renderableCounts[pipName];
 
       for( uint32_t i = 0; i < renderableCount; ++i )
       {
-         const Renderable3D& renderable = m_renderables[pipIdx][i];
+         const Renderable3D& renderable = m_renderables[pipName][i];
 
-         neededTransfer |= _loadMesh( transferList, renderable.meshPath );
-         neededTransfer |= _loadMaterial( transferList, pipIdx, renderable.materialPath );
+         success &= m_assets.loadMesh( renderable.meshPath );
+         success &= m_assets.loadMaterial( renderable.materialPath );
       }
    }
 
-   GRIS::EndRecordingCommandList( transferList );
-
-   GRIS::SubmitCommandList( transferList );
-   GRIS::WaitOnCommandList( transferList );
-
-   GRIS::DestroyCommandList( transferList );
-
-   return true;
+   return success;
 }
 
-bool RenderGraph::execute() const
+bool RenderGraph::execute()
 {
+   GRIS::PrepareFrame();
+
    const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, true );
 
    // Get main view
@@ -145,159 +148,70 @@ bool RenderGraph::execute() const
    GRIS::SetScissor( cmdList, m_scissor );
 
    // Begin rendering straight to the swapchain
-   GRIS::BeginRenderPassSwapchain( cmdList, true );
+   GRIS::BeginRendering( cmdList, true );
 
-   for( uint32_t pipIdx = 0; pipIdx < (uint32_t)StaticPipelines::Type::COUNT; ++pipIdx )
+   for( const auto& renderableArray : m_renderables )
    {
-      const uint32_t renderableCount = m_renderableCounts[pipIdx];
+      const std::string_view pipName = renderableArray.first;
+
+      const uint32_t renderableCount = m_renderableCounts[pipName];
 
       if( renderableCount == 0 )
       {
          continue;
       }
 
-      const StaticPipelines::Type pipType = static_cast<StaticPipelines::Type>( pipIdx );
-      GRIS::BindPipeline( cmdList, pipType );
+      GRIS::BindPipeline( cmdList, pipName );
 
       for( uint32_t i = 0; i < renderableCount; ++i )
       {
-         const Renderable3D& renderable = m_renderables[pipIdx][i];
+         const Renderable3D& renderable = m_renderables[pipName][i];
 
          // Prepare rendering
          GRIS::UpdateConstantBuffer(
              cmdList, ShaderStage::VERTEX_STAGE, 0, sizeof( glm::mat4 ), &renderable.modelMatrix );
 
          // Bind material
-         auto materialIt = m_materials.find( renderable.materialPath );
-         if( materialIt != m_materials.end() )
-         {
-            const Material& material = materialIt->second;
+         const Material& material = m_assets.getMaterial( renderable.materialPath );
 
-            if( material.albedo ) GRIS::BindTexture( cmdList, material.albedo, 1, 0 );
-            if( material.normal ) GRIS::BindTexture( cmdList, material.normal, 1, 1 );
-            if( material.metalness ) GRIS::BindTexture( cmdList, material.metalness, 1, 2 );
-            if( material.roughness ) GRIS::BindTexture( cmdList, material.roughness, 1, 3 );
+         if( material.albedo ) GRIS::BindTexture( cmdList, material.albedo, 1, 0 );
+         if( material.normal ) GRIS::BindTexture( cmdList, material.normal, 1, 1 );
+         if( material.metalness ) GRIS::BindTexture( cmdList, material.metalness, 1, 2 );
+         if( material.roughness ) GRIS::BindTexture( cmdList, material.roughness, 1, 3 );
 
-            // Optional
-            if( material.ao ) GRIS::BindTexture( cmdList, material.ao, 1, 4 );
-            if( material.height ) GRIS::BindTexture( cmdList, material.height, 1, 5 );
-         }
+         // Optional
+         if( material.ao ) GRIS::BindTexture( cmdList, material.ao, 1, 4 );
+         if( material.height ) GRIS::BindTexture( cmdList, material.height, 1, 5 );
 
          // Draw mesh
-         auto meshIt = m_meshes.find( renderable.meshPath );
-         if( meshIt != m_meshes.end() )
+         const Mesh& mesh = m_assets.getMesh( renderable.meshPath );
+
+         GRIS::BindVertexBuffer( cmdList, mesh.vertexBuffer );
+
+         if( mesh.indexBuffer )
          {
-            const Mesh& mesh = meshIt->second;
-
-            GRIS::BindVertexBuffer( cmdList, mesh.vertexBuffer );
-
-            if( mesh.indexBuffer )
-            {
-               // This renderable has an index buffer, use it to draw
-               GRIS::BindIndexBuffer<uint32_t>( cmdList, mesh.indexBuffer );
-               GRIS::DrawVerticesIndexed( cmdList, mesh.indexCount );
-            }
-            else
-            {
-               GRIS::DrawVertices( cmdList, mesh.vertexCount );
-            }
+            // This renderable has an index buffer, use it to draw
+            GRIS::BindIndexBuffer<uint32_t>( cmdList, mesh.indexBuffer );
+            GRIS::DrawVerticesIndexed( cmdList, mesh.indexCount );
+         }
+         else
+         {
+            GRIS::DrawVertices( cmdList, mesh.vertexCount );
          }
       }
    }
 
-   GRIS::EndRenderPass( cmdList );
+   GRIS::EndRendering( cmdList );
 
    GRIS::EndRecordingCommandList( cmdList );
 
    GRIS::SubmitCommandList( cmdList );
    GRIS::DestroyCommandList( cmdList );
 
+   GRIS::PresentFrame();
    GRIS::RenderBackendCleanup();
 
    return true;
-}
-
-bool RenderGraph::_loadMesh( CmdListHandle transferList, const std::string_view meshPath )
-{
-   if( meshPath.empty() )
-   {
-      return false;
-   }
-
-   auto it = m_meshes.find( meshPath );
-   if( it == m_meshes.end() )
-   {
-      // Mesh was not previously loaded, load it
-      std::vector<Vertex> vertices;
-      std::vector<uint32_t> indices;
-      GraphicsIO::LoadMesh( std::string( meshPath ), vertices, indices );
-
-      Mesh& mesh = m_meshes[meshPath];
-
-      mesh.vertexBuffer = GRIS::CreateVertexBuffer(
-          transferList,
-          static_cast<uint32_t>( vertices.size() ),
-          static_cast<uint32_t>( sizeof( Vertex ) ),
-          vertices.data() );
-
-      mesh.vertexCount = static_cast<uint32_t>( vertices.size() );
-
-      mesh.indexBuffer = GRIS::CreateIndexBuffer(
-          transferList, static_cast<uint32_t>( indices.size() ), indices.data() );
-
-      mesh.indexCount = static_cast<uint32_t>( indices.size() );
-
-      return true;
-   }
-
-   return false;
-}
-
-bool RenderGraph::_loadMaterial(
-    CmdListHandle transferList,
-    uint32_t /*pipType*/,
-    std::string_view materialPath )
-{
-   if( materialPath.empty() )
-   {
-      return false;
-   }
-
-   auto it = m_materials.find( materialPath );
-   if( it == m_materials.end() )
-   {
-      TextureDescription texDesc = {};
-      texDesc.width              = 2048;
-      texDesc.height             = 2048;
-      texDesc.size               = texDesc.width * texDesc.height * sizeof( uint32_t );
-      texDesc.type               = ImageType::TEXTURE_2D;
-      texDesc.format             = PixelFormat::RGBA8_SRGB;
-      texDesc.usage              = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;
-      texDesc.stages             = ShaderStage::FRAGMENT_STAGE;
-
-      // TODO More dynamic resource loading. Maybe depending on the pipeline, load only what we need
-      const std::string fullPath = "Data/Materials/" + std::string( materialPath ) + "/";
-
-      const std::string albedoPath    = fullPath + "albedo.png";
-      const std::string normalPath    = fullPath + "normal.png";
-      const std::string metalnessPath = fullPath + "metalness.png";
-      const std::string roughnessPath = fullPath + "roughness.png";
-      const std::string aoPath        = fullPath + "ao.png";
-      const std::string heightPath    = fullPath + "height.png";
-
-      Material& material = m_materials[materialPath];
-
-      material.albedo    = GRIS::CreateTexture( transferList, texDesc, albedoPath );
-      material.normal    = GRIS::CreateTexture( transferList, texDesc, normalPath );
-      material.height    = GRIS::CreateTexture( transferList, texDesc, heightPath );
-      material.metalness = GRIS::CreateTexture( transferList, texDesc, metalnessPath );
-      material.roughness = GRIS::CreateTexture( transferList, texDesc, roughnessPath );
-      material.ao        = GRIS::CreateTexture( transferList, texDesc, aoPath );
-
-      return true;
-   }
-
-   return false;
 }
 
 // State machine used to transfer in between states and detect state anomalies

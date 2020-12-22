@@ -5,8 +5,9 @@
 #include <Graph/NodeGraph.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/StaticPipelines.h>
+#include <Graphics/RenderPipelines.h>
 #include <Graphics/Handles/ResourceHandle.h>
+#include <Graphics/AssetManager.h>
 
 #include <cstdint>
 #include <string_view>
@@ -21,26 +22,8 @@ class RenderGraph final : public EMP::NodeGraph
    MOVABLE( RenderGraph );
    virtual ~RenderGraph();
 
-   void reset() override;
-
-   void add3DRenderable(
-       const glm::mat4& modelMatrix,
-       StaticPipelines::Type pipType,
-       std::string_view materialPath,
-       std::string_view meshPath );
-
-   static constexpr std::string_view MAIN_VIEW_STRING = "MAIN";
-   void addView(
-       std::string_view name,
-       const glm::vec4& position,
-       const glm::mat4& view,
-       const glm::mat4& projection );
-
-   void addLight( const glm::vec4& enabled, const glm::vec4& direction, const glm::vec4& color );
-
-   // Dynamic State
-   void setViewport( float offsetX, float offsetY, float width, float height );
-   void setScissor( int32_t offsetX, int32_t offsetY, uint32_t width, uint32_t height );
+   // Render Graph interactions
+   // ==============================================================================================
 
    // Transforms the graph into an optimized tree and perform validations. Here are the operations:
    // * Getting all resources
@@ -50,7 +33,38 @@ class RenderGraph final : public EMP::NodeGraph
    bool compile();
 
    // Goes through the graph and render to swapchain
-   bool execute() const;
+   bool execute();
+
+   // Dynamic State
+   // ==============================================================================================
+
+   // Set the current viewport with the possibility of flipping it in on the Y-axis
+   void
+   setViewport( float offsetX, float offsetY, float width, float height, bool flippedY = false );
+
+   void setScissor( int32_t offsetX, int32_t offsetY, uint32_t width, uint32_t height );
+
+   // Scene components that can be added. These components are destroyed when resetScene is called.
+   // ==============================================================================================
+
+   static constexpr std::string_view MAIN_VIEW_STRING = "MAIN";
+
+   void addSceneView(
+       std::string_view name,
+       const glm::vec4& position,
+       const glm::mat4& view,
+       const glm::mat4& projection );
+
+   void
+   addSceneLight( const glm::vec4& enabled, const glm::vec4& direction, const glm::vec4& color );
+
+   void add3DRenderable(
+       const glm::mat4& modelMatrix,
+       std::string_view pipName,
+       std::string_view materialPath,
+       std::string_view meshPath );
+
+   void resetScene();
 
   private:
    enum class State : uint8_t
@@ -65,10 +79,8 @@ class RenderGraph final : public EMP::NodeGraph
 
    void _updateState( State desiredState );
 
-   // Load resource functions called during compile time
-   bool _loadMesh( CmdListHandle transferList, std::string_view meshPath );
-   bool
-   _loadMaterial( CmdListHandle transferList, uint32_t pipType, std::string_view materialPath );
+   // Reference to node handles based on pass name
+   std::unordered_map<std::string_view, NodeHandle> m_passToHandle;
 
    // Viewport
    // =============================================================================================
@@ -83,13 +95,20 @@ class RenderGraph final : public EMP::NodeGraph
       std::string_view meshPath;
       std::string_view materialPath;
    };
+
    static constexpr uint32_t MAX_NUMBER_RENDERABLES = 512;
 
    using Renderable3DArray = std::array<Renderable3D, MAX_NUMBER_RENDERABLES>;
-   using Renderables       = std::array<Renderable3DArray, (size_t)StaticPipelines::Type::COUNT>;
+   using Renderables       = std::unordered_map<std::string_view, Renderable3DArray>;
 
-   std::array<uint32_t, (size_t)StaticPipelines::Type::COUNT> m_renderableCounts = {};
-   Renderables m_renderables                                                     = {};
+   // Number of renderables per pipeline
+   std::unordered_map<std::string_view, uint32_t> m_renderableCounts;
+
+   // All renderables per pipeline
+   Renderables m_renderables;
+
+   // Manager for assets to allow reuse for read-only assets
+   AssetManager m_assets;
 
    // Lights
    // =============================================================================================
@@ -115,31 +134,5 @@ class RenderGraph final : public EMP::NodeGraph
    std::unordered_map<std::string_view, View> m_views;
 
    BufferHandle m_viewBuffer;
-
-   // Resources
-   // =============================================================================================
-   static constexpr uint32_t INITIAL_AMOUNT_RESOURCES = 128;
-
-   struct Mesh
-   {
-      VertexBufferHandle vertexBuffer;
-      IndexBufferHandle indexBuffer;
-      uint32_t vertexCount = 0;
-      uint32_t indexCount  = 0;
-   };
-
-   struct Material
-   {
-      TextureHandle albedo;     // Diffuse/Albedo color map
-      TextureHandle normal;     // Normal map
-      TextureHandle height;     // Height map
-      TextureHandle metalness;  // Metallic/Specular map
-      TextureHandle roughness;  // Roughness map
-      TextureHandle ao;         // Ambient occlusion map
-   };
-
-   std::unordered_map<std::string_view, Mesh> m_meshes;
-   std::unordered_map<std::string_view, Material> m_materials;
-   std::unordered_map<std::string_view, BufferHandle> m_buffers;
 };
 }
