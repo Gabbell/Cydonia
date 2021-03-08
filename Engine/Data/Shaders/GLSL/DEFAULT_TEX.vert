@@ -3,12 +3,13 @@
 
 // Model transforms
 // =================================================================================================
-layout( push_constant ) uniform Epsilon { mat4 model; };
+layout( push_constant ) uniform PushConstant { mat4 model; };
 
 // View and environment
 // =================================================================================================
-layout( set = 0, binding = 0 ) uniform Alpha
+layout( set = 0, binding = 0 ) uniform EnvironmentView
 {
+   vec4 pos;
    mat4 view;
    mat4 proj;
 };

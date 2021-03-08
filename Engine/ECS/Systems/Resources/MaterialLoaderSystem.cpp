@@ -1,13 +1,14 @@
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 
 #include <Graphics/AssetStash.h>
+#include <Graphics/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
 
 namespace CYD
 {
 void MaterialLoaderSystem::tick( double /*deltaS*/ )
 {
-   CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER );
+   CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "MaterialLoaderSystem" );
 
    GRIS::StartRecordingCommandList( transferList );
 
@@ -15,20 +16,20 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
    {
       MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
 
-      if( material.albedo || material.normals || material.metalness || material.roughness ||
-          material.ao || material.height )
+      if( material.data.albedo || material.data.normals || material.data.metalness ||
+          material.data.roughness || material.data.ao )
       {
          continue;
       }
 
-      const Material& loadedMaterial = m_assets.loadMaterial( transferList, material.asset );
+      m_assets.loadMaterialFromPath( transferList, material.asset );
 
-      material.albedo    = loadedMaterial.albedo;
-      material.normals   = loadedMaterial.normals;
-      material.metalness = loadedMaterial.metalness;
-      material.roughness = loadedMaterial.roughness;
-      material.ao        = loadedMaterial.ao;
-      material.height    = loadedMaterial.height;
+      const Material& loadedMaterial = m_assets.getMaterial( material.asset );
+      material.data.albedo           = loadedMaterial.albedo;
+      material.data.normals          = loadedMaterial.normals;
+      material.data.metalness        = loadedMaterial.metalness;
+      material.data.roughness        = loadedMaterial.roughness;
+      material.data.ao               = loadedMaterial.ao;
    }
 
    // We don't want to spend more time on loading these entities' resources
@@ -36,8 +37,6 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
 
    GRIS::EndRecordingCommandList( transferList );
 
-   GRIS::SubmitCommandList( transferList );
-   GRIS::WaitOnCommandList( transferList );
-   GRIS::DestroyCommandList( transferList );
+   RenderGraph::AddPass( transferList );
 }
 }

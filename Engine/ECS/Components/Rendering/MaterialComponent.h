@@ -5,6 +5,7 @@
 #include <ECS/Components/ComponentTypes.h>
 
 #include <Graphics/Handles/ResourceHandle.h>
+#include <Graphics/Material.h>
 
 #include <string_view>
 
@@ -19,8 +20,8 @@ class MaterialComponent final : public BaseComponent
 {
   public:
    MaterialComponent() = default;
-   MaterialComponent( const std::string_view pipName, const std::string_view assetName )
-       : pipeline( pipName ), asset( assetName )
+   MaterialComponent( const std::string_view pipName, const std::string_view assetName = "" )
+       : data{ pipName }, asset( assetName )
    {
    }
    COPIABLE( MaterialComponent );
@@ -28,18 +29,9 @@ class MaterialComponent final : public BaseComponent
 
    static constexpr ComponentType TYPE = ComponentType::MATERIAL;
 
-   // Pipeline used to render the material
-   std::string_view pipeline;
-
-   // Name of the material asset
    std::string_view asset;
 
-   // Material texture handles
-   TextureHandle albedo;     // Diffuse/Albedo color map
-   TextureHandle normals;    // Normal map
-   TextureHandle metalness;  // Metallic/Specular map
-   TextureHandle roughness;  // Roughness map
-   TextureHandle ao;         // Ambient occlusion map
-   TextureHandle height;     // Height map
+   // Loaded dynamically
+   Material data;
 };
 }

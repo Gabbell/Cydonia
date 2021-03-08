@@ -3,11 +3,11 @@
 
 // View and environment
 // =================================================================================================
-layout( set = 0, binding = 1 ) uniform DirectionalLights
+layout( set = 0, binding = 1 ) uniform Lights
 {
-   bool enabled;
-   vec4 direction;
+   mat4 viewMat;
    vec4 color;
+   bool enabled;
 }
 dirLights;
 
@@ -67,7 +67,7 @@ float GeometrySmith( vec3 N, vec3 V, vec3 L, float roughness )
 
 vec3 FresnelSchlick( float cosTheta, vec3 F0 )
 {
-   return F0 + ( 1.0 - F0 ) * pow( 1.0 - cosTheta, 5.0 );
+   return F0 + ( 1.0 - F0 ) * pow( max( 1.0 - cosTheta, 0.0 ), 5.0 );
 }
 
 const float A = 0.15;
@@ -87,7 +87,7 @@ vec3 Uncharted2Tonemap( vec3 col )
 // =================================================================================================
 vec3 getNormalFromMap()
 {
-   vec3 tangentNormal = texture( normals, inTexCoord.xy ).xyz;  // * 2.0 - 1.0;
+   vec3 tangentNormal = texture( normals, inTexCoord.xy ).xyz; // * 2.0 - 1.0;
 
    vec3 Q1  = dFdx( fragPos );
    vec3 Q2  = dFdy( fragPos );
@@ -122,8 +122,10 @@ void main()
    vec3 Lo = vec3( 0.0 );
 
    // Calculate per-light radiance
+
    // DIRECTIONAL LIGHT
-   const vec3 L        = normalize( vec3( -dirLights.direction ) );
+   // Get light direction from light view matrix and normalize
+   const vec3 L        = -normalize( vec3( dirLights.viewMat[2].xyz ) );
    const vec3 radiance = vec3( dirLights.color );
 
    // POINT LIGHT
@@ -140,9 +142,9 @@ void main()
    const vec3 F    = FresnelSchlick( max( dot( H, V ), 0.0 ), F0 );
 
    const vec3 nominator    = NDF * G * F;
-   const float denominator = 4 * max( dot( N, V ), 0.0 ) * max( dot( N, L ), 0.0 );
-   const vec3 specular     = nominator / max( denominator, 0.0001 );
-
+   const float denominator = 4.0 * max( dot( N, V ), 0.0 ) * max( dot( N, L ), 0.0 );
+   const vec3 specular     = nominator / max( denominator, 0.00001 );
+ 
    // kS is equal to Fresnel
    const vec3 kS = F;
 
@@ -160,7 +162,7 @@ void main()
    const float NdotL = max( dot( N, L ), 0.0 );
 
    // Add to outgoing radiance Lo
-   Lo += int( dirLights.enabled ) * ( kD * ( albedo / PI ) + specular ) * radiance * NdotL;
+   Lo += int( dirLights.enabled ) * ( kD * albedo / PI + specular ) * radiance * NdotL;
 
    // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by
    // kS again   Lo += int( dirLight.enabled ) * calcLuminance( i, N, V, F0, albedo, metallic,

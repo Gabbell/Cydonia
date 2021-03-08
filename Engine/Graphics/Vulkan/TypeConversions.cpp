@@ -15,6 +15,7 @@ VkIndexType cydToVkIndexType( CYD::IndexType type )
          return VK_INDEX_TYPE_UINT32;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized index type" );
    return VK_INDEX_TYPE_UINT16;
 }
 
@@ -30,14 +31,19 @@ VkFormat cydToVkFormat( CYD::PixelFormat format )
          return VK_FORMAT_R16G16B16A16_SFLOAT;
       case CYD::PixelFormat::RGBA32F:
          return VK_FORMAT_R32G32B32A32_SFLOAT;
+      case CYD::PixelFormat::RGB32F:
+         return VK_FORMAT_R32G32B32_SFLOAT;
       case CYD::PixelFormat::RG32F:
          return VK_FORMAT_R32G32_SFLOAT;
       case CYD::PixelFormat::R32F:
          return VK_FORMAT_R32_SFLOAT;
       case CYD::PixelFormat::D32_SFLOAT:
          return VK_FORMAT_D32_SFLOAT;
+      case CYD::PixelFormat::R16_UNORM:
+         return VK_FORMAT_R16_UNORM;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized pixel format" );
    return VK_FORMAT_B8G8R8A8_UNORM;
 }
 
@@ -49,6 +55,7 @@ VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space )
          return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized color space" );
    return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 }
 
@@ -64,6 +71,7 @@ VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op )
          return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized load operator" );
    return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
@@ -77,6 +85,7 @@ VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op )
          return VK_ATTACHMENT_STORE_OP_DONT_CARE;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized store operator" );
    return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
@@ -96,6 +105,7 @@ VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim )
          return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized draw primitive" );
    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
@@ -111,6 +121,7 @@ VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode )
          return VK_POLYGON_MODE_POINT;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized polygon mode" );
    return VK_POLYGON_MODE_FILL;
 }
 
@@ -137,6 +148,7 @@ VkShaderStageFlags cydToVkShaderStages( CYD::ShaderStageFlag stages )
    {
       vkStages |= VK_SHADER_STAGE_ALL;
    }
+
    return vkStages;
 }
 
@@ -156,6 +168,7 @@ VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type )
          return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized shader resource type" );
    return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 }
 
@@ -171,6 +184,7 @@ VkFilter cydToVkFilter( CYD::Filter filter )
          return VK_FILTER_CUBIC_IMG;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized filter" );
    return VK_FILTER_LINEAR;
 }
 
@@ -190,6 +204,7 @@ VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode )
          return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized addressing mode" );
    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
@@ -215,6 +230,18 @@ VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout )
          return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
    }
 
+   CYDASSERT( !"TypeConversions:: Unrecognized image layout" );
    return VK_IMAGE_LAYOUT_UNDEFINED;
+}
+
+VkImageAspectFlags getAspectMask( CYD::PixelFormat format )
+{
+   switch( format )
+   {
+      case CYD::PixelFormat::D32_SFLOAT:
+         return VK_IMAGE_ASPECT_DEPTH_BIT;
+      default:
+         return VK_IMAGE_ASPECT_COLOR_BIT;
+   }
 }
 }

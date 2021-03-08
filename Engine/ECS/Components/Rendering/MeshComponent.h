@@ -15,8 +15,6 @@
  */
 namespace CYD
 {
-struct Vertex;
-
 class MeshComponent final : public BaseComponent
 {
   public:

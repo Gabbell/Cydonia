@@ -5,9 +5,9 @@
 
 namespace CYD
 {
-struct Vertex;
+class Vertex;
 
-namespace MeshGen
+namespace MeshGeneration
 {
 // Returns a vector of vertices for a grid mesh centered at the origin (0, 0, 0). The actual length
 // of the grid is always 1. Changing the width and the height only changes the resolution/detail of
@@ -17,5 +17,11 @@ void Grid(
     uint32_t columns,
     std::vector<Vertex>& vertices,
     std::vector<uint32_t>& indices );
+
+void Icosphere(
+    std::vector<Vertex>& vertices,
+    std::vector<uint32_t>& indices,
+    uint32_t subdivisions    = 0,
+    float divisionPerEdge = 2.0f );
 }
 }

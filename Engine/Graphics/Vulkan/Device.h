@@ -29,7 +29,7 @@ class Swapchain;
 class PipelineStash;
 class RenderPassStash;
 class SamplerStash;
-class CommandPool;
+class CommandPoolManager;
 class CommandBuffer;
 class Buffer;
 class Texture;
@@ -50,19 +50,23 @@ class Device final
        const Surface& surface,
        const VkPhysicalDevice& physDevice,
        const std::vector<const char*>& extensions );
+   MOVABLE( Device );
    ~Device();
 
    // Interface
    // =============================================================================================
    Swapchain* createSwapchain( const CYD::SwapchainInfo& scInfo );
-   CommandBuffer* createCommandBuffer( CYD::QueueUsageFlag usage, bool presentable = false );
+   CommandBuffer* createCommandBuffer(
+       CYD::QueueUsageFlag usage,
+       const std::string_view name,
+       bool presentable = false );
 
    // Buffer creation function
-   Buffer* createVertexBuffer( size_t size );
-   Buffer* createIndexBuffer( size_t size );
+   Buffer* createVertexBuffer( size_t size, const std::string_view name );
+   Buffer* createIndexBuffer( size_t size, const std::string_view name );
+   Buffer* createUniformBuffer( size_t size, const std::string_view name );
+   Buffer* createBuffer( size_t size, const std::string_view name );
    Buffer* createStagingBuffer( size_t size );
-   Buffer* createUniformBuffer( size_t size );
-   Buffer* createBuffer( size_t size );
    Texture* createTexture( const CYD::TextureDescription& desc );
 
    void cleanup();  // Clean up unused resources
@@ -70,16 +74,28 @@ class Device final
    // Getters
    const VkPhysicalDevice& getPhysicalDevice() const noexcept { return m_physDevice; }
    const VkDevice& getVKDevice() const noexcept { return m_vkDevice; }
-   const VkQueue* getQueueFromFamily( uint32_t familyIndex ) const;
-   const VkQueue* getQueueFromUsage( CYD::QueueUsageFlag usage, bool supportsPresentation = false )
-       const;
 
-   Swapchain* getSwapchain() const { return m_swapchain.get(); }
+   Swapchain& getSwapchain() const { return *m_swapchain; }
 
    PipelineStash& getPipelineStash() const { return *m_pipelines; }
    RenderPassStash& getRenderPassStash() const { return *m_renderPasses; }
    SamplerStash& getSamplerStash() const { return *m_samplers; }
    DescriptorPool& getDescriptorPool() const { return *m_descPool; }
+
+   // Queues
+   struct QueueFamily
+   {
+      std::vector<VkQueue> queues;
+      uint32_t queueCount      = 0;
+      CYD::QueueUsageFlag type = 0;
+      bool supportsPresent     = false;
+   };
+
+   const QueueFamily& getQueueFamilyFromIndex( uint32_t familyIndex ) const;
+   uint32_t getQueueFamilyIndexFromUsage(
+       CYD::QueueUsageFlag usage,
+       bool supportsPresentation = false ) const;
+   VkQueue getQueueFromUsage( CYD::QueueUsageFlag usage, bool supportsPresentation = false ) const;
 
    // Support
    uint32_t findMemoryType( uint32_t typeFilter, uint32_t properties ) const;
@@ -93,12 +109,14 @@ class Device final
    void _populateQueueFamilies();
    void _createLogicalDevice();
    void _fetchQueues();
-   void _createCommandPools();
    void _createDescriptorPool();
 
    // Common buffer function
-   Buffer* _createBuffer( size_t size, CYD::BufferUsageFlag usage, CYD::MemoryTypeFlag memoryType );
-   void _destroyBuffer( Buffer* buffer );
+   Buffer* _createBuffer(
+       size_t size,
+       CYD::BufferUsageFlag usage,
+       CYD::MemoryTypeFlag memoryType,
+       const std::string_view name );
 
    // =============================================================================================
    // Private Members
@@ -110,7 +128,7 @@ class Device final
 
    std::vector<Buffer> m_buffers;
    std::vector<Texture> m_textures;
-   std::vector<std::unique_ptr<CommandPool>> m_commandPools;
+   std::unique_ptr<CommandPoolManager> m_commandPoolManager;
 
    std::unique_ptr<DescriptorPool> m_descPool;
    std::unique_ptr<Swapchain> m_swapchain;
@@ -118,14 +136,6 @@ class Device final
    std::unique_ptr<SamplerStash> m_samplers;
    std::unique_ptr<PipelineStash> m_pipelines;
 
-   struct QueueFamily
-   {
-      std::vector<VkQueue> queues;
-      uint32_t index           = 0;
-      uint32_t queueCount      = 0;
-      CYD::QueueUsageFlag type = 0;
-      bool supportsPresent     = false;
-   };
    std::vector<QueueFamily> m_queueFamilies;
 
    // Extensions used to create the device

@@ -57,6 +57,12 @@ artifacts/
 # StyleCop
 StyleCopReport.xml
 
+# Textures, don't wanna get sued
+*.png
+*.jpg
+*.tga
+*.tif
+
 # Files built by Visual Studio
 *_i.c
 *_p.c

@@ -121,8 +121,7 @@ static void populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debugInfo )
    debugInfo.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
    debugInfo.pNext           = nullptr;
    debugInfo.flags           = 0;
-   debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
-                               VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
+   debugInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT |
                                VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
    debugInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
                            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
@@ -139,13 +138,13 @@ void Instance::_createVKInstance()
    appInfo.pNext              = nullptr;
    appInfo.pApplicationName   = "Cydonia";
    appInfo.applicationVersion = 1;
-   appInfo.pEngineName        = "VK";
+   appInfo.pEngineName        = "Cydonia Engine";
    appInfo.engineVersion      = 1;
-   appInfo.apiVersion         = VK_API_VERSION_1_1;
+   appInfo.apiVersion         = VK_API_VERSION_1_2;
 
    // Use these validation layers if this is a debug build
 #if defined( _DEBUG )
-   m_layers.push_back( "VK_LAYER_LUNARG_standard_validation" );
+   m_layers.push_back( "VK_LAYER_KHRONOS_validation" );
    CYDASSERT( checkValidationLayerSupport( m_layers ) );
 #endif
 

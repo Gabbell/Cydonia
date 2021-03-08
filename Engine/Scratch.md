@@ -95,9 +95,8 @@ for each view {
 ### Abstraction Levels for Rendering
 
 * Application
-  * ECS - RenderSystem
-    * RenderGraph, ResourcePool
-      * GRIS
-        * Rendering Backend
-            * vk:: Abstraction
-                * Vulkan
+ * ECS - RenderSystem
+  * GRIS
+   * Rendering Backend
+    * vk:: Abstraction
+     * Vulkan

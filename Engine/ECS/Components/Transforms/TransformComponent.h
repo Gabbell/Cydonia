@@ -13,11 +13,10 @@ class TransformComponent final : public BaseComponent
 {
   public:
    TransformComponent() = default;
-   explicit TransformComponent( const glm::vec3& aPosition ) : position( aPosition ) {}
    TransformComponent(
        const glm::vec3& aPosition,
-       const glm::vec3& aScaling,
-       const glm::quat& aRotation )
+       const glm::vec3& aScaling  = glm::vec3( 1.0f ),
+       const glm::quat& aRotation = glm::quat( 1.0f, 0.0f, 0.0f, 0.0f ) )
        : position( aPosition ), scaling( aScaling ), rotation( aRotation )
    {
    }

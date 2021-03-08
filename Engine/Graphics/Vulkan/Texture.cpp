@@ -8,6 +8,8 @@
 
 namespace vk
 {
+Texture::Texture() { m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 ); }
+
 void Texture::acquire( const Device& device, const CYD::TextureDescription& desc )
 {
    m_pDevice = &device;
@@ -24,17 +26,15 @@ void Texture::acquire( const Device& device, const CYD::TextureDescription& desc
    _allocateMemory();
    _createImageView();
 
-   CYDASSERT(
-       m_useCount == 0 &&
-       "Texture: Texture use count not 0. This texture was probably not released" );
-
-   m_useCount = 1;
+   incUse();
 }
 
 void Texture::release()
 {
    if( m_pDevice )
    {
+      CYDASSERT( m_useCount->load() == 0 && "Texture: released a still used texture" );
+
       vkDestroyImageView( m_pDevice->getVKDevice(), m_vkImageView, nullptr );
       vkDestroyImage( m_pDevice->getVKDevice(), m_vkImage, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
@@ -52,8 +52,6 @@ void Texture::release()
       m_vkImageView = nullptr;
       m_vkImage     = nullptr;
       m_vkMemory    = nullptr;
-
-      m_useCount = 0;
    }
 }
 
@@ -140,21 +138,11 @@ void Texture::_allocateMemory()
    vkBindImageMemory( m_pDevice->getVKDevice(), m_vkImage, m_vkMemory, 0 );
 }
 
-static VkImageAspectFlagBits getAspectBit( CYD::PixelFormat format )
-{
-   if( format == CYD::PixelFormat::D32_SFLOAT )
-   {
-      return VK_IMAGE_ASPECT_DEPTH_BIT;
-   }
-
-   return VK_IMAGE_ASPECT_COLOR_BIT;
-}
-
 void Texture::_createImageView()
 {
-   VkImageViewCreateInfo viewInfo           = {};
-   viewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-   viewInfo.image                           = m_vkImage;
+   VkImageViewCreateInfo viewInfo = {};
+   viewInfo.sType                 = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+   viewInfo.image                 = m_vkImage;
 
    if( m_width > 0 )
    {
@@ -184,14 +172,16 @@ void Texture::_createImageView()
    }
 
    viewInfo.format                          = TypeConversions::cydToVkFormat( m_format );
-   viewInfo.subresourceRange.aspectMask     = getAspectBit( m_format );
+   viewInfo.subresourceRange.aspectMask     = TypeConversions::getAspectMask( m_format );
    viewInfo.subresourceRange.baseMipLevel   = 0;
    viewInfo.subresourceRange.levelCount     = 1;
    viewInfo.subresourceRange.baseArrayLayer = 0;
-   viewInfo.subresourceRange.layerCount     = 1;
+   viewInfo.subresourceRange.layerCount     = m_layers;
 
    VkResult result =
        vkCreateImageView( m_pDevice->getVKDevice(), &viewInfo, nullptr, &m_vkImageView );
    CYDASSERT( result == VK_SUCCESS && "Texture: Could not create image view" );
 }
+
+Texture::~Texture() { release(); }
 }

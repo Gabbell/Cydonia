@@ -1,19 +1,22 @@
 #include <Applications/VKSandbox.h>
 
 #include <Graphics/AssetStash.h>
+#include <Graphics/RenderGraph.h>
+#include <Graphics/VertexLayout.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/Utility/MeshGeneration.h>
 
-#include <ECS/Systems/Behaviour/EntityFollowSystem.h>
 #include <ECS/Systems/Lighting/LightUpdateSystem.h>
 #include <ECS/Systems/Input/InputSystem.h>
 #include <ECS/Systems/Physics/PlayerMoveSystem.h>
 #include <ECS/Systems/Physics/MotionSystem.h>
+#include <ECS/Systems/Procedural/FFTOceanSystem.h>
 #include <ECS/Systems/Rendering/PBRRenderSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
-#include <ECS/Systems/Lighting/ShadowMapSystem.h>
-#include <ECS/Systems/Rendering/SkyboxSystem.h>
+#include <ECS/Systems/Rendering/AtmosphereRenderSystem.h>
 #include <ECS/Systems/Scene/CameraSystem.h>
+#include <ECS/Systems/UI/ImGuiSystem.h>
 
 #include <ECS/Components/Lighting/LightComponent.h>
 #include <ECS/Components/Physics/MotionComponent.h>
@@ -31,8 +34,8 @@ namespace CYD
 VKSandbox::VKSandbox( uint32_t width, uint32_t height, const char* title )
     : Application( width, height, title )
 {
-   // Core initializers
    GRIS::InitRenderBackend( GRIS::VK, *m_window );
+   GRIS::InitializeUI();
    ECS::Initialize();
 
    m_assets = std::make_unique<AssetStash>();
@@ -40,8 +43,6 @@ VKSandbox::VKSandbox( uint32_t width, uint32_t height, const char* title )
 
 void VKSandbox::preLoop()
 {
-   // TODO Better system scheduler
-
    // Systems Initialization
    // =============================================================================================
 
@@ -57,41 +58,50 @@ void VKSandbox::preLoop()
    ECS::AddSystem<PlayerMoveSystem>();
    ECS::AddSystem<MotionSystem>();
 
-   // Behaviour
-   ECS::AddSystem<EntityFollowSystem>();
+   // Procedural
+   ECS::AddSystem<FFTOceanSystem>();
 
    // Rendering
    ECS::AddSystem<LightUpdateSystem>();
-   ECS::AddSystem<ShadowMapSystem>();
-   ECS::AddSystem<SkyboxSystem>();
    ECS::AddSystem<PBRRenderSystem>();
+   // ECS::AddSystem<ImGuiSystem>();
 
    // Adding entities
    // =============================================================================================
 
    const EntityHandle player = ECS::CreateEntity();
    ECS::Assign<InputComponent>( player );
-   ECS::Assign<TransformComponent>( player, glm::vec3( 0.0f, 0.0f, 200.0f ) );
+   ECS::Assign<TransformComponent>( player, glm::vec3( 0.0f, 0.0f, 0.0f ) );
    ECS::Assign<MotionComponent>( player );
    ECS::Assign<CameraComponent>( player );
 
-   // Light entity
    const EntityHandle sun = ECS::CreateEntity();
+   ECS::Assign<RenderableComponent>( sun );
    ECS::Assign<TransformComponent>( sun );
-   ECS::Assign<LightComponent>( sun, LightComponent::Type::DIRECTIONAL );
+   ECS::Assign<LightComponent>( sun );
+   // ECS::Assign<MeshComponent>( sun, "sphere" );
+   // ECS::Assign<MaterialComponent>( sun, "WIREFRAME" );
 
-   // Some renderable entities
-   for( uint32_t i = 0; i < 64; ++i )
-   {
-      const float x = ( ( ( i / 8 ) % 8 ) * 50.0f ) - ( 4 * 50.0f );
-      const float y = ( ( i % 8 ) * 50.0f ) - ( 4 * 50.0f );
+   const EntityHandle ocean = ECS::CreateEntity();
+   ECS::Assign<RenderableComponent>( ocean );
+   ECS::Assign<TransformComponent>(
+       ocean, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 20.0f, 20.0f, 20.0f ) );
+   ECS::Assign<MeshComponent>( ocean, "Ocean" );
+   ECS::Assign<FFTOceanComponent>( ocean, 512, 150, 100.0f, 20.0f, 100.0f, 0.0f );
+   ECS::Assign<MaterialComponent>( ocean, "OCEAN_RENDER" );
 
-      const EntityHandle rock = ECS::CreateEntity();
-      ECS::Assign<TransformComponent>( rock, glm::vec3( x, y, 0.0f ) );
-      ECS::Assign<MeshComponent>( rock, "sphere" );
-      ECS::Assign<MaterialComponent>( rock, "PBR", "PBR/layered-rock1" );
-      ECS::Assign<RenderableComponent>( rock, true /*isOccluder*/ );
-   }
+   std::vector<Vertex> gridVerts;
+   std::vector<uint32_t> gridIndices;
+   MeshGeneration::Grid( 512, 512, gridVerts, gridIndices );
+
+   // Creating grid mesh used for the ocean
+   const CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "Ocean Transfer" );
+   GRIS::StartRecordingCommandList( transferList );
+   m_assets->loadMesh( transferList, "Ocean", gridVerts, gridIndices );
+   GRIS::EndRecordingCommandList( transferList );
+   GRIS::SubmitCommandList( transferList );
+   GRIS::WaitOnCommandList( transferList );
+   GRIS::DestroyCommandList( transferList );
 }
 
 void VKSandbox::tick( double deltaS )
@@ -104,13 +114,24 @@ void VKSandbox::tick( double deltaS )
       frames = 0;
    }
 
+   GRIS::PrepareFrame();
+
    ECS::Tick( deltaS );
+
+   RenderGraph::Execute();
+
+   GRIS::PresentFrame();
+
+   GRIS::RenderBackendCleanup();
 }
 
 VKSandbox::~VKSandbox()
 {
+   m_assets.reset();
+
    // Core uninitializers
    ECS::Uninitialize();
+   GRIS::UninitializeUI();
    GRIS::UninitRenderBackend();
 }
 }

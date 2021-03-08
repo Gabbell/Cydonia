@@ -1,6 +1,9 @@
 #include <Graphics/AssetStash.h>
 
+#include <Common/Assert.h>
+
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/VertexLayout.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/Utility/GraphicsIO.h>
 
@@ -8,38 +11,57 @@ namespace CYD
 {
 // Asset Paths Constants
 // ================================================================================================
-static const std::string MATERIAL_PATH = "Data/Materials/";
-static const std::string MESH_PATH     = "Data/Meshes/";
+static constexpr char MATERIAL_PATH[] = "Data/Materials/";
+static constexpr char MESH_PATH[]     = "Data/Meshes/";
 
-static const std::string ALBEDO_NAME    = "albedo.png";
-static const std::string NORMALS_NAME   = "normals.png";
-static const std::string METALNESS_NAME = "metalness.png";
-static const std::string ROUGHNESS_NAME = "roughness.png";
-static const std::string AO_NAME        = "ao.png";
-static const std::string HEIGHT_NAME    = "height.png";
+static constexpr char ALBEDO_NAME[]       = "albedo.png";
+static constexpr char NORMALS_NAME[]      = "normals.png";
+static constexpr char DISPLACEMENT_NAME[] = "displacement.png";
+static constexpr char METALNESS_NAME[]    = "metalness.png";
+static constexpr char ROUGHNESS_NAME[]    = "roughness.png";
+static constexpr char AO_NAME[]           = "ao.png";
 
-const Material& AssetStash::loadMaterial(
+const Mesh& AssetStash::getMesh( const std::string_view name )
+{
+   const std::string meshString( name );
+   auto it = m_meshes.find( meshString );
+   if( it != m_meshes.end() )
+   {
+      return it->second;
+   }
+
+   return m_meshes[""];
+}
+
+const Material& AssetStash::getMaterial( const std::string_view name )
+{
+   const std::string materialString( name );
+   auto it = m_materials.find( materialString );
+   if( it != m_materials.end() )
+   {
+      return it->second;
+   }
+
+   return m_materials[""];
+}
+
+bool AssetStash::loadMaterialFromPath(
     CmdListHandle transferList,
     const std::string_view materialPath )
 {
-   if( materialPath.empty() )
-   {
-      return m_materials[""];
-   }
-
    const std::string materialString( materialPath );
-
    auto it = m_materials.find( materialString );
    if( it == m_materials.end() )
    {
-      TextureDescription texDesc = {};
-      texDesc.width              = 2048;
-      texDesc.height             = 2048;
-      texDesc.size               = texDesc.width * texDesc.height * sizeof( uint32_t );
-      texDesc.type               = ImageType::TEXTURE_2D;
-      texDesc.format             = PixelFormat::RGBA8_SRGB;
-      texDesc.usage              = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;
-      texDesc.stages             = ShaderStage::FRAGMENT_STAGE;
+      TextureDescription rgbaDesc = {};
+      rgbaDesc.type               = ImageType::TEXTURE_2D;
+      rgbaDesc.format             = PixelFormat::RGBA8_SRGB;
+      rgbaDesc.usage              = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;
+      rgbaDesc.stages             = ShaderStage::FRAGMENT_STAGE;
+      rgbaDesc.name               = materialPath;
+
+      TextureDescription rDesc = rgbaDesc;
+      rDesc.format             = PixelFormat::R32F;
 
       // TODO More dynamic resource loading. Maybe depending on the pipeline, load only what we need
       const std::string fullPath = MATERIAL_PATH + materialString + "/";
@@ -49,32 +71,26 @@ const Material& AssetStash::loadMaterial(
       const std::string metalnessPath = fullPath + METALNESS_NAME;
       const std::string roughnessPath = fullPath + ROUGHNESS_NAME;
       const std::string aoPath        = fullPath + AO_NAME;
-      const std::string heightPath    = fullPath + HEIGHT_NAME;
+      const std::string dispPath      = fullPath + DISPLACEMENT_NAME;
 
       Material& material = m_materials[materialString];
 
-      material.albedo    = GRIS::CreateTexture( transferList, texDesc, albedoPath );
-      material.normals   = GRIS::CreateTexture( transferList, texDesc, normalsPath );
-      material.height    = GRIS::CreateTexture( transferList, texDesc, heightPath );
-      material.metalness = GRIS::CreateTexture( transferList, texDesc, metalnessPath );
-      material.roughness = GRIS::CreateTexture( transferList, texDesc, roughnessPath );
-      material.ao        = GRIS::CreateTexture( transferList, texDesc, aoPath );
+      material.albedo    = GRIS::CreateTexture( transferList, rgbaDesc, albedoPath );
+      material.normals   = GRIS::CreateTexture( transferList, rgbaDesc, normalsPath );
+      material.disp      = GRIS::CreateTexture( transferList, rgbaDesc, dispPath );
+      material.metalness = GRIS::CreateTexture( transferList, rDesc, metalnessPath );
+      material.roughness = GRIS::CreateTexture( transferList, rDesc, roughnessPath );
+      material.ao        = GRIS::CreateTexture( transferList, rDesc, aoPath );
 
-      return material;
+      return true;
    }
 
-   return m_materials[""];
+   return false;
 }
 
-const Mesh& AssetStash::loadMesh( CmdListHandle transferList, const std::string_view meshPath )
+bool AssetStash::loadMeshFromPath( CmdListHandle transferList, const std::string_view meshPath )
 {
-   if( meshPath.empty() )
-   {
-      return m_meshes[""];
-   }
-
    const std::string meshString( meshPath );
-
    auto it = m_meshes.find( meshString );
    if( it == m_meshes.end() )
    {
@@ -91,29 +107,52 @@ const Mesh& AssetStash::loadMesh( CmdListHandle transferList, const std::string_
           transferList,
           static_cast<uint32_t>( vertices.size() ),
           static_cast<uint32_t>( sizeof( Vertex ) ),
-          vertices.data() );
+          vertices.data(),
+          meshPath );
 
       mesh.vertexCount = static_cast<uint32_t>( vertices.size() );
 
       mesh.indexBuffer = GRIS::CreateIndexBuffer(
-          transferList, static_cast<uint32_t>( indices.size() ), indices.data() );
+          transferList, static_cast<uint32_t>( indices.size() ), indices.data(), meshPath );
 
       mesh.indexCount = static_cast<uint32_t>( indices.size() );
 
-      return mesh;
+      return true;
    }
 
-   return m_meshes[""];
+   return false;
 }
 
-Material::~Material()
+bool AssetStash::loadMesh(
+    CmdListHandle transferList,
+    const std::string_view name,
+    const std::vector<Vertex>& vertices,
+    const std::vector<uint32_t>& indices )
 {
-   GRIS::DestroyTexture( albedo );
-   GRIS::DestroyTexture( normals );
-   GRIS::DestroyTexture( height );
-   GRIS::DestroyTexture( metalness );
-   GRIS::DestroyTexture( roughness );
-   GRIS::DestroyTexture( ao );
+   const std::string meshString( name );
+   auto it = m_meshes.find( meshString );
+   if( it == m_meshes.end() )
+   {
+      Mesh& mesh = m_meshes[meshString];
+
+      mesh.vertexBuffer = GRIS::CreateVertexBuffer(
+          transferList,
+          static_cast<uint32_t>( vertices.size() ),
+          static_cast<uint32_t>( sizeof( Vertex ) ),
+          vertices.data(),
+          name );
+
+      mesh.vertexCount = static_cast<uint32_t>( vertices.size() );
+
+      mesh.indexBuffer = GRIS::CreateIndexBuffer(
+          transferList, static_cast<uint32_t>( indices.size() ), indices.data(), name );
+
+      mesh.indexCount = static_cast<uint32_t>( indices.size() );
+
+      return true;
+   }
+
+   return false;
 }
 
 Mesh::~Mesh()

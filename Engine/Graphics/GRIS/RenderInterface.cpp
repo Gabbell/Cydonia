@@ -2,9 +2,12 @@
 
 #include <Common/Assert.h>
 
-#include <Graphics/RenderPipelines.h>
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/RenderPipelines.h>
+#include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/GRIS/Backends/VKRenderBackend.h>
+
+#include <ThirdParty/ImGui/imgui.h>
 
 #include <cstdio>
 
@@ -24,20 +27,15 @@ bool InitRenderBackend( API api, const Window& window )
    switch( api )
    {
       case VK:
-         printf( "======= Initializing Vulkan Rendering Backend =======\n" );
          b = new VKRenderBackend( window );
          return true;
       case D3D12:
-         printf( "======= DirectX12 Rendering Backend Not Yet Implemented =======\n" );
          return false;
       case D3D11:
-         printf( "======= DirectX11 Rendering Backend Not Yet Implemented =======\n" );
          return false;
       case GL:
-         printf( "======= OpenGL Rendering Backend Not Yet Implemented =======\n" );
          return false;
       case MTL:
-         printf( "======= Metal Rendering Backend Not Yet Implemented =======\n" );
          return false;
    }
 
@@ -46,29 +44,51 @@ bool InitRenderBackend( API api, const Window& window )
 
 void UninitRenderBackend()
 {
-   printf( "======= Reports of my death have been greatly exaggerated =======\n" );
-
    RenderPipelines::Uninitialize();
 
    delete b;
 }
+
+bool InitializeUI()
+{
+   IMGUI_CHECKVERSION();
+   ImGui::CreateContext();
+   ImGui::StyleColorsDark();
+
+   return b->initializeUI();
+}
+
+void UninitializeUI()
+{
+   b->uninitializeUI();
+
+   ImGui::DestroyContext();
+}
+
+void DrawUI( CmdListHandle cmdList ) { b->drawUI( cmdList ); }
 
 void RenderBackendCleanup() { b->cleanup(); }
 
 // =================================================================================================
 // Command Buffers/Lists
 //
-CmdListHandle CreateCommandList( QueueUsageFlag usage, bool presentable )
+CmdListHandle
+CreateCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
 {
-   return b->createCommandList( usage, presentable );
+   return b->createCommandList( usage, name, presentable );
 }
 
 void StartRecordingCommandList( CmdListHandle cmdList ) { b->startRecordingCommandList( cmdList ); }
 void EndRecordingCommandList( CmdListHandle cmdList ) { b->endRecordingCommandList( cmdList ); }
 void SubmitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
+void SubmitCommandLists( const std::vector<CmdListHandle>& /*cmdLists*/ ) {}
 void ResetCommandList( CmdListHandle cmdList ) { b->resetCommandList( cmdList ); }
 void WaitOnCommandList( CmdListHandle cmdList ) { b->waitOnCommandList( cmdList ); }
+void SyncOnCommandList( CmdListHandle from, CmdListHandle to ) { b->syncOnCommandList( from, to ); }
 void DestroyCommandList( CmdListHandle cmdList ) { b->destroyCommandList( cmdList ); }
+
+void SyncOnSwapchain( CmdListHandle cmdList ) { b->syncOnSwapchain( cmdList ); }
+void SyncToSwapchain( CmdListHandle cmdList ) { b->syncToSwapchain( cmdList ); }
 
 // =================================================================================================
 // Pipeline Specification
@@ -93,10 +113,8 @@ void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )
    b->bindPipeline( cmdList, pipInfo );
 }
 
-void BindPipeline( CmdListHandle cmdList, std::string_view pipName )
+void BindPipeline( CmdListHandle cmdList, const PipelineInfo* pPipInfo )
 {
-   const PipelineInfo* pPipInfo = RenderPipelines::Get( pipName );
-
    if( pPipInfo )
    {
       switch( pPipInfo->type )
@@ -109,6 +127,12 @@ void BindPipeline( CmdListHandle cmdList, std::string_view pipName )
             break;
       }
    }
+}
+
+void BindPipeline( CmdListHandle cmdList, std::string_view pipName )
+{
+   const PipelineInfo* pPipInfo = RenderPipelines::Get( pipName );
+   BindPipeline( cmdList, pPipInfo );
 }
 
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
@@ -148,6 +172,11 @@ void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, uint32_t set,
    b->bindBuffer( cmdList, bufferHandle, set, binding );
 }
 
+void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, const std::string_view name )
+{
+   b->bindBuffer( cmdList, bufferHandle, name );
+}
+
 void BindUniformBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
@@ -155,6 +184,14 @@ void BindUniformBuffer(
     uint32_t binding )
 {
    b->bindUniformBuffer( cmdList, bufferHandle, set, binding );
+}
+
+void BindUniformBuffer(
+    CmdListHandle cmdList,
+    BufferHandle bufferHandle,
+    const std::string_view name )
+{
+   b->bindUniformBuffer( cmdList, bufferHandle, name );
 }
 
 void UpdateConstantBuffer(
@@ -170,15 +207,78 @@ void UpdateConstantBuffer(
 // =================================================================================================
 // Resources
 //
-TextureHandle CreateTexture( CmdListHandle transferList, const TextureDescription& desc )
+TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
+
+static TextureHandle LoadImageFromStorage(
+    CmdListHandle transferList,
+    const TextureDescription& inputDesc,
+    uint32_t layerCount,
+    const std::string* paths )
 {
-   return b->createTexture( transferList, desc );
+   CYDASSERT(
+       layerCount <= inputDesc.layers &&
+       "VKRenderBackend:: Number of textures could not fit in number of layers" );
+
+   CYDASSERT(
+       inputDesc.width == 0 && inputDesc.height == 0 && inputDesc.size == 0 &&
+       "VKRenderBackend: Created a texture with a path but specified dimensions" );
+
+   std::vector<void*> imageData;
+   int prevWidth     = 0;
+   int prevHeight    = 0;
+   int prevLayerSize = 0;
+   int width         = 0;
+   int height        = 0;
+   int layerSize     = 0;
+   int totalSize     = 0;
+
+   for( uint32_t i = 0; i < layerCount; ++i )
+   {
+      imageData.push_back(
+          GraphicsIO::LoadImage( paths[i], inputDesc.format, width, height, layerSize ) );
+
+      if( !imageData.back() )
+      {
+         return Handle();
+      }
+
+      // Sanity check
+      if( prevWidth == 0 ) prevWidth = width;
+      if( prevHeight == 0 ) prevHeight = height;
+      if( prevLayerSize == 0 ) prevLayerSize = layerSize;
+
+      CYDASSERT(
+          prevWidth == width && prevHeight == height && prevLayerSize == layerSize &&
+          "VKRenderBackend: Dimension mismatch" );
+
+      prevWidth     = width;
+      prevHeight    = height;
+      prevLayerSize = layerSize;
+
+      totalSize += layerSize;
+   }
+
+   // Description used to create the texture with the actual dimensions
+   TextureDescription newDesc = inputDesc;
+   newDesc.width              = width;
+   newDesc.height             = height;
+   newDesc.size               = totalSize;
+
+   TextureHandle texHandle = b->createTexture(
+       transferList, newDesc, static_cast<uint32_t>( imageData.size() ), imageData.data() );
+
+   for( uint32_t i = 0; i < imageData.size(); ++i )
+   {
+      GraphicsIO::FreeImage( imageData[i] );
+   }
+
+   return texHandle;
 }
 
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const std::string& path )
 {
-   return b->createTexture( transferList, desc, path );
+   return LoadImageFromStorage( transferList, desc, 1, &path );
 }
 
 TextureHandle CreateTexture(
@@ -186,7 +286,8 @@ TextureHandle CreateTexture(
     const TextureDescription& desc,
     const std::vector<std::string>& paths )
 {
-   return b->createTexture( transferList, desc, paths );
+   return LoadImageFromStorage(
+       transferList, desc, static_cast<uint32_t>( paths.size() ), paths.data() );
 }
 
 TextureHandle
@@ -195,24 +296,43 @@ CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const
    return b->createTexture( transferList, desc, pTexels );
 }
 
+TextureHandle CreateTexture(
+    CmdListHandle transferList,
+    const TextureDescription& desc,
+    uint32_t layerCount,
+    const void** ppTexels )
+{
+   return b->createTexture( transferList, desc, layerCount, ppTexels );
+}
+
 VertexBufferHandle CreateVertexBuffer(
     CmdListHandle transferList,
     uint32_t count,
     uint32_t stride,
-    const void* pVertices )
+    const void* pVertices,
+    const std::string_view name )
 {
-   return b->createVertexBuffer( transferList, count, stride, pVertices );
+   return b->createVertexBuffer( transferList, count, stride, pVertices, name );
 }
 
-IndexBufferHandle
-CreateIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices )
+IndexBufferHandle CreateIndexBuffer(
+    CmdListHandle transferList,
+    uint32_t count,
+    const void* pIndices,
+    const std::string_view name )
 {
-   return b->createIndexBuffer( transferList, count, pIndices );
+   return b->createIndexBuffer( transferList, count, pIndices, name );
 }
 
-BufferHandle CreateUniformBuffer( size_t size ) { return b->createUniformBuffer( size ); }
+BufferHandle CreateUniformBuffer( size_t size, const std::string_view name )
+{
+   return b->createUniformBuffer( size, name );
+}
 
-BufferHandle CreateBuffer( size_t size ) { return b->createBuffer( size ); }
+BufferHandle CreateBuffer( size_t size, const std::string_view name )
+{
+   return b->createBuffer( size, name );
+}
 
 void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
 {
@@ -235,10 +355,7 @@ void DestroyBuffer( BufferHandle bufferHandle ) { b->destroyBuffer( bufferHandle
 //
 void PrepareFrame() { b->prepareFrame(); }
 
-void BeginRendering( CmdListHandle cmdList, bool wantDepth )
-{
-   b->beginRendering( cmdList, wantDepth );
-}
+void BeginRendering( CmdListHandle cmdList ) { b->beginRendering( cmdList ); }
 
 void BeginRendering(
     CmdListHandle cmdList,

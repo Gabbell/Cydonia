@@ -16,15 +16,21 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::ImageLa
    const CYD::ImageLayout initialLayout    = texture->getLayout();
    const CYD::ShaderStageFlag targetStages = texture->getStages();
 
+   // If the layout is the same, don't even insert the barrier. The only point of this barrier is to
+   // transition layouts currently
+   if( initialLayout == targetLayout ) return;
+
    // Transition image layout to transfer destination optimal
-   VkImageMemoryBarrier barrier            = {};
-   barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-   barrier.oldLayout                       = TypeConversions::cydToVkImageLayout( initialLayout );
-   barrier.newLayout                       = TypeConversions::cydToVkImageLayout( targetLayout );
-   barrier.srcQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-   barrier.dstQueueFamilyIndex             = VK_QUEUE_FAMILY_IGNORED;
-   barrier.image                           = texture->getVKImage();
-   barrier.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+   VkImageMemoryBarrier barrier = {};
+   barrier.sType                = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+   barrier.oldLayout            = TypeConversions::cydToVkImageLayout( initialLayout );
+   barrier.newLayout            = TypeConversions::cydToVkImageLayout( targetLayout );
+   barrier.srcQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+   barrier.dstQueueFamilyIndex  = VK_QUEUE_FAMILY_IGNORED;
+   barrier.image                = texture->getVKImage();
+
+   barrier.subresourceRange.aspectMask =
+       TypeConversions::getAspectMask( texture->getPixelFormat() );
    barrier.subresourceRange.baseMipLevel   = 0;
    barrier.subresourceRange.levelCount     = 1;
    barrier.subresourceRange.baseArrayLayer = 0;

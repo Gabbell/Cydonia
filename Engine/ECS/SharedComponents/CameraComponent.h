@@ -20,16 +20,14 @@ class CameraComponent final : public BaseSharedComponent
    static constexpr SharedComponentType TYPE = SharedComponentType::CAMERA;
 
    // GPU Buffers
-   BufferHandle viewProjBuffer;
-   BufferHandle positionBuffer;
+   BufferHandle viewBuffer;
 
-   struct ViewProjection
+   struct EnvironmentView
    {
-      glm::mat4 view = glm::mat4( 1.0f );
-      glm::mat4 proj = glm::mat4( 1.0f );
-   } vp;
-
-   glm::vec4 position = glm::vec4( 0.0f );
+      glm::vec4 position = glm::vec4( 0.0f );
+      glm::mat4 viewMat  = glm::mat4( 1.0f );
+      glm::mat4 projMat  = glm::mat4( 1.0f );
+   } view;
 
    // Projection mode
    enum class ProjectionMode

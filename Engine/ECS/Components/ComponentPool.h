@@ -40,6 +40,10 @@ class ComponentPool final : public BaseComponentPool
 
    static constexpr size_t INVALID_POOL_IDX = std::numeric_limits<size_t>::max();
 
+   // static_assert(
+   //     std::is_trivially_move_assignable_v<Component> &&
+   //     "ComponentPool: Component is not move assignable, this can hurt performances" );
+
    Component* getComponent( size_t index ) const { return m_components[index]; }
 
    template <typename... Args>

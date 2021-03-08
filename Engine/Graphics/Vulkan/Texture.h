@@ -4,7 +4,9 @@
 
 #include <Graphics/GraphicsTypes.h>
 
+#include <atomic>
 #include <cstdint>
+#include <memory>
 
 // ================================================================================================
 // Forwards
@@ -27,9 +29,9 @@ namespace vk
 class Texture final
 {
   public:
-   Texture() = default;
+   Texture();
    MOVABLE( Texture );
-   ~Texture() = default;
+   ~Texture();
 
    void acquire( const Device& device, const CYD::TextureDescription& desc );
    void release();
@@ -38,6 +40,7 @@ class Texture final
    uint32_t getWidth() const noexcept { return m_width; }
    uint32_t getHeight() const noexcept { return m_height; }
    uint32_t getLayers() const noexcept { return m_layers; }
+   CYD::PixelFormat getPixelFormat() const noexcept { return m_format; }
    CYD::ShaderStageFlag getStages() const noexcept { return m_stages; }
 
    CYD::ImageLayout getLayout() const noexcept { return m_layout; }
@@ -45,10 +48,10 @@ class Texture final
 
    const VkImage& getVKImage() const noexcept { return m_vkImage; }
    const VkImageView& getVKImageView() const noexcept { return m_vkImageView; }
-   bool inUse() const { return m_useCount > 0; }
+   bool inUse() const { return ( *m_useCount ) > 0; }
 
-   void incUse() { m_useCount++; }
-   void decUse() { m_useCount--; }
+   void incUse() { ( *m_useCount )++; }
+   void decUse() { ( *m_useCount )--; }
 
   private:
    void _createImage();
@@ -72,6 +75,6 @@ class Texture final
    VkImageView m_vkImageView = nullptr;
    VkDeviceMemory m_vkMemory = nullptr;
 
-   uint32_t m_useCount = 0;
+   std::unique_ptr<std::atomic<uint32_t>> m_useCount;
 };
 }

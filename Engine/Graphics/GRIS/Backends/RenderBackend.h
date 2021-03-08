@@ -17,18 +17,27 @@ class RenderBackend
    NON_COPIABLE( RenderBackend );
    virtual ~RenderBackend() = default;
 
+   virtual bool initializeUI() { return false; }
+   virtual void uninitializeUI() {}
+   virtual void drawUI( CmdListHandle /*cmdList*/ ) {}
+
    virtual void cleanup() = 0;
 
    // Command Buffers/Lists
    // ==============================================================================================
-   virtual CmdListHandle createCommandList( QueueUsageFlag usage, bool presentable ) = 0;
+   virtual CmdListHandle
+   createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable ) = 0;
 
-   virtual void startRecordingCommandList( CmdListHandle cmdList ) = 0;
-   virtual void endRecordingCommandList( CmdListHandle cmdList )   = 0;
-   virtual void submitCommandList( CmdListHandle cmdList )         = 0;
-   virtual void resetCommandList( CmdListHandle cmdList )          = 0;
-   virtual void waitOnCommandList( CmdListHandle cmdList )         = 0;
-   virtual void destroyCommandList( CmdListHandle cmdList )        = 0;
+   virtual void startRecordingCommandList( CmdListHandle cmdList )        = 0;
+   virtual void endRecordingCommandList( CmdListHandle cmdList )          = 0;
+   virtual void submitCommandList( CmdListHandle cmdList )                = 0;
+   virtual void resetCommandList( CmdListHandle cmdList )                 = 0;
+   virtual void waitOnCommandList( CmdListHandle cmdList )                = 0;
+   virtual void syncOnCommandList( CmdListHandle from, CmdListHandle to ) = 0;
+   virtual void destroyCommandList( CmdListHandle cmdList )               = 0;
+
+   virtual void syncOnSwapchain( CmdListHandle cmdList ) = 0;
+   virtual void syncToSwapchain( CmdListHandle cmdList ) = 0;
 
    // Pipeline Specification
    // ==============================================================================================
@@ -75,34 +84,33 @@ class RenderBackend
 
    // Resources
    // ==============================================================================================
-   virtual TextureHandle createTexture(
-       CmdListHandle transferList,
-       const TextureDescription& desc ) = 0;
-   virtual TextureHandle createTexture(
-       CmdListHandle transferList,
-       const TextureDescription& desc,
-       const std::string& path ) = 0;
-   virtual TextureHandle createTexture(
-       CmdListHandle transferList,
-       const TextureDescription& desc,
-       const std::vector<std::string>& paths ) = 0;
+   virtual TextureHandle createTexture( const TextureDescription& desc ) = 0;
    virtual TextureHandle createTexture(
        CmdListHandle transferList,
        const TextureDescription& desc,
        const void* pTexels ) = 0;
+   virtual TextureHandle createTexture(
+       CmdListHandle transferList,
+       const TextureDescription& desc,
+       uint32_t layerCount,
+       const void* const* ppTexels ) = 0;
 
    virtual VertexBufferHandle createVertexBuffer(
        CmdListHandle transferList,
        uint32_t count,
        uint32_t stride,
-       const void* pVertices ) = 0;
+       const void* pVertices,
+       const std::string_view name ) = 0;
 
-   virtual IndexBufferHandle
-   createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) = 0;
+   virtual IndexBufferHandle createIndexBuffer(
+       CmdListHandle transferList,
+       uint32_t count,
+       const void* pIndices,
+       const std::string_view name ) = 0;
 
-   virtual BufferHandle createUniformBuffer( size_t size ) = 0;
+   virtual BufferHandle createUniformBuffer( size_t size, const std::string_view name ) = 0;
 
-   virtual BufferHandle createBuffer( size_t size ) = 0;
+   virtual BufferHandle createBuffer( size_t size, const std::string_view name ) = 0;
 
    virtual void
    copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size ) = 0;
@@ -114,8 +122,8 @@ class RenderBackend
 
    // Drawing
    // ==============================================================================================
-   virtual void prepareFrame()                                          = 0;
-   virtual void beginRendering( CmdListHandle cmdList, bool wantDepth ) = 0;
+   virtual void prepareFrame()                          = 0;
+   virtual void beginRendering( CmdListHandle cmdList ) = 0;
    virtual void beginRendering(
        CmdListHandle cmdList,
        const RenderTargetsInfo& targetsInfo,

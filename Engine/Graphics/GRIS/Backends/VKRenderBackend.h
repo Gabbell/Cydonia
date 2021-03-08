@@ -27,18 +27,29 @@ class VKRenderBackend final : public RenderBackend
    NON_COPIABLE( VKRenderBackend );
    virtual ~VKRenderBackend();
 
+   bool initializeUI() override;
+   void uninitializeUI() override;
+   void drawUI( CmdListHandle cmdList ) override;
+
    void cleanup() override;
 
    // Command Buffers/Lists
    // ==============================================================================================
-   CmdListHandle createCommandList( QueueUsageFlag usage, bool presentable ) override;
+   CmdListHandle createCommandList(
+       QueueUsageFlag usage,
+       const std::string_view name,
+       bool presentable ) override;
 
    void startRecordingCommandList( CmdListHandle cmdList ) override;
    void endRecordingCommandList( CmdListHandle cmdList ) override;
    void submitCommandList( CmdListHandle cmdList ) override;
    void resetCommandList( CmdListHandle cmdList ) override;
    void waitOnCommandList( CmdListHandle cmdList ) override;
+   void syncOnCommandList( CmdListHandle from, CmdListHandle to ) override;
    void destroyCommandList( CmdListHandle cmdList ) override;
+
+   void syncOnSwapchain( CmdListHandle cmdList ) override;
+   void syncToSwapchain( CmdListHandle cmdList ) override;
 
    // Pipeline Specification
    // ==============================================================================================
@@ -90,36 +101,35 @@ class VKRenderBackend final : public RenderBackend
 
    // Resources
    // ==============================================================================================
-   TextureHandle createTexture( CmdListHandle transferList, const TextureDescription& desc )
-       override;
-
-   TextureHandle createTexture(
-       CmdListHandle transferList,
-       const TextureDescription& desc,
-       const std::string& path ) override;
-
-   TextureHandle createTexture(
-       CmdListHandle transferList,
-       const TextureDescription& desc,
-       const std::vector<std::string>& paths ) override;
+   TextureHandle createTexture( const TextureDescription& desc ) override;
 
    TextureHandle createTexture(
        CmdListHandle transferList,
        const TextureDescription& desc,
        const void* pTexels ) override;
 
+   TextureHandle createTexture(
+       CmdListHandle transferList,
+       const TextureDescription& desc,
+       uint32_t layerCount,
+       const void* const* ppTexels ) override;
+
    VertexBufferHandle createVertexBuffer(
        CmdListHandle transferList,
        uint32_t count,
        uint32_t stride,
-       const void* pVertices ) override;
+       const void* pVertices,
+       const std::string_view name ) override;
 
-   IndexBufferHandle
-   createIndexBuffer( CmdListHandle transferList, uint32_t count, const void* pIndices ) override;
+   IndexBufferHandle createIndexBuffer(
+       CmdListHandle transferList,
+       uint32_t count,
+       const void* pIndices,
+       const std::string_view name ) override;
 
-   BufferHandle createUniformBuffer( size_t size ) override;
+   BufferHandle createUniformBuffer( size_t size, const std::string_view name ) override;
 
-   BufferHandle createBuffer( size_t size ) override;
+   BufferHandle createBuffer( size_t size, const std::string_view name ) override;
 
    void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
        override;
@@ -132,7 +142,7 @@ class VKRenderBackend final : public RenderBackend
    // Drawing
    // ==============================================================================================
    void prepareFrame() override;
-   void beginRendering( CmdListHandle cmdList, bool wantDepth ) override;
+   void beginRendering( CmdListHandle cmdList ) override;
    void beginRendering(
        CmdListHandle cmdList,
        const RenderTargetsInfo& targetsInfo,

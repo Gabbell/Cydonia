@@ -25,7 +25,9 @@ class DescriptorPool final
    explicit DescriptorPool( const Device& device );
    ~DescriptorPool();
 
-   VkDescriptorSet allocate( const CYD::ShaderSetLayoutInfo& layout ) const;
+   VkDescriptorPool getVKDescriptorPool() const { return m_vkDescPool; }
+
+   VkDescriptorSet allocate( const CYD::ShaderSetInfo& layout ) const;
    void free( const VkDescriptorSet& descSet ) const;
    void free( const VkDescriptorSet* shaderSets, const uint32_t count ) const;
 

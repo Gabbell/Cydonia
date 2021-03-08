@@ -32,6 +32,7 @@ VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderTargetsInfo& target
    std::vector<VkSubpassDescription> subpassDescs;
    std::vector<VkSubpassDependency> dependencies;
 
+   uint32_t attachmentIdx = 0;
    for( const auto& attachment : targetsInfo.attachments )
    {
       VkAttachmentDescription vkAttachment = {};
@@ -41,41 +42,47 @@ VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderTargetsInfo& target
       vkAttachment.storeOp                 = TypeConversions::cydToVkOp( attachment.storeOp );
       vkAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       vkAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-      vkAttachment.initialLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+      vkAttachment.initialLayout = TypeConversions::cydToVkImageLayout( attachment.initialLayout );
 
       switch( attachment.type )
       {
          case CYD::AttachmentType::COLOR_PRESENTATION:
          {
             VkAttachmentReference presentationAttachmentRef = {};
-            presentationAttachmentRef.attachment            = 0;
+            presentationAttachmentRef.attachment            = attachmentIdx;
             presentationAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             colorRefs.push_back( presentationAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            
+            attachmentIdx++;
             break;
          }
          case CYD::AttachmentType::COLOR:
          {
             VkAttachmentReference colorAttachmentRef = {};
-            colorAttachmentRef.attachment            = 0;
+            colorAttachmentRef.attachment            = attachmentIdx;
             colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             colorRefs.push_back( colorAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+            attachmentIdx++;
             break;
          }
          case CYD::AttachmentType::DEPTH_STENCIL:
          {
             VkAttachmentReference depthAttachmentRef = {};
-            depthAttachmentRef.attachment            = 1;
+            depthAttachmentRef.attachment            = attachmentIdx;
             depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
             depthRefs.push_back( depthAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            attachmentIdx++;
             break;
          }
          default:

@@ -24,9 +24,12 @@
   <ItemGroup>
     <ClInclude Include="Algorithms\BitManipulation.h" />
     <ClInclude Include="Graph\NodeGraph.h" />
+    <ClInclude Include="Multithreading\ThreadPool.h" />
+    <ClInclude Include="Multithreading\ThreadSafeQueue.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graph\NodeGraph.cpp" />
+    <ClCompile Include="Multithreading\ThreadPool.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

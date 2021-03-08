@@ -5,8 +5,10 @@
 #include <Graphics/GraphicsTypes.h>
 
 #include <array>
+#include <atomic>
 #include <memory>
 #include <optional>
+#include <unordered_set>
 
 // ================================================================================================
 // Forwards
@@ -20,11 +22,12 @@ FWDHANDLE( VkRenderPass );
 FWDHANDLE( VkDescriptorSet );
 FWDHANDLE( VkFramebuffer );
 FWDHANDLE( VkSampler );
+FWDFLAG( VkPipelineStageFlags );
 
 namespace vk
 {
 class Device;
-class CommandPool;
+class CommandBufferPool;
 class Swapchain;
 class Buffer;
 class Texture;
@@ -45,25 +48,46 @@ namespace vk
 class CommandBuffer final
 {
   public:
-   CommandBuffer() = default;
+   CommandBuffer();
    MOVABLE( CommandBuffer );
-   ~CommandBuffer() = default;
+   ~CommandBuffer();
 
    // Allocation and Deallocation
    // =============================================================================================
-   void acquire( const Device& device, const CommandPool& pool, CYD::QueueUsageFlag usage );
-   void release();
+   void acquire(
+       const Device& device,
+       const CommandBufferPool& pool,
+       CYD::QueueUsageFlag usage,
+       const std::string_view name );
+   void free();     // Releases resources attached to this command buffer
+   void release();  // Destroys the sync objects linked to this command buffer
+
+   bool inUse() const { return ( *m_useCount ) > 0; }
+
+   void incUse();
+   void decUse();
 
    // Getters
    // =============================================================================================
-   const VkCommandBuffer& getVKBuffer() const { return m_vkCmdBuffer; }
-   const VkFence& getVKFence() const { return m_vkFence; }
+   VkPipelineStageFlags getWaitStages() const;
+   VkCommandBuffer getVKBuffer() const { return m_vkCmdBuffer; }
+   VkFence getVKFence() const { return m_vkFence; }
+
+   // Returns the semaphore that will be signaled when this command buffer is done execution
+   VkSemaphore getDoneSemaphore() const;
 
    // Status
    // =============================================================================================
-   bool isCompleted() const;
-   bool wasSubmitted() const noexcept { return m_wasSubmitted; }
+   bool isReleased() const noexcept { return m_state == State::RELEASED; }
+   bool isFree() const noexcept { return m_state == State::FREE; }
+   bool isSubmitted() const noexcept { return m_state == State::SUBMITTED; }
+   bool isCompleted();
    void waitForCompletion() const;  // CPU Spinlock, avoid calling this
+
+   // Synchronization
+   void syncOnCommandList( CommandBuffer* cmdBufferToWaitOn );
+   void syncOnSwapchain( const Swapchain* swapchain );
+   void syncToSwapchain( const Swapchain* swapchain );
 
    // Recording and Submission
    // =============================================================================================
@@ -74,8 +98,8 @@ class CommandBuffer final
 
    // Bindings
    // =============================================================================================
-   void bindVertexBuffer( Buffer* vertexBuf ) const;
-   void bindIndexBuffer( Buffer* indexBuf, CYD::IndexType type ) const;
+   void bindVertexBuffer( Buffer* vertexBuf );
+   void bindIndexBuffer( Buffer* indexBuf, CYD::IndexType type );
 
    void bindPipeline( const CYD::GraphicsPipelineInfo& info );
    void bindPipeline( const CYD::ComputePipelineInfo& info );
@@ -94,7 +118,7 @@ class CommandBuffer final
 
    // Rendering scope
    // =============================================================================================
-   void beginRendering( Swapchain& swapchain, bool hasDepth );
+   void beginRendering( Swapchain& swapchain );
    void beginRendering(
        const CYD::RenderTargetsInfo& targetsInfo,
        const std::vector<const Texture*>& targets );
@@ -117,10 +141,54 @@ class CommandBuffer final
 
    // Transfers
    // =============================================================================================
-   void copyBuffer( const Buffer* src, const Buffer* dst ) const;
-   void uploadBufferToTex( const Buffer* src, Texture* dst ) const;
+   void copyBuffer( Buffer* src, Buffer* dst );
+   void uploadBufferToTex( Buffer* src, Texture* dst );
 
   private:
+   // Command Buffer Internal State
+   // =============================================================================================
+   enum State
+   {
+      ACQUIRED = 0,  // Has been acquired by the command pool
+      RECORDING,     // Has commands being recorded
+      STANDBY,       // Waiting to be submitted
+      SUBMITTED,     // Has been submitted
+      COMPLETED,     // Is completed
+      FREE,          // Has done execution but is still holding sync objects
+      RELEASED,      // Is completely free of resources and sync objects
+      LIMBO,         // Something horrible happened
+      NUMBER_OF_STATES
+   };
+
+   // Contains all the valid state transitions
+   bool m_stateValidationTable[NUMBER_OF_STATES][NUMBER_OF_STATES] = {};
+
+   void _initStateValidationTable();
+   bool _isValidStateTransition( State desiredState );
+
+   // Descriptor Sets and Binding
+   // =============================================================================================
+   // Used for deferred updating and binding of descriptor sets before a draw command
+   template <class T>
+   struct ResourceBinding
+   {
+      ResourceBinding() = default;
+      ResourceBinding(
+          const T* resource,
+          CYD::ShaderResourceType type,
+          uint32_t set,
+          uint32_t binding )
+          : resource( resource ), type( type ), set( set ), binding( binding )
+      {
+      }
+      const T* resource            = nullptr;
+      CYD::ShaderResourceType type = CYD::ShaderResourceType::UNIFORM;
+      uint32_t set                 = 0;
+      uint32_t binding             = 0;
+   };
+   using BufferBinding  = ResourceBinding<Buffer>;
+   using TextureBinding = ResourceBinding<Texture>;
+
    // The updating and binding of descriptor sets is deferred all the way until we do a draw call.
    // We will only update and bind the "new" descriptor sets in Vulkan with the descriptor sets that
    // were bound to the command buffer since the last draw call. This ensures that we do not create
@@ -128,8 +196,28 @@ class CommandBuffer final
    VkDescriptorSet _findOrAllocateDescSet( size_t prevSize, uint32_t set );
    void _prepareDescriptorSets( CYD::PipelineType pipType );
 
-   const Device* m_pDevice    = nullptr;
-   const CommandPool* m_pPool = nullptr;
+   template <class T>
+   ResourceBinding<T> _findBindingFromLayout(
+       const T* resource,
+       const std::string_view name,
+       const CYD::PipelineLayoutInfo& pipLayout );
+
+   // Dependencies
+   // =============================================================================================
+   // Used to keep track of the resources dependent on this command buffer to potentially release
+   // them once the command buffer is done
+   template <class T>
+   void _addDependency( T* dependency );
+
+   // Member Variables
+   // =============================================================================================
+   const Device* m_pDevice          = nullptr;
+   const CommandBufferPool* m_pPool = nullptr;
+
+   State m_state = State::RELEASED;
+
+   static constexpr char DEFAULT_CMDBUFFER_NAME[] = "Unknown Command Buffer Name";
+   std::string_view m_name                        = DEFAULT_CMDBUFFER_NAME;
 
    // Info on the currently bound pipeline
    std::optional<VkPipeline> m_boundPip;
@@ -148,10 +236,10 @@ class CommandBuffer final
    std::unique_ptr<CYD::PipelineInfo> m_boundPipInfo;
 
    // Currently bound descriptor sets
-   static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 8;
-   std::array<VkDescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> m_boundSets;
+   static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS                 = 8;
+   std::array<VkDescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> m_setsToBind = {};
 
-   // All descriptor sets linked to this command buffer
+   // All descriptor sets whose lifetime is linked to this command buffer
    struct DescriptorSetInfo
    {
       uint32_t set;
@@ -159,32 +247,21 @@ class CommandBuffer final
    };
    std::vector<DescriptorSetInfo> m_descSets;
 
-   // Used for deferred updating and binding of descriptor sets before a draw command
-   template <class T>
-   struct BindingInfo
-   {
-      BindingInfo( const T* resource, CYD::ShaderResourceType type, uint32_t set, uint32_t binding )
-          : resource( resource ), type( type ), set( set ), binding( binding )
-      {
-      }
-      const T* resource;
-      CYD::ShaderResourceType type;
-      uint32_t set;
-      uint32_t binding;
-   };
-   using BufferBindingInfo  = BindingInfo<Buffer>;
-   using TextureBindingInfo = BindingInfo<Texture>;
+   std::vector<BufferBinding> m_buffersToUpdate;
+   std::vector<TextureBinding> m_texturesToUpdate;
 
-   std::vector<BufferBindingInfo> m_buffersToUpdate;
-   std::vector<TextureBindingInfo> m_texturesToUpdate;
+   // Dependencies
+   std::unordered_set<CommandBuffer*> m_cmdBuffersInUse;
+   std::unordered_set<Texture*> m_texturesInUse;
+   std::unordered_set<Buffer*> m_buffersInUse;
 
    // Syncing
+   std::unique_ptr<std::atomic<uint32_t>> m_useCount;
+   std::vector<VkPipelineStageFlags> m_stagesToWait;
    std::vector<VkSemaphore> m_semsToWait;
    std::vector<VkSemaphore> m_semsToSignal;
 
    CYD::QueueUsageFlag m_usage   = CYD::QueueUsage::UNKNOWN;
-   bool m_isRecording            = false;
-   bool m_wasSubmitted           = false;
    VkCommandBuffer m_vkCmdBuffer = nullptr;
    VkFence m_vkFence             = nullptr;
    VkSampler m_defaultSampler    = nullptr;

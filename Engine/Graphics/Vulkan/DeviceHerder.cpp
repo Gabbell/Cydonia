@@ -19,7 +19,7 @@ DeviceHerder::DeviceHerder(
     : m_instance( instance ), m_window( window ), m_surface( surface )
 {
    // Desired extensions to be used when creating logical devices
-   m_extensions = {VK_KHR_SWAPCHAIN_EXTENSION_NAME};
+   m_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
    uint32_t physicalDeviceCount;
    vkEnumeratePhysicalDevices( instance.getVKInstance(), &physicalDeviceCount, nullptr );
@@ -38,8 +38,8 @@ DeviceHerder::DeviceHerder(
       if( _checkDevice( m_surface, physDevice ) )
       {
          // Found suitable device, add it to the currently managed devices
-         m_devices.emplace_back(
-             std::make_unique<Device>( m_window, m_instance, m_surface, physDevice, m_extensions ) );
+         m_devices.emplace_back( std::make_unique<Device>(
+             m_window, m_instance, m_surface, physDevice, m_extensions ) );
          break;
       }
    }
@@ -129,7 +129,17 @@ bool DeviceHerder::_checkDeviceExtensionSupport( const VkPhysicalDevice& physDev
    return requiredExtensions.empty();
 }
 
-const Swapchain* DeviceHerder::getMainSwapchain() { return m_devices[0]->getSwapchain(); }
+Device& DeviceHerder::getMainDevice() const
+{
+   CYDASSERT( !m_devices.empty() && "DeviceHerder: There were no devices" );
+   return *m_devices[0];
+}
+
+Swapchain& DeviceHerder::getMainSwapchain() const
+{
+   CYDASSERT( !m_devices.empty() && "DeviceHerder: There were no devices" );
+   return m_devices[0]->getSwapchain();
+}
 
 DeviceHerder::~DeviceHerder() = default;
 }

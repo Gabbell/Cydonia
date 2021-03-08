@@ -3,23 +3,24 @@
 
 // Constant buffer
 // =================================================================================================
-layout( push_constant ) uniform Epsilon { mat4 model; };
+layout( push_constant ) uniform PushConstant { mat4 model; };
 
 // View and environment
 // =================================================================================================
-layout( set = 0, binding = 0 ) uniform Alpha
+layout( set = 0, binding = 0 ) uniform EnvironmentView
 {
    vec4 pos;
    mat4 view;
    mat4 proj;
 };
 
-// =================================================================================================
+layout( set = 1, binding = 5 ) uniform sampler2D displacement;
 
-layout( set = 2, binding = 5 ) uniform sampler2D height;
+// =================================================================================================
 
 // Inputs
 layout( location = 0 ) in vec3 inPosition;
+layout( location = 1 ) in vec4 inColor;  // Not used
 layout( location = 2 ) in vec3 inTexCoord;
 layout( location = 3 ) in vec3 inNormal;
 
@@ -29,22 +30,17 @@ layout( location = 1 ) out vec3 outNormal;
 layout( location = 2 ) out vec3 fragPos;
 layout( location = 3 ) out vec3 viewPos;
 
-const float heightModulator = 0.0;
-
 // =================================================================================================
 
 void main()
 {
-   fragPos     = vec3( model * vec4( inPosition, 1.0 ) );  // World coordinates
-   vec3 normal = normalize( inNormal );
+   const vec3 displacement = texture( displacement, inTexCoord.xy ).rgb;
 
-   // Applying height map modulation
-   float heightValue = texture( height, inTexCoord.xy ).r;
-   fragPos += ( heightModulator * normal * heightValue );
-
-   gl_Position = proj * view * vec4( fragPos, 1.0 );
+   fragPos = vec3( model * vec4( displacement + inPosition, 1.0 ) );  // World coordinates
+   viewPos = vec3( pos );
 
    outTexCoord = inTexCoord;
-   outNormal   = normal;
-   viewPos     = vec3( pos );
+   outNormal   = normalize( vec3( model * vec4( inNormal, 1.0 ) ) );
+
+   gl_Position = proj * view * vec4( fragPos, 1.0 );
 }

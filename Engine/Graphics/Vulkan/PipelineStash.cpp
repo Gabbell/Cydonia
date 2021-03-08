@@ -4,6 +4,7 @@
 #include <Common/Assert.h>
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/VertexLayout.h>
 
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/Shader.h>
@@ -36,11 +37,10 @@ static VkShaderStageFlagBits shaderTypeToVKShaderStage( Shader::Type shaderType 
    }
 }
 
-const VkDescriptorSetLayout PipelineStash::findOrCreate(
-    const CYD::ShaderSetLayoutInfo& shaderSetLayoutInfo )
+VkDescriptorSetLayout PipelineStash::findOrCreate( const CYD::ShaderSetInfo& shaderSetInfo )
 {
    // Creating the descriptor set layout
-   const auto layoutIt = m_descSetLayouts.find( shaderSetLayoutInfo );
+   const auto layoutIt = m_descSetLayouts.find( shaderSetInfo );
    if( layoutIt != m_descSetLayouts.end() )
    {
       return layoutIt->second;
@@ -48,8 +48,8 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate(
 
    std::vector<VkDescriptorSetLayoutBinding> descSetLayoutBindings;
    std::vector<VkDescriptorBindingFlagsEXT> descBindingFlags;
-   descSetLayoutBindings.reserve( shaderSetLayoutInfo.shaderBindings.size() );
-   for( const auto& bindingInfo : shaderSetLayoutInfo.shaderBindings )
+   descSetLayoutBindings.reserve( shaderSetInfo.shaderBindings.size() );
+   for( const auto& bindingInfo : shaderSetInfo.shaderBindings )
    {
       // TODO Add UBO arrays
       VkDescriptorSetLayoutBinding descSetLayoutBinding = {};
@@ -73,10 +73,10 @@ const VkDescriptorSetLayout PipelineStash::findOrCreate(
        vkCreateDescriptorSetLayout( m_device.getVKDevice(), &layoutInfo, nullptr, &descSetLayout );
    CYDASSERT( result == VK_SUCCESS && "PipelineStash: Could not create descriptor set layout" );
 
-   return m_descSetLayouts.insert( { shaderSetLayoutInfo, descSetLayout } ).first->second;
+   return m_descSetLayouts.insert( { shaderSetInfo, descSetLayout } ).first->second;
 }
 
-const VkPipelineLayout PipelineStash::findOrCreate( const CYD::PipelineLayoutInfo& pipLayoutInfo )
+VkPipelineLayout PipelineStash::findOrCreate( const CYD::PipelineLayoutInfo& pipLayoutInfo )
 {
    const auto layoutIt = m_pipLayouts.find( pipLayoutInfo );
    if( layoutIt != m_pipLayouts.end() )
@@ -104,7 +104,7 @@ const VkPipelineLayout PipelineStash::findOrCreate( const CYD::PipelineLayoutInf
    }
    // Vector containing unique VkDescriptorSetLayouts
    std::vector<VkDescriptorSetLayout> descSetLayoutsVec(
-       descSetLayouts.begin(), descSetLayouts.end() );
+       descSetLayouts.cbegin(), descSetLayouts.cend() );
 
    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
    pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -121,7 +121,7 @@ const VkPipelineLayout PipelineStash::findOrCreate( const CYD::PipelineLayoutInf
    return m_pipLayouts.insert( { pipLayoutInfo, pipLayout } ).first->second;
 }
 
-const VkPipeline PipelineStash::findOrCreate( const CYD::ComputePipelineInfo& pipInfo )
+VkPipeline PipelineStash::findOrCreate( const CYD::ComputePipelineInfo& pipInfo )
 {
    // Attempting to find pipeline
    const auto pipIt = m_computePipelines.find( pipInfo );
@@ -189,7 +189,7 @@ const VkPipeline PipelineStash::findOrCreate( const CYD::ComputePipelineInfo& pi
    return m_computePipelines.insert( { pipInfo, pipeline } ).first->second;
 }
 
-const VkPipeline PipelineStash::findOrCreate(
+VkPipeline PipelineStash::findOrCreate(
     const CYD::GraphicsPipelineInfo& pipInfo,
     VkRenderPass renderPass )
 {
@@ -258,45 +258,40 @@ const VkPipeline PipelineStash::findOrCreate(
    }
 
    // Vertex input description
-   // TODO Instancing
-   VkVertexInputBindingDescription vertexBindingDesc = {};
-   vertexBindingDesc.binding                         = 0;
-   vertexBindingDesc.stride                          = sizeof( CYD::Vertex );
-   vertexBindingDesc.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
+   const std::vector<CYD::VertexLayout::Attribute>& attributes = pipInfo.vertLayout.getAttributes();
+   std::vector<VkVertexInputAttributeDescription> vkAttributes( attributes.size() );
+   std::vector<VkVertexInputBindingDescription> vkBindings;
 
-   // Vertex attributes
-   std::array<VkVertexInputAttributeDescription, 4> attributeDescs = {};
+   uint32_t vertBindingStride = 0;
+   for( uint32_t i = 0; i < attributes.size(); ++i )
+   {
+      CYD::PixelFormat vecFormat = attributes[i].vecFormat;
 
-   // Position
-   attributeDescs[0].binding  = 0;
-   attributeDescs[0].location = 0;
-   attributeDescs[0].format   = VK_FORMAT_R32G32B32_SFLOAT;
-   attributeDescs[0].offset   = offsetof( CYD::Vertex, pos );
+      vkAttributes[i].binding  = attributes[i].binding;
+      vkAttributes[i].location = attributes[i].location;
+      vkAttributes[i].format   = TypeConversions::cydToVkFormat( vecFormat );
+      vkAttributes[i].offset   = attributes[i].offset;
 
-   // Color
-   attributeDescs[1].binding  = 0;
-   attributeDescs[1].location = 1;
-   attributeDescs[1].format   = VK_FORMAT_R32G32B32A32_SFLOAT;
-   attributeDescs[1].offset   = offsetof( CYD::Vertex, col );
+      vertBindingStride += GetPixelSizeInBytes( vecFormat );
+   }
 
-   // Texture Coordinates
-   attributeDescs[3].binding  = 0;
-   attributeDescs[3].location = 2;
-   attributeDescs[3].format   = VK_FORMAT_R32G32B32_SFLOAT;
-   attributeDescs[3].offset   = offsetof( CYD::Vertex, uv );
-
-   // Normals
-   attributeDescs[2].binding  = 0;
-   attributeDescs[2].location = 3;
-   attributeDescs[2].format   = VK_FORMAT_R32G32B32_SFLOAT;
-   attributeDescs[2].offset   = offsetof( CYD::Vertex, normal );
+   // TODO More than one binding. For now, if we have attributes, we always have one vertex binding
+   if( !vkAttributes.empty() )
+   {
+      // TODO Instancing
+      VkVertexInputBindingDescription vertexBindingDesc = {};
+      vertexBindingDesc.binding                         = 0;
+      vertexBindingDesc.stride                          = vertBindingStride;
+      vertexBindingDesc.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
+      vkBindings.push_back( std::move( vertexBindingDesc ) );
+   }
 
    VkPipelineVertexInputStateCreateInfo vertexInputInfo = {};
    vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-   vertexInputInfo.vertexBindingDescriptionCount   = 1;
-   vertexInputInfo.pVertexBindingDescriptions      = &vertexBindingDesc;
-   vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>( attributeDescs.size() );
-   vertexInputInfo.pVertexAttributeDescriptions    = attributeDescs.data();
+   vertexInputInfo.vertexBindingDescriptionCount   = static_cast<uint32_t>( vkBindings.size() );
+   vertexInputInfo.pVertexBindingDescriptions      = vkBindings.data();
+   vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>( vkAttributes.size() );
+   vertexInputInfo.pVertexAttributeDescriptions    = vkAttributes.data();
 
    // Input assembly
    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
@@ -347,7 +342,13 @@ const VkPipeline PipelineStash::findOrCreate(
    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-   colorBlendAttachment.blendEnable = VK_FALSE;
+   colorBlendAttachment.blendEnable         = VK_TRUE;
+   colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+   colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+   colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
+   colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+   colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+   colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
 
    VkPipelineColorBlendStateCreateInfo colorBlending = {};
    colorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -394,6 +395,7 @@ const VkPipeline PipelineStash::findOrCreate(
    pipelineInfo.pStages                      = shaderCreateInfos.data();
    pipelineInfo.pVertexInputState            = &vertexInputInfo;
    pipelineInfo.pInputAssemblyState          = &inputAssembly;
+   pipelineInfo.pTessellationState           = nullptr;
    pipelineInfo.pViewportState               = &viewportState;
    pipelineInfo.pRasterizationState          = &rasterizer;
    pipelineInfo.pMultisampleState            = &multisampling;

@@ -5,7 +5,7 @@
 
 #include <Graphics/PipelineInfos.h>
 
-#include <Graphics/Vulkan/CommandPool.h>
+#include <Graphics/Vulkan/CommandBufferPool.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/PipelineStash.h>
 #include <Graphics/Vulkan/DescriptorPool.h>
@@ -22,44 +22,108 @@ namespace vk
 {
 static constexpr uint32_t INITIAL_RESOURCE_TO_UPDATE_COUNT = 32;
 
-void CommandBuffer::acquire(
-    const Device& device,
-    const CommandPool& pool,
-    CYD::QueueUsageFlag usage )
+CommandBuffer::CommandBuffer()
 {
-   m_pDevice = &device;
-   m_pPool   = &pool;
-   m_usage   = usage;
+   m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 );
 
-   VkCommandBufferAllocateInfo allocInfo = {};
-   allocInfo.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-   allocInfo.commandPool                 = m_pPool->getVKCommandPool();
-   allocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-   allocInfo.commandBufferCount          = 1;
-
-   VkResult result =
-       vkAllocateCommandBuffers( m_pDevice->getVKDevice(), &allocInfo, &m_vkCmdBuffer );
-   CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not allocate command buffer" );
-
-   VkFenceCreateInfo fenceInfo = {};
-   fenceInfo.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-
-   result = vkCreateFence( m_pDevice->getVKDevice(), &fenceInfo, nullptr, &m_vkFence );
-   CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create fence" );
-
-   m_defaultSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
-
-   m_buffersToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
-   m_texturesToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
+   // TODO Make this static, it is class-wide
+   _initStateValidationTable();
 }
 
-void CommandBuffer::release()
+void CommandBuffer::incUse() { ( *m_useCount )++; }
+void CommandBuffer::decUse()
 {
-   if( m_pDevice )
+   if( m_useCount->load() == 0 )
    {
-      m_usage        = 0;
-      m_isRecording  = false;
-      m_wasSubmitted = false;
+      CYDASSERT( !"CommandBuffer: Decrementing use count would go below 0" );
+      return;
+   }
+
+   ( *m_useCount )--;
+}
+
+void CommandBuffer::_initStateValidationTable()
+{
+   // Initialize all valid states [currentState][desiredState]
+   m_stateValidationTable[State::ACQUIRED][State::RECORDING]  = true;
+   m_stateValidationTable[State::RECORDING][State::STANDBY]   = true;
+   m_stateValidationTable[State::STANDBY][State::SUBMITTED]   = true;
+   m_stateValidationTable[State::STANDBY][State::SUBMITTED]   = true;
+   m_stateValidationTable[State::SUBMITTED][State::COMPLETED] = true;
+   m_stateValidationTable[State::COMPLETED][State::FREE]      = true;
+   m_stateValidationTable[State::FREE][State::RELEASED]       = true;
+   m_stateValidationTable[State::RELEASED][State::ACQUIRED]   = true;
+}
+
+bool CommandBuffer::_isValidStateTransition( State desiredState )
+{
+   if( m_stateValidationTable[m_state][desiredState] )
+   {
+      m_state = desiredState;
+      return true;
+   }
+
+   CYDASSERT( !"CommandBuffer: Invalid state transition detected" );
+
+   return false;
+}
+
+void CommandBuffer::acquire(
+    const Device& device,
+    const CommandBufferPool& pool,
+    CYD::QueueUsageFlag usage,
+    const std::string_view name )
+{
+   if( _isValidStateTransition( State::ACQUIRED ) )
+   {
+      m_pDevice = &device;
+      m_pPool   = &pool;
+      m_usage   = usage;
+      m_name    = name;
+
+      VkCommandBufferAllocateInfo allocInfo = {};
+      allocInfo.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+      allocInfo.commandPool                 = m_pPool->getVKCommandPool();
+      allocInfo.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+      allocInfo.commandBufferCount          = 1;
+
+      VkResult result =
+          vkAllocateCommandBuffers( m_pDevice->getVKDevice(), &allocInfo, &m_vkCmdBuffer );
+      CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not allocate command buffer" );
+
+      VkFenceCreateInfo fenceInfo = {};
+      fenceInfo.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+
+      result = vkCreateFence( m_pDevice->getVKDevice(), &fenceInfo, nullptr, &m_vkFence );
+      CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create fence" );
+
+      CYDASSERT(
+          ( m_semsToSignal.empty() && m_semsToWait.empty() ) &&
+          "CommandBuffer: Still have semaphores during acquire" );
+
+      m_semsToSignal.resize( 1 );
+
+      VkSemaphoreCreateInfo semaphoreInfo = {};
+      semaphoreInfo.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+      result = vkCreateSemaphore(
+          m_pDevice->getVKDevice(), &semaphoreInfo, nullptr, &m_semsToSignal[0] );
+      CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create semaphore" );
+
+      m_defaultSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
+
+      m_buffersToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
+      m_texturesToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
+
+      incUse();
+   }
+}
+
+void CommandBuffer::free()
+{
+   if( _isValidStateTransition( State::FREE ) )
+   {
+      m_usage = 0;
 
       // Clearing tracked descriptor sets
       std::vector<VkDescriptorSet> vkDescSets;
@@ -85,29 +149,70 @@ void CommandBuffer::release()
 
       m_descSets.clear();
 
-      m_semsToWait.clear();
-      m_semsToSignal.clear();
-
       m_boundPip.reset();
       m_boundPipInfo.reset();
       m_boundPipLayout.reset();
       m_boundRenderPass.reset();
 
-      vkDestroyFence( m_pDevice->getVKDevice(), m_vkFence, nullptr );
       vkFreeCommandBuffers(
           m_pDevice->getVKDevice(), m_pPool->getVKCommandPool(), 1, &m_vkCmdBuffer );
 
       m_defaultSampler = nullptr;
       m_vkCmdBuffer    = nullptr;
-      m_vkFence        = nullptr;
-      m_pDevice        = nullptr;
       m_pPool          = nullptr;
+
+      // This current command buffer is completed so we can free the resources on which it was
+      // dependent
+      for( CommandBuffer* cmdBuffer : m_cmdBuffersInUse )
+      {
+         cmdBuffer->decUse();
+      }
+
+      for( Texture* texture : m_texturesInUse )
+      {
+         texture->decUse();
+      }
+
+      for( Buffer* buffer : m_buffersInUse )
+      {
+         buffer->decUse();
+      }
+
+      m_cmdBuffersInUse.clear();
+      m_texturesInUse.clear();
+      m_buffersInUse.clear();
    }
 }
 
-bool CommandBuffer::isCompleted() const
+void CommandBuffer::release()
 {
-   return vkGetFenceStatus( m_pDevice->getVKDevice(), m_vkFence ) == VK_SUCCESS;
+   if( _isValidStateTransition( State::RELEASED ) )
+   {
+      vkDestroyFence( m_pDevice->getVKDevice(), m_vkFence, nullptr );
+      m_vkFence = nullptr;
+
+      // The semaphore to signal at index 0 is always present and is owned by this command
+      // buffer
+      vkDestroySemaphore( m_pDevice->getVKDevice(), m_semsToSignal.front(), nullptr );
+
+      m_stagesToWait.clear();
+      m_semsToWait.clear();
+      m_semsToSignal.clear();
+
+      m_pDevice = nullptr;
+   }
+}
+
+bool CommandBuffer::isCompleted()
+{
+   bool isCompleted = ( vkGetFenceStatus( m_pDevice->getVKDevice(), m_vkFence ) == VK_SUCCESS );
+
+   if( isCompleted && _isValidStateTransition( State::COMPLETED ) )
+   {
+      return isCompleted;
+   }
+
+   return isCompleted;
 }
 
 void CommandBuffer::waitForCompletion() const
@@ -115,51 +220,126 @@ void CommandBuffer::waitForCompletion() const
    vkWaitForFences( m_pDevice->getVKDevice(), 1, &m_vkFence, VK_TRUE, UINTMAX_MAX );
 }
 
+template <class T>
+void CommandBuffer::_addDependency( T* dependency )
+{
+   bool shouldIncrementUsage = false;
+
+   if constexpr( std::is_same_v<T, vk::Buffer> )
+   {
+      const auto& result   = m_buffersInUse.insert( dependency );
+      shouldIncrementUsage = result.second;
+   }
+   else if constexpr( std::is_same_v<T, vk::Texture> )
+   {
+      const auto& result   = m_texturesInUse.insert( dependency );
+      shouldIncrementUsage = result.second;
+   }
+   else if constexpr( std::is_same_v<T, vk::CommandBuffer> )
+   {
+      const auto& result   = m_cmdBuffersInUse.insert( dependency );
+      shouldIncrementUsage = result.second;
+   }
+   else
+   {
+      static_assert( !"CommandBuffer: Adding dependency of unknown type" );
+   }
+
+   if( shouldIncrementUsage ) dependency->incUse();
+}
+
+void CommandBuffer::syncOnCommandList( CommandBuffer* cmdBufferToWaitOn )
+{
+   m_stagesToWait.push_back( cmdBufferToWaitOn->getWaitStages() );
+   m_semsToWait.push_back( cmdBufferToWaitOn->getDoneSemaphore() );
+
+   _addDependency( cmdBufferToWaitOn );
+}
+
+void CommandBuffer::syncOnSwapchain( const Swapchain* swapchain )
+{
+   m_stagesToWait.push_back( getWaitStages() );
+   m_semsToWait.push_back( swapchain->getSemToWait() );
+}
+
+void CommandBuffer::syncToSwapchain( const Swapchain* swapchain )
+{
+   m_semsToSignal.push_back( swapchain->getSemToSignal() );
+}
+
+VkPipelineStageFlags CommandBuffer::getWaitStages() const
+{
+   VkPipelineStageFlags waitStages = 0;
+   if( m_usage & CYD::QueueUsage::GRAPHICS )
+   {
+      waitStages |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+   }
+   if( m_usage & CYD::QueueUsage::TRANSFER )
+   {
+      waitStages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+   }
+   if( m_usage & CYD::QueueUsage::COMPUTE )
+   {
+      waitStages |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+   }
+
+   return waitStages;
+}
+
+VkSemaphore CommandBuffer::getDoneSemaphore() const
+{
+   if( !m_semsToSignal.empty() )
+   {
+      return m_semsToSignal.front();
+   }
+
+   return VK_NULL_HANDLE;
+}
+
 void CommandBuffer::startRecording()
 {
-   CYDASSERT( !m_isRecording && "CommandBuffer: Already started recording" );
+   if( _isValidStateTransition( State::RECORDING ) )
+   {
+      VkCommandBufferBeginInfo beginInfo = {};
+      beginInfo.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+      beginInfo.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
-   VkCommandBufferBeginInfo beginInfo = {};
-   beginInfo.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-   beginInfo.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-   const VkResult result = vkBeginCommandBuffer( m_vkCmdBuffer, &beginInfo );
-   CYDASSERT(
-       result == VK_SUCCESS && "CommandBuffer: Failed to begin recording of command buffer" );
-   m_isRecording = true;
+      const VkResult result = vkBeginCommandBuffer( m_vkCmdBuffer, &beginInfo );
+      CYDASSERT(
+          result == VK_SUCCESS && "CommandBuffer: Failed to begin recording of command buffer" );
+   }
 }
 
 void CommandBuffer::endRecording()
 {
-   CYDASSERT(
-       m_isRecording && "CommandBuffer: Trying to stop recording but was not in recording state" );
+   if( _isValidStateTransition( State::STANDBY ) )
+   {
+      const VkResult result = vkEndCommandBuffer( m_vkCmdBuffer );
+      CYDASSERT(
+          result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
 
-   const VkResult result = vkEndCommandBuffer( m_vkCmdBuffer );
-   CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
+      m_boundPip        = std::nullopt;
+      m_boundPipLayout  = std::nullopt;
+      m_boundRenderPass = std::nullopt;
 
-   m_boundPip        = std::nullopt;
-   m_boundPipLayout  = std::nullopt;
-   m_boundRenderPass = std::nullopt;
-
-   m_boundPipInfo.reset();
-
-   m_isRecording = false;
+      m_boundPipInfo.reset();
+   }
 }
 
 void CommandBuffer::reset()
 {
-   CYDASSERT(
-       !m_isRecording && "CommandBuffer: Cannot reset, command buffer is in recording state" );
-
-   vkResetCommandBuffer( m_vkCmdBuffer, {} );
-
-   // Clearing tracked descriptor sets
-   for( const auto& descSetInfo : m_descSets )
+   if( _isValidStateTransition( State::ACQUIRED ) )
    {
-      m_pDevice->getDescriptorPool().free( descSetInfo.vkDescSet );
-   }
+      vkResetCommandBuffer( m_vkCmdBuffer, {} );
 
-   m_descSets.clear();
+      // Clearing tracked descriptor sets
+      for( const auto& descSetInfo : m_descSets )
+      {
+         m_pDevice->getDescriptorPool().free( descSetInfo.vkDescSet );
+      }
+
+      m_descSets.clear();
+   }
 }
 
 void CommandBuffer::updatePushConstants( const CYD::PushConstantRange& range, const void* pData )
@@ -212,21 +392,21 @@ void CommandBuffer::bindPipeline( const CYD::ComputePipelineInfo& info )
    m_boundPipInfo   = std::make_unique<CYD::ComputePipelineInfo>( info );
 }
 
-void CommandBuffer::bindVertexBuffer( Buffer* vertexBuffer ) const
+void CommandBuffer::bindVertexBuffer( Buffer* vertexBuffer )
 {
-   VkBuffer vertexBuffers[] = {vertexBuffer->getVKBuffer()};
-   VkDeviceSize offsets[]   = {0};
+   VkBuffer vertexBuffers[] = { vertexBuffer->getVKBuffer() };
+   VkDeviceSize offsets[]   = { 0 };
    vkCmdBindVertexBuffers( m_vkCmdBuffer, 0, 1, vertexBuffers, offsets );
 
-   vertexBuffer->incUse();
+   _addDependency( vertexBuffer );
 }
 
-void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, CYD::IndexType type ) const
+void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, CYD::IndexType type )
 {
    vkCmdBindIndexBuffer(
        m_vkCmdBuffer, indexBuffer->getVKBuffer(), 0, TypeConversions::cydToVkIndexType( type ) );
 
-   indexBuffer->incUse();
+   _addDependency( indexBuffer );
 }
 
 void CommandBuffer::bindTexture( Texture* texture, uint32_t set, uint32_t binding )
@@ -235,7 +415,7 @@ void CommandBuffer::bindTexture( Texture* texture, uint32_t set, uint32_t bindin
    m_texturesToUpdate.emplace_back(
        texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, set, binding );
 
-   texture->incUse();
+   _addDependency( texture );
 }
 
 void CommandBuffer::bindImage( Texture* texture, uint32_t set, uint32_t binding )
@@ -244,7 +424,7 @@ void CommandBuffer::bindImage( Texture* texture, uint32_t set, uint32_t binding 
    m_texturesToUpdate.emplace_back( texture, CYD::ShaderResourceType::STORAGE_IMAGE, set, binding );
 
    // TODO Eventually we will need more info when binding an image (level for mipmaps for example)
-   texture->incUse();
+   _addDependency( texture );
 }
 
 void CommandBuffer::bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
@@ -252,7 +432,7 @@ void CommandBuffer::bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
    // Will need to update this buffer's descriptor set before next draw
    m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::STORAGE, set, binding );
 
-   buffer->incUse();
+   _addDependency( buffer );
 }
 
 void CommandBuffer::bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
@@ -260,106 +440,128 @@ void CommandBuffer::bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t bi
    // Will need to update this buffer's descriptor set before next draw
    m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::UNIFORM, set, binding );
 
-   buffer->incUse();
+   _addDependency( buffer );
 }
 
 template <class T>
-static BindingInfo<T> findBindingInfoFromLayout(
+CommandBuffer::ResourceBinding<T> CommandBuffer::_findBindingFromLayout(
+    const T* resource,
     const std::string_view name,
-    const PipelineLayoutInfo& pipLayout )
+    const CYD::PipelineLayoutInfo& pipLayout )
 {
+   ResourceBinding<T> binding;
+
+   for( const auto& shaderSetInfo : pipLayout.shaderSets )
+   {
+      for( const auto& shaderBindingInfo : shaderSetInfo.second.shaderBindings )
+      {
+         if( shaderBindingInfo.name == name )
+         {
+            // We found the binding
+            binding.binding = shaderBindingInfo.binding;
+            binding.type    = shaderBindingInfo.type;
+            binding.set     = shaderSetInfo.first;
+         }
+      }
+   }
+
+   binding.resource = resource;
+   return binding;
 }
 
 void CommandBuffer::bindTexture( Texture* texture, const std::string_view name )
 {
-   CYDASSERT( m_boundPipInfo && "CommandBuffer: Binding with no pipeline" );
-
-   TextureBindingInfo info = findBindingInfoFromLayout<Texture>( name, m_boundPipinfo->pipLayout );
+   CYDASSERT(
+       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
 
    // Will need to update this texture's descriptor set before next draw
    m_texturesToUpdate.emplace_back(
-       texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, set, binding );
+       _findBindingFromLayout( texture, name, m_boundPipInfo->pipLayout ) );
 
-   texture->incUse();
+   _addDependency( texture );
 }
 
 void CommandBuffer::bindImage( Texture* texture, const std::string_view name )
 {
-   CYDASSERT( m_boundPipInfo && "CommandBuffer: Binding with no pipeline" );
+   CYDASSERT(
+       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
 
    // Will need to update this image descriptor set before next draw
-   m_texturesToUpdate.emplace_back( texture, CYD::ShaderResourceType::STORAGE_IMAGE, set, binding );
+   m_texturesToUpdate.emplace_back(
+       _findBindingFromLayout( texture, name, m_boundPipInfo->pipLayout ) );
 
    // TODO Eventually we will need more info when binding an image (level for mipmaps for example)
-   texture->incUse();
+   _addDependency( texture );
 }
 
 void CommandBuffer::bindBuffer( Buffer* buffer, const std::string_view name )
 {
-   CYDASSERT( m_boundPipInfo && "CommandBuffer: Binding with no pipeline" );
+   CYDASSERT(
+       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
 
    // Will need to update this buffer's descriptor set before next draw
-   m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::STORAGE, set, binding );
+   m_buffersToUpdate.emplace_back(
+       _findBindingFromLayout( buffer, name, m_boundPipInfo->pipLayout ) );
 
-   buffer->incUse();
+   _addDependency( buffer );
 }
 
 void CommandBuffer::bindUniformBuffer( Buffer* buffer, const std::string_view name )
 {
-   CYDASSERT( m_boundPipInfo && "CommandBuffer: Binding with no pipeline" );
+   CYDASSERT(
+       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
 
    // Will need to update this buffer's descriptor set before next draw
-   m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::UNIFORM, set, binding );
+   m_buffersToUpdate.emplace_back(
+       _findBindingFromLayout( buffer, name, m_boundPipInfo->pipLayout ) );
 
-   buffer->incUse();
+   _addDependency( buffer );
 }
 
 void CommandBuffer::setViewport( const CYD::Viewport& viewport ) const
 {
-   VkViewport vkViewport = {viewport.offsetX,
-                            viewport.offsetY,
-                            viewport.width,
-                            viewport.height,
-                            viewport.minDepth,
-                            viewport.maxDepth};
+   VkViewport vkViewport = {
+       viewport.offsetX,
+       viewport.offsetY,
+       viewport.width,
+       viewport.height,
+       viewport.minDepth,
+       viewport.maxDepth };
    vkCmdSetViewport( m_vkCmdBuffer, 0, 1, &vkViewport );
 }
 
 void CommandBuffer::setScissor( const CYD::Rectangle& scissor ) const
 {
    VkRect2D vkScissor = {
-       scissor.offset.x, scissor.offset.y, scissor.extent.width, scissor.extent.height};
+       scissor.offset.x, scissor.offset.y, scissor.extent.width, scissor.extent.height };
    vkCmdSetScissor( m_vkCmdBuffer, 0, 1, &vkScissor );
 }
 
-void CommandBuffer::beginRendering( Swapchain& swapchain, bool hasDepth )
+void CommandBuffer::beginRendering( Swapchain& swapchain )
 {
-   swapchain.initFramebuffers( hasDepth );
-   swapchain.acquireImage();
-
-   VkRenderPass renderPass = swapchain.getCurrentRenderPass();
+   VkRenderPass renderPass = swapchain.getRenderPass();
    CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
 
    m_boundRenderPass = renderPass;
-
-   m_semsToWait.push_back( swapchain.getSemToWait() );
-   m_semsToSignal.push_back( swapchain.getSemToSignal() );
 
    VkRenderPassBeginInfo passBeginInfo = {};
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass.value();
    passBeginInfo.framebuffer           = swapchain.getCurrentFramebuffer();
-   passBeginInfo.renderArea.offset     = {0, 0};
+   passBeginInfo.renderArea.offset     = { 0, 0 };
    passBeginInfo.renderArea.extent     = swapchain.getVKExtent();
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = {0.0f, 0.0f, 0.0f, 1.0f};
-   clearValues[1]                          = {1.0f, 0};
+   clearValues[0]                          = { 1.0, 1.0f, 1.0f, 1.0f };
+   clearValues[1]                          = { 1.0f, 0 };
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
 
    vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
+
+   // We want the next renders in this swapchain to load the previous result
+   swapchain.setToLoad();
 }
 
 void CommandBuffer::beginRendering(
@@ -413,12 +615,12 @@ void CommandBuffer::beginRendering(
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass.value();
    passBeginInfo.framebuffer           = vkFramebuffer;
-   passBeginInfo.renderArea.offset     = {0, 0};
-   passBeginInfo.renderArea.extent     = {commonWidth, commonHeight};
+   passBeginInfo.renderArea.offset     = { 0, 0 };
+   passBeginInfo.renderArea.extent     = { commonWidth, commonHeight };
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = {0.0f, 0.0f, 0.0f, 1.0f};
-   clearValues[1]                          = {1.0f, 0.0f};
+   clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
+   clearValues[1]                          = { 1.0f, 0.0f };
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -428,12 +630,6 @@ void CommandBuffer::beginRendering(
 
 VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t set )
 {
-   if( set >= m_descSets.size() )
-   {
-      CYDASSERT( !"CommandBuffer: Set number was out of bounds" );
-      return nullptr;
-   }
-
    const auto it = std::find_if(
        m_descSets.begin() + prevSize, m_descSets.end(), [set]( const DescriptorSetInfo& info ) {
           return info.set == set;
@@ -449,9 +645,9 @@ VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t
    const VkDescriptorSet vkDescSet =
        m_pDevice->getDescriptorPool().allocate( m_boundPipInfo->pipLayout.shaderSets[set] );
 
-   m_descSets.push_back( {set, vkDescSet} );
+   m_descSets.push_back( { set, vkDescSet } );
 
-   m_boundSets[set] = vkDescSet;
+   m_setsToBind[set] = vkDescSet;
    return vkDescSet;
 }
 
@@ -496,17 +692,9 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
       VkDescriptorImageInfo imageInfo = {};
 
       // Determine layout based on descriptor type
-      switch( entry.type )
-      {
-         case CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER:
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            break;
-         default:  // Includes images which need to be in general layout for load/store operations
-            imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
-      }
-
-      imageInfo.imageView = entry.resource->getVKImageView();
-      imageInfo.sampler   = m_defaultSampler;
+      imageInfo.imageLayout = TypeConversions::cydToVkImageLayout( entry.resource->getLayout() );
+      imageInfo.imageView   = entry.resource->getVKImageView();
+      imageInfo.sampler     = m_defaultSampler;
       imageInfos.push_back( imageInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
@@ -547,9 +735,15 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
    // bad idea and should never happen but hey, you can do it.
    uint32_t contiguousCount = 0;
 
-   for( int i = 0; i < m_boundSets.size(); ++i )
+   for( int i = 0; i < m_setsToBind.size(); ++i )
    {
-      if( ( m_boundSets[i] == nullptr || i == ( m_boundSets.size() - 1 ) ) && contiguousCount > 0 )
+      if( m_setsToBind[i] != nullptr )
+      {
+         contiguousCount++;
+      }
+
+      if( ( m_setsToBind[i] == nullptr || i == ( m_setsToBind.size() - 1 ) ) &&
+          contiguousCount > 0 )
       {
          const uint32_t startIdx = ( i - contiguousCount );
 
@@ -559,18 +753,15 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
              m_boundPipLayout.value(),
              startIdx,
              contiguousCount,
-             &m_boundSets[startIdx],
+             &m_setsToBind[startIdx],
              0,
              nullptr );
 
          contiguousCount = 0;
       }
-      else
-      {
-         contiguousCount++;
-      }
    }
 
+   m_setsToBind.fill( nullptr );
    m_buffersToUpdate.clear();
    m_texturesToUpdate.clear();
 }
@@ -649,7 +840,7 @@ void CommandBuffer::endRendering() const
    vkCmdEndRenderPass( m_vkCmdBuffer );
 }
 
-void CommandBuffer::copyBuffer( const Buffer* src, const Buffer* dst ) const
+void CommandBuffer::copyBuffer( Buffer* src, Buffer* dst )
 {
    CYDASSERT(
        src->getSize() == dst->getSize() &&
@@ -658,9 +849,12 @@ void CommandBuffer::copyBuffer( const Buffer* src, const Buffer* dst ) const
    VkBufferCopy copyRegion = {};
    copyRegion.size         = dst->getSize();
    vkCmdCopyBuffer( m_vkCmdBuffer, src->getVKBuffer(), dst->getVKBuffer(), 1, &copyRegion );
+
+   _addDependency( src );
+   _addDependency( dst );
 }
 
-void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst ) const
+void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
 {
    CYDASSERT(
        src->getSize() == dst->getSize() &&
@@ -675,8 +869,8 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst ) const
    region.imageSubresource.mipLevel       = 0;
    region.imageSubresource.baseArrayLayer = 0;
    region.imageSubresource.layerCount     = dst->getLayers();
-   region.imageOffset                     = {0, 0, 0};
-   region.imageExtent                     = {dst->getWidth(), dst->getHeight(), 1};
+   region.imageOffset                     = { 0, 0, 0 };
+   region.imageExtent                     = { dst->getWidth(), dst->getHeight(), 1 };
 
    vkCmdCopyBufferToImage(
        m_vkCmdBuffer,
@@ -685,42 +879,42 @@ void CommandBuffer::uploadBufferToTex( const Buffer* src, Texture* dst ) const
        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
        1,
        &region );
+
+   _addDependency( src );
+   _addDependency( dst );
 }
 
 void CommandBuffer::submit()
 {
-   VkSubmitInfo submitInfo       = {};
-   submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-   submitInfo.commandBufferCount = 1;
-   submitInfo.pCommandBuffers    = &m_vkCmdBuffer;
-
-   VkPipelineStageFlags waitStages = 0;
-   if( m_usage & CYD::QueueUsage::GRAPHICS )
+   if( _isValidStateTransition( State::SUBMITTED ) )
    {
-      waitStages |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+      VkSubmitInfo submitInfo       = {};
+      submitInfo.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+      submitInfo.commandBufferCount = 1;
+      submitInfo.pCommandBuffers    = &m_vkCmdBuffer;
+
+      submitInfo.waitSemaphoreCount   = static_cast<uint32_t>( m_semsToWait.size() );
+      submitInfo.pWaitSemaphores      = m_semsToWait.data();
+      submitInfo.pWaitDstStageMask    = m_stagesToWait.data();
+      submitInfo.signalSemaphoreCount = static_cast<uint32_t>( m_semsToSignal.size() );
+      submitInfo.pSignalSemaphores    = m_semsToSignal.data();
+
+      const Device::QueueFamily& queueFamily =
+          m_pDevice->getQueueFamilyFromIndex( m_pPool->getFamilyIndex() );
+
+      CYDASSERT(
+          !queueFamily.queues.empty() && "CommandBuffer: Could not find queue to submit to" );
+
+      // TODO Dynamic submission to multiple queues
+      vkQueueSubmit( queueFamily.queues[0], 1, &submitInfo, m_vkFence );
    }
-   if( m_usage & CYD::QueueUsage::TRANSFER )
+}
+
+CommandBuffer::~CommandBuffer()
+{
+   if( isFree() )
    {
-      waitStages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+      release();
    }
-   if( m_usage & CYD::QueueUsage::COMPUTE )
-   {
-      waitStages |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-   }
-
-   submitInfo.waitSemaphoreCount   = static_cast<uint32_t>( m_semsToWait.size() );
-   submitInfo.pWaitSemaphores      = m_semsToWait.data();
-   submitInfo.pWaitDstStageMask    = &waitStages;
-   submitInfo.signalSemaphoreCount = static_cast<uint32_t>( m_semsToSignal.size() );
-   submitInfo.pSignalSemaphores    = m_semsToSignal.data();
-
-   const VkQueue* queue = m_pDevice->getQueueFromFamily( m_pPool->getFamilyIndex() );
-   CYDASSERT( queue && "CommandBuffer: Could not find queue to submit to" );
-
-   vkQueueSubmit( *queue, 1, &submitInfo, m_vkFence );
-   m_wasSubmitted = true;
-
-   m_semsToWait.clear();
-   m_semsToSignal.clear();
 }
 }

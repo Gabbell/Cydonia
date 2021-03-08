@@ -3,6 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/Handles/ResourceHandle.h>
+#include <Graphics/Material.h>
 
 #include <cstdint>
 #include <string_view>
@@ -10,16 +11,7 @@
 
 namespace CYD
 {
-struct Material
-{
-   ~Material();
-   TextureHandle albedo;     // Diffuse/Albedo color map
-   TextureHandle normals;    // Normal map
-   TextureHandle metalness;  // Metallic/Specular map
-   TextureHandle roughness;  // Roughness map
-   TextureHandle ao;         // Ambient occlusion map
-   TextureHandle height;     // Height map
-};
+class Vertex;
 
 struct Mesh
 {
@@ -40,9 +32,16 @@ class AssetStash final
 
    // void cleanup();
 
-   // High-level asset loading
-   const Material& loadMaterial( CmdListHandle transferList, const std::string_view materialPath );
-   const Mesh& loadMesh( CmdListHandle transferList, const std::string_view meshPath );
+   const Mesh& getMesh( const std::string_view name );
+   const Material& getMaterial( const std::string_view name );
+
+   bool loadMaterialFromPath( CmdListHandle transferList, const std::string_view materialPath );
+   bool loadMeshFromPath( CmdListHandle transferList, const std::string_view meshPath );
+   bool loadMesh(
+       CmdListHandle transferList,
+       const std::string_view name,
+       const std::vector<Vertex>& vertices,
+       const std::vector<uint32_t>& indices );
 
   private:
    static constexpr uint32_t INITIAL_AMOUNT_RESOURCES = 128;

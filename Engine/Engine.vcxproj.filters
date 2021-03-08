@@ -4,7 +4,6 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Graphics\Vulkan\Buffer.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
-    <ClCompile Include="Graphics\Vulkan\CommandPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\DescriptorPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\Device.cpp" />
     <ClCompile Include="Graphics\Vulkan\DeviceHerder.cpp" />
@@ -40,7 +39,6 @@
     <ClCompile Include="Graphics\GRIS\RenderInterface.cpp" />
     <ClCompile Include="ECS\Systems\Lighting\LightUpdateSystem.cpp" />
     <ClCompile Include="ECS\Systems\Rendering\PBRRenderSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Rendering\SkyboxSystem.cpp" />
     <ClCompile Include="ECS\Systems\Lighting\ShadowMapSystem.cpp" />
     <ClCompile Include="Graphics\GRIS\Backends\GLRenderBackend.cpp" />
     <ClCompile Include="Graphics\GRIS\Backends\VKRenderBackend.cpp" />
@@ -50,11 +48,27 @@
     <ClCompile Include="ECS\Systems\Resources\MeshLoaderSystem.cpp" />
     <ClCompile Include="Graphics\AssetStash.cpp" />
     <ClCompile Include="Graphics\ShaderConstants.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\AtmosphereRenderSystem.cpp" />
+    <ClCompile Include="Graphics\RenderGraph.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="ECS\Systems\UI\ImGuiSystem.cpp" />
+    <ClCompile Include="UI\UserInterface.cpp" />
+    <ClCompile Include="Graphics\VertexLayout.cpp" />
+    <ClCompile Include="ECS\Systems\Procedural\FFTOceanSystem.cpp" />
+    <ClCompile Include="Graphics\Material.cpp" />
+    <ClCompile Include="Utilities\ThreadPool.cpp" />
+    <ClCompile Include="Graphics\Vulkan\CommandBufferPool.cpp" />
+    <ClCompile Include="Graphics\Vulkan\CommandPoolManager.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBuffer.h" />
-    <ClInclude Include="Graphics\Vulkan\CommandPool.h" />
     <ClInclude Include="Graphics\Vulkan\DescriptorPool.h" />
     <ClInclude Include="Graphics\Vulkan\Device.h" />
     <ClInclude Include="Graphics\Vulkan\DeviceHerder.h" />
@@ -115,7 +129,6 @@
     <ClInclude Include="Graphics\GRIS\RenderInterface.h" />
     <ClInclude Include="ECS\Systems\Lighting\LightUpdateSystem.h" />
     <ClInclude Include="ECS\Systems\Rendering\PBRRenderSystem.h" />
-    <ClInclude Include="ECS\Systems\Rendering\SkyboxSystem.h" />
     <ClInclude Include="ECS\Systems\Lighting\ShadowMapSystem.h" />
     <ClInclude Include="ECS\Components\Rendering\MaterialComponent.h" />
     <ClInclude Include="ECS\Components\Rendering\SkyboxComponent.h" />
@@ -126,6 +139,24 @@
     <ClInclude Include="ECS\Systems\Resources\MeshLoaderSystem.h" />
     <ClInclude Include="Graphics\AssetStash.h" />
     <ClInclude Include="Graphics\ShaderConstants.h" />
+    <ClInclude Include="ECS\Systems\Rendering\AtmosphereRenderSystem.h" />
+    <ClInclude Include="Graphics\RenderGraph.h" />
+    <ClInclude Include="Graphics\VertexLayout.h" />
+    <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_glfw.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_impl_vulkan.h" />
+    <ClInclude Include="ThirdParty\ImGui\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
+    <ClInclude Include="ECS\Systems\UI\ImGuiSystem.h" />
+    <ClInclude Include="UI\UserInterface.h" />
+    <ClInclude Include="ECS\Systems\Procedural\FFTOceanSystem.h" />
+    <ClInclude Include="Graphics\Material.h" />
+    <ClInclude Include="Utilities\ThreadPool.h" />
+    <ClInclude Include="Graphics\Vulkan\CommandBufferPool.h" />
+    <ClInclude Include="Graphics\Vulkan\CommandPoolManager.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

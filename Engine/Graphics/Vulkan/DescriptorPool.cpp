@@ -55,7 +55,7 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
    CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Could not create descriptor pool" );
 }
 
-VkDescriptorSet DescriptorPool::allocate( const CYD::ShaderSetLayoutInfo& layout ) const
+VkDescriptorSet DescriptorPool::allocate( const CYD::ShaderSetInfo& layout ) const
 {
    const VkDescriptorSetLayout vkDescSetLayout = m_device.getPipelineStash().findOrCreate( layout );
 

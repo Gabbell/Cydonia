@@ -24,12 +24,13 @@ class SceneComponent final : public BaseSharedComponent
    Viewport viewport = { 0.0f, 1080.0f, 1920.0f, -1080.0f };
    Rectangle scissor = { 0, 0, 1920, 1080 };
 
-   struct DirectionalLightUBO
+   struct LightUBO
    {
-      glm::vec4 enabled;
-      glm::vec4 direction;
+      glm::mat4 viewMat;
+      glm::vec4 position;
       glm::vec4 color;
-   } dirLight = {};
+      glm::vec4 enabled;
+   } light = {};
 
    BufferHandle lightsBuffer;
 

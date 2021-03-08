@@ -6,13 +6,9 @@ namespace CYD
 {
 CameraComponent::CameraComponent()
 {
-   viewProjBuffer = GRIS::CreateUniformBuffer( sizeof( ViewProjection ) );
-   positionBuffer = GRIS::CreateUniformBuffer( sizeof( glm::vec4 ) );
+   viewBuffer =
+       GRIS::CreateUniformBuffer( sizeof( EnvironmentView ), "CameraComponent View Buffer" );
 }
 
-CameraComponent::~CameraComponent()
-{
-   GRIS::DestroyBuffer( positionBuffer );
-   GRIS::DestroyBuffer( viewProjBuffer );
-}
+CameraComponent::~CameraComponent() { GRIS::DestroyBuffer( viewBuffer ); }
 }

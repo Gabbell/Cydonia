@@ -23,5 +23,6 @@ class PBRRenderSystem final
    virtual ~PBRRenderSystem() = default;
 
    void tick( double deltaS ) override;
+   bool compareEntities( const EntityEntry& first, const EntityEntry& second ) override;
 };
 }

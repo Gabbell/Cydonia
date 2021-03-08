@@ -25,28 +25,86 @@ static ShaderResourceType StringToResourceType( const std::string& typeString )
    {
       return ShaderResourceType::COMBINED_IMAGE_SAMPLER;
    }
+   if( typeString == "IMAGE" )
+   {
+      return ShaderResourceType::STORAGE_IMAGE;
+   }
+   if( typeString == "BUFFER" )
+   {
+      return ShaderResourceType::STORAGE;
+   }
 
    CYDASSERT( !"Pipelines: Could not recognize string as a shader resource type" );
    return ShaderResourceType::UNIFORM;
 }
 
-static ShaderStage::ShaderStage StringToShaderStage( const std::string& stageString )
+static ShaderStageFlag StringToShaderStageFlags( const std::string& stagesString )
 {
-   if( stageString == "VERTEX" )
+   ShaderStageFlag shaderStages = 0;
+
+   if( stagesString.find( "VERTEX" ) != std::string::npos )
    {
-      return ShaderStage::VERTEX_STAGE;
+      shaderStages |= ShaderStage::VERTEX_STAGE;
    }
-   if( stageString == "FRAGMENT" )
+   if( stagesString.find( "FRAGMENT" ) != std::string::npos )
    {
-      return ShaderStage::FRAGMENT_STAGE;
+      shaderStages |= ShaderStage::FRAGMENT_STAGE;
    }
-   if( stageString == "COMPUTE" )
+   if( stagesString.find( "COMPUTE" ) != std::string::npos )
    {
-      return ShaderStage::COMPUTE_STAGE;
+      shaderStages |= ShaderStage::COMPUTE_STAGE;
    }
 
-   CYDASSERT( !"Pipelines: Could not recognize string as a shader stage" );
-   return ShaderStage::VERTEX_STAGE;
+   return shaderStages;
+}
+
+static DrawPrimitive StringToPrimitiveType( const std::string& primString )
+{
+   if( primString == "TRIANGLES" )
+   {
+      return DrawPrimitive::TRIANGLES;
+   }
+   if( primString == "TRIANGLE_STRIPS" )
+   {
+      return DrawPrimitive::TRIANGLE_STRIPS;
+   }
+
+   CYDASSERT( !"Pipelines: Could not recognize string as a primitive draw type" );
+   return DrawPrimitive::TRIANGLES;
+}
+
+static PolygonMode StringToPolygonMode( const std::string& polyModeString )
+{
+   if( polyModeString == "FILL" )
+   {
+      return PolygonMode::FILL;
+   }
+   if( polyModeString == "LINE" )
+   {
+      return PolygonMode::LINE;
+   }
+   if( polyModeString == "POINT" )
+   {
+      return PolygonMode::POINT;
+   }
+
+   CYDASSERT( !"Pipelines: Could not recognize string as a polygon mode" );
+   return PolygonMode::FILL;
+}
+
+static PixelFormat StringToPixelFormat( const std::string& formatString )
+{
+   if( formatString == "RGBA32F" )
+   {
+      return PixelFormat::RGBA32F;
+   }
+   if( formatString == "RGB32F" )
+   {
+      return PixelFormat::RGB32F;
+   }
+
+   CYDASSERT( !"Pipelines: Could not recognize string as a pixel format" );
+   return PixelFormat::RGBA32F;
 }
 
 bool Initialize()
@@ -88,13 +146,13 @@ bool Initialize()
 
          // Optional parameters
          const auto& primIt = pipeline.find( "PRIMITIVE" );
-         if( primIt == pipeline.end() )
+         if( primIt != pipeline.end() )
          {
-            pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
+            pipInfo.drawPrim = StringToPrimitiveType( primIt->front() );
          }
          else
          {
-            // TODO
+            pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
          }
 
          const auto& polyModeIt = pipeline.find( "POLYGON_MODE" );
@@ -104,7 +162,42 @@ bool Initialize()
          }
          else
          {
-            // TODO
+            pipInfo.polyMode = StringToPolygonMode( polyModeIt->front() );
+         }
+
+         // Parsing vertex layout
+         const auto& vertLayoutIt = pipeline.find( "VERTEX_LAYOUT" );
+         if( vertLayoutIt != pipeline.end() )
+         {
+            uint32_t curOffset = 0;
+            for( const auto& attribute : *vertLayoutIt )
+            {
+               const uint32_t location     = attribute["LOCATION"];
+               const PixelFormat vecFormat = StringToPixelFormat( attribute["FORMAT"] );
+               uint32_t offset             = 0;
+               uint32_t binding            = 0;
+
+               // Optionals
+               const auto& offsetIt = attribute.find( "OFFSET" );
+               if( offsetIt == attribute.end() )
+               {
+                  offset = curOffset;
+                  curOffset += GetPixelSizeInBytes( vecFormat );
+               }
+               else
+               {
+                  offset = offsetIt->front();
+                  curOffset += offset;
+               }
+
+               const auto& bindingIt = attribute.find( "BINDING" );
+               if( bindingIt != attribute.end() )
+               {
+                  binding = bindingIt->front();
+               }
+
+               pipInfo.vertLayout.addAttribute( vecFormat, location, offset, binding );
+            }
          }
 
          pipIt = new GraphicsPipelineInfo( pipInfo );
@@ -122,27 +215,32 @@ bool Initialize()
          continue;
       }
 
-      for( const auto& resource : pipeline["SHADER_RESOURCES"] )
+      // Parsing shader resource sets and bindings
+      const auto& resourcesIt = pipeline.find( "SHADER_RESOURCES" );
+      if( resourcesIt != pipeline.end() )
       {
-         const std::string resourceType = resource["TYPE"];
-         if( resourceType == "CONSTANT_BUFFER" )
+         for( const auto& resource : *resourcesIt )
          {
-            const PushConstantRange constantBuffer = {
-                StringToShaderStage( resource["STAGE"] ), 0, resource["SIZE"]};
+            const std::string resourceType = resource["TYPE"];
+            if( resourceType == "CONSTANT_BUFFER" )
+            {
+               const PushConstantRange constantBuffer = {
+                   StringToShaderStageFlags( resource["STAGE"] ), 0, resource["SIZE"] };
 
-            pipIt->pipLayout.ranges.push_back( constantBuffer );
-         }
-         else
-         {
-            const uint32_t set = resource["SET"];
+               pipIt->pipLayout.ranges.push_back( constantBuffer );
+            }
+            else
+            {
+               const uint32_t set = resource["SET"];
 
-            ShaderBindingInfo bindingInfo = {};
-            bindingInfo.name              = resource["NAME"];
-            bindingInfo.stages            = StringToShaderStage( resource["STAGE"] );
-            bindingInfo.type              = StringToResourceType( resource["TYPE"] );
-            bindingInfo.binding           = resource["BINDING"];
+               ShaderBindingInfo bindingInfo = {};
+               bindingInfo.name              = resource["NAME"];
+               bindingInfo.stages            = StringToShaderStageFlags( resource["STAGE"] );
+               bindingInfo.type              = StringToResourceType( resource["TYPE"] );
+               bindingInfo.binding           = resource["BINDING"];
 
-            pipIt->pipLayout.shaderSets[set].shaderBindings.push_back( bindingInfo );
+               pipIt->pipLayout.shaderSets[set].shaderBindings.push_back( bindingInfo );
+            }
          }
       }
    }

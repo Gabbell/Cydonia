@@ -34,7 +34,7 @@ class LightComponent final : public BaseComponent
 
    glm::vec4 position  = glm::vec4( 0.0f );
    glm::vec4 direction = glm::vec4( 0.0f );
-   glm::vec4 color     = glm::vec4( 1.0f );
+   glm::vec4 color     = glm::vec4( 100.0f );
 
    bool enabled = false;
 };

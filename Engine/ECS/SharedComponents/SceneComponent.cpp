@@ -6,8 +6,12 @@ namespace CYD
 {
 SceneComponent::SceneComponent()
 {
-   lightsBuffer = GRIS::CreateUniformBuffer( sizeof( DirectionalLightUBO ) );
+   lightsBuffer = GRIS::CreateUniformBuffer( sizeof( LightUBO ), "SceneComponent Lights Buffer" );
 }
 
-SceneComponent::~SceneComponent() { GRIS::DestroyBuffer( lightsBuffer ); }
+SceneComponent::~SceneComponent()
+{
+   GRIS::DestroyBuffer( lightsBuffer );
+   GRIS::DestroyTexture( shadowMap );
+}
 }

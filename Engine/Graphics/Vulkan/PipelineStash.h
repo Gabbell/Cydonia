@@ -35,22 +35,19 @@ class PipelineStash final
    explicit PipelineStash( const Device& device );
    ~PipelineStash();
 
-   const VkDescriptorSetLayout findOrCreate(
-       const CYD::ShaderSetLayoutInfo& shaderSetLayoutInfo );
+   VkDescriptorSetLayout findOrCreate( const CYD::ShaderSetInfo& shaderSetInfo );
 
-   const VkPipelineLayout findOrCreate( const CYD::PipelineLayoutInfo& pipLayoutInfo );
+   VkPipelineLayout findOrCreate( const CYD::PipelineLayoutInfo& pipLayoutInfo );
 
-   const VkPipeline findOrCreate(
-       const CYD::GraphicsPipelineInfo& pipInfo,
-       VkRenderPass renderPass );
-   const VkPipeline findOrCreate( const CYD::ComputePipelineInfo& pipInfo );
+   VkPipeline findOrCreate( const CYD::GraphicsPipelineInfo& pipInfo, VkRenderPass renderPass );
+   VkPipeline findOrCreate( const CYD::ComputePipelineInfo& pipInfo );
 
   private:
    const Device& m_device;
 
    std::unique_ptr<ShaderStash> m_shaderStash;
 
-   std::unordered_map<CYD::ShaderSetLayoutInfo, VkDescriptorSetLayout> m_descSetLayouts;
+   std::unordered_map<CYD::ShaderSetInfo, VkDescriptorSetLayout> m_descSetLayouts;
    std::unordered_map<CYD::PipelineLayoutInfo, VkPipelineLayout> m_pipLayouts;
 
    std::unordered_map<CYD::GraphicsPipelineInfo, VkPipeline> m_graphicsPipelines;

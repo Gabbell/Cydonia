@@ -19,21 +19,11 @@ namespace vk
 Swapchain::Swapchain( Device& device, const Surface& surface, const CYD::SwapchainInfo& info )
     : m_device( device ), m_surface( surface )
 {
-   // Initializing attachments
-   m_colorPresentation.format  = info.format;
-   m_colorPresentation.loadOp  = CYD::LoadOp::CLEAR;
-   m_colorPresentation.storeOp = CYD::StoreOp::STORE;
-   m_colorPresentation.type    = CYD::AttachmentType::COLOR_PRESENTATION;
-
-   m_depthPresentation.format  = CYD::PixelFormat::D32_SFLOAT;
-   m_depthPresentation.loadOp  = CYD::LoadOp::CLEAR;
-   m_depthPresentation.storeOp = CYD::StoreOp::DONT_CARE;
-   m_depthPresentation.type    = CYD::AttachmentType::DEPTH_STENCIL;
-
    _createSwapchain( info );
    _createImageViews();
    _createDepthResources();
    _createSyncObjects();
+   _createFramebuffers( info );
 }
 
 static uint32_t chooseImageCount( const VkSurfaceCapabilitiesKHR& caps )
@@ -57,7 +47,7 @@ static VkExtent2D chooseExtent( const CYD::Extent2D& extent, const VkSurfaceCapa
    else
    {
       // Use the window extent
-      VkExtent2D actualExtent = {extent.width, extent.height};
+      VkExtent2D actualExtent = { extent.width, extent.height };
 
       actualExtent.width =
           std::clamp( actualExtent.width, caps.minImageExtent.width, caps.maxImageExtent.width );
@@ -279,10 +269,6 @@ void Swapchain::_createSyncObjects()
    VkSemaphoreCreateInfo semaphoreInfo = {};
    semaphoreInfo.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-   VkFenceCreateInfo fenceInfo = {};
-   fenceInfo.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-   fenceInfo.flags             = VK_FENCE_CREATE_SIGNALED_BIT;
-
    for( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
    {
       if( vkCreateSemaphore(
@@ -297,52 +283,69 @@ void Swapchain::_createSyncObjects()
    }
 }
 
-void Swapchain::initFramebuffers( bool hasDepth )
+void Swapchain::_createFramebuffers( const CYD::SwapchainInfo& info )
 {
-   // If we are switching from depth on/off or never initialized the render pass
-   if( ( hasDepth != m_hasDepth ) || !( m_vkRenderPass ) )
+   // Clear render pass
+   CYD::Attachment colorPresentation;
+   CYD::Attachment depth;
+
+   colorPresentation.format  = info.format;
+   colorPresentation.loadOp  = CYD::LoadOp::CLEAR;
+   colorPresentation.storeOp = CYD::StoreOp::STORE;
+   colorPresentation.type    = CYD::AttachmentType::COLOR_PRESENTATION;
+
+   depth.format  = CYD::PixelFormat::D32_SFLOAT;
+   depth.loadOp  = CYD::LoadOp::CLEAR;
+   depth.storeOp = CYD::StoreOp::DONT_CARE;
+   depth.type    = CYD::AttachmentType::DEPTH_STENCIL;
+
+   CYD::RenderTargetsInfo targetsInfo = {};
+   targetsInfo.attachments.push_back( colorPresentation );
+   targetsInfo.attachments.push_back( depth );
+
+   m_clearRenderPass = m_device.getRenderPassStash().findOrCreate( targetsInfo );
+
+   // Load render pass
+   colorPresentation.loadOp        = CYD::LoadOp::LOAD;
+   colorPresentation.initialLayout = CYD::ImageLayout::PRESENT_SRC;
+   depth.loadOp                    = CYD::LoadOp::LOAD;
+
+   targetsInfo.attachments.clear();
+   targetsInfo.attachments.push_back( colorPresentation );
+   targetsInfo.attachments.push_back( depth );
+
+   m_loadRenderPass = m_device.getRenderPassStash().findOrCreate( targetsInfo );
+
+   m_frameBuffers.resize( m_imageCount );
+   for( size_t i = 0; i < m_imageCount; i++ )
    {
-      CYD::RenderTargetsInfo renderTargetsInfo = {};
+      std::vector<VkImageView> vkImageViews;
+      vkImageViews.push_back( m_imageViews[i] );
+      vkImageViews.push_back( m_depthImageView );
 
-      renderTargetsInfo.attachments.push_back( m_colorPresentation );
+      VkFramebufferCreateInfo framebufferInfo = {};
+      framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+      framebufferInfo.renderPass              = m_loadRenderPass;
+      framebufferInfo.attachmentCount         = static_cast<uint32_t>( vkImageViews.size() );
+      framebufferInfo.pAttachments            = vkImageViews.data();
+      framebufferInfo.width                   = m_extent->width;
+      framebufferInfo.height                  = m_extent->height;
+      framebufferInfo.layers                  = 1;
 
-      if( hasDepth )
-      {
-         renderTargetsInfo.attachments.push_back( m_depthPresentation );
-      }
-
-      VkRenderPass renderPass = m_device.getRenderPassStash().findOrCreate( renderTargetsInfo );
-      CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
-
-      m_vkRenderPass = renderPass;
-
-      m_frameBuffers.resize( m_imageCount );
-      for( size_t i = 0; i < m_imageCount; i++ )
-      {
-         std::vector<VkImageView> vkImageViews;
-         vkImageViews.push_back( m_imageViews[i] );
-
-         if( hasDepth )
-         {
-            vkImageViews.push_back( m_depthImageView );
-         }
-
-         VkFramebufferCreateInfo framebufferInfo = {};
-         framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-         framebufferInfo.renderPass              = m_vkRenderPass;
-         framebufferInfo.attachmentCount         = static_cast<uint32_t>( vkImageViews.size() );
-         framebufferInfo.pAttachments            = vkImageViews.data();
-         framebufferInfo.width                   = m_extent->width;
-         framebufferInfo.height                  = m_extent->height;
-         framebufferInfo.layers                  = 1;
-
-         VkResult result = vkCreateFramebuffer(
-             m_device.getVKDevice(), &framebufferInfo, nullptr, &m_frameBuffers[i] );
-         CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create framebuffer" );
-
-         m_hasDepth = hasDepth;
-      }
+      VkResult result = vkCreateFramebuffer(
+          m_device.getVKDevice(), &framebufferInfo, nullptr, &m_frameBuffers[i] );
+      CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create framebuffer" );
    }
+}
+
+VkRenderPass Swapchain::getRenderPass() const
+{
+   if( m_shouldLoad )
+   {
+      return m_loadRenderPass;
+   }
+
+   return m_clearRenderPass;
 }
 
 void Swapchain::acquireImage()
@@ -364,11 +367,11 @@ void Swapchain::present()
        m_ready &&
        "Swapchain: No image was acquired before presenting. Are you rendering to the swapchain?" );
 
-   const VkQueue* presentQueue = m_device.getQueueFromUsage( CYD::QueueUsage::GRAPHICS, true );
+   const VkQueue presentQueue = m_device.getQueueFromUsage( CYD::QueueUsage::GRAPHICS, true );
    if( presentQueue )
    {
-      VkSwapchainKHR swapChains[]    = {m_vkSwapchain};
-      VkSemaphore signalSemaphores[] = {m_renderDoneSems[m_currentFrame]};
+      VkSwapchainKHR swapChains[]    = { m_vkSwapchain };
+      VkSemaphore signalSemaphores[] = { m_renderDoneSems[m_currentFrame] };
 
       VkPresentInfoKHR presentInfo   = {};
       presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -378,7 +381,7 @@ void Swapchain::present()
       presentInfo.pSwapchains        = swapChains;
       presentInfo.pImageIndices      = &m_imageIndex;
 
-      vkQueuePresentKHR( *presentQueue, &presentInfo );
+      vkQueuePresentKHR( presentQueue, &presentInfo );
       m_currentFrame = ( m_currentFrame + 1 ) % MAX_FRAMES_IN_FLIGHT;
 
       m_ready = false;
@@ -387,6 +390,9 @@ void Swapchain::present()
    {
       CYDASSERT( !"Swapchain: Could not get a present queue" );
    }
+
+   // We have presented, the next rendering should clear the swapchain
+   m_shouldLoad = false;
 }
 
 Swapchain::~Swapchain()
