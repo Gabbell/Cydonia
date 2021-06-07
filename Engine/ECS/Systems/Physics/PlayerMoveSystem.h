@@ -21,7 +21,7 @@ class PlayerMoveSystem final
    NON_COPIABLE( PlayerMoveSystem );
    virtual ~PlayerMoveSystem() = default;
 
-   static constexpr float MOVE_SPEED = 20.0f;
+   static constexpr float MOVE_SPEED = 5.0f;
    static constexpr float MOUSE_SENS = 0.001f;
 
    void tick( double deltaS ) override;

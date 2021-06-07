@@ -1,13 +1,14 @@
 #pragma once
 
+#include <Graphics/GraphicsTypes.h>
+
 #include <cstdint>
 #include <string>
 #include <vector>
 
 namespace CYD
 {
-struct Vertex;
-struct TextureDescription;
+class Vertex;
 
 namespace GraphicsIO
 {
@@ -16,7 +17,7 @@ void LoadMesh(
     std::vector<Vertex>& vertices,
     std::vector<uint32_t>& indices );
 
-void* LoadImage( const TextureDescription& desc, const std::string& path );
+void* LoadImage( const std::string& path, PixelFormat format, int& width, int& height, int& size );
 void FreeImage( void* imageData );
 }
 }

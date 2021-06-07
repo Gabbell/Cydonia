@@ -13,18 +13,29 @@ create entities with it.
 */
 namespace CYD
 {
-class LightComponent : public BaseComponent
+class LightComponent final : public BaseComponent
 {
   public:
+   enum class Type
+   {
+      DIRECTIONAL,
+      POINT,
+      SPOT
+   };
+
    LightComponent() = default;
+   LightComponent( LightComponent::Type lightType ) : type( lightType ) {}
    COPIABLE( LightComponent );
    virtual ~LightComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::LIGHT;
 
+   Type type = Type::DIRECTIONAL;
+
    glm::vec4 position  = glm::vec4( 0.0f );
    glm::vec4 direction = glm::vec4( 0.0f );
-   glm::vec4 color     = glm::vec4( 1.0f );
-   bool enabled        = false;
+   glm::vec4 color     = glm::vec4( 100.0f );
+
+   bool enabled = false;
 };
 }

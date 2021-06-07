@@ -2,7 +2,7 @@
 
 #include <Common/Assert.h>
 
-#include <Graphics/GraphicsTypes.h>
+#include <Graphics/VertexLayout.h>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tinyobjloader/tiny_obj_loader.h>
@@ -46,15 +46,21 @@ void GraphicsIO::LoadMesh(
              attrib.vertices[3 * index.vertex_index + 1],
              attrib.vertices[3 * index.vertex_index + 2] };
 
-         vertex.normal = {
-             attrib.normals[3 * index.normal_index + 0],
-             attrib.normals[3 * index.normal_index + 1],
-             attrib.normals[3 * index.normal_index + 2] };
+         if( !attrib.normals.empty() )
+         {
+            vertex.normal = {
+                attrib.normals[3 * index.normal_index + 0],
+                attrib.normals[3 * index.normal_index + 1],
+                attrib.normals[3 * index.normal_index + 2] };
+         }
 
-         vertex.uv = {
-             attrib.texcoords[2 * index.texcoord_index + 0],
-             1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
-             0.0f };
+         if( !attrib.texcoords.empty() )
+         {
+            vertex.uv = {
+                attrib.texcoords[2 * index.texcoord_index + 0],
+                1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
+                0.0f };
+         }
 
          vertex.col = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -69,34 +75,32 @@ void GraphicsIO::LoadMesh(
    }
 }
 
-void* GraphicsIO::LoadImage( const TextureDescription& desc, const std::string& path )
+void* GraphicsIO::LoadImage(
+    const std::string& path,
+    PixelFormat format,
+    int& width,
+    int& height,
+    int& size )
 {
-   size_t imageSize = 0;
-   int width, height, channels;
-   width = height = channels = 0;
-
    void* imageData = nullptr;
-   switch( desc.format )
+   int channels    = 0;
+   switch( format )
    {
       case PixelFormat::RGBA32F:
+      case PixelFormat::R32F:
          imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
-         imageSize = width * height * sizeof( float ) * 4;
          break;
       default:
+         // TODO Format to pixel size function
          imageData = stbi_load( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
-         imageSize = width * height * sizeof( uint32_t );  // TODO Format to pixel size function
    }
+
+   size = width * height * GetPixelSizeInBytes( format );
 
    if( !imageData )
    {
       // Could not load image, returning nullptr
       return nullptr;
-   }
-
-   if( imageSize != ( desc.size / desc.layers ) || static_cast<uint32_t>( width ) != desc.width ||
-       static_cast<uint32_t>( height ) != desc.height )
-   {
-      CYDASSERT( !"GraphicsIO: Mismatch with texture description and actual image" );
    }
 
    return imageData;

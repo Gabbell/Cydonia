@@ -12,8 +12,7 @@
 // ================================================================================================
 namespace CYD
 {
-class EntityFollowSystem final
-    : public CommonSystem<TransformComponent, EntityFollowComponent>
+class EntityFollowSystem final : public CommonSystem<TransformComponent, EntityFollowComponent>
 {
   public:
    EntityFollowSystem() = default;

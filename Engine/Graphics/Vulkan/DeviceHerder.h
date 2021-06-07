@@ -35,8 +35,8 @@ class DeviceHerder final
    ~DeviceHerder();
 
    // Main device is always the first one for now
-   Device* getMainDevice() const { return m_devices[0].get(); }
-   const Swapchain* getMainSwapchain();
+   Device& getMainDevice() const;
+   Swapchain& getMainSwapchain() const;
 
   private:
    // =============================================================================================

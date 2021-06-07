@@ -27,7 +27,6 @@ namespace vk
 {
 class Device;
 class Surface;
-class CommandBuffer;
 }
 
 // ================================================================================================
@@ -42,17 +41,22 @@ class Swapchain final
    NON_COPIABLE( Swapchain );
    ~Swapchain();
 
+   bool isReady() const { return m_ready; }
+
    // For render pass begin info
    const VkExtent2D& getVKExtent() const { return *m_extent; }
    VkFramebuffer getCurrentFramebuffer() const { return m_frameBuffers[m_currentFrame]; }
-   VkRenderPass getCurrentRenderPass() const { return m_vkRenderPass; }
+   VkRenderPass getRenderPass() const;
 
    const VkSwapchainKHR& getVKSwapchain() const noexcept { return m_vkSwapchain; }
    const VkSurfaceFormatKHR& getFormat() const noexcept { return *m_surfaceFormat; }
    const VkSemaphore& getSemToWait() const noexcept { return m_availableSems[m_currentFrame]; }
    const VkSemaphore& getSemToSignal() const noexcept { return m_renderDoneSems[m_currentFrame]; }
 
-   void initFramebuffers( bool wantDepth );
+   uint32_t getImageCount() const { return m_imageCount; }
+
+   void setToLoad() { m_shouldLoad = true; }
+
    void acquireImage();
    void present();
 
@@ -61,16 +65,14 @@ class Swapchain final
    void _createImageViews();
    void _createDepthResources();
    void _createSyncObjects();
+   void _createFramebuffers( const CYD::SwapchainInfo& info );
 
    // Used to create the swapchain
    Device& m_device;
    const Surface& m_surface;
-   CYD::SwapchainInfo m_info;
 
-   bool m_hasDepth = false;
-   CYD::Attachment m_colorPresentation;
-   CYD::Attachment m_depthPresentation;
-   VkRenderPass m_vkRenderPass = nullptr;
+   VkRenderPass m_clearRenderPass = nullptr;
+   VkRenderPass m_loadRenderPass  = nullptr;
 
    uint32_t m_imageCount = 0;
    uint32_t m_imageIndex = 0;
@@ -78,12 +80,13 @@ class Swapchain final
    std::vector<VkImage> m_images;
 
    std::vector<VkFramebuffer> m_frameBuffers;
-   
+
    VkImageView m_depthImageView;
    VkImage m_depthImage;
    VkDeviceMemory m_depthImageMemory;
 
    bool m_ready            = false;  // Used to determine if we acquired an image before presenting
+   bool m_shouldLoad       = false;  // Used to determine which render pass to return
    uint32_t m_currentFrame = 0;
    std::vector<VkSemaphore> m_availableSems;
    std::vector<VkSemaphore> m_renderDoneSems;

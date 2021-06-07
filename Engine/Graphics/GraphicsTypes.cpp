@@ -2,9 +2,32 @@
 
 namespace CYD
 {
-bool Vertex::operator==( const Vertex& other ) const
+// Be aware that this size is minimal and should only be used for packed RAM allocations. It might
+// not reflect the actual size that will be used by the graphics API to store this particular format
+// on the device. Look at the API-specific memory related functions to query this information.
+uint32_t GetPixelSizeInBytes( PixelFormat format )
 {
-   return pos == other.pos && col == other.col && uv == other.uv;
+   switch( format )
+   {
+      case PixelFormat::R8_UNORM:
+         return 1;
+      case PixelFormat::R16_UNORM:
+         return 2;
+      case PixelFormat::BGRA8_UNORM:
+      case PixelFormat::RGBA8_SRGB:
+      case PixelFormat::R32F:
+      case PixelFormat::D32_SFLOAT:
+         return 4;
+      case PixelFormat::RGBA16F:
+      case PixelFormat::RG32F:
+         return 8;
+      case PixelFormat::RGB32F:
+         return 12;
+      case PixelFormat::RGBA32F:
+         return 16;
+   }
+
+   return 0;
 }
 
 bool Extent2D::operator==( const Extent2D& other ) const
@@ -23,35 +46,31 @@ bool PushConstantRange::operator==( const PushConstantRange& other ) const
    return stages == other.stages && offset == other.offset && size == other.size;
 }
 
-bool ShaderResourceInfo::operator==( const ShaderResourceInfo& other ) const
+bool ShaderBindingInfo::operator==( const ShaderBindingInfo& other ) const
 {
-   return type == other.type && stages == other.stages && binding == other.binding &&
-          set == other.set;
+   return type == other.type && stages == other.stages && binding == other.binding;
 }
 
-bool RenderPassInfo::operator==( const RenderPassInfo& other ) const
+bool RenderTargetsInfo::operator==( const RenderTargetsInfo& other ) const
 {
-   bool same = true;
-   same      = attachments.size() == other.attachments.size();
-   if( !same ) return false;
+   if( attachments.size() != other.attachments.size() ) return false;
 
    for( uint32_t i = 0; i < attachments.size(); ++i )
    {
-      same = attachments[i] == other.attachments[i];
-      if( !same ) return false;
+      if( !( attachments[i] == other.attachments[i] ) ) return false;
    }
 
    return true;
 }
 
-bool DescriptorSetLayoutInfo::operator==( const DescriptorSetLayoutInfo& other ) const
+bool ShaderSetInfo::operator==( const ShaderSetInfo& other ) const
 {
-   return shaderResources == other.shaderResources;
+   return shaderBindings == other.shaderBindings;
 }
 
 bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const
 {
-   return ranges == other.ranges && descSets == other.descSets;
+   return ranges == other.ranges && shaderSets == other.shaderSets;
 }
 
 bool SamplerInfo::operator==( const SamplerInfo& other ) const

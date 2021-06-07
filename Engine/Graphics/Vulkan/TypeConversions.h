@@ -34,4 +34,5 @@ VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type );
 VkFilter cydToVkFilter( CYD::Filter filter );
 VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode );
 VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout );
+uint32_t getAspectMask( CYD::PixelFormat format );
 }

@@ -1,5 +1,7 @@
 #include <Applications/Application.h>
 
+#include <Utilities/ThreadPool.h>
+
 #include <Window/GLFWWindow.h>
 
 #include <chrono>
@@ -9,8 +11,11 @@ namespace CYD
 {
 Application::Application( uint32_t width, uint32_t height, const char* title )
 {
+   // Create window
    m_window = std::make_unique<Window>();
    m_window->init( width, height, title );
+
+   ThreadPool::Initialize();  // Initialize threadpool with maximum number of threads
 }
 
 void Application::startLoop()

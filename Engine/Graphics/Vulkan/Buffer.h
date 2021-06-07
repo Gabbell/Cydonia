@@ -4,7 +4,9 @@
 
 #include <Graphics/GraphicsTypes.h>
 
+#include <atomic>
 #include <cstdint>
+#include <memory>
 
 // ================================================================================================
 // Forwards
@@ -26,7 +28,7 @@ namespace vk
 class Buffer final
 {
   public:
-   Buffer() = default;
+   Buffer();
    MOVABLE( Buffer );
    ~Buffer();
 
@@ -34,15 +36,16 @@ class Buffer final
        const Device& device,
        size_t size,
        CYD::BufferUsageFlag usage,
-       CYD::MemoryTypeFlag memoryType );
+       CYD::MemoryTypeFlag memoryType,
+       const std::string_view name );
    void release();
 
    size_t getSize() const noexcept { return m_size; }
    VkBuffer getVKBuffer() const noexcept { return m_vkBuffer; }
-   bool inUse() const { return m_useCount > 0; }
+   bool inUse() const { return ( *m_useCount ) > 0; }
 
-   void incUse() { m_useCount++; }
-   void decUse() { m_useCount--; }
+   void incUse();
+   void decUse();
 
    void copy( const void* pData, size_t offset, size_t size );
 
@@ -57,11 +60,14 @@ class Buffer final
    void* m_data = nullptr;
 
    // Common
+   static constexpr char DEFAULT_BUFFER_NAME[] = "Unknown Buffer Name";
+
+   std::string_view m_name   = DEFAULT_BUFFER_NAME;
    size_t m_size             = 0;
    VkBuffer m_vkBuffer       = nullptr;
    VkDeviceMemory m_vkMemory = nullptr;
    CYD::MemoryTypeFlag m_memoryType;
 
-   uint32_t m_useCount = 0;
+   std::unique_ptr<std::atomic<uint32_t>> m_useCount;
 };
 }

@@ -3,7 +3,8 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Utility/ShaderConstants.h>
+#include <Graphics/VertexLayout.h>
+#include <Graphics/ShaderConstants.h>
 
 #include <string>
 #include <vector>
@@ -16,8 +17,8 @@ struct PipelineInfo
    virtual ~PipelineInfo();
 
    PipelineType type;
-   ShaderConstants constants;
    PipelineLayoutInfo pipLayout;
+   ShaderConstants constants;
 
   protected:
    PipelineInfo();
@@ -34,6 +35,8 @@ struct GraphicsPipelineInfo final : public PipelineInfo
    bool operator==( const GraphicsPipelineInfo& other ) const;
 
    std::vector<std::string> shaders;
+   VertexLayout vertLayout;
+   // PipelineState pipState; // TODO PSO hints
    DrawPrimitive drawPrim;
    PolygonMode polyMode;
    Extent2D extent;

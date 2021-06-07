@@ -1,7 +1,8 @@
 #include <ECS/Systems/Procedural/FFTOceanSystem.h>
 
-#include <Graphics/RenderInterface.h>
+#include <Graphics/RenderGraph.h>
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/GRIS/RenderInterface.h>
 
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 
@@ -12,12 +13,6 @@
 
 namespace CYD
 {
-static ComputePipelineInfo spectraGenPip;            // Phillips spectra generation pipeline
-static ComputePipelineInfo fourierComponentsPip;     // X-Y-Z Fourier components generation pipeline
-static ComputePipelineInfo butterflyTexPip;          // Butterfly texture generation pipeline
-static ComputePipelineInfo butterflyPip;             // Butterfly operations pipeline
-static ComputePipelineInfo inversionPermutationPip;  // Inversion and permutation pipeline
-
 enum class FourierComponent  // To compute the displacement for a specific component
 {
    X,
@@ -27,7 +22,7 @@ enum class FourierComponent  // To compute the displacement for a specific compo
 
 static void computeDisplacement(
     CmdListHandle cmdList,
-    const RenderableComponent& renderable,
+    const MaterialComponent& material,
     FFTOceanComponent& ocean,
     FourierComponent fourierComponent )
 {
@@ -35,7 +30,7 @@ static void computeDisplacement(
    const uint32_t numberOfStages = static_cast<uint32_t>( std::log2( resolution ) );
 
    // Cooley-Tukey Radix-2 FFT GPU algorithm
-   GRIS::BindPipeline( cmdList, butterflyPip );
+   GRIS::BindPipeline( cmdList, "BUTTERFLY_OPERATIONS" );
 
    GRIS::BindImage( cmdList, ocean.butterflyTexture, 0, 0 );
 
@@ -93,9 +88,9 @@ static void computeDisplacement(
    }
 
    // Inversion and permutation shaderpass
-   GRIS::BindPipeline( cmdList, inversionPermutationPip );
+   GRIS::BindPipeline( cmdList, "INVERSION_PERMUTATION" );
 
-   GRIS::BindImage( cmdList, renderable.displacement, 0, 0 );
+   GRIS::BindImage( cmdList, material.data.disp, 0, 0 );
 
    switch( fourierComponent )
    {
@@ -127,15 +122,15 @@ static void computeDisplacement(
 
 void FFTOceanSystem::tick( double deltaS )
 {
-   for( const auto& compPair : m_components )
+   for( const auto& entityEntry : m_entities )
    {
-      RenderableComponent& renderable = *std::get<RenderableComponent*>( compPair.second );
-      FFTOceanComponent& ocean        = *std::get<FFTOceanComponent*>( compPair.second );
+      MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
+      FFTOceanComponent& ocean    = *std::get<FFTOceanComponent*>( entityEntry.arch );
 
       // Updating time elapsed
       ocean.parameters.time += static_cast<float>( deltaS );
 
-      const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS | COMPUTE | TRANSFER );
+      const CmdListHandle cmdList = GRIS::CreateCommandList( COMPUTE );
 
       GRIS::StartRecordingCommandList( cmdList );
 
@@ -157,9 +152,7 @@ void FFTOceanSystem::tick( double deltaS )
          GRIS::DestroyTexture( ocean.fourierComponentsZ );
          GRIS::DestroyTexture( ocean.pingpongTex );
 
-         // TODO In our case, if the entity would have another component modify this displacement
-         // texture, there would be no safeguard
-         GRIS::DestroyTexture( renderable.displacement );
+         GRIS::DestroyTexture( material.data.disp );
 
          // TODO Size based on dimensions and pixel format
          TextureDescription rgTexDesc = {};
@@ -171,14 +164,14 @@ void FFTOceanSystem::tick( double deltaS )
          rgTexDesc.usage              = ImageUsage::STORAGE;
          rgTexDesc.stages             = ShaderStage::COMPUTE_STAGE;
 
-         ocean.spectrum1 = GRIS::CreateTexture( cmdList, rgTexDesc );
-         ocean.spectrum2 = GRIS::CreateTexture( cmdList, rgTexDesc );
+         ocean.spectrum1 = GRIS::CreateTexture( rgTexDesc );
+         ocean.spectrum2 = GRIS::CreateTexture( rgTexDesc );
 
-         ocean.fourierComponentsY = GRIS::CreateTexture( cmdList, rgTexDesc );
-         ocean.fourierComponentsX = GRIS::CreateTexture( cmdList, rgTexDesc );
-         ocean.fourierComponentsZ = GRIS::CreateTexture( cmdList, rgTexDesc );
+         ocean.fourierComponentsY = GRIS::CreateTexture( rgTexDesc );
+         ocean.fourierComponentsX = GRIS::CreateTexture( rgTexDesc );
+         ocean.fourierComponentsZ = GRIS::CreateTexture( rgTexDesc );
 
-         ocean.pingpongTex = GRIS::CreateTexture( cmdList, rgTexDesc );
+         ocean.pingpongTex = GRIS::CreateTexture( rgTexDesc );
 
          TextureDescription dispTexDesc = {};
          dispTexDesc.size               = resolution * resolution * 4 * sizeof( float );
@@ -186,10 +179,11 @@ void FFTOceanSystem::tick( double deltaS )
          dispTexDesc.height             = resolution;
          dispTexDesc.type               = ImageType::TEXTURE_2D;
          dispTexDesc.format             = PixelFormat::RGBA32F;
-         dispTexDesc.usage              = ImageUsage::STORAGE;
-         dispTexDesc.stages             = ShaderStage::COMPUTE_STAGE | ShaderStage::VERTEX_STAGE;
+         dispTexDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
+         dispTexDesc.stages =
+             ShaderStage::COMPUTE_STAGE | ShaderStage::VERTEX_STAGE | ShaderStage::FRAGMENT_STAGE;
 
-         renderable.displacement = GRIS::CreateTexture( cmdList, dispTexDesc );
+         material.data.disp = GRIS::CreateTexture( dispTexDesc );
 
          TextureDescription butterflyDesc = {};
          butterflyDesc.size               = resolution * numberOfStages * 4 * sizeof( float );
@@ -200,9 +194,10 @@ void FFTOceanSystem::tick( double deltaS )
          butterflyDesc.usage              = ImageUsage::STORAGE;
          butterflyDesc.stages             = ShaderStage::COMPUTE_STAGE;
 
-         ocean.butterflyTexture = GRIS::CreateTexture( cmdList, butterflyDesc );
+         ocean.butterflyTexture = GRIS::CreateTexture( butterflyDesc );
 
-         ocean.bitReversedIndices = GRIS::CreateBuffer( sizeof( uint32_t ) * resolution );
+         ocean.bitReversedIndices = GRIS::CreateBuffer(
+             sizeof( uint32_t ) * resolution, "FFTOceanSystem Bit-Reversed Indices" );
 
          ocean.resolutionChanged = false;
 
@@ -215,7 +210,7 @@ void FFTOceanSystem::tick( double deltaS )
       if( ocean.needsUpdate )
       {
          // Generate the two Phillips spectrum textures
-         GRIS::BindPipeline( cmdList, spectraGenPip );
+         GRIS::BindPipeline( cmdList, "PHILLIPS_SPECTRA_GENERATION" );
 
          GRIS::UpdateConstantBuffer(
              cmdList,
@@ -236,7 +231,7 @@ void FFTOceanSystem::tick( double deltaS )
          const size_t indicesDataSize = indices.size() * sizeof( indices[0] );
          GRIS::CopyToBuffer( ocean.bitReversedIndices, indices.data(), 0, indicesDataSize );
 
-         GRIS::BindPipeline( cmdList, butterflyTexPip );
+         GRIS::BindPipeline( cmdList, "BUTTERFLY_TEX_GENERATION" );
 
          GRIS::UpdateConstantBuffer(
              cmdList,
@@ -256,7 +251,7 @@ void FFTOceanSystem::tick( double deltaS )
       // ===========================================================================================
 
       // Generating Fourier components time-dependent textures (dy, dx, dz)
-      GRIS::BindPipeline( cmdList, fourierComponentsPip );
+      GRIS::BindPipeline( cmdList, "FOURIER_COMPONENTS" );
 
       GRIS::UpdateConstantBuffer(
           cmdList,
@@ -272,133 +267,13 @@ void FFTOceanSystem::tick( double deltaS )
       GRIS::BindImage( cmdList, ocean.spectrum2, 0, 4 );
       GRIS::Dispatch( cmdList, resolution / 16, resolution / 16, 1 );
 
-      computeDisplacement( cmdList, renderable, ocean, FourierComponent::X );
-      computeDisplacement( cmdList, renderable, ocean, FourierComponent::Y );
-      computeDisplacement( cmdList, renderable, ocean, FourierComponent::Z );
+      computeDisplacement( cmdList, material, ocean, FourierComponent::X );
+      computeDisplacement( cmdList, material, ocean, FourierComponent::Y );
+      computeDisplacement( cmdList, material, ocean, FourierComponent::Z );
 
       GRIS::EndRecordingCommandList( cmdList );
 
-      GRIS::SubmitCommandList( cmdList );
-      GRIS::WaitOnCommandList( cmdList ); // TODO BAD
-
-      GRIS::DestroyCommandList( cmdList );
+      RenderGraph::AddPass( cmdList );
    }
-}
-
-bool FFTOceanSystem::FFTOceanSystem()
-{
-   // FFT Ocean parameters push constant range. This push constant is used in every FFTOCEAN shaders
-   const PushConstantRange oceanParamsRange = {
-       ShaderStage::COMPUTE_STAGE, 0, sizeof( FFTOceanComponent::Parameters )};
-
-   // Phillips spectra generation pipeline
-   // ==============================================================================================
-   {
-      DescriptorSetLayoutInfo spectraGenSet = {};  // Set 0
-
-      const ShaderResourceInfo spectrum1Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 0};
-      const ShaderResourceInfo spectrum2Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 1};
-
-      spectraGenSet.shaderResources.push_back( spectrum1Info );
-      spectraGenSet.shaderResources.push_back( spectrum2Info );
-
-      // Phillips spectra generation pipeline initialization
-      spectraGenPip.shader = "FFTOCEAN_SPECTRA_COMP";
-      spectraGenPip.pipLayout.descSets.push_back( spectraGenSet );
-      spectraGenPip.pipLayout.ranges.push_back( oceanParamsRange );
-   }
-
-   // X-Y-Z Fourier components generation pipeline
-   // ==============================================================================================
-   {
-      DescriptorSetLayoutInfo fourierComponentsSet = {};  // Set 0
-
-      const ShaderResourceInfo fourierYInfo = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 0};
-      const ShaderResourceInfo fourierXInfo = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 1};
-      const ShaderResourceInfo fourierZInfo = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 2};
-
-      const ShaderResourceInfo spectrum1Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 3};
-      const ShaderResourceInfo spectrum2Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 4};
-
-      fourierComponentsSet.shaderResources.push_back( fourierYInfo );
-      fourierComponentsSet.shaderResources.push_back( fourierXInfo );
-      fourierComponentsSet.shaderResources.push_back( fourierZInfo );
-
-      fourierComponentsSet.shaderResources.push_back( spectrum1Info );
-      fourierComponentsSet.shaderResources.push_back( spectrum2Info );
-
-      fourierComponentsPip.shader = "FFTOCEAN_FOURIERCOMPONENTS_COMP";
-      fourierComponentsPip.pipLayout.descSets.push_back( fourierComponentsSet );
-      fourierComponentsPip.pipLayout.ranges.push_back( oceanParamsRange );
-   }
-
-   // Butterfly texture generation pipeline
-   // ==============================================================================================
-   {
-      DescriptorSetLayoutInfo butterflyTexSet = {};  // Set 0
-
-      const ShaderResourceInfo butterflyTexInfo = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 0};
-      const ShaderResourceInfo bitReversedIndicesInfo = {
-          ShaderResourceType::STORAGE, ShaderStage::COMPUTE_STAGE, 1};
-
-      butterflyTexSet.shaderResources.push_back( butterflyTexInfo );
-      butterflyTexSet.shaderResources.push_back( bitReversedIndicesInfo );
-
-      butterflyTexPip.shader = "FFTOCEAN_BUTTERFLYTEX_COMP";
-      butterflyTexPip.pipLayout.descSets.push_back( butterflyTexSet );
-      butterflyTexPip.pipLayout.ranges.push_back( oceanParamsRange );
-   }
-
-   // Butterfly operations pipeline
-   // ==============================================================================================
-   {
-      DescriptorSetLayoutInfo butterflySet = {};  // Set 0
-
-      const ShaderResourceInfo butterflyTexInfo = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 0};
-      const ShaderResourceInfo pingpong0Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 1};
-      const ShaderResourceInfo pingpong1Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 2};
-
-      butterflySet.shaderResources.push_back( butterflyTexInfo );
-      butterflySet.shaderResources.push_back( pingpong0Info );
-      butterflySet.shaderResources.push_back( pingpong1Info );
-
-      butterflyPip.shader = "FFTOCEAN_BUTTERFLY_COMP";
-      butterflyPip.pipLayout.descSets.push_back( butterflySet );
-      butterflyPip.pipLayout.ranges.push_back( oceanParamsRange );
-   }
-
-   // Inversion and permutation pipeline
-   // ==============================================================================================
-   {
-      DescriptorSetLayoutInfo inversionPermutationSet = {};  // Set 0
-
-      const ShaderResourceInfo displacementInfo = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 0};
-      const ShaderResourceInfo pingpong0Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 1};
-      const ShaderResourceInfo pingpong1Info = {
-          ShaderResourceType::STORAGE_IMAGE, ShaderStage::COMPUTE_STAGE, 2};
-
-      inversionPermutationSet.shaderResources.push_back( displacementInfo );
-      inversionPermutationSet.shaderResources.push_back( pingpong0Info );
-      inversionPermutationSet.shaderResources.push_back( pingpong1Info );
-
-      inversionPermutationPip.shader = "FFTOCEAN_INVERSIONPERMUTATION_COMP";
-      inversionPermutationPip.pipLayout.descSets.push_back( inversionPermutationSet );
-      inversionPermutationPip.pipLayout.ranges.push_back( oceanParamsRange );
-   }
-
-   return true;
 }
 }

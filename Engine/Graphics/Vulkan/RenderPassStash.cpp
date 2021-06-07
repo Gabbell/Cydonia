@@ -15,22 +15,25 @@ RenderPassStash::RenderPassStash( const Device& device ) : m_device( device )
    _createDefaultRenderPasses();
 }
 
-VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderPassInfo& info )
+VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderTargetsInfo& targetsInfo )
 {
    // Find
-   const auto it = m_renderPasses.find( info );
+   const auto it = m_renderPasses.find( targetsInfo );
    if( it != m_renderPasses.end() )
    {
       return it->second;
    }
 
    // Creating attachments
-   std::optional<VkAttachmentReference> depthRef;
    std::vector<VkAttachmentReference> colorRefs;
+   std::vector<VkAttachmentReference> depthRefs;
+
    std::vector<VkAttachmentDescription> attachmentDescs;
    std::vector<VkSubpassDescription> subpassDescs;
    std::vector<VkSubpassDependency> dependencies;
-   for( const auto& attachment : info.attachments )
+
+   uint32_t attachmentIdx = 0;
+   for( const auto& attachment : targetsInfo.attachments )
    {
       VkAttachmentDescription vkAttachment = {};
       vkAttachment.format                  = TypeConversions::cydToVkFormat( attachment.format );
@@ -39,41 +42,47 @@ VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderPassInfo& info )
       vkAttachment.storeOp                 = TypeConversions::cydToVkOp( attachment.storeOp );
       vkAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       vkAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-      vkAttachment.initialLayout           = VK_IMAGE_LAYOUT_UNDEFINED;
+      vkAttachment.initialLayout = TypeConversions::cydToVkImageLayout( attachment.initialLayout );
 
       switch( attachment.type )
       {
          case CYD::AttachmentType::COLOR_PRESENTATION:
          {
             VkAttachmentReference presentationAttachmentRef = {};
-            presentationAttachmentRef.attachment            = 0;
+            presentationAttachmentRef.attachment            = attachmentIdx;
             presentationAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             colorRefs.push_back( presentationAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            
+            attachmentIdx++;
             break;
          }
          case CYD::AttachmentType::COLOR:
          {
             VkAttachmentReference colorAttachmentRef = {};
-            colorAttachmentRef.attachment            = 0;
+            colorAttachmentRef.attachment            = attachmentIdx;
             colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             colorRefs.push_back( colorAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+            attachmentIdx++;
             break;
          }
          case CYD::AttachmentType::DEPTH_STENCIL:
          {
             VkAttachmentReference depthAttachmentRef = {};
-            depthAttachmentRef.attachment            = 1;
+            depthAttachmentRef.attachment            = attachmentIdx;
             depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-            depthRef = depthAttachmentRef;
+            depthRefs.push_back( depthAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            attachmentIdx++;
             break;
          }
          default:
@@ -88,10 +97,12 @@ VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderPassInfo& info )
    subpass.colorAttachmentCount = static_cast<uint32_t>( colorRefs.size() );
    subpass.pColorAttachments    = colorRefs.data();
 
-   if( depthRef.has_value() )
+   if( !depthRefs.empty() )
    {
+      CYDASSERT( depthRefs.size() == 1 && "Multi depth attachment not supported" );
+
       // We have a depth attachment reference
-      subpass.pDepthStencilAttachment = &depthRef.value();
+      subpass.pDepthStencilAttachment = &depthRefs[0];
 
       VkSubpassDependency dependency = {};
       dependency.srcSubpass          = VK_SUBPASS_EXTERNAL;
@@ -122,7 +133,7 @@ VkRenderPass RenderPassStash::findOrCreate( const CYD::RenderPassInfo& info )
        vkCreateRenderPass( m_device.getVKDevice(), &renderPassInfo, nullptr, &renderPass );
    CYDASSERT( result == VK_SUCCESS && "RenderPass: Could not create default render pass" );
 
-   return m_renderPasses.insert( { info, renderPass } ).first->second;
+   return m_renderPasses.insert( { targetsInfo, renderPass } ).first->second;
 }
 
 void RenderPassStash::_createDefaultRenderPasses()

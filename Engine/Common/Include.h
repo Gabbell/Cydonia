@@ -2,6 +2,7 @@
 
 // Forward including handles
 #define FWDHANDLE( obj ) typedef struct obj##_T* obj;
+#define FWDFLAG( obj ) typedef uint32_t obj;
 
 // Add to a class to make it copiable
 #define COPIABLE( ClassName )                          \

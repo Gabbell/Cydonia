@@ -2,6 +2,10 @@
 
 #include <ECS/SharedComponents/BaseSharedComponent.h>
 
+#include <Graphics/Handles/ResourceHandle.h>
+
+#include <ECS/SharedComponents/SharedComponentType.h>
+
 #include <glm/glm.hpp>
 
 namespace CYD
@@ -9,20 +13,23 @@ namespace CYD
 class CameraComponent final : public BaseSharedComponent
 {
   public:
-   CameraComponent() = default;
+   CameraComponent();
    NON_COPIABLE( CameraComponent );
-   virtual ~CameraComponent() = default;
+   virtual ~CameraComponent();
 
    static constexpr SharedComponentType TYPE = SharedComponentType::CAMERA;
 
-   struct ViewProjection
+   // GPU Buffers
+   BufferHandle viewBuffer;
+
+   struct EnvironmentView
    {
-      glm::mat4 view = glm::mat4( 1.0f );
-      glm::mat4 proj = glm::mat4( 1.0f );
-   } vp;
+      glm::vec4 position = glm::vec4( 0.0f );
+      glm::mat4 viewMat  = glm::mat4( 1.0f );
+      glm::mat4 projMat  = glm::mat4( 1.0f );
+   } view;
 
-   glm::vec4 pos;
-
+   // Projection mode
    enum class ProjectionMode
    {
       UNKNOWN,

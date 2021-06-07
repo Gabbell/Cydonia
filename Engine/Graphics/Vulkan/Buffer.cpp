@@ -7,20 +7,35 @@
 
 namespace vk
 {
+Buffer::Buffer() { m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 ); }
+
+void Buffer::incUse() { ( *m_useCount )++; }
+void Buffer::decUse()
+{
+   if( m_useCount->load() == 0 )
+   {
+      CYDASSERT( !"Buffer: Decrementing use count would go below 0" );
+      return;
+   }
+
+   ( *m_useCount )--;
+}
+
 void Buffer::acquire(
     const Device& device,
     size_t size,
     CYD::BufferUsageFlag usage,
-    CYD::MemoryTypeFlag memoryType )
+    CYD::MemoryTypeFlag memoryType,
+    const std::string_view name )
 {
+   m_name       = name;
    m_pDevice    = &device;
    m_size       = size;
    m_memoryType = memoryType;
 
    CYDASSERT(
-       m_useCount == 0 && "Buffer: Use count was not 0. This buffer was probably not released" );
-
-   m_useCount = 1;
+       ( m_useCount->load() ) == 0 &&
+       "Buffer: Use count was not 0. This buffer was probably not released" );
 
    VkBufferCreateInfo bufferInfo = {};
    bufferInfo.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -58,22 +73,25 @@ void Buffer::acquire(
    CYDASSERT( result == VK_SUCCESS && "Buffer: Could not create buffer" );
 
    _allocateMemory();
+
+   incUse();
 }
 
 void Buffer::release()
 {
    if( m_pDevice )
    {
+      CYDASSERT( m_useCount->load() == 0 && "Buffer: released a still used buffer" );
+
       vkDestroyBuffer( m_pDevice->getVKDevice(), m_vkBuffer, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
+      m_name       = DEFAULT_BUFFER_NAME;
       m_size       = 0;
       m_memoryType = 0;
       m_pDevice    = nullptr;
       m_vkBuffer   = nullptr;
       m_vkMemory   = nullptr;
-
-      m_useCount = 0;
    }
 }
 
