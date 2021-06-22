@@ -135,7 +135,8 @@ void BindPipeline( CmdListHandle cmdList, std::string_view pipName )
    BindPipeline( cmdList, pPipInfo );
 }
 
-void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
+template <>
+void BindVertexBuffer<Vertex>( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
 {
    b->bindVertexBuffer( cmdList, bufferHandle );
 }
@@ -385,4 +386,16 @@ void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t w
 }
 
 void PresentFrame() { b->presentFrame(); }
+
+void BeginDebugRange( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color )
+{
+   b->beginDebugRange( cmdList, name, color );
+}
+
+void EndDebugRange( CmdListHandle cmdList ) { b->endDebugRange( cmdList ); }
+
+void InsertDebugLabel( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color )
+{
+   b->insertDebugLabel( cmdList, name, color );
+}
 }

@@ -72,8 +72,8 @@ class Device final
    void cleanup();  // Clean up unused resources
 
    // Getters
-   const VkPhysicalDevice& getPhysicalDevice() const noexcept { return m_physDevice; }
-   const VkDevice& getVKDevice() const noexcept { return m_vkDevice; }
+   VkPhysicalDevice getPhysicalDevice() const noexcept { return m_physDevice; }
+   VkDevice getVKDevice() const noexcept { return m_vkDevice; }
 
    Swapchain& getSwapchain() const { return *m_swapchain; }
 

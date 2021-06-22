@@ -144,6 +144,12 @@ class CommandBuffer final
    void copyBuffer( Buffer* src, Buffer* dst );
    void uploadBufferToTex( Buffer* src, Texture* dst );
 
+   // Debug
+   // ==============================================================================================
+   void beginDebugRange( const char* name, const std::array<float, 4>& color );
+   void endDebugRange();
+   void insertDebugMarker( const char* name, const std::array<float, 4>& color );
+
   private:
    // Command Buffer Internal State
    // =============================================================================================

@@ -1,5 +1,6 @@
 #include <ECS/Systems/Lighting/ShadowMapSystem.h>
 
+#include <Graphics/VertexLayout.h>
 #include <Graphics/GRIS/RenderInterface.h>
 
 #include <ECS/EntityManager.h>
@@ -71,7 +72,7 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       {
          if( mesh.vertexBuffer )
          {
-            GRIS::BindVertexBuffer( cmdList, mesh.vertexBuffer );
+            GRIS::BindVertexBuffer<Vertex>( cmdList, mesh.vertexBuffer );
             if( mesh.indexBuffer )
             {
                // This renderable has an index buffer, use it to draw

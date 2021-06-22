@@ -27,10 +27,11 @@ CommandBuffer* CommandPoolManager::acquire(
    const auto it = m_commandPools.find( threadId );
    if( it == m_commandPools.end() )
    {
+      // There were no command pools found for this thread, create them
       _initializePoolsForThread( threadId );
    }
 
-   // Attempting to find an adequate type
+   // Attempting to find a pool of the adequate type
    const auto poolIt = std::find_if(
        it->second.begin(), it->second.end(), [usage, presentable]( const CommandBufferPool& pool ) {
           return ( usage & pool.getType() ) && !( presentable && !pool.supportsPresentation() );
@@ -58,6 +59,8 @@ void CommandPoolManager::cleanup()
 
 void CommandPoolManager::_initializePoolsForThread( const std::thread::id threadId )
 {
+   m_commandPools[threadId].reserve( m_nbFamilies );
+
    for( uint32_t familyIdx = 0; familyIdx < m_nbFamilies; ++familyIdx )
    {
       const Device::QueueFamily& family = m_device.getQueueFamilyFromIndex( familyIdx );

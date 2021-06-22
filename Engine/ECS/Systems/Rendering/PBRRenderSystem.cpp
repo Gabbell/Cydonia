@@ -1,6 +1,7 @@
 #include <ECS/Systems/Rendering/PBRRenderSystem.h>
 
 #include <Graphics/RenderGraph.h>
+#include <Graphics/VertexLayout.h>
 #include <Graphics/GRIS/RenderInterface.h>
 
 #include <ECS/EntityManager.h>
@@ -24,7 +25,7 @@ static void setupScene( CmdListHandle cmdList )
    GRIS::SetScissor( cmdList, scene.scissor );
 }
 
-bool PBRRenderSystem::compareEntities( const EntityEntry& first, const EntityEntry& second )
+bool PBRRenderSystem::_compareEntities( const EntityEntry& first, const EntityEntry& second )
 {
    // We are sorting entities by their pipeline
    // TODO Sort entities better by shader/material
@@ -114,7 +115,7 @@ void PBRRenderSystem::tick( double /*deltaS*/ )
       {
          if( mesh.vertexBuffer )
          {
-            GRIS::BindVertexBuffer( cmdList, mesh.vertexBuffer );
+            GRIS::BindVertexBuffer<Vertex>( cmdList, mesh.vertexBuffer );
             if( mesh.indexBuffer )
             {
                // This renderable has an index buffer, use it to draw

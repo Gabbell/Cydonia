@@ -154,6 +154,18 @@ class VKRenderBackend final : public RenderBackend
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
    void presentFrame() override;
 
+   // Debug
+   // ==============================================================================================
+   void beginDebugRange(
+       CmdListHandle cmdList,
+       const char* name,
+       const std::array<float, 4>& color ) override;
+   void endDebugRange( CmdListHandle cmdList ) override;
+   void insertDebugLabel(
+       CmdListHandle cmdList,
+       const char* name,
+       const std::array<float, 4>& color ) override;
+
   private:
    VKRenderBackendImp* _imp;
 };

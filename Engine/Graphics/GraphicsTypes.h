@@ -111,6 +111,8 @@ enum class ImageLayout
    GENERAL,
    COLOR_ATTACHMENT,
    DEPTH_ATTACHMENT,
+   DEPTH_STENCIL_ATTACHMENT,
+   DEPTH_STENCIL_READ,
    SHADER_READ,
    TRANSFER_SRC,
    TRANSFER_DST,
@@ -306,6 +308,7 @@ struct PipelineLayoutInfo
 
 struct SwapchainInfo
 {
+   uint32_t imageCount;
    Extent2D extent;
    PixelFormat format;
    ColorSpace space;

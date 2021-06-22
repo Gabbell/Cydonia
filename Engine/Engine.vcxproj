@@ -170,6 +170,7 @@
   <ItemGroup>
     <ClCompile Include="Applications\Application.cpp" />
     <ClCompile Include="Applications\VKSandbox.cpp" />
+    <ClCompile Include="Common\ThreadPool.cpp" />
     <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
     <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="ECS\SharedComponents\CameraComponent.cpp" />
@@ -209,6 +210,7 @@
     <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBufferPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandPoolManager.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DebugUtilsLabel.cpp" />
     <ClCompile Include="Graphics\Vulkan\DescriptorPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\Device.cpp" />
     <ClCompile Include="Graphics\Vulkan\DeviceHerder.cpp" />
@@ -230,7 +232,6 @@
     <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
     <ClCompile Include="UI\UserInterface.cpp" />
-    <ClCompile Include="Utilities\ThreadPool.cpp" />
     <ClCompile Include="Window\GLFWWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -238,6 +239,7 @@
     <ClInclude Include="Applications\VKSandbox.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Common\Include.h" />
+    <ClInclude Include="Common\ThreadPool.h" />
     <ClInclude Include="Common\Vulkan.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\Behaviour\EntityFollowComponent.h" />
@@ -298,6 +300,7 @@
     <ClInclude Include="Graphics\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBufferPool.h" />
     <ClInclude Include="Graphics\Vulkan\CommandPoolManager.h" />
+    <ClInclude Include="Graphics\Vulkan\DebugUtilsLabel.h" />
     <ClInclude Include="Graphics\Vulkan\DescriptorPool.h" />
     <ClInclude Include="Graphics\Vulkan\Device.h" />
     <ClInclude Include="Graphics\Vulkan\DeviceHerder.h" />
@@ -322,7 +325,6 @@
     <ClInclude Include="ThirdParty\ImGui\imstb_textedit.h" />
     <ClInclude Include="ThirdParty\ImGui\imstb_truetype.h" />
     <ClInclude Include="UI\UserInterface.h" />
-    <ClInclude Include="Utilities\ThreadPool.h" />
     <ClInclude Include="Window\GLFWWindow.h" />
   </ItemGroup>
   <ItemGroup>

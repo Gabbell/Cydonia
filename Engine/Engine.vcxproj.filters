@@ -62,9 +62,10 @@
     <ClCompile Include="Graphics\VertexLayout.cpp" />
     <ClCompile Include="ECS\Systems\Procedural\FFTOceanSystem.cpp" />
     <ClCompile Include="Graphics\Material.cpp" />
-    <ClCompile Include="Utilities\ThreadPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBufferPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandPoolManager.cpp" />
+    <ClCompile Include="Common\ThreadPool.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DebugUtilsLabel.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
@@ -154,9 +155,10 @@
     <ClInclude Include="UI\UserInterface.h" />
     <ClInclude Include="ECS\Systems\Procedural\FFTOceanSystem.h" />
     <ClInclude Include="Graphics\Material.h" />
-    <ClInclude Include="Utilities\ThreadPool.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBufferPool.h" />
     <ClInclude Include="Graphics\Vulkan\CommandPoolManager.h" />
+    <ClInclude Include="Common\ThreadPool.h" />
+    <ClInclude Include="Graphics\Vulkan\DebugUtilsLabel.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

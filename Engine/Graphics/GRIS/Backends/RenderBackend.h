@@ -28,16 +28,17 @@ class RenderBackend
    virtual CmdListHandle
    createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable ) = 0;
 
-   virtual void startRecordingCommandList( CmdListHandle cmdList )        = 0;
-   virtual void endRecordingCommandList( CmdListHandle cmdList )          = 0;
-   virtual void submitCommandList( CmdListHandle cmdList )                = 0;
-   virtual void resetCommandList( CmdListHandle cmdList )                 = 0;
-   virtual void waitOnCommandList( CmdListHandle cmdList )                = 0;
-   virtual void syncOnCommandList( CmdListHandle from, CmdListHandle to ) = 0;
-   virtual void destroyCommandList( CmdListHandle cmdList )               = 0;
+   virtual void startRecordingCommandList( CmdListHandle cmdList ) = 0;
+   virtual void endRecordingCommandList( CmdListHandle cmdList )   = 0;
+   virtual void submitCommandList( CmdListHandle cmdList )         = 0;
+   virtual void resetCommandList( CmdListHandle cmdList )          = 0;
+   virtual void waitOnCommandList( CmdListHandle cmdList )         = 0;
+   virtual void destroyCommandList( CmdListHandle cmdList )        = 0;
 
-   virtual void syncOnSwapchain( CmdListHandle cmdList ) = 0;
-   virtual void syncToSwapchain( CmdListHandle cmdList ) = 0;
+   virtual void syncOnCommandList( CmdListHandle /*from*/, CmdListHandle /*to*/ ) {}
+
+   virtual void syncOnSwapchain( CmdListHandle /*cmdList*/ ) {}
+   virtual void syncToSwapchain( CmdListHandle /*cmdList*/ ) {}
 
    // Pipeline Specification
    // ==============================================================================================
@@ -136,5 +137,21 @@ class RenderBackend
    virtual void
    dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) = 0;
    virtual void presentFrame()                                                       = 0;
+
+   // Debug
+   // ==============================================================================================
+   virtual void beginDebugRange(
+       CmdListHandle /*cmdList*/,
+       const char* /*name*/,
+       const std::array<float, 4>& /*color*/ )
+   {
+   }
+   virtual void endDebugRange( CmdListHandle /*cmdList*/ ) {}
+   virtual void insertDebugLabel(
+       CmdListHandle /*cmdList*/,
+       const char* /*name*/,
+       const std::array<float, 4>& /*color*/ )
+   {
+   }
 };
 }

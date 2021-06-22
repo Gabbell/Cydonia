@@ -34,6 +34,7 @@ namespace CYD
 VKSandbox::VKSandbox( uint32_t width, uint32_t height, const char* title )
     : Application( width, height, title )
 {
+   // Core initializers
    GRIS::InitRenderBackend( GRIS::VK, *m_window );
    GRIS::InitializeUI();
    ECS::Initialize();
@@ -84,15 +85,14 @@ void VKSandbox::preLoop()
 
    const EntityHandle ocean = ECS::CreateEntity();
    ECS::Assign<RenderableComponent>( ocean );
-   ECS::Assign<TransformComponent>(
-       ocean, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 20.0f, 20.0f, 20.0f ) );
+   ECS::Assign<TransformComponent>( ocean, glm::vec3( 0.0f, 0.0f, 0.0f ) );
    ECS::Assign<MeshComponent>( ocean, "Ocean" );
    ECS::Assign<FFTOceanComponent>( ocean, 512, 150, 100.0f, 20.0f, 100.0f, 0.0f );
    ECS::Assign<MaterialComponent>( ocean, "OCEAN_RENDER" );
 
    std::vector<Vertex> gridVerts;
    std::vector<uint32_t> gridIndices;
-   MeshGeneration::Grid( 512, 512, gridVerts, gridIndices );
+   MeshGeneration::Grid( gridVerts, gridIndices, 512, 512 );
 
    // Creating grid mesh used for the ocean
    const CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "Ocean Transfer" );

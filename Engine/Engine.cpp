@@ -3,7 +3,7 @@
 int main()
 {
    {
-      CYD::VKSandbox app( 1920, 1080, "GARBAGIO" );
+      CYD::VKSandbox app( 1920, 1080, "Cydonia Sandbox" );
       app.startLoop();
    }
 

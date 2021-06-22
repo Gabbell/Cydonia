@@ -17,7 +17,7 @@ class VertexLayout
 
    struct Attribute
    {
-      // Not used as a pixel format but as sizing factor for vector components
+      // Not used as a pixel format but as a sizing factor for vector components
       PixelFormat vecFormat = PixelFormat::RGBA32F;
       uint32_t location     = 0;
       uint32_t offset       = 0;
@@ -50,7 +50,7 @@ class Vertex final
    }
 
    glm::vec3 pos;
-   glm::vec4 col;
+   glm::vec4 col = glm::vec4( 1.0f );
    glm::vec3 uv;
    glm::vec3 normal;
 };

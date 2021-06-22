@@ -66,7 +66,7 @@ static void computeDisplacement(
       GRIS::Dispatch( cmdList, resolution / 16, resolution / 16, 1 );
 
       // Horizontal butterfly shaderpass
-      ocean.parameters.pingpong = ( ++ocean.parameters.pingpong ) % 2;
+      ocean.parameters.pingpong = !ocean.parameters.pingpong;
    }
 
    ocean.parameters.direction = 1;
@@ -84,7 +84,7 @@ static void computeDisplacement(
       GRIS::Dispatch( cmdList, resolution / 16, resolution / 16, 1 );
 
       // Vertical butterfly shaderpass
-      ocean.parameters.pingpong = ( ++ocean.parameters.pingpong ) % 2;
+      ocean.parameters.pingpong = !ocean.parameters.pingpong;
    }
 
    // Inversion and permutation shaderpass
@@ -267,9 +267,9 @@ void FFTOceanSystem::tick( double deltaS )
       GRIS::BindImage( cmdList, ocean.spectrum2, 0, 4 );
       GRIS::Dispatch( cmdList, resolution / 16, resolution / 16, 1 );
 
-      computeDisplacement( cmdList, material, ocean, FourierComponent::X );
+      //computeDisplacement( cmdList, material, ocean, FourierComponent::X );
       computeDisplacement( cmdList, material, ocean, FourierComponent::Y );
-      computeDisplacement( cmdList, material, ocean, FourierComponent::Z );
+      //computeDisplacement( cmdList, material, ocean, FourierComponent::Z );
 
       GRIS::EndRecordingCommandList( cmdList );
 

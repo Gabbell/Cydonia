@@ -8,10 +8,10 @@
 namespace CYD::MeshGeneration
 {
 void Grid(
-    uint32_t rows,
-    uint32_t columns,
     std::vector<Vertex>& vertices,
-    std::vector<uint32_t>& indices )
+    std::vector<uint32_t>& indices,
+    uint32_t rows,
+    uint32_t columns )
 {
    vertices.resize( rows * columns );
 
@@ -27,7 +27,6 @@ void Grid(
              ( static_cast<float>( r ) / static_cast<float>( rows ) ) - 0.5f );
          vertices[index].uv =
              glm::vec3( static_cast<float>( c ) / columns, static_cast<float>( r ) / rows, 0.0f );
-         vertices[index].col    = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
          vertices[index].normal = glm::vec3( 0.0, 1.0f, 0.0f );
       }
    }

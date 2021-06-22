@@ -5,18 +5,19 @@
 #include <Window/GLFWWindow.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/Handles/ResourceHandleManager.h>
-#include <Graphics/Vulkan/Instance.h>
-#include <Graphics/Vulkan/Surface.h>
-#include <Graphics/Vulkan/DeviceHerder.h>
+#include <Graphics/Utility/GraphicsIO.h>
+#include <Graphics/Vulkan/BarriersHelper.h>
+#include <Graphics/Vulkan/Buffer.h>
+#include <Graphics/Vulkan/CommandBuffer.h>
+#include <Graphics/Vulkan/DebugUtilsLabel.h>
 #include <Graphics/Vulkan/DescriptorPool.h>
 #include <Graphics/Vulkan/Device.h>
+#include <Graphics/Vulkan/DeviceHerder.h>
+#include <Graphics/Vulkan/Instance.h>
+#include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/Swapchain.h>
-#include <Graphics/Vulkan/CommandBuffer.h>
-#include <Graphics/Vulkan/Buffer.h>
 #include <Graphics/Vulkan/Texture.h>
-#include <Graphics/Vulkan/BarriersHelper.h>
 
 #include <ThirdParty/ImGui/imgui_impl_glfw.h>
 #include <ThirdParty/ImGui/imgui_impl_vulkan.h>
@@ -40,12 +41,15 @@ class VKRenderBackendImp
    {
       // Initializing swapchain on main device
       SwapchainInfo scInfo = {};
+      scInfo.imageCount    = 2;  // Double buffered
       scInfo.extent        = window.getExtent();
       scInfo.format        = PixelFormat::BGRA8_UNORM;
       scInfo.space         = ColorSpace::SRGB_NONLINEAR;
       scInfo.mode          = PresentMode::IMMEDIATE;
 
       m_mainSwapchain = m_mainDevice.createSwapchain( scInfo );
+
+      vk::DebugUtilsLabel::Initialize( m_mainDevice );
    }
 
    ~VKRenderBackendImp() = default;
@@ -620,6 +624,26 @@ class VKRenderBackendImp
       m_mainSwapchain->present();
    }
 
+   void
+   beginDebugRange( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      vk::DebugUtilsLabel::Begin( *cmdBuffer, name, color );
+   }
+
+   void endDebugRange( CmdListHandle cmdList )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      vk::DebugUtilsLabel::End( *cmdBuffer );
+   }
+
+   void
+   insertDebugLabel( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      vk::DebugUtilsLabel::Insert( *cmdBuffer, name, color );
+   }
+
   private:
    const Window& m_window;
    vk::Instance m_instance;
@@ -929,4 +953,22 @@ void VKRenderBackend::dispatch(
 }
 
 void VKRenderBackend::presentFrame() { _imp->presentFrame(); }
+
+void VKRenderBackend::beginDebugRange(
+    CmdListHandle cmdList,
+    const char* name,
+    const std::array<float, 4>& color )
+{
+   _imp->beginDebugRange( cmdList, name, color );
+}
+
+void VKRenderBackend::endDebugRange( CmdListHandle cmdList ) { _imp->endDebugRange( cmdList ); }
+
+void VKRenderBackend::insertDebugLabel(
+    CmdListHandle cmdList,
+    const char* name,
+    const std::array<float, 4>& color )
+{
+   _imp->insertDebugLabel( cmdList, name, color );
+}
 }

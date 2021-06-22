@@ -4,6 +4,11 @@
 #include <Graphics/RenderPipelines.h>
 #include <Graphics/Handles/ResourceHandle.h>
 
+#include <array>
+#include <string>
+#include <string_view>
+#include <vector>
+
 // =================================================================================================
 // Graphics Rendering Interface Subsystem
 // =================================================================================================
@@ -18,11 +23,11 @@ namespace GRIS
 enum API
 {
    NONE,
-   VK,
-   D3D12,
-   D3D11,
-   GL,
-   MTL
+   VK,     // Vulkan
+   D3D12,  // DirectX 12 (Not implemented)
+   D3D11,  // DirectX 11 (Not implemented)
+   GL,     // OpenGL (Not implemented)
+   MTL     // Metal (Not implemented)
 };
 
 // Core initialization
@@ -38,6 +43,7 @@ void DrawUI( CmdListHandle cmdList );
 void RenderBackendCleanup();
 
 // Command Buffers/Lists
+// ===============================================================================================
 CmdListHandle CreateCommandList(
     QueueUsageFlag usage,
     const std::string_view name = "",
@@ -47,9 +53,8 @@ void EndRecordingCommandList( CmdListHandle cmdList );
 void SubmitCommandList( CmdListHandle cmdList );
 
 // TODO Parallel work submission
-// Will submit the command lists in as much of parallel way as possible (multiple queues). Ideally,
-// these command lists don't have any inter-dependencies but if there are, they should be specified
-// with GPU semaphores.
+// Will submit the command lists in as much of parallel way as possible (multiple queues). If
+// these command lists have any inter-dependencies, they should be specified with GPU semaphores.
 void SubmitCommandLists( std::vector<CmdListHandle> /*cmdLists*/ );
 
 void ResetCommandList( CmdListHandle cmdList );
@@ -61,20 +66,24 @@ void DestroyCommandList( CmdListHandle cmdList );
 void SyncOnSwapchain( CmdListHandle cmdList );
 void SyncToSwapchain( CmdListHandle cmdList );
 
+// Pipeline
+// ===============================================================================================
+
 // Dynamic state
 // TODO Dynamic depth? Some APIs may have different min/max depth conventions
 void SetViewport( CmdListHandle cmdList, const Viewport& viewport );
 void SetScissor( CmdListHandle cmdList, const Rectangle& scissor );
 
-// Bind shader pipelines
 void BindPipeline( CmdListHandle cmdList, const std::string_view pipName );
 void BindPipeline( CmdListHandle cmdList, const PipelineInfo* pipInfo );
 void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo );
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo );
 
 // Bind vertex and index buffers
+template <class VertexLayout>
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
-template <class T>
+
+template <class Type>
 void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );
 
 // Bind shader resources by binding/set
@@ -104,6 +113,7 @@ void UpdateConstantBuffer(
     const void* pData );
 
 // Resources
+// ===============================================================================================
 TextureHandle CreateTexture( const TextureDescription& desc );
 TextureHandle CreateTexture(
     CmdListHandle transferList,
@@ -139,7 +149,8 @@ void DestroyVertexBuffer( VertexBufferHandle bufferHandle );
 void DestroyIndexBuffer( IndexBufferHandle bufferHandle );
 void DestroyBuffer( BufferHandle bufferHandle );
 
-// Drawing
+// Drawing and Presentation
+// ===============================================================================================
 void PrepareFrame();
 void BeginRendering( CmdListHandle cmdList );
 void BeginRendering(
@@ -152,5 +163,14 @@ void DrawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex
 void DrawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex = 0 );
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
 void PresentFrame();
+
+// Debug
+// ===============================================================================================
+void BeginDebugRange( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color );
+void EndDebugRange( CmdListHandle cmdList );
+void InsertDebugLabel(
+    CmdListHandle cmdList,
+    const char* name,
+    const std::array<float, 4>& color );
 }
 }

@@ -43,8 +43,9 @@ class CommandPoolManager final
 
    uint32_t m_nbFamilies;
 
-   using PoolPerQueueFamilyIndex = std::vector<CommandBufferPool>;
+   using PoolsPerQueueFamily = std::vector<CommandBufferPool>;
 
-   std::unordered_map<std::thread::id, PoolPerQueueFamilyIndex> m_commandPools;
+   // One vector of command pools of each queue family per thread
+   std::unordered_map<std::thread::id, PoolsPerQueueFamily> m_commandPools;
 };
 }

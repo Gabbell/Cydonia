@@ -552,7 +552,7 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
    passBeginInfo.renderArea.extent     = swapchain.getVKExtent();
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = { 1.0, 1.0f, 1.0f, 1.0f };
+   clearValues[0]                          = { 0.2f, 0.2f, 0.2f, 1.0f };
    clearValues[1]                          = { 1.0f, 0 };
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );

@@ -26,16 +26,9 @@ Swapchain::Swapchain( Device& device, const Surface& surface, const CYD::Swapcha
    _createFramebuffers( info );
 }
 
-static uint32_t chooseImageCount( const VkSurfaceCapabilitiesKHR& caps )
+static uint32_t chooseImageCount( uint32_t desiredCount, const VkSurfaceCapabilitiesKHR& caps )
 {
-   uint32_t imageCount = caps.minImageCount;
-
-   if( caps.maxImageCount > 0 && imageCount > caps.maxImageCount )
-   {
-      imageCount = caps.maxImageCount;
-   }
-
-   return imageCount;
+   return std::clamp( desiredCount, caps.minImageCount, caps.maxImageCount);
 }
 
 static VkExtent2D chooseExtent( const CYD::Extent2D& extent, const VkSurfaceCapabilitiesKHR& caps )
@@ -151,7 +144,7 @@ void Swapchain::_createSwapchain( const CYD::SwapchainInfo& info )
    m_surfaceFormat = std::make_unique<VkSurfaceFormatKHR>(
        chooseFormat( info.format, info.space, physDevice, vkSurface ) );
    m_extent      = std::make_unique<VkExtent2D>( chooseExtent( info.extent, caps ) );
-   m_imageCount  = chooseImageCount( caps );
+   m_imageCount  = chooseImageCount( info.imageCount, caps );
    m_presentMode = choosePresentMode( info.mode, physDevice, vkSurface );
 
    VkSwapchainCreateInfoKHR createInfo = {};
@@ -309,6 +302,7 @@ void Swapchain::_createFramebuffers( const CYD::SwapchainInfo& info )
    colorPresentation.loadOp        = CYD::LoadOp::LOAD;
    colorPresentation.initialLayout = CYD::ImageLayout::PRESENT_SRC;
    depth.loadOp                    = CYD::LoadOp::LOAD;
+   depth.initialLayout             = CYD::ImageLayout::DEPTH_STENCIL_ATTACHMENT;
 
    targetsInfo.attachments.clear();
    targetsInfo.attachments.push_back( colorPresentation );

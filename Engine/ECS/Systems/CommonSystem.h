@@ -62,17 +62,17 @@ class CommonSystem : public BaseSystem
 
    std::vector<EntityEntry> m_entities;
 
+   // Override this function in your system to tell it how the entities should be inserted/sorted.
+   // By default, the entities are in the same order they were assigned to the system. Return true
+   // if the first argument is "less" (ordered before) than the second.
+   virtual bool _compareEntities( const EntityEntry&, const EntityEntry& ) { return true; }
+
   public:
    NON_COPIABLE( CommonSystem );
    virtual ~CommonSystem() = default;
 
    // If the system is not watching any entity, no need to tick
    bool hasToTick() const noexcept override { return !m_entities.empty(); }
-
-   // Override this function in your system to tell it how the entities should be inserted/sorted.
-   // By default, the entities are in the same order they were assigned to the system. Return true
-   // if the first argument is "less" (ordered before) than the second.
-   virtual bool compareEntities( const EntityEntry&, const EntityEntry& ) { return true; }
 
    void onEntityAssigned( const Entity& entity ) override final
    {
@@ -101,7 +101,7 @@ class CommonSystem : public BaseSystem
                     m_entities.cend(),
                     entry,
                     [this]( const EntityEntry& first, const EntityEntry& second ) {
-                       return compareEntities( first, second );
+                       return _compareEntities( first, second );
                     } ),
                 std::move( entry ) );
          }

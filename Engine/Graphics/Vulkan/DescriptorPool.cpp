@@ -16,11 +16,15 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
 
    const auto& limits = m_device.getProperties()->limits;
 
-   const uint32_t maxDescriptorSetUniformBuffers = limits.maxDescriptorSetUniformBuffers;
-   const uint32_t maxDescriptorSetStorageBuffers = limits.maxDescriptorSetStorageBuffers;
-   const uint32_t maxDescriptorSetSampledImages  = limits.maxDescriptorSetSampledImages;
-   const uint32_t maxDescriptorSetStorageImages  = limits.maxDescriptorSetStorageImages;
-   const uint32_t maxDescriptorSetSamplers       = limits.maxDescriptorSetSamplers;
+   const uint32_t maxDescriptorSetUniformBuffers =
+       std::min( 128u, limits.maxDescriptorSetUniformBuffers );
+   const uint32_t maxDescriptorSetStorageBuffers =
+       std::min( 128u, limits.maxDescriptorSetStorageBuffers );
+   const uint32_t maxDescriptorSetSampledImages =
+       std::min( 128u, limits.maxDescriptorSetSampledImages );
+   const uint32_t maxDescriptorSetStorageImages =
+       std::min( 128u, limits.maxDescriptorSetStorageImages );
+   const uint32_t maxDescriptorSetSamplers = std::min( 128u, limits.maxDescriptorSetSamplers );
 
    const uint32_t totalDescriptorSets =
        maxDescriptorSetUniformBuffers + maxDescriptorSetStorageBuffers +
