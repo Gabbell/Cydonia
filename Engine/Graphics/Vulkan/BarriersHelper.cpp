@@ -1,8 +1,8 @@
 #include <Graphics/Vulkan/BarriersHelper.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
 
+#include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
 #include <Graphics/Vulkan/Texture.h>
 #include <Graphics/Vulkan/TypeConversions.h>

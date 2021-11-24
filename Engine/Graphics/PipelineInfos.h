@@ -11,6 +11,22 @@
 
 namespace CYD
 {
+template <class T>
+struct ResourceBinding
+{
+   ResourceBinding() = default;
+   ResourceBinding( const T resource, CYD::ShaderResourceType type, uint32_t set, uint32_t binding )
+       : resource( resource ), type( type ), set( set ), binding( binding )
+   {
+   }
+
+   mutable T resource;
+   CYD::ShaderResourceType type;
+   uint32_t set;
+   uint32_t binding;
+   bool valid = false;
+};
+
 // Should not create unspecialized version of this struct
 struct PipelineInfo
 {
@@ -19,6 +35,32 @@ struct PipelineInfo
    PipelineType type;
    PipelineLayoutInfo pipLayout;
    ShaderConstants constants;
+
+   template <class T>
+   ResourceBinding<T> findBinding( const T resource, const std::string_view name ) const
+   {
+      ResourceBinding<T> binding;
+
+      for( const auto& shaderSetInfo : pipLayout.shaderSets )
+      {
+         for( const auto& shaderBindingInfo : shaderSetInfo.second.shaderBindings )
+         {
+            if( shaderBindingInfo.name == name )
+            {
+               // We found the binding
+               binding.binding = shaderBindingInfo.binding;
+               binding.type    = shaderBindingInfo.type;
+               binding.set     = shaderSetInfo.first;
+
+               // A resource binding is only valid if the resource is not null
+               if( resource ) binding.valid = true;
+            }
+         }
+      }
+
+      binding.resource = resource;
+      return binding;
+   }
 
   protected:
    PipelineInfo();

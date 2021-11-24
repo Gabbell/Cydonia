@@ -1,7 +1,6 @@
 #include <Graphics/Vulkan/DebugUtilsLabel.h>
 
-#include <Common/Vulkan.h>
-
+#include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
 #include <Graphics/Vulkan/Device.h>
 

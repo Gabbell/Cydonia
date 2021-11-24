@@ -1,10 +1,10 @@
 #include <Graphics/Vulkan/Surface.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
 
 #include <Window/GLFWWindow.h>
 
+#include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/Instance.h>
 
 #include <GLFW/glfw3.h>

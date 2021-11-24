@@ -13,6 +13,7 @@
 namespace CYD
 {
 class Entity;
+class EntityManager;
 }
 
 // ================================================================================================
@@ -60,6 +61,7 @@ class CommonSystem : public BaseSystem
       Archetype arch;
    };
 
+   EntityManager* m_ecs = nullptr;
    std::vector<EntityEntry> m_entities;
 
    // Override this function in your system to tell it how the entities should be inserted/sorted.
@@ -70,6 +72,8 @@ class CommonSystem : public BaseSystem
   public:
    NON_COPIABLE( CommonSystem );
    virtual ~CommonSystem() = default;
+
+    void assignEntityManager( EntityManager* ecs ) { m_ecs = ecs; }
 
    // If the system is not watching any entity, no need to tick
    bool hasToTick() const noexcept override { return !m_entities.empty(); }

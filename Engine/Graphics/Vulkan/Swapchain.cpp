@@ -1,12 +1,12 @@
 #include <Graphics/Vulkan/Swapchain.h>
 
-#include <Common/Vulkan.h>
 #include <Common/Assert.h>
 
+#include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
-#include <Graphics/Vulkan/RenderPassStash.h>
+#include <Graphics/Vulkan/RenderPassCache.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <algorithm>
@@ -296,7 +296,7 @@ void Swapchain::_createFramebuffers( const CYD::SwapchainInfo& info )
    targetsInfo.attachments.push_back( colorPresentation );
    targetsInfo.attachments.push_back( depth );
 
-   m_clearRenderPass = m_device.getRenderPassStash().findOrCreate( targetsInfo );
+   m_clearRenderPass = m_device.getRenderPassCache().findOrCreate( targetsInfo );
 
    // Load render pass
    colorPresentation.loadOp        = CYD::LoadOp::LOAD;
@@ -308,7 +308,7 @@ void Swapchain::_createFramebuffers( const CYD::SwapchainInfo& info )
    targetsInfo.attachments.push_back( colorPresentation );
    targetsInfo.attachments.push_back( depth );
 
-   m_loadRenderPass = m_device.getRenderPassStash().findOrCreate( targetsInfo );
+   m_loadRenderPass = m_device.getRenderPassCache().findOrCreate( targetsInfo );
 
    m_frameBuffers.resize( m_imageCount );
    for( size_t i = 0; i < m_imageCount; i++ )

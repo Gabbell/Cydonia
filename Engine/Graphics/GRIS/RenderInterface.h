@@ -20,12 +20,12 @@ struct ComputePipelineInfo;
 
 namespace GRIS
 {
-enum API
+enum class API
 {
    NONE,
    VK,     // Vulkan
-   D3D12,  // DirectX 12 (Not implemented)
    D3D11,  // DirectX 11 (Not implemented)
+   D3D12,  // DirectX 12 (WIP)
    GL,     // OpenGL (Not implemented)
    MTL     // Metal (Not implemented)
 };
@@ -41,6 +41,9 @@ void DrawUI( CmdListHandle cmdList );
 
 // Cleanup rendering resources
 void RenderBackendCleanup();
+
+// Wait until all devices are idle
+void WaitUntilIdle();
 
 // Command Buffers/Lists
 // ===============================================================================================
@@ -95,15 +98,6 @@ void BindUniformBuffer(
     BufferHandle bufferHandle,
     uint32_t set,
     uint32_t binding );
-
-// Bind shader resources by name. Using .json definitions
-void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name );
-void BindImage( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name );
-void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, const std::string_view name );
-void BindUniformBuffer(
-    CmdListHandle cmdList,
-    BufferHandle bufferHandle,
-    const std::string_view name );
 
 void UpdateConstantBuffer(
     CmdListHandle cmdList,

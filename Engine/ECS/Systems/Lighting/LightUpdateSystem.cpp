@@ -10,7 +10,7 @@ namespace CYD
 {
 void LightUpdateSystem::tick( double deltaS )
 {
-   SceneComponent& scene = ECS::GetSharedComponent<SceneComponent>();
+   SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    static double timeElapsed = 0;
 
@@ -20,7 +20,7 @@ void LightUpdateSystem::tick( double deltaS )
       TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
 
       transform.position = glm::vec3(
-          5.0f * std::cos( 0.50f * timeElapsed ), 5.0f, 5.0f * std::sin( 0.50f * timeElapsed ) );
+          25.0f * std::cos( 0.50f * timeElapsed ), 10.0f, 25.0f * std::sin( 0.50f * timeElapsed ) );
 
       const glm::vec3 direction = glm::normalize( -transform.position );
 

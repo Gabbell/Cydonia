@@ -6,7 +6,7 @@
 #include <functional>
 #include <future>
 
-namespace EMP
+namespace CYD
 {
 class ThreadPool
 {

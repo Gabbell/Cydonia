@@ -11,7 +11,7 @@
 
 namespace CYD::RenderPipelines
 {
-static constexpr char PIPELINES_PATH[] = "Data/Pipelines/RenderPipelines.json";
+static constexpr char PIPELINES_PATH[] = "../Engine/Data/Pipelines/RenderPipelines.json";
 
 static std::unordered_map<std::string, PipelineInfo*> s_pipelines;
 

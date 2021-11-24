@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Common/Include.h>
+
 #include <cstdint>
 
 // ================================================================================================
@@ -45,3 +47,14 @@ using IndexBufferHandle  = Handle;
 using TextureHandle      = Handle;
 using BufferHandle       = Handle;
 }
+
+template <>
+struct std::hash<CYD::Handle>
+{
+   size_t operator()( CYD::Handle handle ) const noexcept
+   {
+      size_t seed = 0;
+      hashCombine( seed, handle.operator uint32_t() );
+      return seed;
+   }
+};

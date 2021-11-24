@@ -28,28 +28,28 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v142</PlatformToolset>
+    <PlatformToolset>v143</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
@@ -88,15 +88,16 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib32;$(VULKAN_SDK)\Third-Party\Bin32;$(SolutionDir)lib\x86;$(SolutionDir)x86\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib32;$(VULKAN_SDK)\Third-Party\Bin32;$(SolutionDir)lib\x86;$(SolutionDir)x86\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
@@ -107,15 +108,16 @@
       <WarningLevel>Level4</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(VULKAN_SDK)\Third-Party\Bin;$(SolutionDir)lib\x64;$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(VULKAN_SDK)\Third-Party\Bin;$(SolutionDir)lib\x64;$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
@@ -128,18 +130,19 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib32;$(VULKAN_SDK)\Third-Party\Bin32;$(SolutionDir)lib\x86;$(SolutionDir)x86\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib32;$(VULKAN_SDK)\Third-Party\Bin32;$(SolutionDir)lib\x86;$(SolutionDir)x86\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
@@ -152,25 +155,24 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>26495</DisableSpecificWarnings>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
     </ClCompile>
     <Link>
       <SubSystem>NotSet</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(VULKAN_SDK)\Third-Party\Bin;$(SolutionDir)lib\x64;$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(VULKAN_SDK)\Third-Party\Bin;$(SolutionDir)lib\x64;$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
       <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Applications\Application.cpp" />
-    <ClCompile Include="Applications\VKSandbox.cpp" />
-    <ClCompile Include="Common\ThreadPool.cpp" />
+    <ClCompile Include="Application.cpp" />
     <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
     <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="ECS\SharedComponents\CameraComponent.cpp" />
@@ -188,9 +190,12 @@
     <ClCompile Include="ECS\Systems\Resources\MeshLoaderSystem.cpp" />
     <ClCompile Include="ECS\Systems\Scene\CameraSystem.cpp" />
     <ClCompile Include="ECS\Systems\UI\ImGuiSystem.cpp" />
-    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Graphics\AssetStash.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\Device.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\DeviceManager.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\Factory.cpp" />
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
+    <ClCompile Include="Graphics\GRIS\Backends\D3D12RenderBackend.cpp" />
     <ClCompile Include="Graphics\GRIS\Backends\GLRenderBackend.cpp" />
     <ClCompile Include="Graphics\GRIS\Backends\VKRenderBackend.cpp" />
     <ClCompile Include="Graphics\GRIS\RenderInterface.cpp" />
@@ -213,17 +218,18 @@
     <ClCompile Include="Graphics\Vulkan\DebugUtilsLabel.cpp" />
     <ClCompile Include="Graphics\Vulkan\DescriptorPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\Device.cpp" />
-    <ClCompile Include="Graphics\Vulkan\DeviceHerder.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DeviceManager.cpp" />
     <ClCompile Include="Graphics\Vulkan\Instance.cpp" />
-    <ClCompile Include="Graphics\Vulkan\PipelineStash.cpp" />
-    <ClCompile Include="Graphics\Vulkan\RenderPassStash.cpp" />
-    <ClCompile Include="Graphics\Vulkan\SamplerStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\PipelineCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\RenderPassCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\SamplerCache.cpp" />
     <ClCompile Include="Graphics\Vulkan\Shader.cpp" />
-    <ClCompile Include="Graphics\Vulkan\ShaderStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\ShaderCache.cpp" />
     <ClCompile Include="Graphics\Vulkan\Surface.cpp" />
     <ClCompile Include="Graphics\Vulkan\Swapchain.cpp" />
     <ClCompile Include="Graphics\Vulkan\Texture.cpp" />
     <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
+    <ClCompile Include="JobPool.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -235,12 +241,7 @@
     <ClCompile Include="Window\GLFWWindow.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Applications\Application.h" />
-    <ClInclude Include="Applications\VKSandbox.h" />
-    <ClInclude Include="Common\Assert.h" />
-    <ClInclude Include="Common\Include.h" />
-    <ClInclude Include="Common\ThreadPool.h" />
-    <ClInclude Include="Common\Vulkan.h" />
+    <ClInclude Include="Application.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\Behaviour\EntityFollowComponent.h" />
     <ClInclude Include="ECS\Components\Lighting\DirectionalLightComponent.h" />
@@ -277,7 +278,12 @@
     <ClInclude Include="ECS\Systems\Scene\CameraSystem.h" />
     <ClInclude Include="ECS\Systems\UI\ImGuiSystem.h" />
     <ClInclude Include="Graphics\AssetStash.h" />
+    <ClInclude Include="Graphics\Direct3D12\Device.h" />
+    <ClInclude Include="Graphics\Direct3D12\DeviceManager.h" />
+    <ClInclude Include="Graphics\Direct3D12\Factory.h" />
+    <ClInclude Include="Graphics\DirectX12.h" />
     <ClInclude Include="Graphics\GraphicsTypes.h" />
+    <ClInclude Include="Graphics\GRIS\Backends\D3D12RenderBackend.h" />
     <ClInclude Include="Graphics\GRIS\Backends\GLRenderBackend.h" />
     <ClInclude Include="Graphics\GRIS\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\GRIS\Backends\VKRenderBackend.h" />
@@ -295,6 +301,7 @@
     <ClInclude Include="Graphics\Utility\ShaderReflection.h" />
     <ClInclude Include="Graphics\Utility\Transforms.h" />
     <ClInclude Include="Graphics\VertexLayout.h" />
+    <ClInclude Include="Graphics\Vulkan.h" />
     <ClInclude Include="Graphics\Vulkan\BarriersHelper.h" />
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBuffer.h" />
@@ -303,19 +310,21 @@
     <ClInclude Include="Graphics\Vulkan\DebugUtilsLabel.h" />
     <ClInclude Include="Graphics\Vulkan\DescriptorPool.h" />
     <ClInclude Include="Graphics\Vulkan\Device.h" />
-    <ClInclude Include="Graphics\Vulkan\DeviceHerder.h" />
+    <ClInclude Include="Graphics\Vulkan\DeviceManager.h" />
     <ClInclude Include="Graphics\Vulkan\Instance.h" />
-    <ClInclude Include="Graphics\Vulkan\PipelineStash.h" />
-    <ClInclude Include="Graphics\Vulkan\RenderPassStash.h" />
-    <ClInclude Include="Graphics\Vulkan\SamplerStash.h" />
+    <ClInclude Include="Graphics\Vulkan\PipelineCache.h" />
+    <ClInclude Include="Graphics\Vulkan\RenderPassCache.h" />
+    <ClInclude Include="Graphics\Vulkan\SamplerCache.h" />
     <ClInclude Include="Graphics\Vulkan\Shader.h" />
-    <ClInclude Include="Graphics\Vulkan\ShaderStash.h" />
+    <ClInclude Include="Graphics\Vulkan\ShaderCache.h" />
     <ClInclude Include="Graphics\Vulkan\Surface.h" />
     <ClInclude Include="Graphics\Vulkan\Swapchain.h" />
     <ClInclude Include="Graphics\Vulkan\Texture.h" />
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
     <ClInclude Include="Graph\Node.h" />
     <ClInclude Include="Handles\Handle.h" />
+    <ClInclude Include="JobPool.h" />
+    <ClInclude Include="Physics\PhysicsConstants.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui_impl_glfw.h" />

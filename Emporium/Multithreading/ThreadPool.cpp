@@ -1,6 +1,6 @@
 #include <Multithreading/ThreadPool.h>
 
-namespace EMP
+namespace CYD
 {
 ThreadPool::ThreadPool() : _shutdown( false ) {}
 

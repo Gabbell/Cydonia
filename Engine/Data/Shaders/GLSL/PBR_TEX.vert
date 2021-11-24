@@ -36,7 +36,7 @@ void main()
 {
    const vec3 displacement = texture( displacement, inTexCoord.xy ).rgb;
 
-   fragPos = vec3( model * vec4( displacement + inPosition, 1.0 ) );  // World coordinates
+   fragPos = vec3( model * vec4( inPosition, 1.0 ) );  // World coordinates
    viewPos = vec3( pos );
 
    outTexCoord = inTexCoord;

@@ -1,7 +1,8 @@
 #include <Window/GLFWWindow.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
+
+#include <Graphics/Vulkan.h>
 
 #include <GLFW/glfw3.h>
 

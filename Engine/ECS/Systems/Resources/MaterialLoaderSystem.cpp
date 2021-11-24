@@ -28,6 +28,7 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
       material.data.albedo           = loadedMaterial.albedo;
       material.data.normals          = loadedMaterial.normals;
       material.data.metalness        = loadedMaterial.metalness;
+      material.data.disp             = loadedMaterial.disp;
       material.data.roughness        = loadedMaterial.roughness;
       material.data.ao               = loadedMaterial.ao;
    }

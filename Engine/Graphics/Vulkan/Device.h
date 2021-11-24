@@ -26,9 +26,9 @@ namespace vk
 class Instance;
 class Surface;
 class Swapchain;
-class PipelineStash;
-class RenderPassStash;
-class SamplerStash;
+class PipelineCache;
+class RenderPassCache;
+class SamplerCache;
 class CommandPoolManager;
 class CommandBuffer;
 class Buffer;
@@ -71,15 +71,17 @@ class Device final
 
    void cleanup();  // Clean up unused resources
 
+   void waitUntilIdle(); // CPU wait until device is done working
+
    // Getters
    VkPhysicalDevice getPhysicalDevice() const noexcept { return m_physDevice; }
    VkDevice getVKDevice() const noexcept { return m_vkDevice; }
 
    Swapchain& getSwapchain() const { return *m_swapchain; }
 
-   PipelineStash& getPipelineStash() const { return *m_pipelines; }
-   RenderPassStash& getRenderPassStash() const { return *m_renderPasses; }
-   SamplerStash& getSamplerStash() const { return *m_samplers; }
+   PipelineCache& getPipelineCache() const { return *m_pipelines; }
+   RenderPassCache& getRenderPassCache() const { return *m_renderPasses; }
+   SamplerCache& getSamplerCache() const { return *m_samplers; }
    DescriptorPool& getDescriptorPool() const { return *m_descPool; }
 
    // Queues
@@ -132,9 +134,9 @@ class Device final
 
    std::unique_ptr<DescriptorPool> m_descPool;
    std::unique_ptr<Swapchain> m_swapchain;
-   std::unique_ptr<RenderPassStash> m_renderPasses;
-   std::unique_ptr<SamplerStash> m_samplers;
-   std::unique_ptr<PipelineStash> m_pipelines;
+   std::unique_ptr<RenderPassCache> m_renderPasses;
+   std::unique_ptr<SamplerCache> m_samplers;
+   std::unique_ptr<PipelineCache> m_pipelines;
 
    std::vector<QueueFamily> m_queueFamilies;
 

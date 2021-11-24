@@ -61,7 +61,7 @@ CYD::INITIALIZATION
                 createDebugMessenger
             Create vk::surface
                 glfwCreateWindowSurface
-            Create vk::DeviceHerder
+            Create vk::DeviceManager
                 Create Device 0
                     populateQueueFamilies
                     createLogicalDevice

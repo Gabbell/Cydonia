@@ -75,7 +75,7 @@ class ComponentPool final : public BaseComponentPool
    }
 
   private:
-   static constexpr size_t MAX_POOL_SIZE        = 1024 * 64;  // 64kB
+   static constexpr size_t MAX_POOL_SIZE        = 1024 * 128;  // 128kB
    static constexpr size_t COMPONENT_ARRAY_SIZE = MAX_POOL_SIZE / sizeof( Component );
 
    std::array<bool, COMPONENT_ARRAY_SIZE> m_slots           = {};

@@ -1,16 +1,16 @@
 #include <Graphics/Vulkan/CommandBuffer.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
 
+#include <Graphics/Vulkan.h>
 #include <Graphics/PipelineInfos.h>
 
 #include <Graphics/Vulkan/CommandBufferPool.h>
 #include <Graphics/Vulkan/Device.h>
-#include <Graphics/Vulkan/PipelineStash.h>
+#include <Graphics/Vulkan/PipelineCache.h>
 #include <Graphics/Vulkan/DescriptorPool.h>
-#include <Graphics/Vulkan/SamplerStash.h>
-#include <Graphics/Vulkan/RenderPassStash.h>
+#include <Graphics/Vulkan/SamplerCache.h>
+#include <Graphics/Vulkan/RenderPassCache.h>
 #include <Graphics/Vulkan/Swapchain.h>
 #include <Graphics/Vulkan/Buffer.h>
 #include <Graphics/Vulkan/Texture.h>
@@ -20,6 +20,7 @@
 
 namespace vk
 {
+
 static constexpr uint32_t INITIAL_RESOURCE_TO_UPDATE_COUNT = 32;
 
 CommandBuffer::CommandBuffer()
@@ -110,7 +111,7 @@ void CommandBuffer::acquire(
           m_pDevice->getVKDevice(), &semaphoreInfo, nullptr, &m_semsToSignal[0] );
       CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create semaphore" );
 
-      m_defaultSampler = m_pDevice->getSamplerStash().findOrCreate( {} );
+      m_defaultSampler = m_pDevice->getSamplerCache().findOrCreate( {} );
 
       m_buffersToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
       m_texturesToUpdate.reserve( INITIAL_RESOURCE_TO_UPDATE_COUNT );
@@ -267,7 +268,7 @@ void CommandBuffer::syncToSwapchain( const Swapchain* swapchain )
    m_semsToSignal.push_back( swapchain->getSemToSignal() );
 }
 
-VkPipelineStageFlags CommandBuffer::getWaitStages() const
+VkPipelineStageFlags CommandBuffer::getWaitStages() const noexcept
 {
    VkPipelineStageFlags waitStages = 0;
    if( m_usage & CYD::QueueUsage::GRAPHICS )
@@ -362,9 +363,9 @@ void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
        "CommandBuffer: Cannot bind pipeline because not in a render pass" );
 
    VkPipeline pipeline =
-       m_pDevice->getPipelineStash().findOrCreate( info, m_boundRenderPass.value() );
+       m_pDevice->getPipelineCache().findOrCreate( info, m_boundRenderPass.value() );
 
-   VkPipelineLayout pipLayout = m_pDevice->getPipelineStash().findOrCreate( info.pipLayout );
+   VkPipelineLayout pipLayout = m_pDevice->getPipelineCache().findOrCreate( info.pipLayout );
 
    CYDASSERT(
        pipeline && pipLayout &&
@@ -378,9 +379,9 @@ void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
 
 void CommandBuffer::bindPipeline( const CYD::ComputePipelineInfo& info )
 {
-   VkPipeline pipeline = m_pDevice->getPipelineStash().findOrCreate( info );
+   VkPipeline pipeline = m_pDevice->getPipelineCache().findOrCreate( info );
 
-   VkPipelineLayout pipLayout = m_pDevice->getPipelineStash().findOrCreate( info.pipLayout );
+   VkPipelineLayout pipLayout = m_pDevice->getPipelineCache().findOrCreate( info.pipLayout );
 
    CYDASSERT(
        pipeline && pipLayout &&
@@ -443,81 +444,6 @@ void CommandBuffer::bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t bi
    _addDependency( buffer );
 }
 
-template <class T>
-CommandBuffer::ResourceBinding<T> CommandBuffer::_findBindingFromLayout(
-    const T* resource,
-    const std::string_view name,
-    const CYD::PipelineLayoutInfo& pipLayout )
-{
-   ResourceBinding<T> binding;
-
-   for( const auto& shaderSetInfo : pipLayout.shaderSets )
-   {
-      for( const auto& shaderBindingInfo : shaderSetInfo.second.shaderBindings )
-      {
-         if( shaderBindingInfo.name == name )
-         {
-            // We found the binding
-            binding.binding = shaderBindingInfo.binding;
-            binding.type    = shaderBindingInfo.type;
-            binding.set     = shaderSetInfo.first;
-         }
-      }
-   }
-
-   binding.resource = resource;
-   return binding;
-}
-
-void CommandBuffer::bindTexture( Texture* texture, const std::string_view name )
-{
-   CYDASSERT(
-       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
-
-   // Will need to update this texture's descriptor set before next draw
-   m_texturesToUpdate.emplace_back(
-       _findBindingFromLayout( texture, name, m_boundPipInfo->pipLayout ) );
-
-   _addDependency( texture );
-}
-
-void CommandBuffer::bindImage( Texture* texture, const std::string_view name )
-{
-   CYDASSERT(
-       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
-
-   // Will need to update this image descriptor set before next draw
-   m_texturesToUpdate.emplace_back(
-       _findBindingFromLayout( texture, name, m_boundPipInfo->pipLayout ) );
-
-   // TODO Eventually we will need more info when binding an image (level for mipmaps for example)
-   _addDependency( texture );
-}
-
-void CommandBuffer::bindBuffer( Buffer* buffer, const std::string_view name )
-{
-   CYDASSERT(
-       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
-
-   // Will need to update this buffer's descriptor set before next draw
-   m_buffersToUpdate.emplace_back(
-       _findBindingFromLayout( buffer, name, m_boundPipInfo->pipLayout ) );
-
-   _addDependency( buffer );
-}
-
-void CommandBuffer::bindUniformBuffer( Buffer* buffer, const std::string_view name )
-{
-   CYDASSERT(
-       m_boundPipInfo && "CommandBuffer: Need pipeline bound to determine binding from name" );
-
-   // Will need to update this buffer's descriptor set before next draw
-   m_buffersToUpdate.emplace_back(
-       _findBindingFromLayout( buffer, name, m_boundPipInfo->pipLayout ) );
-
-   _addDependency( buffer );
-}
-
 void CommandBuffer::setViewport( const CYD::Viewport& viewport ) const
 {
    VkViewport vkViewport = {
@@ -568,7 +494,7 @@ void CommandBuffer::beginRendering(
     const CYD::RenderTargetsInfo& targetsInfo,
     const std::vector<const Texture*>& targets )
 {
-   VkRenderPass renderPass = m_pDevice->getRenderPassStash().findOrCreate( targetsInfo );
+   VkRenderPass renderPass = m_pDevice->getRenderPassCache().findOrCreate( targetsInfo );
    CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
 
    m_boundRenderPass  = renderPass;

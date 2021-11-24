@@ -107,7 +107,7 @@ class Entity final
       }
       else if constexpr( std::is_base_of_v<BaseSharedComponent, Component> )
       {
-         auto it = m_sharedComponents.find( SharedComponent::TYPE );
+         auto it = m_sharedComponents.find( Component::TYPE );
          if( it != m_sharedComponents.end() )
          {
             return static_cast<Component*>( it->second );

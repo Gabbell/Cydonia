@@ -1,7 +1,8 @@
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
+
+#include <Graphics/Vulkan.h>
 
 namespace vk::TypeConversions
 {

@@ -1,8 +1,8 @@
 #include <Graphics/Vulkan/Shader.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
 
+#include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/Device.h>
 
 #include <fstream>

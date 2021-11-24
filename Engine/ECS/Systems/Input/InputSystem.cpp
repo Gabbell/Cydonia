@@ -39,7 +39,7 @@ InputSystem::InputSystem( const Window& window ) : m_window( window )
 
 void InputSystem::tick( double /*deltaS*/ )
 {
-   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
+   InputComponent& input = m_ecs->getSharedComponent<InputComponent>();
    input.cursorDelta     = glm::vec2( 0.0f );
 
    // Polling GLFW to trigger the callbacks
@@ -58,7 +58,7 @@ void InputSystem::_keyCallback(
       glfwSetWindowShouldClose( window, true );
    }
 
-   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
+   InputComponent& input = m_ecs->getSharedComponent<InputComponent>();
 
    if( key == GLFW_KEY_W )
    {
@@ -135,7 +135,7 @@ void InputSystem::_keyCallback(
 
 void InputSystem::_cursorCallback( GLFWwindow* /*window*/, double xpos, double ypos )
 {
-   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
+   InputComponent& input = m_ecs->getSharedComponent<InputComponent>();
 
    glm::vec2 curPos( xpos, ypos );
 
@@ -149,7 +149,7 @@ void InputSystem::_cursorCallback( GLFWwindow* /*window*/, double xpos, double y
 
 void InputSystem::_mouseCallback( GLFWwindow* window, int button, int action, int /*mods*/ )
 {
-   InputComponent& input = ECS::GetSharedComponent<InputComponent>();
+   InputComponent& input = m_ecs->getSharedComponent<InputComponent>();
 
    if( button == GLFW_MOUSE_BUTTON_RIGHT )
    {

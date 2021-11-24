@@ -1,10 +1,10 @@
 #include <Graphics/Vulkan/DescriptorPool.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
 
+#include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/Device.h>
-#include <Graphics/Vulkan/PipelineStash.h>
+#include <Graphics/Vulkan/PipelineCache.h>
 
 #include <array>
 
@@ -61,7 +61,7 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
 
 VkDescriptorSet DescriptorPool::allocate( const CYD::ShaderSetInfo& layout ) const
 {
-   const VkDescriptorSetLayout vkDescSetLayout = m_device.getPipelineStash().findOrCreate( layout );
+   const VkDescriptorSetLayout vkDescSetLayout = m_device.getPipelineCache().findOrCreate( layout );
 
    VkDescriptorSetAllocateInfo allocInfo = {};
    allocInfo.sType                       = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;

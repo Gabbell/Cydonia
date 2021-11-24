@@ -3,7 +3,7 @@
 #include <mutex>
 #include <queue>
 
-namespace EMP
+namespace CYD
 {
 template <typename T>
 class ThreadSafeQueue

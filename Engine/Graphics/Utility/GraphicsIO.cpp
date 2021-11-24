@@ -14,7 +14,7 @@
 
 namespace CYD
 {
-static const char MESH_PATH[] = "Data/Meshes/";
+static const char MESH_PATH[] = "../Engine/Data/Meshes/";
 
 void GraphicsIO::LoadMesh(
     const std::string& path,
@@ -87,8 +87,10 @@ void* GraphicsIO::LoadImage(
    switch( format )
    {
       case PixelFormat::RGBA32F:
-      case PixelFormat::R32F:
          imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         break;
+      case PixelFormat::R32F:
+         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, 0 );
          break;
       default:
          // TODO Format to pixel size function

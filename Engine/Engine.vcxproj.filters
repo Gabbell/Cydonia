@@ -1,26 +1,23 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="Graphics\Vulkan\Buffer.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
     <ClCompile Include="Graphics\Vulkan\DescriptorPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\Device.cpp" />
-    <ClCompile Include="Graphics\Vulkan\DeviceHerder.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DeviceManager.cpp" />
     <ClCompile Include="Graphics\Vulkan\Instance.cpp" />
-    <ClCompile Include="Graphics\Vulkan\PipelineStash.cpp" />
-    <ClCompile Include="Graphics\Vulkan\RenderPassStash.cpp" />
-    <ClCompile Include="Graphics\Vulkan\SamplerStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\PipelineCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\RenderPassCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\SamplerCache.cpp" />
     <ClCompile Include="Graphics\Vulkan\Shader.cpp" />
-    <ClCompile Include="Graphics\Vulkan\ShaderStash.cpp" />
+    <ClCompile Include="Graphics\Vulkan\ShaderCache.cpp" />
     <ClCompile Include="Graphics\Vulkan\Surface.cpp" />
     <ClCompile Include="Graphics\Vulkan\Swapchain.cpp" />
     <ClCompile Include="Graphics\Vulkan\Texture.cpp" />
     <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
     <ClCompile Include="Graphics\Scene\Frustum.cpp" />
-    <ClCompile Include="Applications\Application.cpp" />
     <ClCompile Include="Window\GLFWWindow.cpp" />
-    <ClCompile Include="Applications\VKSandbox.cpp" />
     <ClCompile Include="ECS\EntityManager.cpp" />
     <ClCompile Include="ECS\Systems\Scene\CameraSystem.cpp" />
     <ClCompile Include="ECS\Systems\Physics\PlayerMoveSystem.cpp" />
@@ -64,32 +61,32 @@
     <ClCompile Include="Graphics\Material.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBufferPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandPoolManager.cpp" />
-    <ClCompile Include="Common\ThreadPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\DebugUtilsLabel.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\Factory.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\Device.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\DeviceManager.cpp" />
+    <ClCompile Include="Graphics\GRIS\Backends\D3D12RenderBackend.cpp" />
+    <ClCompile Include="JobPool.cpp" />
+    <ClCompile Include="Application.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBuffer.h" />
     <ClInclude Include="Graphics\Vulkan\DescriptorPool.h" />
     <ClInclude Include="Graphics\Vulkan\Device.h" />
-    <ClInclude Include="Graphics\Vulkan\DeviceHerder.h" />
+    <ClInclude Include="Graphics\Vulkan\DeviceManager.h" />
     <ClInclude Include="Graphics\Vulkan\Instance.h" />
-    <ClInclude Include="Graphics\Vulkan\PipelineStash.h" />
-    <ClInclude Include="Graphics\Vulkan\RenderPassStash.h" />
-    <ClInclude Include="Graphics\Vulkan\SamplerStash.h" />
+    <ClInclude Include="Graphics\Vulkan\PipelineCache.h" />
+    <ClInclude Include="Graphics\Vulkan\RenderPassCache.h" />
+    <ClInclude Include="Graphics\Vulkan\SamplerCache.h" />
     <ClInclude Include="Graphics\Vulkan\Shader.h" />
-    <ClInclude Include="Graphics\Vulkan\ShaderStash.h" />
+    <ClInclude Include="Graphics\Vulkan\ShaderCache.h" />
     <ClInclude Include="Graphics\Vulkan\Surface.h" />
     <ClInclude Include="Graphics\Vulkan\Swapchain.h" />
     <ClInclude Include="Graphics\Vulkan\Texture.h" />
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
     <ClInclude Include="Graphics\Scene\Frustum.h" />
-    <ClInclude Include="Common\Vulkan.h" />
-    <ClInclude Include="Common\Include.h" />
-    <ClInclude Include="Common\Assert.h" />
-    <ClInclude Include="Applications\Application.h" />
     <ClInclude Include="Window\GLFWWindow.h" />
-    <ClInclude Include="Applications\VKSandbox.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\ComponentTypes.h" />
     <ClInclude Include="Handles\Handle.h" />
@@ -157,8 +154,16 @@
     <ClInclude Include="Graphics\Material.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBufferPool.h" />
     <ClInclude Include="Graphics\Vulkan\CommandPoolManager.h" />
-    <ClInclude Include="Common\ThreadPool.h" />
     <ClInclude Include="Graphics\Vulkan\DebugUtilsLabel.h" />
+    <ClInclude Include="Graphics\Direct3D12\Factory.h" />
+    <ClInclude Include="Graphics\Direct3D12\DeviceManager.h" />
+    <ClInclude Include="Graphics\Direct3D12\Device.h" />
+    <ClInclude Include="Graphics\GRIS\Backends\D3D12RenderBackend.h" />
+    <ClInclude Include="JobPool.h" />
+    <ClInclude Include="Graphics\Vulkan.h" />
+    <ClInclude Include="Graphics\DirectX12.h" />
+    <ClInclude Include="Physics\PhysicsConstants.h" />
+    <ClInclude Include="Application.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />

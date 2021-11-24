@@ -8,7 +8,10 @@
 // Forwards
 // ================================================================================================
 FWDHANDLE( VkInstance );
+
+#if defined( _DEBUG )
 FWDHANDLE( VkDebugUtilsMessengerEXT );
+#endif
 
 namespace CYD
 {
@@ -35,7 +38,10 @@ class Instance final
    // Private Functions
    // =============================================================================================
    void _createVKInstance();
+
+#if defined( _DEBUG )
    void _createDebugMessenger();
+#endif
 
    // =============================================================================================
    // Private Variables
@@ -44,7 +50,10 @@ class Instance final
 
    const CYD::Window& m_window;
 
-   VkInstance m_vkInstance                   = nullptr;
+   VkInstance m_vkInstance = nullptr;
+
+#if defined( _DEBUG )
    VkDebugUtilsMessengerEXT m_debugMessenger = nullptr;
+#endif
 };
 }

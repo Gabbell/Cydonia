@@ -10,9 +10,9 @@ namespace CYD
 {
 static constexpr uint32_t ENV_VIEW_SET = 0;
 
-static void setupScene( CmdListHandle cmdList )
+static void setupScene( EntityManager* ecs, CmdListHandle cmdList )
 {
-   SceneComponent& scene = ECS::GetSharedComponent<SceneComponent>();
+   SceneComponent& scene = ecs->getSharedComponent<SceneComponent>();
 
    if( !scene.shadowMap )
    {
@@ -42,13 +42,13 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
 
    GRIS::StartRecordingCommandList( cmdList );
 
-   setupScene( cmdList );
+   setupScene( m_ecs, cmdList );
 
    RenderTargetsInfo targetsInfo;
    targetsInfo.attachments.push_back(
        { PixelFormat::D32_SFLOAT, AttachmentType::DEPTH_STENCIL, LoadOp::CLEAR, StoreOp::STORE } );
 
-   const SceneComponent& scene = ECS::GetSharedComponent<SceneComponent>();
+   const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    GRIS::BeginRendering( cmdList, targetsInfo, { scene.shadowMap } );
 

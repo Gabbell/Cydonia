@@ -12,7 +12,7 @@ void EntityFollowSystem::tick( double /*deltaS*/ )
       TransformComponent& transform       = *std::get<TransformComponent*>( entityEntry.arch );
 
       // Getting the position of the followed entity and setting the current entity's position to it
-      const Entity* followedEntity = ECS::GetEntity( follow.entity );
+      const Entity* followedEntity = m_ecs->getEntity( follow.entity );
       if( followedEntity )
       {
          // TODO Is this OK? Probably, because we cannot modify the entity.

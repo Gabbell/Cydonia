@@ -17,7 +17,7 @@ void CameraSystem::tick( double /*deltaS*/ )
       return;
    }
 
-   CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
+   CameraComponent& camera = m_ecs->getSharedComponent<CameraComponent>();
 
    for( const auto& entityEntry : m_entities )
    {

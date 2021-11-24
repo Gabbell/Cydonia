@@ -33,6 +33,8 @@ class VKRenderBackend final : public RenderBackend
 
    void cleanup() override;
 
+   void waitUntilIdle() override;
+
    // Command Buffers/Lists
    // ==============================================================================================
    CmdListHandle createCommandList(
@@ -80,17 +82,6 @@ class VKRenderBackend final : public RenderBackend
        BufferHandle bufferHandle,
        uint32_t set,
        uint32_t binding ) override;
-
-   void bindTexture( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name )
-       override;
-   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name )
-       override;
-   void bindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, const std::string_view name )
-       override;
-   void bindUniformBuffer(
-       CmdListHandle cmdList,
-       BufferHandle bufferHandle,
-       const std::string_view name ) override;
 
    void updateConstantBuffer(
        CmdListHandle cmdList,

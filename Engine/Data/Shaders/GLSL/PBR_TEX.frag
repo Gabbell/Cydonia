@@ -6,10 +6,11 @@
 layout( set = 0, binding = 1 ) uniform Lights
 {
    mat4 viewMat;
+   vec4 position;
    vec4 color;
    bool enabled;
 }
-dirLights;
+lights;
 
 // Material properties
 // =================================================================================================
@@ -125,14 +126,14 @@ void main()
 
    // DIRECTIONAL LIGHT
    // Get light direction from light view matrix and normalize
-   const vec3 L        = -normalize( vec3( dirLights.viewMat[2].xyz ) );
-   const vec3 radiance = vec3( dirLights.color );
+   // const vec3 L        = -normalize( vec3( lights.viewMat[2].xyz ) );
+   // const vec3 radiance = vec3( lights.color );
 
    // POINT LIGHT
-   // const vec3 L            = normalize( vec3( lightPositions[i] ) - fragPos );
-   // const float distance    = length( vec3( lightPositions[i] ) - fragPos );
-   // const float attenuation = 1.0 / ( distance * distance );
-   // const vec3 radiance     = vec3( lightColors[i] * attenuation );
+   const vec3 L            = normalize( vec3( lights.position ) - fragPos );
+   const float distance    = length( vec3( lights.position ) - fragPos );
+   const float attenuation = 1.0 / ( distance * distance );
+   const vec3 radiance     = vec3( lights.color * attenuation );
 
    const vec3 H = normalize( V + L );
 
@@ -162,7 +163,7 @@ void main()
    const float NdotL = max( dot( N, L ), 0.0 );
 
    // Add to outgoing radiance Lo
-   Lo += int( dirLights.enabled ) * ( kD * albedo / PI + specular ) * radiance * NdotL;
+   Lo += int( lights.enabled ) * ( kD * albedo / PI + specular ) * radiance * NdotL;
 
    // note that we already multiplied the BRDF by the Fresnel (kS) so we won't multiply by
    // kS again   Lo += int( dirLight.enabled ) * calcLuminance( i, N, V, F0, albedo, metallic,

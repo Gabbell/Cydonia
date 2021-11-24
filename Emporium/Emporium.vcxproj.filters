@@ -1,14 +1,6 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <Filter Include="Patterns">
-      <UniqueIdentifier>{a9daa296-e0c4-44b9-8878-768a9d0ad681}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Memory">
-      <UniqueIdentifier>{02534dac-1104-45dc-a0ab-c6239d00901b}</UniqueIdentifier>
-    </Filter>
-  </ItemGroup>
-  <ItemGroup>
     <None Include=".clang-format" />
   </ItemGroup>
   <ItemGroup>
@@ -16,6 +8,8 @@
     <ClInclude Include="Graph\NodeGraph.h" />
     <ClInclude Include="Multithreading\ThreadPool.h" />
     <ClInclude Include="Multithreading\ThreadSafeQueue.h" />
+    <ClInclude Include="Common\Assert.h" />
+    <ClInclude Include="Common\Include.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graph\NodeGraph.cpp" />

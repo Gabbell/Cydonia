@@ -23,6 +23,8 @@ class RenderBackend
 
    virtual void cleanup() = 0;
 
+   virtual void waitUntilIdle() = 0;
+
    // Command Buffers/Lists
    // ==============================================================================================
    virtual CmdListHandle
@@ -42,13 +44,16 @@ class RenderBackend
 
    // Pipeline Specification
    // ==============================================================================================
-   virtual void setViewport( CmdListHandle cmdList, const Viewport& viewport )             = 0;
-   virtual void setScissor( CmdListHandle cmdList, const Rectangle& scissor )              = 0;
+   virtual void setViewport( CmdListHandle cmdList, const Viewport& viewport ) = 0;
+   virtual void setScissor( CmdListHandle cmdList, const Rectangle& scissor )  = 0;
+
    virtual void bindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo ) = 0;
    virtual void bindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )  = 0;
+
    virtual void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) = 0;
    virtual void
    bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type ) = 0;
+
    virtual void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -66,16 +71,7 @@ class RenderBackend
        BufferHandle bufferHandle,
        uint32_t set,
        uint32_t binding ) = 0;
-   virtual void
-   bindTexture( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name ) = 0;
-   virtual void
-   bindImage( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name ) = 0;
-   virtual void
-   bindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, const std::string_view name ) = 0;
-   virtual void bindUniformBuffer(
-       CmdListHandle cmdList,
-       BufferHandle bufferHandle,
-       const std::string_view name ) = 0;
+
    virtual void updateConstantBuffer(
        CmdListHandle cmdList,
        ShaderStageFlag stages,

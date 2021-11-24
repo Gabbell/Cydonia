@@ -5,17 +5,17 @@
 // ================================================================================================
 // Forwards
 // ================================================================================================
-enum VkIndexType;
-enum VkFormat;
-enum VkColorSpaceKHR;
-enum VkAttachmentLoadOp;
-enum VkAttachmentStoreOp;
-enum VkPrimitiveTopology;
-enum VkPolygonMode;
-enum VkImageLayout;
-enum VkDescriptorType;
-enum VkFilter;
-enum VkSamplerAddressMode;
+enum VkIndexType : int;
+enum VkFormat : int;
+enum VkColorSpaceKHR : int;
+enum VkAttachmentLoadOp : int;
+enum VkAttachmentStoreOp : int;
+enum VkPrimitiveTopology : int;
+enum VkPolygonMode : int;
+enum VkImageLayout : int;
+enum VkDescriptorType : int;
+enum VkFilter : int;
+enum VkSamplerAddressMode : int;
 
 // ================================================================================================
 // Definition

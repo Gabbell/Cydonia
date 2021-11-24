@@ -13,7 +13,7 @@
 #include <Graphics/Vulkan/DebugUtilsLabel.h>
 #include <Graphics/Vulkan/DescriptorPool.h>
 #include <Graphics/Vulkan/Device.h>
-#include <Graphics/Vulkan/DeviceHerder.h>
+#include <Graphics/Vulkan/DeviceManager.h>
 #include <Graphics/Vulkan/Instance.h>
 #include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/Swapchain.h>
@@ -122,6 +122,8 @@ class VKRenderBackendImp
    }
 
    void cleanup() const { m_mainDevice.cleanup(); }
+
+   void waitUntilIdle() const { m_mainDevice.waitUntilIdle(); }
 
    CmdListHandle
    createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
@@ -268,7 +270,6 @@ class VKRenderBackendImp
       auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
 
-      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::SHADER_READ );
       cmdBuffer->bindTexture( texture, set, binding );
    }
 
@@ -310,56 +311,6 @@ class VKRenderBackendImp
       const auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
       cmdBuffer->bindUniformBuffer( uniformBuffer, set, binding );
-   }
-
-   void bindTexture( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name )
-       const
-   {
-      if( !texHandle )
-      {
-         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
-         return;
-      }
-
-      auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
-
-      cmdBuffer->bindTexture( texture, name );
-   }
-
-   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name )
-       const
-   {
-      if( !texHandle )
-      {
-         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
-         return;
-      }
-
-      auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
-
-      cmdBuffer->bindImage( texture, name );
-   }
-
-   void bindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, const std::string_view name )
-       const
-   {
-      auto cmdBuffer    = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      const auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-
-      cmdBuffer->bindBuffer( buffer, name );
-   }
-
-   void bindUniformBuffer(
-       CmdListHandle cmdList,
-       BufferHandle bufferHandle,
-       const std::string_view name ) const
-   {
-      auto cmdBuffer           = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      const auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-
-      cmdBuffer->bindUniformBuffer( uniformBuffer, name );
    }
 
    void updateConstantBuffer(
@@ -411,6 +362,8 @@ class VKRenderBackendImp
 
       cmdBuffer->uploadBufferToTex( staging, texture );
 
+      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::SHADER_READ );
+
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
 
@@ -430,6 +383,8 @@ class VKRenderBackendImp
       vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::TRANSFER_DST );
 
       cmdBuffer->uploadBufferToTex( staging, texture );
+
+      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::SHADER_READ );
 
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
@@ -648,7 +603,7 @@ class VKRenderBackendImp
    const Window& m_window;
    vk::Instance m_instance;
    vk::Surface m_surface;
-   vk::DeviceHerder m_devices;
+   vk::DeviceManager m_devices;
 
    vk::Device& m_mainDevice;
    vk::Swapchain* m_mainSwapchain;
@@ -657,7 +612,7 @@ class VKRenderBackendImp
 
    // Used to store intermediate buffers like staging buffers to be able to flag them as unused once
    // the command list is getting destroyed
-   using CmdListDependencyMap = std::unordered_map<uint32_t, std::vector<vk::Buffer*>>;
+   using CmdListDependencyMap = std::unordered_map<CmdListHandle, std::vector<vk::Buffer*>>;
    CmdListDependencyMap m_cmdListDeps;
 
    bool m_hasUI = false;
@@ -675,6 +630,7 @@ bool VKRenderBackend::initializeUI() { return _imp->initializeUI(); }
 void VKRenderBackend::uninitializeUI() { _imp->uninitializeUI(); }
 void VKRenderBackend::drawUI( CmdListHandle cmdList ) { _imp->drawUI( cmdList ); }
 void VKRenderBackend::cleanup() { _imp->cleanup(); }
+void VKRenderBackend::waitUntilIdle() { _imp->waitUntilIdle(); }
 
 CmdListHandle VKRenderBackend::createCommandList(
     QueueUsageFlag usage,
@@ -780,38 +736,6 @@ void VKRenderBackend::bindUniformBuffer(
     uint32_t binding )
 {
    _imp->bindUniformBuffer( cmdList, bufferHandle, set, binding );
-}
-
-void VKRenderBackend::bindTexture(
-    CmdListHandle cmdList,
-    TextureHandle texHandle,
-    const std::string_view name )
-{
-   _imp->bindTexture( cmdList, texHandle, name );
-}
-
-void VKRenderBackend::bindImage(
-    CmdListHandle cmdList,
-    TextureHandle texHandle,
-    const std::string_view name )
-{
-   _imp->bindImage( cmdList, texHandle, name );
-}
-
-void VKRenderBackend::bindBuffer(
-    CmdListHandle cmdList,
-    BufferHandle bufferHandle,
-    const std::string_view name )
-{
-   _imp->bindBuffer( cmdList, bufferHandle, name );
-}
-
-void VKRenderBackend::bindUniformBuffer(
-    CmdListHandle cmdList,
-    BufferHandle bufferHandle,
-    const std::string_view name )
-{
-   _imp->bindUniformBuffer( cmdList, bufferHandle, name );
 }
 
 void VKRenderBackend::setViewport( CmdListHandle cmdList, const Viewport& viewport )

@@ -1,14 +1,14 @@
 #include <Graphics/Vulkan/Device.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
 
+#include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/Instance.h>
 #include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/Swapchain.h>
-#include <Graphics/Vulkan/PipelineStash.h>
-#include <Graphics/Vulkan/RenderPassStash.h>
-#include <Graphics/Vulkan/SamplerStash.h>
+#include <Graphics/Vulkan/PipelineCache.h>
+#include <Graphics/Vulkan/RenderPassCache.h>
+#include <Graphics/Vulkan/SamplerCache.h>
 #include <Graphics/Vulkan/CommandPoolManager.h>
 #include <Graphics/Vulkan/CommandBufferPool.h>
 #include <Graphics/Vulkan/Buffer.h>
@@ -48,9 +48,9 @@ Device::Device(
    m_descPool           = std::make_unique<DescriptorPool>( *this );
    m_commandPoolManager = std::make_unique<CommandPoolManager>(
        *this, static_cast<uint32_t>( m_queueFamilies.size() ) );
-   m_renderPasses       = std::make_unique<RenderPassStash>( *this );
-   m_pipelines          = std::make_unique<PipelineStash>( *this );
-   m_samplers           = std::make_unique<SamplerStash>( *this );
+   m_renderPasses       = std::make_unique<RenderPassCache>( *this );
+   m_pipelines          = std::make_unique<PipelineCache>( *this );
+   m_samplers           = std::make_unique<SamplerCache>( *this );
 }
 
 void Device::_populateQueueFamilies()
@@ -289,6 +289,11 @@ void Device::cleanup()
 }
 
 // =================================================================================================
+// Synchronization
+
+void Device::waitUntilIdle() { vkDeviceWaitIdle( m_vkDevice ); }
+
+// =================================================================================================
 // Getters
 
 const Device::QueueFamily& Device::getQueueFamilyFromIndex( uint32_t familyIndex ) const
@@ -365,6 +370,23 @@ Device::~Device()
    vkDeviceWaitIdle( m_vkDevice );
 
    cleanup();
+
+   // Checking for any leaking resources
+   CYDASSERT(
+       std::find_if(
+           m_buffers.begin(),
+           m_buffers.end(),
+           []( const Buffer& buffer ) { return buffer.getVKBuffer(); } ) == m_buffers.end() &&
+       "Device: Some buffers are leaking" );
+   CYDASSERT(
+       std::find_if(
+           m_textures.begin(),
+           m_textures.end(),
+           []( const Texture& texture ) { return texture.getVKImage(); } ) == m_textures.end() &&
+       "Device: Some textures are leaking" );
+
+   m_buffers.clear();
+   m_textures.clear();
 
    m_samplers.reset();
    m_pipelines.reset();

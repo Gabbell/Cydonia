@@ -6,6 +6,7 @@
 #include <Graphics/RenderPipelines.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/GRIS/Backends/VKRenderBackend.h>
+#include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
 
 #include <ThirdParty/ImGui/imgui.h>
 
@@ -26,16 +27,17 @@ bool InitRenderBackend( API api, const Window& window )
 
    switch( api )
    {
-      case VK:
+      case API::VK:
          b = new VKRenderBackend( window );
          return true;
-      case D3D12:
+      case API::D3D12:
+         b = new D3D12RenderBackend( window );
+         return true;
+      case API::D3D11:
          return false;
-      case D3D11:
+      case API::GL:
          return false;
-      case GL:
-         return false;
-      case MTL:
+      case API::MTL:
          return false;
    }
 
@@ -68,6 +70,8 @@ void UninitializeUI()
 void DrawUI( CmdListHandle cmdList ) { b->drawUI( cmdList ); }
 
 void RenderBackendCleanup() { b->cleanup(); }
+
+void WaitUntilIdle() { b->waitUntilIdle(); }
 
 // =================================================================================================
 // Command Buffers/Lists
@@ -158,11 +162,6 @@ void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, 
    b->bindTexture( cmdList, texHandle, set, binding );
 }
 
-void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, const std::string_view name )
-{
-   b->bindTexture( cmdList, texHandle, name );
-}
-
 void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
 {
    b->bindImage( cmdList, texHandle, set, binding );
@@ -173,11 +172,6 @@ void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, uint32_t set,
    b->bindBuffer( cmdList, bufferHandle, set, binding );
 }
 
-void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, const std::string_view name )
-{
-   b->bindBuffer( cmdList, bufferHandle, name );
-}
-
 void BindUniformBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
@@ -185,14 +179,6 @@ void BindUniformBuffer(
     uint32_t binding )
 {
    b->bindUniformBuffer( cmdList, bufferHandle, set, binding );
-}
-
-void BindUniformBuffer(
-    CmdListHandle cmdList,
-    BufferHandle bufferHandle,
-    const std::string_view name )
-{
-   b->bindUniformBuffer( cmdList, bufferHandle, name );
 }
 
 void UpdateConstantBuffer(

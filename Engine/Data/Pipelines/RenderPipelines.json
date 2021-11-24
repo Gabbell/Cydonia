@@ -52,7 +52,7 @@
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "FFTOCEAN_RENDER_VERT",
       "FRAGMENT_SHADER": "FFTOCEAN_RENDER_FRAG",
-      "POLYGON_MODE": "FILL",
+      "POLYGON_MODE": "LINE",
       "VERTEX_LAYOUT": [
         {
           "LOCATION": 0,
@@ -93,7 +93,7 @@
           "BINDING": 1
         },
         {
-          "NAME": "dirLights",
+          "NAME": "DirectionalLight",
           "TYPE": "UBO",
           "STAGE": "FRAGMENT",
           "SET": 0,
@@ -160,7 +160,7 @@
           "BINDING": 0
         },
         {
-          "NAME": "dirLights",
+          "NAME": "DirectionalLight",
           "TYPE": "UBO",
           "STAGE": "FRAGMENT",
           "SET": 0,

@@ -26,7 +26,7 @@ class RenderableComponent final : public BaseComponent
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
-   bool isVisible  = true;
-   bool isOccluder = false;
+   bool isVisible : 1  = true;
+   bool isOccluder : 1 = false;
 };
 }

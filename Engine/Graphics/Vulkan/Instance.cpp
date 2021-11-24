@@ -1,7 +1,8 @@
 #include <Graphics/Vulkan/Instance.h>
 
 #include <Common/Assert.h>
-#include <Common/Vulkan.h>
+
+#include <Graphics/Vulkan.h>
 
 #include <Window/GLFWWindow.h>
 
@@ -11,6 +12,7 @@
 
 #include <set>
 
+#if defined( _DEBUG )
 static VkBool32 errorCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
@@ -86,25 +88,26 @@ void destroyDebugUtilsMessengerEXT(
       func( instance, debugMessenger, pAllocator );
    }
 }
+#endif
 
 namespace vk
 {
 Instance::Instance( const CYD::Window& window ) : m_window( window )
 {
    _createVKInstance();
+
+#if defined( _DEBUG )
    _createDebugMessenger();
+#endif
 }
 
 static bool checkValidationLayerSupport( const std::vector<const char*>& desiredLayers )
 {
    uint32_t layerCount;
-   vkEnumerateInstanceLayerProperties( &layerCount, nullptr );
+   VKCALL( vkEnumerateInstanceLayerProperties( &layerCount, nullptr ) );
 
    std::vector<VkLayerProperties> supportedLayers( layerCount );
-   const VkResult result =
-       vkEnumerateInstanceLayerProperties( &layerCount, supportedLayers.data() );
-
-   CYDASSERT( result == VK_SUCCESS && "Instance: Could not enumerate instance layer properties" );
+   VKCALL( vkEnumerateInstanceLayerProperties( &layerCount, supportedLayers.data() ) );
 
    std::set<std::string> requiredLayers( desiredLayers.begin(), desiredLayers.end() );
    for( const auto& layer : supportedLayers )
@@ -115,6 +118,7 @@ static bool checkValidationLayerSupport( const std::vector<const char*>& desired
    return requiredLayers.empty();
 }
 
+#if defined( _DEBUG )
 static void populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debugInfo )
 {
    // Filling up debug info
@@ -129,6 +133,16 @@ static void populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debugInfo )
    debugInfo.pfnUserCallback = errorCallback;
    debugInfo.pUserData       = nullptr;
 }
+
+void Instance::_createDebugMessenger()
+{
+   // Create debug messenger
+   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
+   populateDebugInfo( debugInfo );
+
+   VKCALL( createDebugUtilsMessengerEXT( m_vkInstance, &debugInfo, nullptr, &m_debugMessenger ) );
+}
+#endif
 
 void Instance::_createVKInstance()
 {
@@ -160,36 +174,22 @@ void Instance::_createVKInstance()
    instInfo.enabledExtensionCount   = static_cast<uint32_t>( extensions.size() );
    instInfo.ppEnabledExtensionNames = extensions.data();
 
-#ifdef _DEBUG
+#if defined( _DEBUG )
    VkDebugUtilsMessengerCreateInfoEXT debugInfo;
    populateDebugInfo( debugInfo );
    instInfo.pNext = &debugInfo;
 #endif
 
    // Attempting to create an instance
-   const VkResult instanceResult = vkCreateInstance( &instInfo, nullptr, &m_vkInstance );
-   CYDASSERT( instanceResult == VK_SUCCESS && "Instance: Vulkan instance creation failed" );
-}
-
-void Instance::_createDebugMessenger()
-{
-#ifdef _DEBUG
-   // Create debug messenger
-   VkDebugUtilsMessengerCreateInfoEXT debugInfo;
-   populateDebugInfo( debugInfo );
-
-   const VkResult debugResult =
-       createDebugUtilsMessengerEXT( m_vkInstance, &debugInfo, nullptr, &m_debugMessenger );
-
-   CYDASSERT( debugResult == VK_SUCCESS && "Instance:: Debug utils messenger creation failed" );
-#endif
+   VKCALL( vkCreateInstance( &instInfo, nullptr, &m_vkInstance ) );
 }
 
 Instance::~Instance()
 {
-#ifdef _DEBUG
+#if defined( _DEBUG )
    destroyDebugUtilsMessengerEXT( m_vkInstance, m_debugMessenger, nullptr );
 #endif
+   
    vkDestroyInstance( m_vkInstance, nullptr );
 }
 }

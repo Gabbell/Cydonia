@@ -1,6 +1,6 @@
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 
-#include <Common/PhysicsConstants.h>
+#include <Physics/PhysicsConstants.h>
 
 #include <Graphics/GRIS/RenderInterface.h>
 

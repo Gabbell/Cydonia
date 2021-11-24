@@ -2,6 +2,7 @@
 
 #include <Graphics/RenderGraph.h>
 #include <Graphics/VertexLayout.h>
+#include <Graphics/PipelineInfos.h>
 #include <Graphics/GRIS/RenderInterface.h>
 
 #include <ECS/EntityManager.h>
@@ -12,19 +13,6 @@ namespace CYD
 {
 static constexpr uint32_t ENV_VIEW_SET = 0;
 
-static void setupScene( CmdListHandle cmdList )
-{
-   const CameraComponent& camera = ECS::GetSharedComponent<CameraComponent>();
-   const SceneComponent& scene   = ECS::GetSharedComponent<SceneComponent>();
-
-   GRIS::BindUniformBuffer( cmdList, camera.viewBuffer, ENV_VIEW_SET, 0 );
-   GRIS::BindUniformBuffer( cmdList, scene.lightsBuffer, ENV_VIEW_SET, 2 );
-
-   // Dynamic state
-   GRIS::SetViewport( cmdList, scene.viewport );
-   GRIS::SetScissor( cmdList, scene.scissor );
-}
-
 bool PBRRenderSystem::_compareEntities( const EntityEntry& first, const EntityEntry& second )
 {
    // We are sorting entities by their pipeline
@@ -34,13 +22,42 @@ bool PBRRenderSystem::_compareEntities( const EntityEntry& first, const EntityEn
    return matFirst.data.pipeline < matSecond.data.pipeline;
 }
 
+static void optionalTextureBinding(
+    CmdListHandle cmdList,
+    TextureHandle texture,
+    std::string_view name,
+    const PipelineInfo* pipInfo )
+{
+   if( ResourceBinding<TextureHandle> res = pipInfo->findBinding( texture, name ); res.valid )
+   {
+      GRIS::BindTexture( cmdList, res.resource, res.set, res.binding );
+   }
+}
+
+static void optionalBufferBinding(
+    CmdListHandle cmdList,
+    BufferHandle buffer,
+    std::string_view name,
+    const PipelineInfo* pipInfo )
+{
+   if( ResourceBinding<BufferHandle> res = pipInfo->findBinding( buffer, name ); res.valid )
+   {
+      GRIS::BindUniformBuffer( cmdList, res.resource, res.set, res.binding );
+   }
+}
+
 void PBRRenderSystem::tick( double /*deltaS*/ )
 {
+   const CameraComponent& camera = m_ecs->getSharedComponent<CameraComponent>();
+   const SceneComponent& scene   = m_ecs->getSharedComponent<SceneComponent>();
+
    const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, "PBRRenderSystem", true );
 
    GRIS::StartRecordingCommandList( cmdList );
 
-   setupScene( cmdList );
+   // Dynamic state
+   GRIS::SetViewport( cmdList, scene.viewport );
+   GRIS::SetScissor( cmdList, scene.scissor );
 
    // Rendering straight to swapchain
    GRIS::BeginRendering( cmdList );
@@ -63,16 +80,17 @@ void PBRRenderSystem::tick( double /*deltaS*/ )
       // Pipeline
       // ==========================================================================================
       const PipelineInfo* pipInfo = nullptr;
+
+      pipInfo = RenderPipelines::Get( material.data.pipeline );
+      if( pipInfo == nullptr )
+      {
+         // TODO WARNINGS
+         printf( "PBRRenderSystem: Passed a null pipeline, skipping entity" );
+         continue;
+      }
+
       if( prevPipeline != material.data.pipeline )
       {
-         pipInfo = RenderPipelines::Get( material.data.pipeline );
-         if( pipInfo == nullptr )
-         {
-            // TODO WARNINGS
-            printf( "PBRRenderSystem: Passed a null pipeline, skipping entity" );
-            continue;
-         }
-
          GRIS::BindPipeline( cmdList, pipInfo );
          prevPipeline = material.data.pipeline;
       }
@@ -82,32 +100,19 @@ void PBRRenderSystem::tick( double /*deltaS*/ )
       GRIS::UpdateConstantBuffer(
           cmdList, ShaderStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
 
-      // Bind material
+      // Optional scene bindings
       // ==========================================================================================
-      if( material.data.albedo )
-      {
-         GRIS::BindTexture( cmdList, material.data.albedo, "albedo" );
-      }
-      if( material.data.normals )
-      {
-         GRIS::BindTexture( cmdList, material.data.normals, "normals" );
-      }
-      if( material.data.metalness )
-      {
-         GRIS::BindTexture( cmdList, material.data.metalness, "metalness" );
-      }
-      if( material.data.roughness )
-      {
-         GRIS::BindTexture( cmdList, material.data.roughness, "roughness" );
-      }
-      if( material.data.ao )
-      {
-         GRIS::BindTexture( cmdList, material.data.ao, "ambientOcclusion" );
-      }
-      if( material.data.disp )
-      {
-         GRIS::BindTexture( cmdList, material.data.disp, "displacement" );
-      }
+      optionalBufferBinding( cmdList, camera.viewBuffer, "EnvironmentView", pipInfo );
+      optionalBufferBinding( cmdList, scene.lightsBuffer, "DirectionalLight", pipInfo );
+
+      // Optional material bindings
+      // ==========================================================================================
+      optionalTextureBinding( cmdList, material.data.albedo, "albedo", pipInfo );
+      optionalTextureBinding( cmdList, material.data.normals, "normals", pipInfo );
+      optionalTextureBinding( cmdList, material.data.metalness, "metalness", pipInfo );
+      optionalTextureBinding( cmdList, material.data.roughness, "roughness", pipInfo );
+      optionalTextureBinding( cmdList, material.data.ao, "ambientOcclusion", pipInfo );
+      optionalTextureBinding( cmdList, material.data.disp, "displacement", pipInfo );
 
       // Vertex and index buffers
       // ==========================================================================================

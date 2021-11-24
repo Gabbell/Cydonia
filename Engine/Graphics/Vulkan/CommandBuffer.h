@@ -3,6 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/PipelineInfos.h>
 
 #include <array>
 #include <atomic>
@@ -69,9 +70,9 @@ class CommandBuffer final
 
    // Getters
    // =============================================================================================
-   VkPipelineStageFlags getWaitStages() const;
-   VkCommandBuffer getVKBuffer() const { return m_vkCmdBuffer; }
-   VkFence getVKFence() const { return m_vkFence; }
+   VkPipelineStageFlags getWaitStages() const noexcept;
+   VkCommandBuffer getVKBuffer() const noexcept { return m_vkCmdBuffer; }
+   VkFence getVKFence() const noexcept { return m_vkFence; }
 
    // Returns the semaphore that will be signaled when this command buffer is done execution
    VkSemaphore getDoneSemaphore() const;
@@ -108,11 +109,6 @@ class CommandBuffer final
    void bindImage( Texture* texture, uint32_t set, uint32_t binding );
    void bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
    void bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
-
-   void bindTexture( Texture* texture, const std::string_view name );
-   void bindImage( Texture* texture, const std::string_view name );
-   void bindBuffer( Buffer* buffer, const std::string_view name );
-   void bindUniformBuffer( Buffer* buffer, const std::string_view name );
 
    void updatePushConstants( const CYD::PushConstantRange& range, const void* pData );
 
@@ -175,25 +171,8 @@ class CommandBuffer final
    // Descriptor Sets and Binding
    // =============================================================================================
    // Used for deferred updating and binding of descriptor sets before a draw command
-   template <class T>
-   struct ResourceBinding
-   {
-      ResourceBinding() = default;
-      ResourceBinding(
-          const T* resource,
-          CYD::ShaderResourceType type,
-          uint32_t set,
-          uint32_t binding )
-          : resource( resource ), type( type ), set( set ), binding( binding )
-      {
-      }
-      const T* resource            = nullptr;
-      CYD::ShaderResourceType type = CYD::ShaderResourceType::UNIFORM;
-      uint32_t set                 = 0;
-      uint32_t binding             = 0;
-   };
-   using BufferBinding  = ResourceBinding<Buffer>;
-   using TextureBinding = ResourceBinding<Texture>;
+   using BufferBinding  = CYD::ResourceBinding<Buffer*>;
+   using TextureBinding = CYD::ResourceBinding<Texture*>;
 
    // The updating and binding of descriptor sets is deferred all the way until we do a draw call.
    // We will only update and bind the "new" descriptor sets in Vulkan with the descriptor sets that
@@ -201,12 +180,6 @@ class CommandBuffer final
    // unnecessary descriptor sets and that we only update and bind what is needed for the next draw.
    VkDescriptorSet _findOrAllocateDescSet( size_t prevSize, uint32_t set );
    void _prepareDescriptorSets( CYD::PipelineType pipType );
-
-   template <class T>
-   ResourceBinding<T> _findBindingFromLayout(
-       const T* resource,
-       const std::string_view name,
-       const CYD::PipelineLayoutInfo& pipLayout );
 
    // Dependencies
    // =============================================================================================
