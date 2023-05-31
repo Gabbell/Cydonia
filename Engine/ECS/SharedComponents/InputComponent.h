@@ -8,7 +8,7 @@ namespace CYD
 {
 class InputComponent final : public BaseSharedComponent
 {
-public:
+  public:
    InputComponent() = default;
    NON_COPIABLE( InputComponent );
    virtual ~InputComponent() = default;
@@ -21,6 +21,9 @@ public:
    // Keeps track of mouse displacement since last update
    glm::vec2 cursorDelta = glm::vec2( 0.0f );
 
+   int windowWidth  = 0;
+   int windowHeight = 0;
+
    bool goingForwards  = false;
    bool goingBackwards = false;
    bool goingRight     = false;
@@ -28,5 +31,8 @@ public:
    bool goingUp        = false;
    bool goingDown      = false;
    bool rotating       = false;
+   bool sprinting      = false;
+
+   bool resolutionChanged = true;
 };
 }

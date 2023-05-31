@@ -12,7 +12,7 @@
 
 #include <set>
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
 static VkBool32 errorCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
@@ -96,7 +96,7 @@ Instance::Instance( const CYD::Window& window ) : m_window( window )
 {
    _createVKInstance();
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    _createDebugMessenger();
 #endif
 }
@@ -118,7 +118,7 @@ static bool checkValidationLayerSupport( const std::vector<const char*>& desired
    return requiredLayers.empty();
 }
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
 static void populateDebugInfo( VkDebugUtilsMessengerCreateInfoEXT& debugInfo )
 {
    // Filling up debug info
@@ -157,7 +157,7 @@ void Instance::_createVKInstance()
    appInfo.apiVersion         = VK_API_VERSION_1_2;
 
    // Use these validation layers if this is a debug build
-#if defined( _DEBUG )
+#if CYD_DEBUG
    m_layers.push_back( "VK_LAYER_KHRONOS_validation" );
    CYDASSERT( checkValidationLayerSupport( m_layers ) );
 #endif
@@ -174,7 +174,7 @@ void Instance::_createVKInstance()
    instInfo.enabledExtensionCount   = static_cast<uint32_t>( extensions.size() );
    instInfo.ppEnabledExtensionNames = extensions.data();
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    VkDebugUtilsMessengerCreateInfoEXT debugInfo;
    populateDebugInfo( debugInfo );
    instInfo.pNext = &debugInfo;
@@ -186,7 +186,7 @@ void Instance::_createVKInstance()
 
 Instance::~Instance()
 {
-#if defined( _DEBUG )
+#if CYD_DEBUG
    destroyDebugUtilsMessengerEXT( m_vkInstance, m_debugMessenger, nullptr );
 #endif
    

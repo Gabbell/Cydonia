@@ -14,7 +14,7 @@ struct ID3D12Device;
 struct IDXGIAdapter1;
 struct ID3D12CommandQueue;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
 struct ID3D12DebugDevice;
 #endif
 
@@ -54,7 +54,7 @@ class Device final
 
    std::vector<ID3D12CommandQueue*> m_commandQueues;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    ID3D12DebugDevice* m_debugDevice;
 #endif
 };

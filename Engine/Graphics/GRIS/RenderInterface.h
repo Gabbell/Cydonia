@@ -1,7 +1,7 @@
 #pragma once
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/RenderPipelines.h>
+#include <Graphics/PipelineInfos.h>
 #include <Graphics/Handles/ResourceHandle.h>
 
 #include <array>
@@ -77,7 +77,7 @@ void SyncToSwapchain( CmdListHandle cmdList );
 void SetViewport( CmdListHandle cmdList, const Viewport& viewport );
 void SetScissor( CmdListHandle cmdList, const Rectangle& scissor );
 
-void BindPipeline( CmdListHandle cmdList, const std::string_view pipName );
+void BindPipeline( CmdListHandle cmdList, PipelineIndex index );
 void BindPipeline( CmdListHandle cmdList, const PipelineInfo* pipInfo );
 void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo );
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo );
@@ -87,21 +87,37 @@ template <class VertexLayout>
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
 
 template <class Type>
-void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle );
+void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, uint32_t offset = 0 );
 
 // Bind shader resources by binding/set
-void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding );
-void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding );
-void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, uint32_t set, uint32_t binding );
+void BindTexture(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    uint32_t binding,
+    uint32_t set = 0 );
+void BindImage(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    uint32_t binding,
+    uint32_t set = 0 );
+void BindBuffer(
+    CmdListHandle cmdList,
+    BufferHandle bufferHandle,
+    uint32_t binding,
+    uint32_t set    = 0,
+    uint32_t offset = 0,
+    uint32_t range  = 0 );
 void BindUniformBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
-    uint32_t set,
-    uint32_t binding );
+    uint32_t binding,
+    uint32_t set    = 0,
+    uint32_t offset = 0,
+    uint32_t range  = 0 );
 
 void UpdateConstantBuffer(
     CmdListHandle cmdList,
-    ShaderStageFlag stages,
+    PipelineStageFlag stages,
     size_t offset,
     size_t size,
     const void* pData );
@@ -149,12 +165,24 @@ void PrepareFrame();
 void BeginRendering( CmdListHandle cmdList );
 void BeginRendering(
     CmdListHandle cmdList,
-    const RenderTargetsInfo& attachmentsInfo,
+    const FramebufferInfo& attachmentsInfo,
     const std::vector<TextureHandle>& targets );
 void NextPass( CmdListHandle cmdList );
 void EndRendering( CmdListHandle cmdList );
-void DrawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex = 0 );
-void DrawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex = 0 );
+void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex = 0 );
+void DrawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex = 0 );
+void DrawInstanced(
+    CmdListHandle cmdList,
+    size_t vertexCount,
+    size_t instanceCount,
+    size_t firstVertex   = 0,
+    size_t firstInstance = 0 );
+void DrawIndexedInstanced(
+    CmdListHandle cmdList,
+    size_t indexCount,
+    size_t instanceCount,
+    size_t firstIndex    = 0,
+    size_t firstInstance = 0 );
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
 void PresentFrame();
 
@@ -162,9 +190,6 @@ void PresentFrame();
 // ===============================================================================================
 void BeginDebugRange( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color );
 void EndDebugRange( CmdListHandle cmdList );
-void InsertDebugLabel(
-    CmdListHandle cmdList,
-    const char* name,
-    const std::array<float, 4>& color );
+void InsertDebugLabel( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color );
 }
 }

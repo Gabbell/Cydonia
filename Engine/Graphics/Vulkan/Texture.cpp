@@ -55,6 +55,18 @@ void Texture::release()
    }
 }
 
+void Texture::incUse() { ( *m_useCount )++; }
+void Texture::decUse()
+{
+   if( m_useCount->load() == 0 )
+   {
+      CYDASSERT(
+          !"Tried to decrease a resource usage counter to below 0. Probably a scope problem." );
+      return;
+   }
+   ( *m_useCount )--;
+}
+
 void Texture::_createImage()
 {
    // Creating image

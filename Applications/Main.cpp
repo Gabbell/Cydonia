@@ -4,7 +4,7 @@
 int main()
 {
     {
-        CYD::VKSandbox app(1920, 1080, "Cydonia Sandbox");
+        CYD::VKSandbox app(2560, 1440, "Cydonia Sandbox");
         app.startLoop();
     }
 

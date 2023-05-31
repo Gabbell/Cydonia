@@ -11,7 +11,7 @@
 // Definition
 // ================================================================================================
 /*
-This system is used to generate an displacement field for entities that have an FFTOceanComponent.
+This system is used to generate a displacement field for entities that have an FFTOceanComponent.
 */
 namespace CYD
 {

@@ -11,18 +11,18 @@
 // ================================================================================================
 namespace CYD
 {
-class AssetStash;
+class MeshCache;
 
 class MeshLoaderSystem final : public CommonSystem<MeshComponent>
 {
   public:
-   MeshLoaderSystem( AssetStash& assets ) : m_assets( assets ) {}
+   MeshLoaderSystem( MeshCache& meshCache ) : m_meshCache( meshCache ) {}
    NON_COPIABLE( MeshLoaderSystem );
    virtual ~MeshLoaderSystem() = default;
 
    void tick( double deltaS ) override;
 
   private:
-   AssetStash& m_assets;
+   MeshCache& m_meshCache;
 };
 }

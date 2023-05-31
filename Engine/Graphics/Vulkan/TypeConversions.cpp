@@ -26,6 +26,8 @@ VkFormat cydToVkFormat( CYD::PixelFormat format )
    {
       case CYD::PixelFormat::BGRA8_UNORM:
          return VK_FORMAT_B8G8R8A8_UNORM;
+      case CYD::PixelFormat::RGBA8_UNORM:
+         return VK_FORMAT_R8G8B8A8_UNORM;
       case CYD::PixelFormat::RGBA8_SRGB:
          return VK_FORMAT_R8G8B8A8_SRGB;
       case CYD::PixelFormat::RGBA16F:
@@ -126,26 +128,60 @@ VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode )
    return VK_POLYGON_MODE_FILL;
 }
 
-VkShaderStageFlags cydToVkShaderStages( CYD::ShaderStageFlag stages )
+VkPipelineStageFlags cydToVkPipelineStages( CYD::PipelineStageFlag stages )
 {
+   VkPipelineStageFlags vkStages = 0;
+   if( stages & CYD::PipelineStage::VERTEX_STAGE )
+   {
+      vkStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+   }
+   if( stages & CYD::PipelineStage::FRAGMENT_STAGE )
+   {
+      vkStages |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+   }
+   if( stages & CYD::PipelineStage::COMPUTE_STAGE )
+   {
+      vkStages |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+   }
+   if( stages & CYD::PipelineStage::TRANSFER_STAGE )
+   {
+      vkStages |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+   }
+   if( stages & CYD::PipelineStage::ALL_GRAPHICS_STAGES )
+   {
+      vkStages |= VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+   }
+   if( stages & CYD::PipelineStage::ALL_STAGES )
+   {
+      vkStages |= VK_PIPELINE_STAGE_ALL_COMMANDS_BIT;
+   }
+
+   return vkStages;
+}
+
+VkShaderStageFlags cydToVkShaderStages( CYD::PipelineStageFlag stages )
+{
+   // Invalid stages for shaders
+   CYDASSERT( !(stages & CYD::PipelineStage::TRANSFER_STAGE) );
+
    VkShaderStageFlags vkStages = 0;
-   if( stages & CYD::ShaderStage::VERTEX_STAGE )
+   if( stages & CYD::PipelineStage::VERTEX_STAGE )
    {
       vkStages |= VK_SHADER_STAGE_VERTEX_BIT;
    }
-   if( stages & CYD::ShaderStage::FRAGMENT_STAGE )
+   if( stages & CYD::PipelineStage::FRAGMENT_STAGE )
    {
       vkStages |= VK_SHADER_STAGE_FRAGMENT_BIT;
    }
-   if( stages & CYD::ShaderStage::COMPUTE_STAGE )
+   if( stages & CYD::PipelineStage::COMPUTE_STAGE )
    {
       vkStages |= VK_SHADER_STAGE_COMPUTE_BIT;
    }
-   if( stages & CYD::ShaderStage::ALL_GRAPHICS_STAGES )
+   if( stages & CYD::PipelineStage::ALL_GRAPHICS_STAGES )
    {
       vkStages |= VK_SHADER_STAGE_ALL_GRAPHICS;
    }
-   if( stages & CYD::ShaderStage::ALL_STAGES )
+   if( stages & CYD::PipelineStage::ALL_STAGES )
    {
       vkStages |= VK_SHADER_STAGE_ALL;
    }

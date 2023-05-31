@@ -1,15 +1,16 @@
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
 
-#include <Graphics/AssetStash.h>
-#include <Graphics/RenderGraph.h>
+#include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
+
+#include <Graphics/Scene/MeshCache.h>
 
 namespace CYD
 {
-static bool findMesh( MeshComponent& mesh, AssetStash& assets )
+static bool findMesh( MeshComponent& mesh, MeshCache& cache )
 {
    // Check if the mesh is already in the asset stash
-   const Mesh& loadedMesh = assets.getMesh( mesh.asset );
+   const Mesh& loadedMesh = cache.getMesh( mesh.asset );
    if( loadedMesh.vertexCount )
    {
       mesh.vertexBuffer = loadedMesh.vertexBuffer;
@@ -33,11 +34,11 @@ void MeshLoaderSystem::tick( double /*deltaS*/ )
    {
       MeshComponent& mesh = *std::get<MeshComponent*>( entityEntry.arch );
 
-      if( !mesh.asset.empty() && !findMesh( mesh, m_assets ) )
+      if( !mesh.asset.empty() && !findMesh( mesh, m_meshCache ) )
       {
-         m_assets.loadMeshFromPath( transferList, mesh.asset );
+         m_meshCache.loadMeshFromPath( transferList, mesh.asset );
 
-         const bool foundMesh = findMesh( mesh, m_assets );
+         const bool foundMesh = findMesh( mesh, m_meshCache );
          CYDASSERT( foundMesh && "MeshLoaderSystem: A named mesh could not be loaded" );
       }
    }

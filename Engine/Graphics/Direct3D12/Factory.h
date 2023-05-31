@@ -7,7 +7,7 @@
 // ================================================================================================
 struct IDXGIFactory7;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
 struct ID3D12Debug1;
 struct ID3D12DebugDevice;
 #endif
@@ -32,7 +32,7 @@ class Factory final
    // =============================================================================================
    void _createFactory( const uint32_t factoryFlags );
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    void _createDebugController( uint32_t& factoryFlags );
 #endif
 
@@ -41,7 +41,7 @@ class Factory final
    // =============================================================================================
    IDXGIFactory7* m_factory;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    ID3D12Debug1* m_debugController;
 #endif
 };

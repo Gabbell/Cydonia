@@ -16,7 +16,7 @@ void Device::_createDevice()
    D3D12CALL(
        D3D12CreateDevice( m_adapter, D3D_FEATURE_LEVEL_12_0, IID_PPV_ARGS( &m_d3d12Device ) ) );
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    D3D12CALL( m_d3d12Device->QueryInterface( &m_debugDevice ) );
 #endif
 }
@@ -46,7 +46,7 @@ Device::~Device()
    m_d3d12Device->Release();
    m_d3d12Device = nullptr;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    m_debugDevice->Release();
    m_debugDevice = nullptr;
 #endif

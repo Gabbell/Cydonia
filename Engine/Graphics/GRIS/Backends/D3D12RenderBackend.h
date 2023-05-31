@@ -58,8 +58,11 @@ class D3D12RenderBackend final : public RenderBackend
    void bindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo ) override;
 
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) override;
-   void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
-       override;
+   void bindIndexBuffer(
+       CmdListHandle cmdList,
+       IndexBufferHandle bufferHandle,
+       IndexType type,
+       uint32_t offset ) override;
 
    void bindTexture(
        CmdListHandle cmdList,
@@ -71,17 +74,21 @@ class D3D12RenderBackend final : public RenderBackend
    void bindBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) override;
+       uint32_t offset,
+       uint32_t range ) override;
    void bindUniformBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) override;
+       uint32_t offset,
+       uint32_t range ) override;
 
    void updateConstantBuffer(
        CmdListHandle cmdList,
-       ShaderStageFlag stages,
+       PipelineStageFlag stages,
        size_t offset,
        size_t size,
        const void* pData ) override;
@@ -132,7 +139,7 @@ class D3D12RenderBackend final : public RenderBackend
    void beginRendering( CmdListHandle cmdList ) override;
    void beginRendering(
        CmdListHandle cmdList,
-       const RenderTargetsInfo& targetsInfo,
+       const FramebufferInfo& targetsInfo,
        const std::vector<TextureHandle>& targets ) override;
    void nextPass( CmdListHandle cmdList ) override;
    void endRendering( CmdListHandle cmdList ) override;

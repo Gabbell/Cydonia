@@ -1,6 +1,16 @@
 #pragma once
 
-#include <functional>
+#include <functional>  // for std::hash
+
+#if( _DEBUG )
+    #define CYD_DEBUG 1
+
+    #define REF( EXPR )   \
+       do                 \
+       {                  \
+          sizeof( EXPR ); \
+       } while( 0 );
+#endif
 
 // Forward including handles
 #define FWDHANDLE( obj ) typedef struct obj##_T* obj;

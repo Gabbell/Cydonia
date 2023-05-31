@@ -32,7 +32,7 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
    const char** extensions  = glfwGetRequiredInstanceExtensions( &extensionsCount );
    m_extensions             = std::vector<const char*>( extensions, extensions + extensionsCount );
 
-#if _DEBUG
+#if CYD_DEBUG
    m_extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
 #endif
 

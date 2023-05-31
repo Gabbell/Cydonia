@@ -25,9 +25,11 @@ enum class ComponentType : int16_t
    MATERIAL,
    MESH,
    RENDERABLE,
+   FULLSCREEN,
 
    // Procedural
    // ==============================================================================================
+   NOISE,
    OCEAN,
    ATMOSPHERE,
 
@@ -38,6 +40,11 @@ enum class ComponentType : int16_t
    // Behaviour
    // ==============================================================================================
    ENTITY_FOLLOW,
+
+   // Debug
+   // ==============================================================================================
+   DEBUG_DRAW,
+   DEBUG_SPHERE,
 
    COUNT  // Keep at the end
 };

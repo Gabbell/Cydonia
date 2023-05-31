@@ -5,7 +5,7 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/SharedComponents/CameraComponent.h>
+#include <ECS/Components/Scene/CameraComponent.h>
 
 namespace CYD
 {

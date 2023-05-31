@@ -10,7 +10,6 @@ namespace CYD
 enum class SharedComponentType : uint8_t
 {
    INPUT,
-   CAMERA,
    SCENE,
    COUNT  //  Keep at the end
 };

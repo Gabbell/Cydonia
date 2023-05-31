@@ -34,7 +34,7 @@ const Shader* ShaderCache::getShader( const std::string& shaderName )
    {
       return it->second.get();
    }
-   CYDASSERT( !"ShaderCache: Could not find shader in herder" );
+   CYDASSERT( !"ShaderCache: Could not find shader in cache" );
    return nullptr;
 }
 }

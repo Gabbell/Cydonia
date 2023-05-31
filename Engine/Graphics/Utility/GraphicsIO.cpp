@@ -89,12 +89,18 @@ void* GraphicsIO::LoadImage(
       case PixelFormat::RGBA32F:
          imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
          break;
+      case PixelFormat::RGB32F:
+         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb );
+         break;
+      case PixelFormat::RGBA8_SRGB:
+         imageData = stbi_load( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         break;
       case PixelFormat::R32F:
          imageData = stbi_loadf( path.c_str(), &width, &height, &channels, 0 );
          break;
       default:
          // TODO Format to pixel size function
-         imageData = stbi_load( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         CYDASSERT( !"Not implemented" );
    }
 
    size = width * height * GetPixelSizeInBytes( format );

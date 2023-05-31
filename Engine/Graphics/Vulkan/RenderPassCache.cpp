@@ -15,7 +15,7 @@ RenderPassCache::RenderPassCache( const Device& device ) : m_device( device )
    _createDefaultRenderPasses();
 }
 
-VkRenderPass RenderPassCache::findOrCreate( const CYD::RenderTargetsInfo& targetsInfo )
+VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsInfo )
 {
    // Find
    const auto it = m_renderPasses.find( targetsInfo );

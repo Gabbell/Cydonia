@@ -3,6 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/PipelineInfos.h>
 #include <Graphics/Handles/ResourceHandle.h>
 
 namespace CYD
@@ -23,7 +24,7 @@ class RenderBackend
 
    virtual void cleanup() = 0;
 
-   virtual void waitUntilIdle() = 0;
+   virtual void waitUntilIdle() {}
 
    // Command Buffers/Lists
    // ==============================================================================================
@@ -51,30 +52,37 @@ class RenderBackend
    virtual void bindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )  = 0;
 
    virtual void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) = 0;
-   virtual void
-   bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type ) = 0;
+   virtual void bindIndexBuffer(
+       CmdListHandle cmdList,
+       IndexBufferHandle bufferHandle,
+       IndexType type,
+       uint32_t offset ) = 0;
 
    virtual void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
-       uint32_t set,
-       uint32_t binding ) = 0;
+       uint32_t binding,
+       uint32_t set ) = 0;
    virtual void
-   bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding ) = 0;
+   bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set ) = 0;
    virtual void bindBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) = 0;
+       uint32_t offset,
+       uint32_t range ) = 0;
    virtual void bindUniformBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) = 0;
+       uint32_t offset,
+       uint32_t range ) = 0;
 
    virtual void updateConstantBuffer(
        CmdListHandle cmdList,
-       ShaderStageFlag stages,
+       PipelineStageFlag stages,
        size_t offset,
        size_t size,
        const void* pData ) = 0;
@@ -123,7 +131,7 @@ class RenderBackend
    virtual void beginRendering( CmdListHandle cmdList ) = 0;
    virtual void beginRendering(
        CmdListHandle cmdList,
-       const RenderTargetsInfo& targetsInfo,
+       const FramebufferInfo& targetsInfo,
        const std::vector<TextureHandle>& targets )                                            = 0;
    virtual void nextPass( CmdListHandle cmdList )                                             = 0;
    virtual void endRendering( CmdListHandle cmdList )                                         = 0;

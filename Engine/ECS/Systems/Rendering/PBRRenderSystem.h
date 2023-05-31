@@ -14,11 +14,14 @@
 // ================================================================================================
 namespace CYD
 {
+class MaterialCache;
+
 class PBRRenderSystem final
     : public CommonSystem<TransformComponent, MeshComponent, MaterialComponent, RenderableComponent>
 {
   public:
-   PBRRenderSystem() = default;
+   PBRRenderSystem() = delete;
+   PBRRenderSystem( const MaterialCache& materials ) : m_materials( materials ) {}
    NON_COPIABLE( PBRRenderSystem );
    virtual ~PBRRenderSystem() = default;
 
@@ -26,5 +29,8 @@ class PBRRenderSystem final
 
   protected:
    bool _compareEntities( const EntityEntry& first, const EntityEntry& second ) override;
+
+  private:
+   const MaterialCache& m_materials;
 };
 }

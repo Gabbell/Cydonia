@@ -25,6 +25,8 @@
     <ClInclude Include="Algorithms\BitManipulation.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Common\Include.h" />
+    <ClInclude Include="Common\ObjectPool.h" />
+    <ClInclude Include="Common\TODOByteBuffer.h" />
     <ClInclude Include="Graph\NodeGraph.h" />
     <ClInclude Include="Multithreading\ThreadPool.h" />
     <ClInclude Include="Multithreading\ThreadSafeQueue.h" />

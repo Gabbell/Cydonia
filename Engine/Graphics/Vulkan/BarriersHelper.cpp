@@ -14,7 +14,7 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::ImageLa
    CYDASSERT( texture && "BarriersHelper: No texture passed to make barrier" );
 
    const CYD::ImageLayout initialLayout    = texture->getLayout();
-   const CYD::ShaderStageFlag targetStages = texture->getStages();
+   const CYD::PipelineStageFlag targetStages = texture->getStages();
 
    // If the layout is the same, don't even insert the barrier. The only point of this barrier is to
    // transition layouts currently
@@ -78,11 +78,11 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::ImageLa
        ( targetLayout == CYD::ImageLayout::SHADER_READ ) ||
        ( targetLayout == CYD::ImageLayout::GENERAL ) )
    {
-      if( targetStages & CYD::ShaderStage::FRAGMENT_STAGE )
+      if( targetStages & CYD::PipelineStage::FRAGMENT_STAGE )
       {
          dstPipelineStage |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
       }
-      if( targetStages & CYD::ShaderStage::COMPUTE_STAGE )
+      if( targetStages & CYD::PipelineStage::COMPUTE_STAGE )
       {
          dstPipelineStage |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
       }
@@ -102,5 +102,23 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::ImageLa
 
    // Updating layout
    texture->setLayout( targetLayout );
+}
+
+void Pipeline(
+    const CommandBuffer* cmdBuffer,
+    CYD::PipelineStageFlag sourceStage,
+    CYD::PipelineStageFlag destStage )
+{
+   vkCmdPipelineBarrier(
+       cmdBuffer->getVKBuffer(),
+       vk::TypeConversions::cydToVkPipelineStages( sourceStage ),
+       vk::TypeConversions::cydToVkPipelineStages( destStage ),
+       0,
+       0,
+       nullptr,
+       0,
+       nullptr,
+       0,
+       nullptr );
 }
 }

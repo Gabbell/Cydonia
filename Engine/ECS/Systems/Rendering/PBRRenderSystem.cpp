@@ -1,56 +1,58 @@
 #include <ECS/Systems/Rendering/PBRRenderSystem.h>
 
-#include <Graphics/RenderGraph.h>
-#include <Graphics/VertexLayout.h>
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/StaticPipelines.h>
+#include <Graphics/Scene/MaterialCache.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/RenderGraph.h>
 
 #include <ECS/EntityManager.h>
-#include <ECS/SharedComponents/CameraComponent.h>
+#include <ECS/Components/Scene/CameraComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
 namespace CYD
 {
-static constexpr uint32_t ENV_VIEW_SET = 0;
-
+// ================================================================================================
 bool PBRRenderSystem::_compareEntities( const EntityEntry& first, const EntityEntry& second )
 {
-   // We are sorting entities by their pipeline
-   // TODO Sort entities better by shader/material
+   // We are sorting entities by their material/pipeline
    const MaterialComponent& matFirst  = *std::get<MaterialComponent*>( first.arch );
    const MaterialComponent& matSecond = *std::get<MaterialComponent*>( second.arch );
-   return matFirst.data.pipeline < matSecond.data.pipeline;
+
+   return matFirst.materialIdx < matSecond.materialIdx;
 }
 
-static void optionalTextureBinding(
-    CmdListHandle cmdList,
-    TextureHandle texture,
-    std::string_view name,
-    const PipelineInfo* pipInfo )
-{
-   if( ResourceBinding<TextureHandle> res = pipInfo->findBinding( texture, name ); res.valid )
-   {
-      GRIS::BindTexture( cmdList, res.resource, res.set, res.binding );
-   }
-}
-
+// ================================================================================================
 static void optionalBufferBinding(
     CmdListHandle cmdList,
     BufferHandle buffer,
     std::string_view name,
-    const PipelineInfo* pipInfo )
+    const PipelineInfo* pipInfo,
+    uint32_t offset = 0,
+    uint32_t range  = 0 )
 {
-   if( ResourceBinding<BufferHandle> res = pipInfo->findBinding( buffer, name ); res.valid )
+   if( FlatShaderBinding res = pipInfo->findBinding( buffer, name ); res.valid )
    {
-      GRIS::BindUniformBuffer( cmdList, res.resource, res.set, res.binding );
+      GRIS::BindUniformBuffer( cmdList, buffer, res.binding, res.set, offset, range );
    }
 }
 
+// ================================================================================================
 void PBRRenderSystem::tick( double /*deltaS*/ )
 {
-   const CameraComponent& camera = m_ecs->getSharedComponent<CameraComponent>();
-   const SceneComponent& scene   = m_ecs->getSharedComponent<SceneComponent>();
+   // Finding main view
+   const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
+   const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "MAIN" );
+   if( it == scene.viewNames.end() )
+   {
+      // TODO WARNING
+      CYDASSERT( !"Could not find main view, skipping render tick" );
+      return;
+   }
+   const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
+
+   // Start command list recording
    const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, "PBRRenderSystem", true );
 
    GRIS::StartRecordingCommandList( cmdList );
@@ -62,9 +64,10 @@ void PBRRenderSystem::tick( double /*deltaS*/ )
    // Rendering straight to swapchain
    GRIS::BeginRendering( cmdList );
 
+   // Tracking
    std::string_view prevMesh;
-   std::string_view prevPipeline;
-   std::string_view prevMaterial;
+   PipelineIndex prevPipeline = INVALID_PIPELINE_IDX;
+   MaterialIndex prevMaterial = INVALID_MATERIAL_IDX;
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
@@ -73,49 +76,48 @@ void PBRRenderSystem::tick( double /*deltaS*/ )
       const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
       const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
+      // Pipeline
+      if( prevPipeline != material.pipelineIdx )
+      {
+         const PipelineInfo* pipInfo = StaticPipelines::Get( material.pipelineIdx );
+         if( pipInfo == nullptr )
+         {
+            // TODO WARNINGS
+            printf( "PBRRenderSystem: Passed a null pipeline, skipping entity" );
+            continue;
+         }
+
+         GRIS::BindPipeline( cmdList, pipInfo );
+
+         // Scene bindings
+         optionalBufferBinding(
+             cmdList,
+             scene.viewsBuffer,
+             "EnvironmentView",
+             pipInfo,
+             viewIdx * sizeof( SceneComponent::ViewUBO ),
+             sizeof( SceneComponent::ViewUBO ) );
+         optionalBufferBinding( cmdList, scene.lightsBuffer, "DirectionalLight", pipInfo );
+
+         prevPipeline = material.pipelineIdx;
+      }
+
       const glm::mat4 modelMatrix = glm::translate( glm::mat4( 1.0f ), transform.position ) *
                                     glm::scale( glm::mat4( 1.0f ), transform.scaling ) *
                                     glm::toMat4( transform.rotation );
 
-      // Pipeline
-      // ==========================================================================================
-      const PipelineInfo* pipInfo = nullptr;
-
-      pipInfo = RenderPipelines::Get( material.data.pipeline );
-      if( pipInfo == nullptr )
-      {
-         // TODO WARNINGS
-         printf( "PBRRenderSystem: Passed a null pipeline, skipping entity" );
-         continue;
-      }
-
-      if( prevPipeline != material.data.pipeline )
-      {
-         GRIS::BindPipeline( cmdList, pipInfo );
-         prevPipeline = material.data.pipeline;
-      }
-
       // Update model transform push constant
-      // ==========================================================================================
       GRIS::UpdateConstantBuffer(
-          cmdList, ShaderStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
+          cmdList, PipelineStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
 
-      // Optional scene bindings
-      // ==========================================================================================
-      optionalBufferBinding( cmdList, camera.viewBuffer, "EnvironmentView", pipInfo );
-      optionalBufferBinding( cmdList, scene.lightsBuffer, "DirectionalLight", pipInfo );
-
-      // Optional material bindings
-      // ==========================================================================================
-      optionalTextureBinding( cmdList, material.data.albedo, "albedo", pipInfo );
-      optionalTextureBinding( cmdList, material.data.normals, "normals", pipInfo );
-      optionalTextureBinding( cmdList, material.data.metalness, "metalness", pipInfo );
-      optionalTextureBinding( cmdList, material.data.roughness, "roughness", pipInfo );
-      optionalTextureBinding( cmdList, material.data.ao, "ambientOcclusion", pipInfo );
-      optionalTextureBinding( cmdList, material.data.disp, "displacement", pipInfo );
+      // Material
+      if( prevMaterial != material.materialIdx )
+      {
+         m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
+         prevMaterial = material.materialIdx;
+      }
 
       // Vertex and index buffers
-      // ==========================================================================================
       if( prevMesh != mesh.asset )
       {
          if( mesh.vertexBuffer )
@@ -133,11 +135,11 @@ void PBRRenderSystem::tick( double /*deltaS*/ )
 
       if( mesh.indexCount > 0 )
       {
-         GRIS::DrawVerticesIndexed( cmdList, mesh.indexCount );
+         GRIS::DrawIndexed( cmdList, mesh.indexCount );
       }
       else
       {
-         GRIS::DrawVertices( cmdList, mesh.vertexCount );
+         GRIS::Draw( cmdList, mesh.vertexCount );
       }
    }
 

@@ -5,6 +5,7 @@
 #include <Window/GLFWWindow.h>
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/PipelineInfos.h>
 #include <Graphics/Handles/ResourceHandleManager.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/Vulkan/BarriersHelper.h>
@@ -205,13 +206,41 @@ class VKRenderBackendImp
    void setViewport( CmdListHandle cmdList, const Viewport& viewport ) const
    {
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->setViewport( viewport );
+
+      if( viewport.width > 0 && viewport.height > 0 )
+      {
+         cmdBuffer->setViewport( viewport );
+      }
+      else
+      {
+         // This is a null viewport, give a default one instead
+         const VkExtent2D& swapchainExtent = m_mainSwapchain->getVKExtent();
+
+         const Viewport defaultViewport =
+             Viewport( 0.0f, 0.0f, swapchainExtent.width, swapchainExtent.height );
+
+         cmdBuffer->setViewport( defaultViewport );
+      }
    }
 
    void setScissor( CmdListHandle cmdList, const Rectangle& scissor ) const
    {
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->setScissor( scissor );
+
+      if( scissor.extent.width > 0 && scissor.extent.height > 0 )
+      {
+         cmdBuffer->setScissor( scissor );
+      }
+      else
+      {
+         // This is a null scissor, give a default one instead
+         const VkExtent2D& swapchainExtent = m_mainSwapchain->getVKExtent();
+
+         const Rectangle defaultScissor =
+             Rectangle( { 0.0f, 0.0f }, { swapchainExtent.width, swapchainExtent.height } );
+
+         cmdBuffer->setScissor( defaultScissor );
+      }
    }
 
    void bindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo ) const
@@ -240,8 +269,11 @@ class VKRenderBackendImp
       cmdBuffer->bindVertexBuffer( vertexBuffer );
    }
 
-   void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
-       const
+   void bindIndexBuffer(
+       CmdListHandle cmdList,
+       IndexBufferHandle bufferHandle,
+       IndexType type,
+       uint32_t offset ) const
    {
       if( !bufferHandle )
       {
@@ -252,14 +284,14 @@ class VKRenderBackendImp
       const auto cmdBuffer   = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto indexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
-      cmdBuffer->bindIndexBuffer( indexBuffer, type );
+      cmdBuffer->bindIndexBuffer( indexBuffer, type, offset );
    }
 
    void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
-       uint32_t set,
-       uint32_t binding ) const
+       uint32_t binding,
+       uint32_t set ) const
    {
       if( !texHandle )
       {
@@ -270,10 +302,10 @@ class VKRenderBackendImp
       auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
 
-      cmdBuffer->bindTexture( texture, set, binding );
+      cmdBuffer->bindTexture( texture, binding, set );
    }
 
-   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
+   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
        const
    {
       if( !texHandle )
@@ -286,36 +318,40 @@ class VKRenderBackendImp
       const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
 
       vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::GENERAL );
-      cmdBuffer->bindImage( texture, set, binding );
+      cmdBuffer->bindImage( texture, binding, set );
    }
 
    void bindBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) const
+       uint32_t offset,
+       uint32_t range ) const
    {
       auto cmdBuffer    = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
-      cmdBuffer->bindBuffer( buffer, set, binding );
+      cmdBuffer->bindBuffer( buffer, binding, set, offset, range );
    }
 
    void bindUniformBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) const
+       uint32_t offset,
+       uint32_t range ) const
    {
       auto cmdBuffer           = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto uniformBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
-      cmdBuffer->bindUniformBuffer( uniformBuffer, set, binding );
+      cmdBuffer->bindUniformBuffer( uniformBuffer, binding, set, offset, range );
    }
 
    void updateConstantBuffer(
        CmdListHandle cmdList,
-       ShaderStageFlag stages,
+       PipelineStageFlag stages,
        size_t offset,
        size_t size,
        const void* pData ) const
@@ -523,7 +559,7 @@ class VKRenderBackendImp
 
    void beginRendering(
        CmdListHandle cmdList,
-       const RenderTargetsInfo& targetsInfo,
+       const FramebufferInfo& targetsInfo,
        const std::vector<TextureHandle>& targets ) const
    {
       // Fetching textures
@@ -566,6 +602,10 @@ class VKRenderBackendImp
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+
+      vk::Barriers::Pipeline(
+          cmdBuffer, CYD::PipelineStage::COMPUTE_STAGE, CYD::PipelineStage::COMPUTE_STAGE );
+
       cmdBuffer->dispatch( workX, workY, workZ );
    }
 
@@ -697,9 +737,10 @@ void VKRenderBackend::bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandl
 void VKRenderBackend::bindIndexBuffer(
     CmdListHandle cmdList,
     IndexBufferHandle bufferHandle,
-    IndexType type )
+    IndexType type,
+    uint32_t offset )
 {
-   _imp->bindIndexBuffer( cmdList, bufferHandle, type );
+   _imp->bindIndexBuffer( cmdList, bufferHandle, type, offset );
 }
 
 void VKRenderBackend::bindTexture(
@@ -724,18 +765,22 @@ void VKRenderBackend::bindBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
     uint32_t set,
-    uint32_t binding )
+    uint32_t binding,
+    uint32_t offset,
+    uint32_t range )
 {
-   _imp->bindBuffer( cmdList, bufferHandle, set, binding );
+   _imp->bindBuffer( cmdList, bufferHandle, set, binding, offset, range );
 }
 
 void VKRenderBackend::bindUniformBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
     uint32_t set,
-    uint32_t binding )
+    uint32_t binding,
+    uint32_t offset,
+    uint32_t range )
 {
-   _imp->bindUniformBuffer( cmdList, bufferHandle, set, binding );
+   _imp->bindUniformBuffer( cmdList, bufferHandle, set, binding, offset, range );
 }
 
 void VKRenderBackend::setViewport( CmdListHandle cmdList, const Viewport& viewport )
@@ -750,7 +795,7 @@ void VKRenderBackend::setScissor( CmdListHandle cmdList, const Rectangle& scisso
 
 void VKRenderBackend::updateConstantBuffer(
     CmdListHandle cmdList,
-    ShaderStageFlag stages,
+    PipelineStageFlag stages,
     size_t offset,
     size_t size,
     const void* pData )
@@ -844,7 +889,7 @@ void VKRenderBackend::beginRendering( CmdListHandle cmdList ) { _imp->beginRende
 
 void VKRenderBackend::beginRendering(
     CmdListHandle cmdList,
-    const RenderTargetsInfo& targetsInfo,
+    const FramebufferInfo& targetsInfo,
     const std::vector<TextureHandle>& targets )
 {
    _imp->beginRendering( cmdList, targetsInfo, targets );

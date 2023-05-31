@@ -20,7 +20,6 @@
 
 namespace vk
 {
-
 static constexpr uint32_t INITIAL_RESOURCE_TO_UPDATE_COUNT = 32;
 
 CommandBuffer::CommandBuffer()
@@ -127,18 +126,9 @@ void CommandBuffer::free()
       m_usage = 0;
 
       // Clearing tracked descriptor sets
-      std::vector<VkDescriptorSet> vkDescSets;
-      vkDescSets.reserve( m_descSets.size() );
-
       for( const auto& descSet : m_descSets )
       {
-         vkDescSets.push_back( descSet.vkDescSet );
-      }
-
-      if( !vkDescSets.empty() )
-      {
-         m_pDevice->getDescriptorPool().free(
-             vkDescSets.data(), static_cast<uint32_t>( vkDescSets.size() ) );
+         m_pDevice->getDescriptorPool().free( descSet.vkDescSet );
       }
 
       // Clearing accumulated framebuffers
@@ -150,10 +140,11 @@ void CommandBuffer::free()
 
       m_descSets.clear();
 
-      m_boundPip.reset();
+      m_boundPip        = nullptr;
+      m_boundPipLayout  = nullptr;
+      m_boundRenderPass = nullptr;
+
       m_boundPipInfo.reset();
-      m_boundPipLayout.reset();
-      m_boundRenderPass.reset();
 
       vkFreeCommandBuffers(
           m_pDevice->getVKDevice(), m_pPool->getVKCommandPool(), 1, &m_vkCmdBuffer );
@@ -319,9 +310,9 @@ void CommandBuffer::endRecording()
       CYDASSERT(
           result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
 
-      m_boundPip        = std::nullopt;
-      m_boundPipLayout  = std::nullopt;
-      m_boundRenderPass = std::nullopt;
+      m_boundPip        = nullptr;
+      m_boundPipLayout  = nullptr;
+      m_boundRenderPass = nullptr;
 
       m_boundPipInfo.reset();
    }
@@ -345,25 +336,44 @@ void CommandBuffer::reset()
 
 void CommandBuffer::updatePushConstants( const CYD::PushConstantRange& range, const void* pData )
 {
-   CYDASSERT( m_boundPipLayout.has_value() && "CommandBuffer: No currently bound pipeline layout" );
+   CYDASSERT( m_boundPipLayout && "CommandBuffer: No currently bound pipeline layout" );
 
    vkCmdPushConstants(
        m_vkCmdBuffer,
-       m_boundPipLayout.value(),
+       m_boundPipLayout,
        TypeConversions::cydToVkShaderStages( range.stages ),
        static_cast<uint32_t>( range.offset ),
        static_cast<uint32_t>( range.size ),
        pData );
 }
 
+static bool samePipeline( const CYD::PipelineInfo* lhs, const CYD::PipelineInfo* rhs )
+{
+   if( lhs == nullptr || rhs == nullptr ) return false;
+   if( lhs->type != rhs->type ) return false;
+
+   switch( lhs->type )
+   {
+      case CYD::PipelineType::GRAPHICS:
+         return *static_cast<const CYD::GraphicsPipelineInfo*>( lhs ) ==
+                *static_cast<const CYD::GraphicsPipelineInfo*>( rhs );
+
+      case CYD::PipelineType::COMPUTE:
+         return *static_cast<const CYD::ComputePipelineInfo*>( lhs ) ==
+                *static_cast<const CYD::ComputePipelineInfo*>( rhs );
+   }
+
+   return false;
+}
+
 void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
 {
    CYDASSERT(
-       m_boundRenderPass.has_value() &&
-       "CommandBuffer: Cannot bind pipeline because not in a render pass" );
+       m_boundRenderPass && "CommandBuffer: Cannot bind pipeline because not in a render pass" );
 
-   VkPipeline pipeline =
-       m_pDevice->getPipelineCache().findOrCreate( info, m_boundRenderPass.value() );
+   if( samePipeline( &info, m_boundPipInfo.get() ) ) return;
+
+   VkPipeline pipeline = m_pDevice->getPipelineCache().findOrCreate( info, m_boundRenderPass );
 
    VkPipelineLayout pipLayout = m_pDevice->getPipelineCache().findOrCreate( info.pipLayout );
 
@@ -379,6 +389,8 @@ void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
 
 void CommandBuffer::bindPipeline( const CYD::ComputePipelineInfo& info )
 {
+   if( samePipeline( &info, m_boundPipInfo.get() ) ) return;
+
    VkPipeline pipeline = m_pDevice->getPipelineCache().findOrCreate( info );
 
    VkPipelineLayout pipLayout = m_pDevice->getPipelineCache().findOrCreate( info.pipLayout );
@@ -402,44 +414,59 @@ void CommandBuffer::bindVertexBuffer( Buffer* vertexBuffer )
    _addDependency( vertexBuffer );
 }
 
-void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, CYD::IndexType type )
+void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, CYD::IndexType type, uint32_t offset )
 {
    vkCmdBindIndexBuffer(
-       m_vkCmdBuffer, indexBuffer->getVKBuffer(), 0, TypeConversions::cydToVkIndexType( type ) );
+       m_vkCmdBuffer,
+       indexBuffer->getVKBuffer(),
+       offset,
+       TypeConversions::cydToVkIndexType( type ) );
 
    _addDependency( indexBuffer );
 }
 
-void CommandBuffer::bindTexture( Texture* texture, uint32_t set, uint32_t binding )
+void CommandBuffer::bindTexture( Texture* texture, uint8_t binding, uint8_t set )
 {
    // Will need to update this texture's descriptor set before next draw
    m_texturesToUpdate.emplace_back(
-       texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, set, binding );
+       texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, binding, set );
 
    _addDependency( texture );
 }
 
-void CommandBuffer::bindImage( Texture* texture, uint32_t set, uint32_t binding )
+void CommandBuffer::bindImage( Texture* texture, uint8_t binding, uint8_t set )
 {
    // Will need to update this image descriptor set before next draw
-   m_texturesToUpdate.emplace_back( texture, CYD::ShaderResourceType::STORAGE_IMAGE, set, binding );
+   m_texturesToUpdate.emplace_back( texture, CYD::ShaderResourceType::STORAGE_IMAGE, binding, set );
 
    // TODO Eventually we will need more info when binding an image (level for mipmaps for example)
    _addDependency( texture );
 }
 
-void CommandBuffer::bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
+void CommandBuffer::bindBuffer(
+    Buffer* buffer,
+    uint8_t binding,
+    uint8_t set,
+    uint32_t offset,
+    uint32_t range )
 {
    // Will need to update this buffer's descriptor set before next draw
-   m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::STORAGE, set, binding );
+   m_buffersToUpdate.emplace_back(
+       buffer, CYD::ShaderResourceType::STORAGE, binding, set, offset, range );
 
    _addDependency( buffer );
 }
 
-void CommandBuffer::bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding )
+void CommandBuffer::bindUniformBuffer(
+    Buffer* buffer,
+    uint8_t binding,
+    uint8_t set,
+    uint32_t offset,
+    uint32_t range )
 {
    // Will need to update this buffer's descriptor set before next draw
-   m_buffersToUpdate.emplace_back( buffer, CYD::ShaderResourceType::UNIFORM, set, binding );
+   m_buffersToUpdate.emplace_back(
+       buffer, CYD::ShaderResourceType::UNIFORM, binding, set, offset, range );
 
    _addDependency( buffer );
 }
@@ -472,7 +499,7 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
 
    VkRenderPassBeginInfo passBeginInfo = {};
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-   passBeginInfo.renderPass            = m_boundRenderPass.value();
+   passBeginInfo.renderPass            = m_boundRenderPass;
    passBeginInfo.framebuffer           = swapchain.getCurrentFramebuffer();
    passBeginInfo.renderArea.offset     = { 0, 0 };
    passBeginInfo.renderArea.extent     = swapchain.getVKExtent();
@@ -491,7 +518,7 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
 }
 
 void CommandBuffer::beginRendering(
-    const CYD::RenderTargetsInfo& targetsInfo,
+    const CYD::FramebufferInfo& targetsInfo,
     const std::vector<const Texture*>& targets )
 {
    VkRenderPass renderPass = m_pDevice->getRenderPassCache().findOrCreate( targetsInfo );
@@ -522,7 +549,7 @@ void CommandBuffer::beginRendering(
 
    VkFramebufferCreateInfo framebufferInfo = {};
    framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-   framebufferInfo.renderPass              = m_boundRenderPass.value();
+   framebufferInfo.renderPass              = m_boundRenderPass;
    framebufferInfo.attachmentCount         = static_cast<uint32_t>( vkImageViews.size() );
    framebufferInfo.pAttachments            = vkImageViews.data();
    framebufferInfo.width                   = commonWidth;
@@ -539,7 +566,7 @@ void CommandBuffer::beginRendering(
 
    VkRenderPassBeginInfo passBeginInfo = {};
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-   passBeginInfo.renderPass            = m_boundRenderPass.value();
+   passBeginInfo.renderPass            = m_boundRenderPass;
    passBeginInfo.framebuffer           = vkFramebuffer;
    passBeginInfo.renderArea.offset     = { 0, 0 };
    passBeginInfo.renderArea.extent     = { commonWidth, commonHeight };
@@ -554,12 +581,12 @@ void CommandBuffer::beginRendering(
    vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
 }
 
-VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t set )
+VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint8_t set )
 {
    const auto it = std::find_if(
-       m_descSets.begin() + prevSize, m_descSets.end(), [set]( const DescriptorSetInfo& info ) {
-          return info.set == set;
-       } );
+       m_descSets.begin() + prevSize,
+       m_descSets.end(),
+       [set]( const DescriptorSetInfo& info ) { return info.set == set; } );
 
    if( it != m_descSets.end() )
    {
@@ -571,13 +598,13 @@ VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint32_t
    const VkDescriptorSet vkDescSet =
        m_pDevice->getDescriptorPool().allocate( m_boundPipInfo->pipLayout.shaderSets[set] );
 
-   m_descSets.push_back( { set, vkDescSet } );
+   m_descSets.emplace_back( set, vkDescSet );
 
    m_setsToBind[set] = vkDescSet;
    return vkDescSet;
 }
 
-void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
+void CommandBuffer::_prepareDescriptorSets()
 {
    // We do not care about any of the descriptor sets before this index
    const size_t prevSize = m_descSets.size();
@@ -585,20 +612,29 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
    // Creating write descriptors for resources we want to update for this draw
    const size_t totalSize = m_buffersToUpdate.size() + m_texturesToUpdate.size();
 
-   // New descriptor sets that need to be allocated for this draw call
+   if( totalSize == 0 )
+   {
+      // Nothing to update
+      return;
+   }
+
+   // New descriptor sets that need to be updated or allocated for this draw call
    std::vector<VkDescriptorBufferInfo> bufferInfos;
    std::vector<VkDescriptorImageInfo> imageInfos;
    std::vector<VkWriteDescriptorSet> writeDescSets;
+
+   CYD::PipelineLayoutInfo pipLayout;
+
    bufferInfos.reserve( totalSize );
    imageInfos.reserve( totalSize );
    writeDescSets.reserve( totalSize );
 
-   for( const auto& entry : m_buffersToUpdate )
+   for( const BufferBinding& entry : m_buffersToUpdate )
    {
-      VkDescriptorBufferInfo bufferInfo;
-      bufferInfo.buffer = entry.resource->getVKBuffer();
-      bufferInfo.offset = 0;
-      bufferInfo.range  = entry.resource->getSize();
+      VkDescriptorBufferInfo bufferInfo = {};
+      bufferInfo.buffer                 = entry.resource->getVKBuffer();
+      bufferInfo.offset                 = entry.offset;
+      bufferInfo.range                  = entry.range > 0 ? entry.range : entry.resource->getSize();
       bufferInfos.push_back( bufferInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
@@ -610,17 +646,15 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
       descriptorWrite.descriptorCount      = 1;
       descriptorWrite.pBufferInfo          = &bufferInfos.back();
 
-      writeDescSets.push_back( descriptorWrite );
+      writeDescSets.push_back( std::move( descriptorWrite ) );
    }
 
-   for( const auto& entry : m_texturesToUpdate )
+   for( const TextureBinding& entry : m_texturesToUpdate )
    {
       VkDescriptorImageInfo imageInfo = {};
-
-      // Determine layout based on descriptor type
+      imageInfo.sampler               = m_defaultSampler;
+      imageInfo.imageView             = entry.resource->getVKImageView();
       imageInfo.imageLayout = TypeConversions::cydToVkImageLayout( entry.resource->getLayout() );
-      imageInfo.imageView   = entry.resource->getVKImageView();
-      imageInfo.sampler     = m_defaultSampler;
       imageInfos.push_back( imageInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
@@ -632,8 +666,10 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
       descriptorWrite.descriptorCount      = 1;
       descriptorWrite.pImageInfo           = &imageInfos.back();
 
-      writeDescSets.push_back( descriptorWrite );
+      writeDescSets.push_back( std::move( descriptorWrite ) );
    }
+
+   // TODO Sanitize m_boundPipInfo vs m_descSetInfos
 
    // Updating the descriptor sets for this draw
    vkUpdateDescriptorSets(
@@ -645,7 +681,7 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
 
    // Binding the descriptor sets we want for this draw (expensive apparently)
    VkPipelineBindPoint bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-   switch( pipType )
+   switch( m_boundPipInfo->type )
    {
       case CYD::PipelineType::GRAPHICS:
          bindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -660,7 +696,6 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
    // Determine how to bind descriptor sets in the case of noncontinuous sets. Usually, this is a
    // bad idea and should never happen but hey, you can do it.
    uint32_t contiguousCount = 0;
-
    for( int i = 0; i < m_setsToBind.size(); ++i )
    {
       if( m_setsToBind[i] != nullptr )
@@ -676,7 +711,7 @@ void CommandBuffer::_prepareDescriptorSets( CYD::PipelineType pipType )
          vkCmdBindDescriptorSets(
              m_vkCmdBuffer,
              bindPoint,
-             m_boundPipLayout.value(),
+             m_boundPipLayout,
              startIdx,
              contiguousCount,
              &m_setsToBind[startIdx],
@@ -702,7 +737,7 @@ void CommandBuffer::draw( size_t vertexCount, size_t firstVertex )
        m_boundPip && m_boundPipInfo && ( m_boundPipInfo->type == CYD::PipelineType::GRAPHICS ) &&
        "CommandBuffer: Cannot draw because no pipeline was bound" );
 
-   _prepareDescriptorSets( CYD::PipelineType::GRAPHICS );
+   _prepareDescriptorSets();
 
    vkCmdDraw(
        m_vkCmdBuffer,
@@ -722,7 +757,7 @@ void CommandBuffer::drawIndexed( size_t indexCount, size_t firstIndex )
        m_boundPip && m_boundPipInfo && ( m_boundPipInfo->type == CYD::PipelineType::GRAPHICS ) &&
        "CommandBuffer: Cannot draw because no pipeline was bound" );
 
-   _prepareDescriptorSets( CYD::PipelineType::GRAPHICS );
+   _prepareDescriptorSets();
 
    vkCmdDrawIndexed(
        m_vkCmdBuffer,
@@ -743,7 +778,7 @@ void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
        m_boundPip && m_boundPipInfo && m_boundPipInfo->type == CYD::PipelineType::COMPUTE &&
        "CommandBuffer: Cannot dispatch because no proper pipeline was bound" );
 
-   _prepareDescriptorSets( CYD::PipelineType::COMPUTE );
+   _prepareDescriptorSets();
 
    vkCmdDispatch( m_vkCmdBuffer, workX, workY, workZ );
 }
@@ -751,7 +786,7 @@ void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
 void CommandBuffer::nextPass() const
 {
    CYDASSERT(
-       m_boundRenderPass.has_value() &&
+       m_boundRenderPass &&
        "CommandBuffer: Cannot go to the next pass if there was no render pass to begin with!" );
 
    vkCmdNextSubpass( m_vkCmdBuffer, VK_SUBPASS_CONTENTS_INLINE );
@@ -759,9 +794,7 @@ void CommandBuffer::nextPass() const
 
 void CommandBuffer::endRendering() const
 {
-   CYDASSERT(
-       m_boundRenderPass.has_value() &&
-       "CommandBuffer: Cannot end a pass that was never started!" );
+   CYDASSERT( m_boundRenderPass && "CommandBuffer: Cannot end a pass that was never started!" );
 
    vkCmdEndRenderPass( m_vkCmdBuffer );
 }

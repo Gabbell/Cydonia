@@ -68,20 +68,23 @@ class D3D12RenderBackendImp
 
    void bindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle ) const {}
 
-   void bindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, IndexType type )
-       const
+   void bindIndexBuffer(
+       CmdListHandle cmdList,
+       IndexBufferHandle bufferHandle,
+       IndexType type,
+       uint32_t offset ) const
    {
    }
 
    void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
-       uint32_t set,
-       uint32_t binding ) const
+       uint32_t binding,
+       uint32_t set ) const
    {
    }
 
-   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
+   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
        const
    {
       if( !texHandle )
@@ -94,22 +97,26 @@ class D3D12RenderBackendImp
    void bindBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) const
+       uint32_t offset,
+       uint32_t range ) const
    {
    }
 
    void bindUniformBuffer(
        CmdListHandle cmdList,
        BufferHandle bufferHandle,
+       uint32_t binding,
        uint32_t set,
-       uint32_t binding ) const
+       uint32_t offset,
+       uint32_t range ) const
    {
    }
 
    void updateConstantBuffer(
        CmdListHandle cmdList,
-       ShaderStageFlag stages,
+       PipelineStageFlag stages,
        size_t offset,
        size_t size,
        const void* pData ) const
@@ -175,7 +182,7 @@ class D3D12RenderBackendImp
 
    void beginRendering(
        CmdListHandle cmdList,
-       const RenderTargetsInfo& targetsInfo,
+       const FramebufferInfo& targetsInfo,
        const std::vector<TextureHandle>& targets ) const
    {
    }
@@ -285,9 +292,10 @@ void D3D12RenderBackend::bindVertexBuffer( CmdListHandle cmdList, VertexBufferHa
 void D3D12RenderBackend::bindIndexBuffer(
     CmdListHandle cmdList,
     IndexBufferHandle bufferHandle,
-    IndexType type )
+    IndexType type,
+    uint32_t offset )
 {
-   _imp->bindIndexBuffer( cmdList, bufferHandle, type );
+   _imp->bindIndexBuffer( cmdList, bufferHandle, type, offset );
 }
 
 void D3D12RenderBackend::bindTexture(
@@ -296,34 +304,38 @@ void D3D12RenderBackend::bindTexture(
     uint32_t set,
     uint32_t binding )
 {
-   _imp->bindTexture( cmdList, texHandle, set, binding );
+   _imp->bindTexture( cmdList, texHandle, binding, set );
 }
 
 void D3D12RenderBackend::bindImage(
     CmdListHandle cmdList,
     TextureHandle texHandle,
-    uint32_t set,
-    uint32_t binding )
+    uint32_t binding,
+    uint32_t set )
 {
-   _imp->bindImage( cmdList, texHandle, set, binding );
+   _imp->bindImage( cmdList, texHandle, binding, set );
 }
 
 void D3D12RenderBackend::bindBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
+    uint32_t binding,
     uint32_t set,
-    uint32_t binding )
+    uint32_t offset,
+    uint32_t range )
 {
-   _imp->bindBuffer( cmdList, bufferHandle, set, binding );
+   _imp->bindBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
 void D3D12RenderBackend::bindUniformBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
+    uint32_t binding,
     uint32_t set,
-    uint32_t binding )
+    uint32_t offset,
+    uint32_t range )
 {
-   _imp->bindUniformBuffer( cmdList, bufferHandle, set, binding );
+   _imp->bindUniformBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
 void D3D12RenderBackend::setViewport( CmdListHandle cmdList, const Viewport& viewport )
@@ -338,7 +350,7 @@ void D3D12RenderBackend::setScissor( CmdListHandle cmdList, const Rectangle& sci
 
 void D3D12RenderBackend::updateConstantBuffer(
     CmdListHandle cmdList,
-    ShaderStageFlag stages,
+    PipelineStageFlag stages,
     size_t offset,
     size_t size,
     const void* pData )
@@ -435,7 +447,7 @@ void D3D12RenderBackend::beginRendering( CmdListHandle cmdList )
 
 void D3D12RenderBackend::beginRendering(
     CmdListHandle cmdList,
-    const RenderTargetsInfo& targetsInfo,
+    const FramebufferInfo& targetsInfo,
     const std::vector<TextureHandle>& targets )
 {
    _imp->beginRendering( cmdList, targetsInfo, targets );

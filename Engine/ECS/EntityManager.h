@@ -86,7 +86,7 @@ class EntityManager final
 
          // Component is a normal component
          ComponentPool<Component>*& pPool =
-             (ComponentPool<Component>*&)m_components[componentPoolIdx];
+             (ComponentPool<Component>*&)m_componentPools[componentPoolIdx];
          if( !pPool )
          {
             // Pool has never been created, create it
@@ -133,7 +133,7 @@ class EntityManager final
       {
          // Component is a normal component
          ComponentPool<Component>*& pPool =
-             (ComponentPool<Component>*&)m_components[(size_t)Component::TYPE];
+             (ComponentPool<Component>*&)m_componentPools[(size_t)Component::TYPE];
 
          // Deallocate it from the pool
          pPool->releaseComponent( it->second.getComponent() );
@@ -165,7 +165,7 @@ class EntityManager final
    Entities m_entities;
 
    // Pools of all components. Index is component type.
-   Components m_components;
+   Components m_componentPools;
    SharedComponents m_sharedComponents;
 
    // All currently running data transformation systems

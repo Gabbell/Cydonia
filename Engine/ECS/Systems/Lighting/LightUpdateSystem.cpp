@@ -1,6 +1,6 @@
 #include <ECS/Systems/Lighting/LightUpdateSystem.h>
 
-#include <Graphics/RenderGraph.h>
+#include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
 
 #include <ECS/EntityManager.h>
@@ -19,6 +19,7 @@ void LightUpdateSystem::tick( double deltaS )
       const LightComponent& light   = *std::get<LightComponent*>( entityEntry.arch );
       TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
 
+      // Updating light transform
       transform.position = glm::vec3(
           25.0f * std::cos( 0.50f * timeElapsed ), 10.0f, 25.0f * std::sin( 0.50f * timeElapsed ) );
 
@@ -26,9 +27,15 @@ void LightUpdateSystem::tick( double deltaS )
 
       transform.rotation = glm::quatLookAt( direction, glm::vec3( 0.0f, 1.0f, 0.0f ) );
 
-      scene.light.position = glm::vec4( transform.position, 1.0f );
-      scene.light.color    = light.color;
-      scene.light.enabled  = glm::vec4( true, false, false, false );
+      // Updating scene
+      scene.lights[0].viewMat =
+          glm::toMat4( glm::conjugate( transform.rotation ) ) *
+          glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling ) *
+          glm::translate( glm::mat4( 1.0f ), -transform.position );
+
+      scene.lights[0].position = glm::vec4( transform.position, 1.0f );
+      scene.lights[0].color    = light.color;
+      scene.lights[0].enabled  = glm::vec4( light.enabled, false, false, false );
    }
 
    timeElapsed += deltaS;
@@ -38,7 +45,7 @@ void LightUpdateSystem::tick( double deltaS )
 
    GRIS::StartRecordingCommandList( transferList );
 
-   GRIS::CopyToBuffer( scene.lightsBuffer, &scene.light, 0, sizeof( SceneComponent::LightUBO ) );
+   GRIS::CopyToBuffer( scene.lightsBuffer, &scene.lights, 0, sizeof( SceneComponent::LightUBO ) );
 
    GRIS::EndRecordingCommandList( transferList );
 

@@ -3,7 +3,7 @@
 #include <Common/Assert.h>
 
 #include <Graphics/PipelineInfos.h>
-#include <Graphics/RenderPipelines.h>
+#include <Graphics/StaticPipelines.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/GRIS/Backends/VKRenderBackend.h>
 #include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
@@ -21,8 +21,6 @@ static RenderBackend* b = nullptr;
 //
 bool InitRenderBackend( API api, const Window& window )
 {
-   RenderPipelines::Initialize();
-
    delete b;
 
    switch( api )
@@ -44,12 +42,7 @@ bool InitRenderBackend( API api, const Window& window )
    return false;
 }
 
-void UninitRenderBackend()
-{
-   RenderPipelines::Uninitialize();
-
-   delete b;
-}
+void UninitRenderBackend() { delete b; }
 
 bool InitializeUI()
 {
@@ -133,9 +126,9 @@ void BindPipeline( CmdListHandle cmdList, const PipelineInfo* pPipInfo )
    }
 }
 
-void BindPipeline( CmdListHandle cmdList, std::string_view pipName )
+void BindPipeline( CmdListHandle cmdList, PipelineIndex index )
 {
-   const PipelineInfo* pPipInfo = RenderPipelines::Get( pipName );
+   const PipelineInfo* pPipInfo = StaticPipelines::Get( index );
    BindPipeline( cmdList, pPipInfo );
 }
 
@@ -146,44 +139,58 @@ void BindVertexBuffer<Vertex>( CmdListHandle cmdList, VertexBufferHandle bufferH
 }
 
 template <>
-void BindIndexBuffer<uint16_t>( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
+void BindIndexBuffer<uint16_t>(
+    CmdListHandle cmdList,
+    IndexBufferHandle bufferHandle,
+    uint32_t offset )
 {
-   b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT16 );
+   b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT16, offset );
 }
 
 template <>
-void BindIndexBuffer<uint32_t>( CmdListHandle cmdList, IndexBufferHandle bufferHandle )
+void BindIndexBuffer<uint32_t>(
+    CmdListHandle cmdList,
+    IndexBufferHandle bufferHandle,
+    uint32_t offset )
 {
-   b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT32 );
+   b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT32, offset );
 }
 
-void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
+void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
-   b->bindTexture( cmdList, texHandle, set, binding );
+   b->bindTexture( cmdList, texHandle, binding, set );
 }
 
-void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
+void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
-   b->bindImage( cmdList, texHandle, set, binding );
+   b->bindImage( cmdList, texHandle, binding, set );
 }
 
-void BindBuffer( CmdListHandle cmdList, BufferHandle bufferHandle, uint32_t set, uint32_t binding )
+void BindBuffer(
+    CmdListHandle cmdList,
+    BufferHandle bufferHandle,
+    uint32_t binding,
+    uint32_t set,
+    uint32_t offset,
+    uint32_t range )
 {
-   b->bindBuffer( cmdList, bufferHandle, set, binding );
+   b->bindBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
 void BindUniformBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
+    uint32_t binding,
     uint32_t set,
-    uint32_t binding )
+    uint32_t offset,
+    uint32_t range )
 {
-   b->bindUniformBuffer( cmdList, bufferHandle, set, binding );
+   b->bindUniformBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
 void UpdateConstantBuffer(
     CmdListHandle cmdList,
-    ShaderStageFlag stages,
+    PipelineStageFlag stages,
     size_t offset,
     size_t size,
     const void* pData )
@@ -346,7 +353,7 @@ void BeginRendering( CmdListHandle cmdList ) { b->beginRendering( cmdList ); }
 
 void BeginRendering(
     CmdListHandle cmdList,
-    const RenderTargetsInfo& targetsInfo,
+    const FramebufferInfo& targetsInfo,
     const std::vector<TextureHandle>& targets )
 {
    b->beginRendering( cmdList, targetsInfo, targets );
@@ -356,14 +363,32 @@ void NextPass( CmdListHandle cmdList ) { b->nextPass( cmdList ); }
 
 void EndRendering( CmdListHandle cmdList ) { b->endRendering( cmdList ); }
 
-void DrawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
+void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
 {
    b->drawVertices( cmdList, vertexCount, firstVertex );
 }
 
-void DrawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )
+void DrawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )
 {
    b->drawVerticesIndexed( cmdList, indexCount, firstIndex );
+}
+
+void DrawInstanced(
+    CmdListHandle /*cmdList*/,
+    size_t /*vertexCount*/,
+    size_t /*instanceCount*/,
+    size_t /*firstVertex*/,
+    size_t /*firstInstance*/)
+{
+}
+
+void DrawIndexedInstanced(
+    CmdListHandle /*cmdList*/,
+    size_t /*indexCount*/,
+    size_t /*instanceCount*/,
+    size_t /*firstIndex*/,
+    size_t /*firstInstance*/ )
+{
 }
 
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )

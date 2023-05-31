@@ -4,6 +4,8 @@
 
 #include <ECS/Components/ComponentTypes.h>
 
+#include <Graphics/Handles/ResourceHandle.h>
+
 #include <glm/glm.hpp>
 
 /*
@@ -24,7 +26,10 @@ class LightComponent final : public BaseComponent
    };
 
    LightComponent() = default;
-   LightComponent( LightComponent::Type lightType ) : type( lightType ) {}
+   LightComponent( LightComponent::Type lightType, bool shadows = false )
+       : type( lightType ), shadows( shadows )
+   {
+   }
    COPIABLE( LightComponent );
    virtual ~LightComponent() = default;
 
@@ -32,10 +37,11 @@ class LightComponent final : public BaseComponent
 
    Type type = Type::DIRECTIONAL;
 
-   glm::vec4 position  = glm::vec4( 0.0f );
-   glm::vec4 direction = glm::vec4( 0.0f );
-   glm::vec4 color     = glm::vec4( 100.0f );
+   glm::vec4 color = glm::vec4( 100.0f );
 
-   bool enabled = false;
+   TextureHandle shadowMap;  // Optional
+
+   bool enabled = true;
+   bool shadows = false;
 };
 }

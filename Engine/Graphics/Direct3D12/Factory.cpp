@@ -10,14 +10,14 @@ Factory::Factory()
 {
    UINT factoryFlags = 0;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    _createDebugController( factoryFlags );
 #endif
 
    _createFactory( factoryFlags );
 }
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
 void Factory::_createDebugController( uint32_t& factoryFlags )
 {
    ID3D12Debug* debugInterface = nullptr;
@@ -44,7 +44,7 @@ Factory::~Factory()
    m_factory->Release();
    m_factory = nullptr;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    m_debugController->Release();
    m_debugController = nullptr;
 #endif

@@ -41,17 +41,18 @@ class Texture final
    uint32_t getHeight() const noexcept { return m_height; }
    uint32_t getLayers() const noexcept { return m_layers; }
    CYD::PixelFormat getPixelFormat() const noexcept { return m_format; }
-   CYD::ShaderStageFlag getStages() const noexcept { return m_stages; }
-
+   CYD::PipelineStageFlag getStages() const noexcept { return m_stages; }
    CYD::ImageLayout getLayout() const noexcept { return m_layout; }
-   void setLayout( CYD::ImageLayout layout ) { m_layout = layout; }
 
    const VkImage& getVKImage() const noexcept { return m_vkImage; }
    const VkImageView& getVKImageView() const noexcept { return m_vkImageView; }
-   bool inUse() const { return ( *m_useCount ) > 0; }
 
-   void incUse() { ( *m_useCount )++; }
-   void decUse() { ( *m_useCount )--; }
+   bool inUse() const { return ( *m_useCount ) > 0; }
+   
+   void setLayout( CYD::ImageLayout layout ) { m_layout = layout; }
+
+   void incUse();
+   void decUse();
 
   private:
    void _createImage();
@@ -65,11 +66,13 @@ class Texture final
    uint32_t m_width              = 0;
    uint32_t m_height             = 0;
    uint32_t m_layers             = 1;  // For 3D images and cube maps
+
    CYD::ImageType m_type         = CYD::ImageType::TEXTURE_2D;
    CYD::PixelFormat m_format     = CYD::PixelFormat::BGRA8_UNORM;
    CYD::ImageLayout m_layout     = CYD::ImageLayout::UNKNOWN;
+
    CYD::ImageUsageFlag m_usage   = 0;
-   CYD::ShaderStageFlag m_stages = 0;
+   CYD::PipelineStageFlag m_stages = 0;
 
    VkImage m_vkImage         = nullptr;
    VkImageView m_vkImageView = nullptr;

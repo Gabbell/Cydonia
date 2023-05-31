@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include <Common/Include.h>
 
@@ -23,6 +24,8 @@ FWDHANDLE( VkRenderPass );
 FWDHANDLE( VkDescriptorSet );
 FWDHANDLE( VkFramebuffer );
 FWDHANDLE( VkSampler );
+FWDHANDLE( VkBuffer );
+FWDHANDLE( VkImageView );
 FWDFLAG( VkPipelineStageFlags );
 
 namespace vk
@@ -32,6 +35,7 @@ class CommandBufferPool;
 class Swapchain;
 class Buffer;
 class Texture;
+struct DescriptorSetInfo;
 }
 
 namespace CYD
@@ -100,15 +104,20 @@ class CommandBuffer final
    // Bindings
    // =============================================================================================
    void bindVertexBuffer( Buffer* vertexBuf );
-   void bindIndexBuffer( Buffer* indexBuf, CYD::IndexType type );
+   void bindIndexBuffer( Buffer* indexBuf, CYD::IndexType type, uint32_t offset );
 
    void bindPipeline( const CYD::GraphicsPipelineInfo& info );
    void bindPipeline( const CYD::ComputePipelineInfo& info );
 
-   void bindTexture( Texture* texture, uint32_t set, uint32_t binding );
-   void bindImage( Texture* texture, uint32_t set, uint32_t binding );
-   void bindBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
-   void bindUniformBuffer( Buffer* buffer, uint32_t set, uint32_t binding );
+   void bindTexture( Texture* texture, uint8_t binding, uint8_t set );
+   void bindImage( Texture* texture, uint8_t binding, uint8_t set );
+   void bindBuffer( Buffer* buffer, uint8_t binding, uint8_t set, uint32_t offset, uint32_t range );
+   void bindUniformBuffer(
+       Buffer* buffer,
+       uint8_t binding,
+       uint8_t set,
+       uint32_t offset,
+       uint32_t range );
 
    void updatePushConstants( const CYD::PushConstantRange& range, const void* pData );
 
@@ -116,7 +125,7 @@ class CommandBuffer final
    // =============================================================================================
    void beginRendering( Swapchain& swapchain );
    void beginRendering(
-       const CYD::RenderTargetsInfo& targetsInfo,
+       const CYD::FramebufferInfo& targetsInfo,
        const std::vector<const Texture*>& targets );
    void nextPass() const;
    void endRendering() const;
@@ -147,6 +156,11 @@ class CommandBuffer final
    void insertDebugMarker( const char* name, const std::array<float, 4>& color );
 
   private:
+   // Constants
+   // =============================================================================================
+   static constexpr char DEFAULT_CMDBUFFER_NAME[]      = "Unknown Command Buffer";
+   static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS = 8;
+
    // Command Buffer Internal State
    // =============================================================================================
    enum State
@@ -170,16 +184,13 @@ class CommandBuffer final
 
    // Descriptor Sets and Binding
    // =============================================================================================
-   // Used for deferred updating and binding of descriptor sets before a draw command
-   using BufferBinding  = CYD::ResourceBinding<Buffer*>;
-   using TextureBinding = CYD::ResourceBinding<Texture*>;
 
    // The updating and binding of descriptor sets is deferred all the way until we do a draw call.
    // We will only update and bind the "new" descriptor sets in Vulkan with the descriptor sets that
    // were bound to the command buffer since the last draw call. This ensures that we do not create
    // unnecessary descriptor sets and that we only update and bind what is needed for the next draw.
-   VkDescriptorSet _findOrAllocateDescSet( size_t prevSize, uint32_t set );
-   void _prepareDescriptorSets( CYD::PipelineType pipType );
+   VkDescriptorSet _findOrAllocateDescSet( size_t prevSize, uint8_t set );
+   void _prepareDescriptorSets();
 
    // Dependencies
    // =============================================================================================
@@ -195,15 +206,14 @@ class CommandBuffer final
 
    State m_state = State::RELEASED;
 
-   static constexpr char DEFAULT_CMDBUFFER_NAME[] = "Unknown Command Buffer Name";
-   std::string_view m_name                        = DEFAULT_CMDBUFFER_NAME;
+   std::string_view m_name = DEFAULT_CMDBUFFER_NAME;
 
    // Info on the currently bound pipeline
-   std::optional<VkPipeline> m_boundPip;
-   std::optional<VkPipelineLayout> m_boundPipLayout;
+   VkPipeline m_boundPip             = nullptr;
+   VkPipelineLayout m_boundPipLayout = nullptr;
 
-   std::optional<VkRenderPass> m_boundRenderPass;
-   std::optional<CYD::RenderTargetsInfo> m_boundTargetsInfo;
+   VkRenderPass m_boundRenderPass = nullptr;
+   std::optional<CYD::FramebufferInfo> m_boundTargetsInfo;
    uint32_t m_currentSubpass = 0;
 
    // To keep in scope for destruction
@@ -214,22 +224,25 @@ class CommandBuffer final
    // Wtf why.
    std::unique_ptr<CYD::PipelineInfo> m_boundPipInfo;
 
-   // Currently bound descriptor sets
-   static constexpr uint32_t MAX_BOUND_DESCRIPTOR_SETS                 = 8;
+   // Descriptor sets to bind
    std::array<VkDescriptorSet, MAX_BOUND_DESCRIPTOR_SETS> m_setsToBind = {};
 
    // All descriptor sets whose lifetime is linked to this command buffer
    struct DescriptorSetInfo
    {
-      uint32_t set;
+      uint8_t set;
       VkDescriptorSet vkDescSet;
    };
    std::vector<DescriptorSetInfo> m_descSets;
 
+   // Used for deferred updating and binding of descriptor sets before a draw command
+   using BufferBinding  = CYD::FlatShaderBinding<Buffer>;
+   using TextureBinding = CYD::FlatShaderBinding<Texture>;
+
    std::vector<BufferBinding> m_buffersToUpdate;
    std::vector<TextureBinding> m_texturesToUpdate;
 
-   // Dependencies
+   // Resource Dependencies
    std::unordered_set<CommandBuffer*> m_cmdBuffersInUse;
    std::unordered_set<Texture*> m_texturesInUse;
    std::unordered_set<Buffer*> m_buffersInUse;

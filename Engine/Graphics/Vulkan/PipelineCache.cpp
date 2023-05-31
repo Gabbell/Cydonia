@@ -12,7 +12,7 @@
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <array>
-#include <unordered_set>
+#include <set>
 #include <vector>
 
 namespace vk
@@ -96,22 +96,19 @@ VkPipelineLayout PipelineCache::findOrCreate( const CYD::PipelineLayoutInfo& pip
       vkRanges.push_back( vkRange );
    }
 
-   std::unordered_set<VkDescriptorSetLayout> descSetLayouts;
-   descSetLayouts.reserve( pipLayoutInfo.shaderSets.size() );
-   for( const auto& shaderSetLayoutPair : pipLayoutInfo.shaderSets )
+   // TODO This dictates the set order...not good
+   std::vector<VkDescriptorSetLayout> descSetLayouts( pipLayoutInfo.shaderSets.size() );
+   for( const CYD::ShaderSetInfo& shaderSetInfo : pipLayoutInfo.shaderSets )
    {
-      descSetLayouts.insert( findOrCreate( shaderSetLayoutPair.second ) );
+      descSetLayouts[shaderSetInfo.set] = findOrCreate( shaderSetInfo );
    }
-   // Vector containing unique VkDescriptorSetLayouts
-   std::vector<VkDescriptorSetLayout> descSetLayoutsVec(
-       descSetLayouts.cbegin(), descSetLayouts.cend() );
 
    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
    pipelineLayoutInfo.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-   pipelineLayoutInfo.setLayoutCount         = static_cast<uint32_t>( descSetLayoutsVec.size() );
-   pipelineLayoutInfo.pSetLayouts            = descSetLayoutsVec.data();
-   pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>( vkRanges.size() );
-   pipelineLayoutInfo.pPushConstantRanges    = vkRanges.data();
+   pipelineLayoutInfo.setLayoutCount             = static_cast<uint32_t>( descSetLayouts.size() );
+   pipelineLayoutInfo.pSetLayouts                = descSetLayouts.data();
+   pipelineLayoutInfo.pushConstantRangeCount     = static_cast<uint32_t>( vkRanges.size() );
+   pipelineLayoutInfo.pPushConstantRanges        = vkRanges.data();
 
    VkPipelineLayout pipLayout;
    const VkResult result =
@@ -129,8 +126,6 @@ VkPipeline PipelineCache::findOrCreate( const CYD::ComputePipelineInfo& pipInfo 
    {
       return pipIt->second;
    }
-
-   VkResult result;
 
    // Building shader constants
    const CYD::ShaderConstants::Entry* entry = pipInfo.constants.getEntry( pipInfo.shader );
@@ -182,7 +177,7 @@ VkPipeline PipelineCache::findOrCreate( const CYD::ComputePipelineInfo& pipInfo 
    pipelineInfo.basePipelineIndex           = -1;
 
    VkPipeline pipeline;
-   result = vkCreateComputePipelines(
+   const VkResult result = vkCreateComputePipelines(
        m_device.getVKDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline );
    CYDASSERT( result == VK_SUCCESS && "PipelineCache: Could not create compute pipeline" );
 
@@ -199,8 +194,6 @@ VkPipeline PipelineCache::findOrCreate(
    {
       return pipIt->second;
    }
-
-   VkResult result;
 
    // Scope protection for shader info structs
    std::vector<VkPipelineShaderStageCreateInfo> shaderCreateInfos;
@@ -408,9 +401,10 @@ VkPipeline PipelineCache::findOrCreate(
    pipelineInfo.basePipelineHandle           = nullptr;
 
    VkPipeline pipeline;
-   result = vkCreateGraphicsPipelines(
+   const VkResult result = vkCreateGraphicsPipelines(
        m_device.getVKDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline );
-   CYDASSERT( result == VK_SUCCESS && "PipelineCache: Could not create graphics pipeline" );
+
+   CYDASSERT( result == VK_SUCCESS && "Could not create pipeline" );
 
    return m_graphicsPipelines.insert( { pipInfo, pipeline } ).first->second;
 }

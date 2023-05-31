@@ -12,23 +12,31 @@
 
 namespace CYD
 {
+using MaterialIndex                                 = size_t;
+static constexpr MaterialIndex INVALID_MATERIAL_IDX = std::numeric_limits<MaterialIndex>::max();
+
+using PipelineIndex                                 = size_t;
+static constexpr PipelineIndex INVALID_PIPELINE_IDX = std::numeric_limits<PipelineIndex>::max();
+
 // ================================================================================================
-// Types & Enums
+// Flags
 
-using Flag = uint32_t;
+using Flag8  = uint8_t;
+using Flag16 = uint16_t;
+using Flag32 = uint32_t;
 
-enum QueueUsage : Flag
+enum QueueUsage
 {
    UNKNOWN  = 0,
    GRAPHICS = 1 << 0,
    COMPUTE  = 1 << 1,
    TRANSFER = 1 << 2
 };
-using QueueUsageFlag = Flag;
+using QueueUsageFlag = Flag8;
 
 namespace BufferUsage
 {
-enum BufferUsage : Flag
+enum BufferUsage
 {
    TRANSFER_SRC = 1 << 0,
    TRANSFER_DST = 1 << 1,
@@ -38,11 +46,11 @@ enum BufferUsage : Flag
    VERTEX       = 1 << 5
 };
 }
-using BufferUsageFlag = Flag;
+using BufferUsageFlag = Flag8;
 
 namespace ImageUsage
 {
-enum ImageUsage : Flag
+enum ImageUsage : Flag32
 {
    TRANSFER_SRC  = 1 << 0,
    TRANSFER_DST  = 1 << 1,
@@ -52,46 +60,51 @@ enum ImageUsage : Flag
    DEPTH_STENCIL = 1 << 5
 };
 }
-using ImageUsageFlag = Flag;
+using ImageUsageFlag = Flag8;
 
-enum MemoryType : Flag
+enum MemoryType
 {
    DEVICE_LOCAL  = 1 << 0,
    HOST_VISIBLE  = 1 << 1,
    HOST_COHERENT = 1 << 2
 };
-using MemoryTypeFlag = Flag;
+using MemoryTypeFlag = Flag8;
 
-namespace ShaderStage
+namespace PipelineStage
 {
-enum ShaderStage : Flag
+enum PipelineStage : Flag32
 {
    VERTEX_STAGE        = 1 << 0,
    GEOMETRY_STAGE      = 1 << 1,
    FRAGMENT_STAGE      = 1 << 2,
    COMPUTE_STAGE       = 1 << 3,
-   ALL_GRAPHICS_STAGES = 1 << 4,
-   ALL_STAGES          = 1 << 5
+   TRANSFER_STAGE      = 1 << 4,
+   ALL_GRAPHICS_STAGES = 1 << 5,
+   ALL_STAGES          = 1 << 6
 };
 }
-using ShaderStageFlag = Flag;
+using PipelineStageFlag = Flag16;
 
-enum class PipelineType
+// ================================================================================================
+// Types & Enums
+
+enum class PipelineType : uint8_t
 {
    GRAPHICS,
    COMPUTE
 };
 
-enum class IndexType
+enum class IndexType : uint8_t
 {
    UNSIGNED_INT8,
    UNSIGNED_INT16,
    UNSIGNED_INT32,
 };
 
-enum class PixelFormat
+enum class PixelFormat : uint8_t
 {
    BGRA8_UNORM,
+   RGBA8_UNORM,
    RGBA8_SRGB,
    RGBA16F,
    RGBA32F,
@@ -203,18 +216,17 @@ enum class AddressMode
 
 // ================================================================================================
 // Basic structs
-
 struct TextureDescription
 {
-   size_t size            = 0;
-   uint32_t width         = 0;
-   uint32_t height        = 0;
-   uint32_t layers        = 1;
-   ImageType type         = ImageType::TEXTURE_2D;  // 1D, 2D, 3D...
-   PixelFormat format     = PixelFormat::RGBA32F;   // The texture's pixel format
-   ImageUsageFlag usage   = 0;                      // How this image will be used
-   ShaderStageFlag stages = 0;                      // Stages where this texture is accessed
-   std::string_view name  = "Unknown Texture Name";
+   size_t size              = 0;
+   uint32_t width           = 0;  // 2D Dimensions are optional when
+   uint32_t height          = 0;  // loading from storage
+   uint32_t layers          = 1;
+   ImageType type           = ImageType::TEXTURE_2D;  // 1D, 2D, 3D...
+   PixelFormat format       = PixelFormat::RGBA32F;   // The texture's pixel format
+   ImageUsageFlag usage     = 0;                      // How this image will be used
+   PipelineStageFlag stages = 0;                      // Stages where this texture is accessed
+   std::string_view name    = "Unknown Texture Name";
 };
 
 struct Extent2D
@@ -246,6 +258,15 @@ struct Viewport
    float maxDepth = 1.0f;
 };
 
+struct SwapchainInfo
+{
+   uint32_t imageCount;
+   Extent2D extent;
+   PixelFormat format;
+   ColorSpace space;
+   PresentMode mode;
+};
+
 struct Attachment
 {
    bool operator==( const Attachment& other ) const;
@@ -256,16 +277,11 @@ struct Attachment
    ImageLayout initialLayout = ImageLayout::UNKNOWN;
 };
 
-struct PushConstantRange
+struct FramebufferInfo
 {
-   bool operator==( const PushConstantRange& other ) const;
-   ShaderStageFlag stages;
-   size_t offset;
-   size_t size;
+   bool operator==( const FramebufferInfo& other ) const;
+   std::vector<Attachment> attachments;
 };
-
-// ================================================================================================
-// Pipeline Description
 
 struct SamplerInfo
 {
@@ -276,48 +292,11 @@ struct SamplerInfo
    Filter minFilter        = Filter::LINEAR;
    AddressMode addressMode = AddressMode::REPEAT;
 };
-
-struct RenderTargetsInfo
-{
-   bool operator==( const RenderTargetsInfo& other ) const;
-   std::vector<Attachment> attachments;
-};
-
-struct ShaderBindingInfo
-{
-   bool operator==( const ShaderBindingInfo& other ) const;
-   std::string name;
-   ShaderResourceType type;
-   ShaderStageFlag stages;
-   uint32_t binding;
-};
-
-struct ShaderSetInfo
-{
-   bool operator==( const ShaderSetInfo& other ) const;
-   // TODO Helper function to add bindings more easily
-   std::vector<ShaderBindingInfo> shaderBindings;
-};
-
-struct PipelineLayoutInfo
-{
-   bool operator==( const PipelineLayoutInfo& other ) const;
-   std::vector<PushConstantRange> ranges;
-   std::map<uint32_t, ShaderSetInfo> shaderSets;
-};
-
-struct SwapchainInfo
-{
-   uint32_t imageCount;
-   Extent2D extent;
-   PixelFormat format;
-   ColorSpace space;
-   PresentMode mode;
-};
 }
 
 // ================================================================================================
 // Hashing Functions
+
 template <>
 struct std::hash<CYD::Extent2D>
 {
@@ -331,52 +310,11 @@ struct std::hash<CYD::Extent2D>
 };
 
 template <>
-struct std::hash<CYD::Attachment>
+struct std::hash<CYD::FramebufferInfo>
 {
-   size_t operator()( const CYD::Attachment& attachment ) const noexcept
+   size_t operator()( const CYD::FramebufferInfo& framebufferInfo ) const noexcept
    {
-      size_t seed = 0;
-      hashCombine( seed, attachment.format );
-      hashCombine( seed, attachment.loadOp );
-      hashCombine( seed, attachment.storeOp );
-      hashCombine( seed, attachment.type );
-
-      return seed;
-   }
-};
-
-template <>
-struct std::hash<CYD::ShaderBindingInfo>
-{
-   size_t operator()( const CYD::ShaderBindingInfo& shaderObject ) const noexcept
-   {
-      size_t seed = 0;
-      hashCombine( seed, shaderObject.type );
-      hashCombine( seed, shaderObject.binding );
-      hashCombine( seed, shaderObject.stages );
-      return seed;
-   }
-};
-
-template <>
-struct std::hash<CYD::PushConstantRange>
-{
-   size_t operator()( const CYD::PushConstantRange& range ) const noexcept
-   {
-      size_t seed = 0;
-      hashCombine( seed, range.stages );
-      hashCombine( seed, range.offset );
-      hashCombine( seed, range.size );
-      return seed;
-   }
-};
-
-template <>
-struct std::hash<CYD::RenderTargetsInfo>
-{
-   size_t operator()( const CYD::RenderTargetsInfo& targetsInfo ) const noexcept
-   {
-      const std::vector<CYD::Attachment>& attachments = targetsInfo.attachments;
+      const std::vector<CYD::Attachment>& attachments = framebufferInfo.attachments;
 
       size_t seed = 0;
       for( const auto& attachment : attachments )
@@ -384,34 +322,6 @@ struct std::hash<CYD::RenderTargetsInfo>
          hashCombine( seed, attachment );
       }
 
-      return seed;
-   }
-};
-
-template <>
-struct std::hash<CYD::ShaderSetInfo>
-{
-   size_t operator()( const CYD::ShaderSetInfo& shaderSetInfo ) const noexcept
-   {
-      size_t seed = 0;
-      for( const auto& ubo : shaderSetInfo.shaderBindings )
-      {
-         hashCombine( seed, ubo );
-      }
-      return seed;
-   }
-};
-
-template <>
-struct std::hash<CYD::PipelineLayoutInfo>
-{
-   size_t operator()( const CYD::PipelineLayoutInfo& pipLayoutInfo ) const noexcept
-   {
-      size_t seed = 0;
-      for( const auto& range : pipLayoutInfo.ranges )
-      {
-         hashCombine( seed, range );
-      }
       return seed;
    }
 };
@@ -427,6 +337,21 @@ struct std::hash<CYD::SamplerInfo>
       hashCombine( seed, samplerInfo.magFilter );
       hashCombine( seed, samplerInfo.minFilter );
       hashCombine( seed, samplerInfo.addressMode );
+
+      return seed;
+   }
+};
+
+template <>
+struct std::hash<CYD::Attachment>
+{
+   size_t operator()( const CYD::Attachment& attachment ) const noexcept
+   {
+      size_t seed = 0;
+      hashCombine( seed, attachment.format );
+      hashCombine( seed, attachment.loadOp );
+      hashCombine( seed, attachment.storeOp );
+      hashCombine( seed, attachment.type );
 
       return seed;
    }

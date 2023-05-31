@@ -2,16 +2,20 @@
 
 #include <Common/Include.h>
 
-#include <Graphics/GraphicsTypes.h>
-
 // ================================================================================================
 // Forwards
 // ================================================================================================
 FWDHANDLE( VkDescriptorPool );
 FWDHANDLE( VkDescriptorSet );
+
 namespace vk
 {
 class Device;
+}
+
+namespace CYD
+{
+struct ShaderSetInfo;
 }
 
 // ================================================================================================
@@ -33,6 +37,8 @@ class DescriptorPool final
 
   private:
    const Device& m_device;
+
+
 
    VkDescriptorPool m_vkDescPool = nullptr;
 };

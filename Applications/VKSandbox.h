@@ -11,8 +11,9 @@
 // ================================================================================================
 namespace CYD
 {
-class AssetStash;
 class EntityManager;
+class MeshCache;
+class MaterialCache;
 }
 
 // ================================================================================================
@@ -36,6 +37,7 @@ class VKSandbox final : public Application
 
   private:
    std::unique_ptr<EntityManager> m_ecs;
-   std::unique_ptr<AssetStash> m_assets;
+   std::unique_ptr<MeshCache> m_meshes;
+   std::unique_ptr<MaterialCache> m_materials;
 };
 }

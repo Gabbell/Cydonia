@@ -7,24 +7,82 @@
 #include <Graphics/ShaderConstants.h>
 
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace CYD
 {
-template <class T>
-struct ResourceBinding
+struct PushConstantRange
 {
-   ResourceBinding() = default;
-   ResourceBinding( const T resource, CYD::ShaderResourceType type, uint32_t set, uint32_t binding )
-       : resource( resource ), type( type ), set( set ), binding( binding )
+   bool operator==( const PushConstantRange& other ) const;
+   PipelineStageFlag stages;
+   size_t offset;
+   size_t size;
+};
+
+struct ShaderBindingInfo
+{
+   bool operator==( const ShaderBindingInfo& other ) const;
+
+   std::string name;
+   ShaderResourceType type;
+   PipelineStageFlag stages;
+   uint32_t offset;
+   uint32_t range;
+   uint8_t binding;
+};
+
+struct ShaderSetInfo
+{
+   bool operator==( const ShaderSetInfo& other ) const;
+
+   uint8_t set;
+   std::vector<ShaderBindingInfo> shaderBindings;
+};
+
+struct PipelineLayoutInfo
+{
+   bool operator==( const PipelineLayoutInfo& other ) const;
+
+   void addBinding(
+       ShaderResourceType type,
+       PipelineStageFlag stages,
+       uint8_t binding,
+       uint8_t set = 0,
+       const std::string_view name = "" );
+
+   std::vector<PushConstantRange> ranges;
+   std::vector<ShaderSetInfo> shaderSets;
+};
+
+// Flat shader resource binding
+template <class T>
+struct FlatShaderBinding
+{
+   FlatShaderBinding() = default;
+   FlatShaderBinding(
+       T* resource,
+       CYD::ShaderResourceType type,
+       uint8_t binding,
+       uint8_t set,
+       size_t offset = 0,
+       size_t range  = 0 )
+       : resource( resource ),
+         type( type ),
+         binding( binding ),
+         set( set ),
+         offset( offset ),
+         range( range )
    {
    }
 
-   mutable T resource;
+   T* resource;
    CYD::ShaderResourceType type;
-   uint32_t set;
-   uint32_t binding;
-   bool valid = false;
+   uint8_t binding;
+   uint8_t set;
+   size_t offset;
+   size_t range;
+   bool valid;
 };
 
 // Should not create unspecialized version of this struct
@@ -32,33 +90,35 @@ struct PipelineInfo
 {
    virtual ~PipelineInfo();
 
+   std::string name;
    PipelineType type;
    PipelineLayoutInfo pipLayout;
    ShaderConstants constants;
 
    template <class T>
-   ResourceBinding<T> findBinding( const T resource, const std::string_view name ) const
+   FlatShaderBinding<T> findBinding( T resource, const std::string_view name ) const
    {
-      ResourceBinding<T> binding;
+      FlatShaderBinding<T> binding = {};
 
-      for( const auto& shaderSetInfo : pipLayout.shaderSets )
+      for( const ShaderSetInfo& shaderSetInfo : pipLayout.shaderSets )
       {
-         for( const auto& shaderBindingInfo : shaderSetInfo.second.shaderBindings )
+         for( const ShaderBindingInfo& shaderBindingInfo : shaderSetInfo.shaderBindings )
          {
             if( shaderBindingInfo.name == name )
             {
                // We found the binding
-               binding.binding = shaderBindingInfo.binding;
                binding.type    = shaderBindingInfo.type;
-               binding.set     = shaderSetInfo.first;
+               binding.binding = shaderBindingInfo.binding;
+               binding.set     = shaderSetInfo.set;
 
-               // A resource binding is only valid if the resource is not null
-               if( resource ) binding.valid = true;
+               if( resource )
+               {
+                  binding.valid = true;
+               }
             }
          }
       }
 
-      binding.resource = resource;
       return binding;
    }
 
@@ -97,6 +157,47 @@ struct ComputePipelineInfo final : public PipelineInfo
 }
 
 template <>
+struct std::hash<CYD::ShaderBindingInfo>
+{
+   size_t operator()( const CYD::ShaderBindingInfo& shaderObject ) const noexcept
+   {
+      size_t seed = 0;
+      hashCombine( seed, shaderObject.type );
+      hashCombine( seed, shaderObject.binding );
+      hashCombine( seed, shaderObject.stages );
+      return seed;
+   }
+};
+
+template <>
+struct std::hash<CYD::ShaderSetInfo>
+{
+   size_t operator()( const CYD::ShaderSetInfo& shaderSetInfo ) const noexcept
+   {
+      size_t seed = 0;
+      for( const auto& ubo : shaderSetInfo.shaderBindings )
+      {
+         hashCombine( seed, ubo );
+      }
+      return seed;
+   }
+};
+
+template <>
+struct std::hash<CYD::PipelineLayoutInfo>
+{
+   size_t operator()( const CYD::PipelineLayoutInfo& pipLayoutInfo ) const noexcept
+   {
+      size_t seed = 0;
+      for( const auto& range : pipLayoutInfo.ranges )
+      {
+         hashCombine( seed, range );
+      }
+      return seed;
+   }
+};
+
+template <>
 struct std::hash<CYD::GraphicsPipelineInfo>
 {
    size_t operator()( const CYD::GraphicsPipelineInfo& pipInfo ) const noexcept
@@ -126,6 +227,19 @@ struct std::hash<CYD::ComputePipelineInfo>
       hashCombine( seed, pipInfo.pipLayout );
       hashCombine( seed, pipInfo.shader );
 
+      return seed;
+   }
+};
+
+template <>
+struct std::hash<CYD::PushConstantRange>
+{
+   size_t operator()( const CYD::PushConstantRange& range ) const noexcept
+   {
+      size_t seed = 0;
+      hashCombine( seed, range.stages );
+      hashCombine( seed, range.offset );
+      hashCombine( seed, range.size );
       return seed;
    }
 };

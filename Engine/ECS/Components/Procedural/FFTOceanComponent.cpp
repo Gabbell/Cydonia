@@ -14,13 +14,13 @@ FFTOceanComponent::FFTOceanComponent(
     float windDirX,
     float windDirZ )
 {
-   parameters.resolution          = resolution;
-   parameters.horizontalDimension = horizontalDimension;
-   parameters.amplitude           = amplitude;
-   parameters.gravity             = PHYSICS::GRAV_ACCELERATION_CONSTANT;
-   parameters.windSpeed           = windSpeed;
-   parameters.windDirX            = windDirX;
-   parameters.windDirZ            = windDirZ;
+   params.resolution          = resolution;
+   params.horizontalDimension = horizontalDimension;
+   params.amplitude           = amplitude;
+   params.gravity             = PHYSICS::GRAV_ACCELERATION_CONSTANT;
+   params.windSpeed           = windSpeed;
+   params.windDirX            = windDirX;
+   params.windDirZ            = windDirZ;
 }
 
 FFTOceanComponent::~FFTOceanComponent()
@@ -33,5 +33,7 @@ FFTOceanComponent::~FFTOceanComponent()
    GRIS::DestroyTexture( fourierComponentsY );
    GRIS::DestroyTexture( fourierComponentsX );
    GRIS::DestroyTexture( fourierComponentsZ );
+
+   GRIS::DestroyTexture( pingpongTex );
 }
 }

@@ -9,7 +9,7 @@
 // ================================================================================================
 FWDHANDLE( VkInstance );
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
 FWDHANDLE( VkDebugUtilsMessengerEXT );
 #endif
 
@@ -39,7 +39,7 @@ class Instance final
    // =============================================================================================
    void _createVKInstance();
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    void _createDebugMessenger();
 #endif
 
@@ -52,7 +52,7 @@ class Instance final
 
    VkInstance m_vkInstance = nullptr;
 
-#if defined( _DEBUG )
+#if CYD_DEBUG
    VkDebugUtilsMessengerEXT m_debugMessenger = nullptr;
 #endif
 };

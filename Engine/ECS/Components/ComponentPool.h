@@ -42,7 +42,7 @@ class ComponentPool final : public BaseComponentPool
 
    // static_assert(
    //     std::is_trivially_move_assignable_v<Component> &&
-   //     "ComponentPool: Component is not move assignable, this can hurt performances" );
+   //     "ComponentPool: Component is not trivially move assignable, this can hurt performances" );
 
    Component* getComponent( size_t index ) const { return m_components[index]; }
 
@@ -71,6 +71,7 @@ class ComponentPool final : public BaseComponentPool
    {
       CYDASSERT( poolIdx >= 0 && "ComponentPool: Trying to release an invalid component" );
 
+      m_components[poolIdx] = {};
       m_slots[poolIdx] = false;  // Freeing slot
    }
 

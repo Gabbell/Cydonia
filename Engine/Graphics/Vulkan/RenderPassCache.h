@@ -27,13 +27,13 @@ class RenderPassCache final
    explicit RenderPassCache( const Device& device );
    ~RenderPassCache();
 
-   VkRenderPass findOrCreate( const CYD::RenderTargetsInfo& targetsInfo );
+   VkRenderPass findOrCreate( const CYD::FramebufferInfo& targetsInfo );
 
   private:
    void _createDefaultRenderPasses();
 
    const Device& m_device;
 
-   std::unordered_map<CYD::RenderTargetsInfo, VkRenderPass> m_renderPasses;
+   std::unordered_map<CYD::FramebufferInfo, VkRenderPass> m_renderPasses;
 };
 }

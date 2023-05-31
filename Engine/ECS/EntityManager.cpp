@@ -3,7 +3,6 @@
 #include <ECS/Components/BaseComponent.h>
 
 #include <ECS/SharedComponents/InputComponent.h>
-#include <ECS/SharedComponents/CameraComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
 namespace CYD
@@ -12,7 +11,6 @@ EntityManager::EntityManager()
 {
    // Initializing shared components
    m_sharedComponents[(size_t)SharedComponentType::INPUT]  = new InputComponent();
-   m_sharedComponents[(size_t)SharedComponentType::CAMERA] = new CameraComponent();
    m_sharedComponents[(size_t)SharedComponentType::SCENE]  = new SceneComponent();
 }
 
@@ -22,7 +20,7 @@ EntityManager::~EntityManager()
    {
       delete sharedComponent;
    }
-   for( auto& componentPool : m_components )
+   for( auto& componentPool : m_componentPools )
    {
       delete componentPool;
    }
@@ -81,7 +79,7 @@ void EntityManager::removeEntity( EntityHandle handle )
    for( const auto& component : entity.getComponents() )
    {
       // Remove from pool
-      m_components[(size_t)component.first]->releaseComponent(
+      m_componentPools[(size_t)component.first]->releaseComponent(
           component.second->getPoolIndex() );
    }
 

@@ -4,6 +4,7 @@
 #include <ECS/Components/ComponentTypes.h>
 
 #include <Graphics/Handles/ResourceHandle.h>
+#include <Graphics/GraphicsTypes.h>
 
 namespace CYD
 {
@@ -38,7 +39,7 @@ class FFTOceanComponent final : public BaseComponent
       float windDirX               = 0.0f;
       float windDirZ               = 0.0f;
       float time                   = 0.0f;
-   } parameters;
+   } params;
 
    // Time-indepdendent textures (precomputed)
    // These textures are sampled each frame and are constant across time until one of the properties
@@ -60,7 +61,14 @@ class FFTOceanComponent final : public BaseComponent
    float modulationX = 1.0f;
    float modulationZ = 1.0f;
 
-   bool needsUpdate       = true;
-   bool resolutionChanged = true;
+   PipelineIndex butterflyOperationsPip    = INVALID_PIPELINE_IDX;
+   PipelineIndex inversionPermutationPip   = INVALID_PIPELINE_IDX;
+   PipelineIndex philipsSpectraGenPip      = INVALID_PIPELINE_IDX;
+   PipelineIndex butterflyTexGenerationPip = INVALID_PIPELINE_IDX;
+   PipelineIndex fourierComponentsPip      = INVALID_PIPELINE_IDX;
+
+   bool needsInit         = true; // Initialize pipeline indices
+   bool needsUpdate       = true; // If we need to update the pre-computed textures
+   bool resolutionChanged = true; // If we need to resize the textures
 };
 }

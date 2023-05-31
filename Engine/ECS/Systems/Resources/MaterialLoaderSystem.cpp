@@ -1,8 +1,10 @@
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 
-#include <Graphics/AssetStash.h>
-#include <Graphics/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/RenderGraph.h>
+
+#include "Graphics/StaticPipelines.h"
+#include "Graphics/Scene/MaterialCache.h"
 
 namespace CYD
 {
@@ -16,21 +18,18 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
    {
       MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
 
-      if( material.data.albedo || material.data.normals || material.data.metalness ||
-          material.data.roughness || material.data.ao )
+      if( !material.isLoaded )
       {
-         continue;
+         material.pipelineIdx = StaticPipelines::FindByName( material.pipelineName );
+         material.materialIdx = m_materials.getMaterialByName( material.materialName );
+
+         m_materials.load( transferList, material.materialIdx );
       }
 
-      m_assets.loadMaterialFromPath( transferList, material.asset );
+      CYDASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
+      CYDASSERT( material.materialIdx != INVALID_MATERIAL_IDX );
 
-      const Material& loadedMaterial = m_assets.getMaterial( material.asset );
-      material.data.albedo           = loadedMaterial.albedo;
-      material.data.normals          = loadedMaterial.normals;
-      material.data.metalness        = loadedMaterial.metalness;
-      material.data.disp             = loadedMaterial.disp;
-      material.data.roughness        = loadedMaterial.roughness;
-      material.data.ao               = loadedMaterial.ao;
+      material.isLoaded = true;
    }
 
    // We don't want to spend more time on loading these entities' resources

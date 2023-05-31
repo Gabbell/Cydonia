@@ -10,6 +10,8 @@
     <ClInclude Include="Multithreading\ThreadSafeQueue.h" />
     <ClInclude Include="Common\Assert.h" />
     <ClInclude Include="Common\Include.h" />
+    <ClInclude Include="Common\ObjectPool.h" />
+    <ClInclude Include="Common\TODOByteBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Graph\NodeGraph.cpp" />

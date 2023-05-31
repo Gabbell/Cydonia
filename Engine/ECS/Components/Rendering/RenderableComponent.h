@@ -17,8 +17,8 @@ class RenderableComponent final : public BaseComponent
 {
   public:
    RenderableComponent() = default;
-   RenderableComponent( bool occluder, bool visible = true )
-       : isVisible( visible ), isOccluder( occluder )
+   RenderableComponent( bool castsShadows = false, bool visible = true )
+       : isVisible( visible ), castsShadows( castsShadows )
    {
    }
    COPIABLE( RenderableComponent );
@@ -26,7 +26,7 @@ class RenderableComponent final : public BaseComponent
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
-   bool isVisible : 1  = true;
-   bool isOccluder : 1 = false;
+   bool castsShadows : 1 = true;
+   bool isVisible : 1    = true;
 };
 }

@@ -36,6 +36,7 @@ class VertexLayout
    std::vector<Attribute> m_attributes;
 };
 
+// TODO More flexible vertex layouts
 class Vertex final
 {
   public:
@@ -50,9 +51,9 @@ class Vertex final
    }
 
    glm::vec3 pos;
-   glm::vec4 col = glm::vec4( 1.0f );
-   glm::vec3 uv;
    glm::vec3 normal;
+   glm::vec3 uv;
+   glm::vec4 col = glm::vec4( 1.0f );
 };
 }
 

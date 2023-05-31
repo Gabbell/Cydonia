@@ -292,7 +292,7 @@ void Swapchain::_createFramebuffers( const CYD::SwapchainInfo& info )
    depth.storeOp = CYD::StoreOp::DONT_CARE;
    depth.type    = CYD::AttachmentType::DEPTH_STENCIL;
 
-   CYD::RenderTargetsInfo targetsInfo = {};
+   CYD::FramebufferInfo targetsInfo = {};
    targetsInfo.attachments.push_back( colorPresentation );
    targetsInfo.attachments.push_back( depth );
 

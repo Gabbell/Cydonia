@@ -1,0 +1,21 @@
+#version 450
+
+#include "NOISE.h"
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
+
+float goldNoise( in vec2 xy, in float seed )
+{
+   return fract( tan( distance( xy * PHI, xy ) * seed ) * xy.x );
+}
+
+void main()
+{
+   vec2 uv = gl_GlobalInvocationID.xy;
+
+   vec3 noiseVal = vec3( goldNoise( uv, seed ) );
+
+   imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( noiseVal, 1.0 ) );
+}

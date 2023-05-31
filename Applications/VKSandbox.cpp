@@ -1,30 +1,26 @@
 #include <VKSandbox.h>
 
-#include <Graphics/AssetStash.h>
-#include <Graphics/RenderGraph.h>
-#include <Graphics/VertexLayout.h>
+#include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
-#include <Graphics/Utility/MeshGeneration.h>
+#include <Graphics/Scene/MeshCache.h>
+#include <Graphics/Scene/MaterialCache.h>
 
-#include <ECS/Systems/Lighting/LightUpdateSystem.h>
 #include <ECS/Systems/Input/InputSystem.h>
-#include <ECS/Systems/Physics/PlayerMoveSystem.h>
-#include <ECS/Systems/Physics/MotionSystem.h>
-#include <ECS/Systems/Procedural/FFTOceanSystem.h>
-#include <ECS/Systems/Rendering/PBRRenderSystem.h>
+#include <ECS/Systems/Rendering/FullscreenRenderSystem.h>
+#include <ECS/Systems/Debug/DebugDrawSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
-#include <ECS/Systems/Rendering/AtmosphereRenderSystem.h>
+#include <ECS/Systems/Procedural/NoiseGenerationSystem.h>
 #include <ECS/Systems/Scene/CameraSystem.h>
 #include <ECS/Systems/UI/ImGuiSystem.h>
 
-#include <ECS/Components/Lighting/LightComponent.h>
-#include <ECS/Components/Physics/MotionComponent.h>
-#include <ECS/Components/Rendering/MeshComponent.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
-#include <ECS/Components/Transforms/TransformComponent.h>
+#include <ECS/Components/Rendering/FullscreenComponent.h>
+#include <ECS/Components/Procedural/NoiseComponent.h>
 
-#include <ECS/SharedComponents/CameraComponent.h>
+#if CYD_DEBUG
+#include <ECS/Components/Debug/DebugSphereComponent.h>
+#endif
+
 #include <ECS/SharedComponents/InputComponent.h>
 
 #include <ECS/EntityManager.h>
@@ -38,76 +34,64 @@ VKSandbox::VKSandbox( uint32_t width, uint32_t height, const char* title )
    GRIS::InitRenderBackend( GRIS::API::VK, *m_window );
    GRIS::InitializeUI();
 
-   m_ecs    = std::make_unique<EntityManager>();
-   m_assets = std::make_unique<AssetStash>();
+   StaticPipelines::Initialize();
+
+   m_meshes    = std::make_unique<MeshCache>();
+   m_materials = std::make_unique<MaterialCache>();
+   m_ecs       = std::make_unique<EntityManager>();
 }
 
 void VKSandbox::preLoop()
 {
    // Systems Initialization
    // =============================================================================================
-
    // Core
    m_ecs->addSystem<InputSystem>( *m_window );
    m_ecs->addSystem<CameraSystem>();
 
    // Resources
-   m_ecs->addSystem<MeshLoaderSystem>( *m_assets );
-   m_ecs->addSystem<MaterialLoaderSystem>( *m_assets );
+   m_ecs->addSystem<MeshLoaderSystem>( *m_meshes );
+   m_ecs->addSystem<MaterialLoaderSystem>( *m_materials );
 
-   // Physics/Motion
-   m_ecs->addSystem<PlayerMoveSystem>();
-   m_ecs->addSystem<MotionSystem>();
+   // Procedural
+   m_ecs->addSystem<NoiseGenerationSystem>( *m_materials );
 
    // Rendering
-   m_ecs->addSystem<LightUpdateSystem>();
-   m_ecs->addSystem<FFTOceanSystem>();
-   m_ecs->addSystem<PBRRenderSystem>();
+   m_ecs->addSystem<FullscreenRenderSystem>( *m_materials );
+
+   // Debug
+#if CYD_DEBUG
+   // m_ecs->addSystem<DebugDrawSystem>( *m_meshes );
+#endif
+
+   // UI
    // m_ecs->addSystem<ImGuiSystem>();
 
    // Adding entities
    // =============================================================================================
-
-   const EntityHandle player = m_ecs->createEntity();
-   m_ecs->assign<InputComponent>( player );
-   m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 0.0f, 0.0f ) );
-   m_ecs->assign<MotionComponent>( player );
-   m_ecs->assign<CameraComponent>( player );
-
-   const EntityHandle sun = m_ecs->createEntity();
-   m_ecs->assign<RenderableComponent>( sun );
-   m_ecs->assign<TransformComponent>( sun );
-   m_ecs->assign<LightComponent>( sun );
-
-   const EntityHandle ocean = m_ecs->createEntity();
-   m_ecs->assign<RenderableComponent>( ocean );
-   m_ecs->assign<TransformComponent>( ocean, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3(10.0f) );
-   m_ecs->assign<MeshComponent>( ocean, "Ocean" );
-   m_ecs->assign<FFTOceanComponent>( ocean, 256, 100, 10.0f, 40.0f, 1.0f, 0.0f );
-   m_ecs->assign<MaterialComponent>( ocean, "OCEAN_RENDER" );
-
-   std::vector<Vertex> gridVerts;
-   std::vector<uint32_t> gridIndices;
-   MeshGeneration::Grid( gridVerts, gridIndices, 512, 512 );
-
-   // Creating grid mesh used for the ocean
-   const CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "Ocean Transfer" );
-   GRIS::StartRecordingCommandList( transferList );
-   m_assets->loadMesh( transferList, "Ocean", gridVerts, gridIndices );
-   GRIS::EndRecordingCommandList( transferList );
-   GRIS::SubmitCommandList( transferList );
-   GRIS::WaitOnCommandList( transferList );
-   GRIS::DestroyCommandList( transferList );
+   const EntityHandle noiseTexture = m_ecs->createEntity();
+   m_ecs->assign<FullscreenComponent>( noiseTexture );
+   m_ecs->assign<NoiseComponent>( noiseTexture );
+   m_ecs->assign<MaterialComponent>( noiseTexture, "SIMPLEX_NOISE", "SOLO_TEX" );
 }
 
 void VKSandbox::tick( double deltaS )
 {
-   static uint32_t frames = 0;
-   frames++;
-   if( frames > 50 )
+   static double timeAccum    = 0;
+   static uint32_t fpsAccum   = 0;
+   static uint32_t frameAccum = 0;
+
+   timeAccum += deltaS;
+   fpsAccum += static_cast<uint32_t>( 1.0 / deltaS );
+   frameAccum++;
+
+   if( timeAccum > 1.0 )
    {
-      printf( "FPS: %f\n", 1.0 / deltaS );
-      frames = 0;
+      printf( "Average FPS: %d\n", fpsAccum / frameAccum );
+
+      timeAccum  = 0.0;
+      fpsAccum   = 0;
+      frameAccum = 0;
    }
 
    GRIS::PrepareFrame();
@@ -123,10 +107,13 @@ void VKSandbox::tick( double deltaS )
 
 VKSandbox::~VKSandbox()
 {
-   m_assets.reset();
+   m_ecs.reset();
+   m_materials.reset();
+   m_meshes.reset();
 
    // Core uninitializers
    GRIS::UninitializeUI();
    GRIS::UninitRenderBackend();
+   StaticPipelines::Uninitialize();
 }
 }

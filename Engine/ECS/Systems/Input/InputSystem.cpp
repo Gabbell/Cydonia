@@ -4,6 +4,7 @@
 
 #include <ECS/EntityManager.h>
 #include <ECS/SharedComponents/InputComponent.h>
+#include <ECS/SharedComponents/SceneComponent.h>
 
 #include <GLFW/glfw3.h>
 
@@ -16,17 +17,20 @@ InputSystem::InputSystem( const Window& window ) : m_window( window )
    glfwSetWindowUserPointer( m_window.getGLFWwindow(), this );
 
    // Callback wrappers
-   auto mainKeyCallback = []( GLFWwindow* window, int key, int scancode, int action, int mods ) {
+   auto mainKeyCallback = []( GLFWwindow* window, int key, int scancode, int action, int mods )
+   {
       static_cast<InputSystem*>( glfwGetWindowUserPointer( window ) )
           ->_keyCallback( window, key, scancode, action, mods );
    };
 
-   auto mainCursorCallback = []( GLFWwindow* window, double xpos, double ypos ) {
+   auto mainCursorCallback = []( GLFWwindow* window, double xpos, double ypos )
+   {
       static_cast<InputSystem*>( glfwGetWindowUserPointer( window ) )
           ->_cursorCallback( window, xpos, ypos );
    };
 
-   auto mainMouseCallback = []( GLFWwindow* window, int button, int action, int mods ) {
+   auto mainMouseCallback = []( GLFWwindow* window, int button, int action, int mods )
+   {
       static_cast<InputSystem*>( glfwGetWindowUserPointer( window ) )
           ->_mouseCallback( window, button, action, mods );
    };
@@ -40,10 +44,31 @@ InputSystem::InputSystem( const Window& window ) : m_window( window )
 void InputSystem::tick( double /*deltaS*/ )
 {
    InputComponent& input = m_ecs->getSharedComponent<InputComponent>();
-   input.cursorDelta     = glm::vec2( 0.0f );
+   SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
+
+   input.cursorDelta = glm::vec2( 0.0f );
 
    // Polling GLFW to trigger the callbacks
    glfwPollEvents();
+
+   int width, height;
+   glfwGetFramebufferSize( m_window.getGLFWwindow(), &width, &height );
+   if( width != input.windowWidth || height != input.windowHeight )
+   {
+      // Window size changed
+      input.resolutionChanged = true;
+      input.windowWidth       = width;
+      input.windowHeight      = height;
+
+      // Update viewport and scissor
+      scene.viewport = { 0.0f, 0.0f, static_cast<float>( width ), static_cast<float>( height ) };
+      scene.scissor  = {
+          { 0, 0 }, { static_cast<uint32_t>( width ), static_cast<uint32_t>( height ) } };
+   }
+   else
+   {
+      input.resolutionChanged = false;
+   }
 }
 
 void InputSystem::_keyCallback(
@@ -129,6 +154,18 @@ void InputSystem::_keyCallback(
       else if( action == GLFW_RELEASE )
       {
          input.goingDown = false;
+      }
+   }
+
+   if( key == GLFW_KEY_LEFT_CONTROL )
+   {
+      if( action == GLFW_PRESS )
+      {
+         input.sprinting = true;
+      }
+      else if( action == GLFW_RELEASE )
+      {
+         input.sprinting = false;
       }
    }
 }

@@ -11,18 +11,18 @@
 // ================================================================================================
 namespace CYD
 {
-class AssetStash;
+class MaterialCache;
 
 class MaterialLoaderSystem final : public CommonSystem<MaterialComponent>
 {
   public:
-   MaterialLoaderSystem( AssetStash& assets ) : m_assets( assets ) {}
+   MaterialLoaderSystem( MaterialCache& materials ) : m_materials( materials ) {}
    NON_COPIABLE( MaterialLoaderSystem );
    virtual ~MaterialLoaderSystem() = default;
 
    void tick( double deltaS ) override;
 
   private:
-   AssetStash& m_assets;
+   MaterialCache& m_materials;
 };
 }

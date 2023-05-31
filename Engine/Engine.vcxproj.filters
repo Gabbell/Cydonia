@@ -32,21 +32,18 @@
     <ClCompile Include="Graphics\GraphicsTypes.cpp" />
     <ClCompile Include="Graphics\PipelineInfos.cpp" />
     <ClCompile Include="ECS\Systems\Physics\MotionSystem.cpp" />
-    <ClCompile Include="Graphics\RenderPipelines.cpp" />
+    <ClCompile Include="Graphics\StaticPipelines.cpp" />
     <ClCompile Include="Graphics\GRIS\RenderInterface.cpp" />
     <ClCompile Include="ECS\Systems\Lighting\LightUpdateSystem.cpp" />
     <ClCompile Include="ECS\Systems\Rendering\PBRRenderSystem.cpp" />
     <ClCompile Include="ECS\Systems\Lighting\ShadowMapSystem.cpp" />
     <ClCompile Include="Graphics\GRIS\Backends\GLRenderBackend.cpp" />
     <ClCompile Include="Graphics\GRIS\Backends\VKRenderBackend.cpp" />
-    <ClCompile Include="ECS\SharedComponents\CameraComponent.cpp" />
     <ClCompile Include="ECS\SharedComponents\SceneComponent.cpp" />
     <ClCompile Include="ECS\Systems\Resources\MaterialLoaderSystem.cpp" />
     <ClCompile Include="ECS\Systems\Resources\MeshLoaderSystem.cpp" />
-    <ClCompile Include="Graphics\AssetStash.cpp" />
     <ClCompile Include="Graphics\ShaderConstants.cpp" />
-    <ClCompile Include="ECS\Systems\Rendering\AtmosphereRenderSystem.cpp" />
-    <ClCompile Include="Graphics\RenderGraph.cpp" />
+    <ClCompile Include="Graphics\GRIS\RenderGraph.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
@@ -58,7 +55,7 @@
     <ClCompile Include="UI\UserInterface.cpp" />
     <ClCompile Include="Graphics\VertexLayout.cpp" />
     <ClCompile Include="ECS\Systems\Procedural\FFTOceanSystem.cpp" />
-    <ClCompile Include="Graphics\Material.cpp" />
+    <ClCompile Include="Graphics\Scene\Material.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandBufferPool.cpp" />
     <ClCompile Include="Graphics\Vulkan\CommandPoolManager.cpp" />
     <ClCompile Include="Graphics\Vulkan\DebugUtilsLabel.cpp" />
@@ -68,6 +65,14 @@
     <ClCompile Include="Graphics\GRIS\Backends\D3D12RenderBackend.cpp" />
     <ClCompile Include="JobPool.cpp" />
     <ClCompile Include="Application.cpp" />
+    <ClCompile Include="Graphics\Scene\MeshCache.cpp" />
+    <ClCompile Include="ECS\Systems\Debug\DebugDrawSystem.cpp" />
+    <ClCompile Include="Graphics\Scene\Mesh.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\AtmosphereSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\FullscreenRenderSystem.cpp" />
+    <ClCompile Include="Graphics\Scene\MaterialCache.cpp" />
+    <ClCompile Include="ECS\Components\Procedural\NoiseComponent.cpp" />
+    <ClCompile Include="ECS\Systems\Procedural\NoiseGenerationSystem.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics\Vulkan\Buffer.h" />
@@ -96,7 +101,6 @@
     <ClInclude Include="ECS\Entity.h" />
     <ClInclude Include="ECS\SharedComponents\InputComponent.h" />
     <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
-    <ClInclude Include="ECS\SharedComponents\CameraComponent.h" />
     <ClInclude Include="ECS\SharedComponents\SharedComponentType.h" />
     <ClInclude Include="ECS\SharedComponents\SceneComponent.h" />
     <ClInclude Include="ECS\Components\Transforms\TransformComponent.h" />
@@ -123,7 +127,7 @@
     <ClInclude Include="Graph\Node.h" />
     <ClInclude Include="ECS\Components\Rendering\MeshComponent.h" />
     <ClInclude Include="ECS\Components\Rendering\RenderableComponent.h" />
-    <ClInclude Include="Graphics\RenderPipelines.h" />
+    <ClInclude Include="Graphics\StaticPipelines.h" />
     <ClInclude Include="Graphics\GRIS\RenderInterface.h" />
     <ClInclude Include="ECS\Systems\Lighting\LightUpdateSystem.h" />
     <ClInclude Include="ECS\Systems\Rendering\PBRRenderSystem.h" />
@@ -135,10 +139,8 @@
     <ClInclude Include="Graphics\GRIS\Backends\VKRenderBackend.h" />
     <ClInclude Include="ECS\Systems\Resources\MaterialLoaderSystem.h" />
     <ClInclude Include="ECS\Systems\Resources\MeshLoaderSystem.h" />
-    <ClInclude Include="Graphics\AssetStash.h" />
     <ClInclude Include="Graphics\ShaderConstants.h" />
-    <ClInclude Include="ECS\Systems\Rendering\AtmosphereRenderSystem.h" />
-    <ClInclude Include="Graphics\RenderGraph.h" />
+    <ClInclude Include="Graphics\GRIS\RenderGraph.h" />
     <ClInclude Include="Graphics\VertexLayout.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
     <ClInclude Include="ThirdParty\ImGui\imgui.h" />
@@ -151,7 +153,7 @@
     <ClInclude Include="ECS\Systems\UI\ImGuiSystem.h" />
     <ClInclude Include="UI\UserInterface.h" />
     <ClInclude Include="ECS\Systems\Procedural\FFTOceanSystem.h" />
-    <ClInclude Include="Graphics\Material.h" />
+    <ClInclude Include="Graphics\Scene\Material.h" />
     <ClInclude Include="Graphics\Vulkan\CommandBufferPool.h" />
     <ClInclude Include="Graphics\Vulkan\CommandPoolManager.h" />
     <ClInclude Include="Graphics\Vulkan\DebugUtilsLabel.h" />
@@ -164,6 +166,19 @@
     <ClInclude Include="Graphics\DirectX12.h" />
     <ClInclude Include="Physics\PhysicsConstants.h" />
     <ClInclude Include="Application.h" />
+    <ClInclude Include="ECS\Components\Scene\CameraComponent.h" />
+    <ClInclude Include="Graphics\GRIS\Backends\RenderBackendDeclaration.h" />
+    <ClInclude Include="Graphics\Scene\MeshCache.h" />
+    <ClInclude Include="ECS\Components\Debug\DebugDrawComponent.h" />
+    <ClInclude Include="ECS\Components\Debug\DebugSphereComponent.h" />
+    <ClInclude Include="ECS\Systems\Debug\DebugDrawSystem.h" />
+    <ClInclude Include="Graphics\Scene\Mesh.h" />
+    <ClInclude Include="ECS\Systems\Rendering\AtmosphereSystem.h" />
+    <ClInclude Include="Graphics\Scene\MaterialCache.h" />
+    <ClInclude Include="ECS\Systems\Rendering\FullscreenRenderSystem.h" />
+    <ClInclude Include="ECS\Components\Procedural\NoiseComponent.h" />
+    <ClInclude Include="ECS\Systems\Procedural\NoiseGenerationSystem.h" />
+    <ClInclude Include="ECS\Components\Rendering\FullscreenComponent.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include=".clang-format" />
