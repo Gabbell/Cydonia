@@ -152,6 +152,9 @@ IndexBufferHandle CreateIndexBuffer(
 BufferHandle CreateUniformBuffer( size_t size, const std::string_view name );
 BufferHandle CreateBuffer( size_t size, const std::string_view name );
 
+void* AddDebugTexture( TextureHandle texture );
+void RemoveDebugTexture( void* texture );
+
 void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size );
 
 void DestroyTexture( TextureHandle texHandle );

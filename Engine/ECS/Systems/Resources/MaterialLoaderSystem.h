@@ -4,7 +4,7 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Rendering/MaterialComponent.h>
+#include <ECS/Components/Rendering/StaticMaterialComponent.h>
 
 // ================================================================================================
 // Definition
@@ -13,7 +13,7 @@ namespace CYD
 {
 class MaterialCache;
 
-class MaterialLoaderSystem final : public CommonSystem<MaterialComponent>
+class MaterialLoaderSystem final : public CommonSystem<StaticMaterialComponent>
 {
   public:
    MaterialLoaderSystem( MaterialCache& materials ) : m_materials( materials ) {}

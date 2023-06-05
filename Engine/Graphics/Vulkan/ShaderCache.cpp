@@ -7,7 +7,7 @@
 #include <filesystem>
 
 // Hard-coded shader directories
-static constexpr char SPIRV_SHADER_DIR[] = "../Engine/Data/Shaders/SPIR-V/";
+static constexpr char SPIRV_SHADER_DIR[] = "Shaders/";
 
 namespace vk
 {
@@ -16,14 +16,17 @@ ShaderCache::~ShaderCache() = default;
 
 void ShaderCache::_initializeAllShaders()
 {
+   CYDASSERT(
+       std::filesystem::exists( SPIRV_SHADER_DIR ) &&
+       "ShaderCache: Could not find compiled shader directory" );
+
    auto directory = std::filesystem::directory_iterator( SPIRV_SHADER_DIR );
-   CYDASSERT( directory->exists() && "ShaderCache: Could not find compiled shader directory" );
 
    for( const auto& entry : directory )
    {
       std::string shaderPath = entry.path().generic_string();
 
-      _shaders.insert( {shaderPath, std::make_unique<Shader>( _device, shaderPath )} );
+      _shaders.insert( { shaderPath, std::make_unique<Shader>( _device, shaderPath ) } );
    }
 }
 

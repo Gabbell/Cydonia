@@ -29,7 +29,9 @@ enum class ComponentType : int16_t
 
    // Procedural
    // ==============================================================================================
-   NOISE,
+   //NOISE,
+   PROCEDURAL_DISPLACEMENT,
+   PROCEDURAL_MATERIAL,
    OCEAN,
    ATMOSPHERE,
 

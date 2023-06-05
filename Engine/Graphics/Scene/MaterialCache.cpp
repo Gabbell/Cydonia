@@ -15,12 +15,12 @@ namespace CYD
 // Asset Paths Constants
 // ================================================================================================
 static constexpr uint32_t MAX_STATIC_MATERIALS = 128;
-static constexpr char STATIC_MATERIALS_PATH[]  = "../Engine/Data/Materials/Materials.json";
-static constexpr char MATERIALS_PATH[]         = "../Engine/Data/Materials/";
+static constexpr char STATIC_MATERIALS_PATH[]  = "Materials.json";
+//static constexpr char MATERIALS_PATH[]         = "../Engine/Data/Materials/";
 
 MaterialCache::MaterialCache() { initializeStaticMaterials(); }
 
-MaterialIndex MaterialCache::addMaterial( const std::string& name, const MaterialDescription& desc )
+MaterialIndex MaterialCache::addMaterial( const std::string& name, const Material::Description& desc )
 {
    MaterialIndex index   = m_materials.insertObject( name, desc );
    m_materialNames[name] = index;
@@ -45,9 +45,9 @@ void MaterialCache::bind( CmdListHandle cmdList, MaterialIndex index, uint8_t se
    m_materials[index]->bind( cmdList, set );
 }
 
-void MaterialCache::updateMaterial( MaterialIndex index, TextureHandle texture, uint32_t binding )
+void MaterialCache::updateMaterial( MaterialIndex index, TextureHandle texture, Material::TextureSlot slot)
 {
-   return m_materials[index]->updateTexture( texture, binding );
+   return m_materials[index]->updateTexture( texture, slot );
 }
 
 MaterialIndex MaterialCache::getMaterialByName( const std::string& name ) const
@@ -140,7 +140,7 @@ void MaterialCache::initializeStaticMaterials()
       }
 #endif
 
-      MaterialDescription desc;
+      Material::Description desc;
 
       const auto& texturesIt = material.find( "TEXTURES" );
       if( texturesIt != material.end() )

@@ -5,6 +5,7 @@
 #include <Graphics/Vulkan.h>
 
 #include <GLFW/glfw3.h>
+#include <stb/stb_image.h>
 
 namespace CYD
 {
@@ -26,6 +27,13 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
    glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );  // Tell GLFW we do not need a GL context
    m_glfwWindow = glfwCreateWindow( width, height, title, nullptr, nullptr );
    CYDASSERT_AND_RETURN( m_glfwWindow && "Could not create GLFW window", false );
+
+   // Assigning icon
+   GLFWimage images[1];
+   images[0].pixels =
+       stbi_load( "CydoniaIcon.png", &images[0].width, &images[0].height, 0, 4 );  // rgba channels
+   glfwSetWindowIcon( m_glfwWindow, 1, images );
+   stbi_image_free( images[0].pixels );
 
    // Populating extensions
    uint32_t extensionsCount = 0;

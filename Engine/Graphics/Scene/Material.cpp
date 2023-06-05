@@ -6,7 +6,7 @@
 
 namespace CYD
 {
-void MaterialDescription::addTexture( const TextureDescription& texDesc, const std::string& path )
+void Material::Description::addTexture( const TextureDescription& texDesc, const std::string& path )
 {
    textureDescs[textureCount] = texDesc;
    texturePaths[textureCount] = path;
@@ -49,20 +49,21 @@ void Material::unload()
 
 void Material::bind( CmdListHandle cmdList, uint8_t set ) const
 {
-   for( uint32_t i = 0; i < m_desc.textureCount; ++i )
+   for( uint32_t i = 0; i < m_textures.size(); ++i )
    {
       // Set is hardcoded to 1 for materials right now
       // TODO Allow non-contiguous bindings?
-      GRIS::BindTexture( cmdList, m_textures[i], i, set );
+      if( m_textures[i] )
+      {
+         GRIS::BindTexture( cmdList, m_textures[i], i, set );
+      }
    }
 }
 
-void Material::updateTexture(TextureHandle texture, uint32_t binding)
+void Material::updateTexture(TextureHandle texture, TextureSlot slot)
 {
-   CYDASSERT( binding < MaterialDescription::MAX_TEXTURE_HANDLES );
-
-   if( !m_textures[binding] ) m_desc.textureCount++;
-   m_textures[binding] = texture;
+   if( !m_textures[slot] ) m_desc.textureCount++;
+   m_textures[slot] = texture;
 }
 
 Material::~Material() { unload(); }

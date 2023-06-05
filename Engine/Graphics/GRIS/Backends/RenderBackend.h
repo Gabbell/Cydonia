@@ -117,6 +117,9 @@ class RenderBackend
 
    virtual BufferHandle createBuffer( size_t size, const std::string_view name ) = 0;
 
+   virtual void* addDebugTexture( TextureHandle /*textureHandle*/ ) { return nullptr; };
+   virtual void removeDebugTexture( void* /*texture*/ ){};
+
    virtual void
    copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size ) = 0;
 

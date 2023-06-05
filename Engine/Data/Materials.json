@@ -1,0 +1,22 @@
+{
+  "MATERIALS": [{
+      "NAME": "NO_TEX"
+    },
+    {
+      "NAME": "SOLO_TEX_RGBA8",
+      "TEXTURES": [{
+        "NAME": "TEXTURE",
+        "FORMAT": "RGBA8_UNORM",
+        "TYPE": "TEXTURE2D"
+      }]
+    },
+    {
+      "NAME": "SOLO_TEX_R32F",
+      "TEXTURES": [{
+        "NAME": "TEXTURE",
+        "FORMAT": "R32F",
+        "TYPE": "TEXTURE2D"
+      }]
+    }
+  ]
+}

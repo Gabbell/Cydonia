@@ -11,7 +11,7 @@
 
 namespace CYD::StaticPipelines
 {
-static constexpr char PIPELINES_PATH[] = "../Engine/Data/Pipelines/Pipelines.json";
+static constexpr char PIPELINES_PATH[] = "Pipelines.json";
 
 static constexpr uint32_t MAX_STATIC_PIPELINES = 128;
 static std::array<PipelineInfo*, MAX_STATIC_PIPELINES> s_pipelines;

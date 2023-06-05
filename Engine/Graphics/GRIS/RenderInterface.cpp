@@ -328,6 +328,9 @@ BufferHandle CreateBuffer( size_t size, const std::string_view name )
    return b->createBuffer( size, name );
 }
 
+void* AddDebugTexture( TextureHandle textureHandle ) { return b->addDebugTexture( textureHandle ); }
+void RemoveDebugTexture( void* texture ) { b->removeDebugTexture( texture ); }
+
 void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
 {
    return b->copyToBuffer( bufferHandle, pData, offset, size );
@@ -378,7 +381,7 @@ void DrawInstanced(
     size_t /*vertexCount*/,
     size_t /*instanceCount*/,
     size_t /*firstVertex*/,
-    size_t /*firstInstance*/)
+    size_t /*firstInstance*/ )
 {
 }
 

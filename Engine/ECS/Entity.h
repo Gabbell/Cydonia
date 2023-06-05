@@ -29,11 +29,12 @@ class Entity final
 {
   public:
    Entity() = default;
-   Entity( EntityHandle handle ) : m_handle( handle ) {}
+   Entity( EntityHandle handle, std::string_view name ) : m_handle( handle ), m_name( name ) {}
    MOVABLE( Entity );
    ~Entity() = default;
 
    EntityHandle getHandle() const noexcept { return m_handle; }
+   const std::string& getName() const noexcept { return m_name; }
 
    // Adding component pointer to entity
    // ==============================================================================================
@@ -131,6 +132,8 @@ class Entity final
   private:
    // This entity's handle
    EntityHandle m_handle = INVALID_ENTITY;
+
+   std::string m_name;
 
    // All components associated (that were added) to this entity.
    ComponentsMap m_components;

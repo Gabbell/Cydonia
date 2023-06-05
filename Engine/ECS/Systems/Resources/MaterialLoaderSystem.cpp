@@ -16,18 +16,18 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
 
    for( const auto& entityEntry : m_entities )
    {
-      MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
+      StaticMaterialComponent& material = *std::get<StaticMaterialComponent*>( entityEntry.arch );
 
       if( !material.isLoaded )
       {
          material.pipelineIdx = StaticPipelines::FindByName( material.pipelineName );
          material.materialIdx = m_materials.getMaterialByName( material.materialName );
 
+         CYDASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
+         CYDASSERT( material.materialIdx != INVALID_MATERIAL_IDX );
+
          m_materials.load( transferList, material.materialIdx );
       }
-
-      CYDASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
-      CYDASSERT( material.materialIdx != INVALID_MATERIAL_IDX );
 
       material.isLoaded = true;
    }

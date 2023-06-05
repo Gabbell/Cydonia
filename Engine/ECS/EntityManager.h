@@ -28,11 +28,16 @@ class EntityManager final
    NON_COPIABLE( EntityManager );
    ~EntityManager();
 
+   using Entities         = std::unordered_map<EntityHandle, Entity>;
+   using Components       = std::array<BaseComponentPool*, (size_t)ComponentType::COUNT>;
+   using SharedComponents = std::array<BaseSharedComponent*, (size_t)SharedComponentType::COUNT>;
+   using Systems          = std::vector<BaseSystem*>;
+
    void tick( double deltaS );
 
    // Entity management
    // ================================================================================================
-   EntityHandle createEntity();
+   EntityHandle createEntity( std::string_view name = "" );
    const Entity* getEntity( EntityHandle handle ) const;
    void removeEntity( EntityHandle handle );
 
@@ -54,7 +59,7 @@ class EntityManager final
        typename = std::enable_if_t<std::is_base_of_v<BaseSystem, System>>>
    void addSystem( Args&&... args )
    {
-      System* newSystem = new System( std::forward<Args>(args)... );
+      System* newSystem = new System( std::forward<Args>( args )... );
       newSystem->assignEntityManager( this );
 
       m_systems.push_back( newSystem );
@@ -155,20 +160,17 @@ class EntityManager final
       }
    }
 
-  private:
-   using Entities         = std::unordered_map<EntityHandle, Entity>;
-   using Components       = std::array<BaseComponentPool*, (size_t)ComponentType::COUNT>;
-   using SharedComponents = std::array<BaseSharedComponent*, (size_t)SharedComponentType::COUNT>;
-   using Systems          = std::vector<BaseSystem*>;
+   const Entities& getEntities() const { return m_entities; };
 
+  private:
    // All entities currently managed by the manager (all entities in the world)
-   Entities m_entities;
+   Entities m_entities = {};
 
    // Pools of all components. Index is component type.
-   Components m_componentPools;
-   SharedComponents m_sharedComponents;
+   Components m_componentPools         = {};
+   SharedComponents m_sharedComponents = {};
 
    // All currently running data transformation systems
-   Systems m_systems;
+   Systems m_systems = {};
 };
 }

@@ -7,7 +7,7 @@
 #define VK_USE_PLATFORM_WIN32_KHR
 #endif
 
-#include <Graphics/Vulkan/Types.h>
+#include <Graphics/GraphicsTypes.h>
 
 #include <cstdint>
 #include <memory>
@@ -33,8 +33,8 @@ class Window
    bool init( uint32_t width, uint32_t height, const std::string& title );
    bool uninit();
 
-   const Extent2D& getExtent2D() const noexcept { return _extent; }
-   SDL_Window* getSDLWindow() const noexcept { return _sdlWindow; }
+   const Extent2D& getExtent2D() const noexcept { return m_extent; }
+   SDL_Window* getSDLWindow() const noexcept { return m_sdlWindow; }
    std::vector<const char*> getExtensionsFromSDL() const noexcept { return _extensions; };
 
   private:

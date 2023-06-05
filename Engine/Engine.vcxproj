@@ -1,273 +1,117 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (c) 2015-2019 LunarG, Inc. -->
-<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
-    <ProjectConfiguration Include="Debug|Win32">
-      <Configuration>Debug</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Debug|x64">
-      <Configuration>Debug</Configuration>
+    <ProjectConfiguration Include="Debug Static64|x64">
+      <Configuration>Debug Static64</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|Win32">
-      <Configuration>Release</Configuration>
-      <Platform>Win32</Platform>
-    </ProjectConfiguration>
-    <ProjectConfiguration Include="Release|x64">
-      <Configuration>Release</Configuration>
+    <ProjectConfiguration Include="Release Static64|x64">
+      <Configuration>Release Static64</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{5A4234BA-9B20-4CD4-B9F0-D7BC800EDB93}</ProjectGuid>
+    <ProjectGuid>{DBC7D3B0-C769-FE86-B024-12DB9C6585D7}</ProjectGuid>
+    <IgnoreWarnCompileDuplicatedFilename>true</IgnoreWarnCompileDuplicatedFilename>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>VulkanCppWindowedProgram1</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Engine</ProjectName>
+    <RootNamespace>Engine</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
-    <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
-    <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
-  </ImportGroup>
-  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LinkIncremental>true</LinkIncremental>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">
+    <OutDir>..\bin\Debug\</OutDir>
+    <IntDir>..\intermediate\Debug\Static64\Debug\Engine\</IntDir>
+    <TargetName>Engine</TargetName>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LinkIncremental>true</LinkIncremental>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">
+    <OutDir>..\bin\Release\</OutDir>
+    <IntDir>..\intermediate\Release\Static64\Release\Engine\</IntDir>
+    <TargetName>Engine</TargetName>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LinkIncremental>false</LinkIncremental>
-  </PropertyGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\Emporium;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>26495</DisableSpecificWarnings>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>NotSet</SubSystem>
+      <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib32;$(VULKAN_SDK)\Third-Party\Bin32;$(SolutionDir)lib\x86;$(SolutionDir)x86\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">
     <ClCompile>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <WarningLevel>Level4</WarningLevel>
-      <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>26495</DisableSpecificWarnings>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
-    </ClCompile>
-    <Link>
-      <SubSystem>NotSet</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(VULKAN_SDK)\Third-Party\Bin;$(SolutionDir)lib\x64;$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>.;..\Emporium;..\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <Optimization>Full</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>26495</DisableSpecificWarnings>
+      <MinimalRebuild>false</MinimalRebuild>
+      <StringPooling>true</StringPooling>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
+      <ExternalWarningLevel>Level3</ExternalWarningLevel>
     </ClCompile>
     <Link>
-      <SubSystem>NotSet</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib32;$(VULKAN_SDK)\Third-Party\Bin32;$(SolutionDir)lib\x86;$(SolutionDir)x86\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
-  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <ClCompile>
-      <WarningLevel>Level4</WarningLevel>
-      <PrecompiledHeader>
-      </PrecompiledHeader>
-      <Optimization>MaxSpeed</Optimization>
-      <FunctionLevelLinking>true</FunctionLevelLinking>
-      <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;VULKAN_HPP_TYPESAFE_CONVERSION;VULKAN_HPP_NO_EXCEPTIONS;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(SolutionDir)\Emporium\;$(ProjectDir);$(VULKAN_SDK)\Include;$(VULKAN_SDK)\Third-Party\Include;$(SolutionDir)include</AdditionalIncludeDirectories>
-      <DisableSpecificWarnings>26495</DisableSpecificWarnings>
-      <LanguageStandard>stdcpp20</LanguageStandard>
-      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
-      <ObjectFileName>$(IntDir)/%(RelativeDir)/</ObjectFileName>
-    </ClCompile>
-    <Link>
-      <SubSystem>NotSet</SubSystem>
-      <GenerateDebugInformation>true</GenerateDebugInformation>
-      <EnableCOMDATFolding>true</EnableCOMDATFolding>
-      <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>vulkan-1.lib;D3d12.lib;dxgi.lib;d3dcompiler.lib;glfw3.lib;Emporium.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(VULKAN_SDK)\Third-Party\Bin;$(SolutionDir)lib\x64;$(SolutionDir)x64\$(Configuration);%(AdditionalLibraryDirectories);$(WindowsSDK_LibraryPath)</AdditionalLibraryDirectories>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
-    </Link>
-  </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Application.cpp" />
-    <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
-    <ClCompile Include="ECS\Components\Procedural\NoiseComponent.cpp" />
-    <ClCompile Include="ECS\EntityManager.cpp" />
-    <ClCompile Include="ECS\SharedComponents\SceneComponent.cpp" />
-    <ClCompile Include="ECS\Systems\Behaviour\EntityFollowSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Debug\DebugDrawSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Input\InputSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Lighting\LightUpdateSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Lighting\ShadowMapSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Physics\MotionSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Physics\PlayerMoveSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Procedural\FFTOceanSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Procedural\NoiseGenerationSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Rendering\AtmosphereSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Rendering\FullscreenRenderSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Rendering\PBRRenderSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Resources\MaterialLoaderSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Resources\MeshLoaderSystem.cpp" />
-    <ClCompile Include="ECS\Systems\Scene\CameraSystem.cpp" />
-    <ClCompile Include="ECS\Systems\UI\ImGuiSystem.cpp" />
-    <ClCompile Include="Graphics\Scene\MaterialCache.cpp" />
-    <ClCompile Include="Graphics\Scene\Mesh.cpp" />
-    <ClCompile Include="Graphics\Scene\MeshCache.cpp" />
-    <ClCompile Include="Graphics\Direct3D12\Device.cpp" />
-    <ClCompile Include="Graphics\Direct3D12\DeviceManager.cpp" />
-    <ClCompile Include="Graphics\Direct3D12\Factory.cpp" />
-    <ClCompile Include="Graphics\GraphicsTypes.cpp" />
-    <ClCompile Include="Graphics\GRIS\Backends\D3D12RenderBackend.cpp" />
-    <ClCompile Include="Graphics\GRIS\Backends\GLRenderBackend.cpp" />
-    <ClCompile Include="Graphics\GRIS\Backends\VKRenderBackend.cpp" />
-    <ClCompile Include="Graphics\GRIS\RenderInterface.cpp" />
-    <ClCompile Include="Graphics\Handles\ResourceHandleManager.cpp" />
-    <ClCompile Include="Graphics\Scene\Material.cpp" />
-    <ClCompile Include="Graphics\PipelineInfos.cpp" />
-    <ClCompile Include="Graphics\GRIS\RenderGraph.cpp" />
-    <ClCompile Include="Graphics\StaticPipelines.cpp" />
-    <ClCompile Include="Graphics\Scene\Frustum.cpp" />
-    <ClCompile Include="Graphics\Utility\GraphicsIO.cpp" />
-    <ClCompile Include="Graphics\Utility\MeshGeneration.cpp" />
-    <ClCompile Include="Graphics\ShaderConstants.cpp" />
-    <ClCompile Include="Graphics\Utility\Transforms.cpp" />
-    <ClCompile Include="Graphics\VertexLayout.cpp" />
-    <ClCompile Include="Graphics\Vulkan\BarriersHelper.cpp" />
-    <ClCompile Include="Graphics\Vulkan\Buffer.cpp" />
-    <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
-    <ClCompile Include="Graphics\Vulkan\CommandBufferPool.cpp" />
-    <ClCompile Include="Graphics\Vulkan\CommandPoolManager.cpp" />
-    <ClCompile Include="Graphics\Vulkan\DebugUtilsLabel.cpp" />
-    <ClCompile Include="Graphics\Vulkan\DescriptorPool.cpp" />
-    <ClCompile Include="Graphics\Vulkan\Device.cpp" />
-    <ClCompile Include="Graphics\Vulkan\DeviceManager.cpp" />
-    <ClCompile Include="Graphics\Vulkan\Instance.cpp" />
-    <ClCompile Include="Graphics\Vulkan\PipelineCache.cpp" />
-    <ClCompile Include="Graphics\Vulkan\RenderPassCache.cpp" />
-    <ClCompile Include="Graphics\Vulkan\SamplerCache.cpp" />
-    <ClCompile Include="Graphics\Vulkan\Shader.cpp" />
-    <ClCompile Include="Graphics\Vulkan\ShaderCache.cpp" />
-    <ClCompile Include="Graphics\Vulkan\Surface.cpp" />
-    <ClCompile Include="Graphics\Vulkan\Swapchain.cpp" />
-    <ClCompile Include="Graphics\Vulkan\Texture.cpp" />
-    <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
-    <ClCompile Include="JobPool.cpp" />
-    <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
-    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
-    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
-    <ClCompile Include="ThirdParty\ImGui\imgui_impl_glfw.cpp" />
-    <ClCompile Include="ThirdParty\ImGui\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
-    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
-    <ClCompile Include="UI\UserInterface.cpp" />
-    <ClCompile Include="Window\GLFWWindow.cpp" />
-  </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Application.h" />
+    <ClInclude Include="Data\Shaders\GLSL\Compute\NOISE.h" />
+    <ClInclude Include="Data\Shaders\GLSL\Compute\RAYMARCH.h" />
+    <ClInclude Include="Data\Shaders\GLSL\Fragment\MATERIAL.h" />
     <ClInclude Include="ECS\Components\BaseComponent.h" />
     <ClInclude Include="ECS\Components\Behaviour\EntityFollowComponent.h" />
-    <ClInclude Include="ECS\Components\Debug\DebugDrawComponent.h" />
-    <ClInclude Include="ECS\Components\Debug\DebugSphereComponent.h" />
-    <ClInclude Include="ECS\Components\Lighting\DirectionalLightComponent.h" />
-    <ClInclude Include="ECS\Components\Lighting\LightComponent.h" />
-    <ClInclude Include="ECS\Components\Lighting\PointLightComponent.h" />
-    <ClInclude Include="ECS\Components\Physics\MotionComponent.h" />
-    <ClInclude Include="ECS\Components\Procedural\FFTOceanComponent.h" />
-    <ClInclude Include="ECS\Components\Procedural\NoiseComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\FullscreenComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\MaterialComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\MeshComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\RenderableComponent.h" />
-    <ClInclude Include="ECS\Components\Rendering\SkyboxComponent.h" />
-    <ClInclude Include="ECS\Components\Scene\CameraComponent.h" />
-    <ClInclude Include="ECS\Components\Transforms\TransformComponent.h" />
-    <ClInclude Include="ECS\EntityManager.h" />
     <ClInclude Include="ECS\Components\ComponentPool.h" />
     <ClInclude Include="ECS\Components\ComponentTypes.h" />
+    <ClInclude Include="ECS\Components\Debug\DebugDrawComponent.h" />
+    <ClInclude Include="ECS\Components\Debug\DebugSphereComponent.h" />
+    <ClInclude Include="ECS\Components\Lighting\LightComponent.h" />
+    <ClInclude Include="ECS\Components\Physics\MotionComponent.h" />
+    <ClInclude Include="ECS\Components\Procedural\FFTOceanComponent.h" />
+    <ClInclude Include="ECS\Components\Procedural\ProceduralDisplacementComponent.h" />
+    <ClInclude Include="ECS\Components\Procedural\ProceduralMaterialComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\AtmosphereComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\FullscreenComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\MeshComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\RenderableComponent.h" />
+    <ClInclude Include="ECS\Components\Rendering\StaticMaterialComponent.h" />
+    <ClInclude Include="ECS\Components\Scene\CameraComponent.h" />
+    <ClInclude Include="ECS\Components\Transforms\TransformComponent.h" />
     <ClInclude Include="ECS\Entity.h" />
+    <ClInclude Include="ECS\EntityManager.h" />
     <ClInclude Include="ECS\SharedComponents\BaseSharedComponent.h" />
     <ClInclude Include="ECS\SharedComponents\InputComponent.h" />
     <ClInclude Include="ECS\SharedComponents\SceneComponent.h" />
@@ -281,39 +125,40 @@
     <ClInclude Include="ECS\Systems\Physics\MotionSystem.h" />
     <ClInclude Include="ECS\Systems\Physics\PlayerMoveSystem.h" />
     <ClInclude Include="ECS\Systems\Procedural\FFTOceanSystem.h" />
-    <ClInclude Include="ECS\Systems\Procedural\NoiseGenerationSystem.h" />
+    <ClInclude Include="ECS\Systems\Procedural\ProceduralDisplacementSystem.h" />
     <ClInclude Include="ECS\Systems\Rendering\AtmosphereSystem.h" />
     <ClInclude Include="ECS\Systems\Rendering\FullscreenRenderSystem.h" />
-    <ClInclude Include="ECS\Systems\Rendering\PBRRenderSystem.h" />
+    <ClInclude Include="ECS\Systems\Rendering\ModelRenderSystem.h" />
     <ClInclude Include="ECS\Systems\Resources\MaterialLoaderSystem.h" />
     <ClInclude Include="ECS\Systems\Resources\MeshLoaderSystem.h" />
     <ClInclude Include="ECS\Systems\Scene\CameraSystem.h" />
     <ClInclude Include="ECS\Systems\UI\ImGuiSystem.h" />
-    <ClInclude Include="Graphics\Scene\MaterialCache.h" />
-    <ClInclude Include="Graphics\Scene\Mesh.h" />
-    <ClInclude Include="Graphics\Scene\MeshCache.h" />
+    <ClInclude Include="Graphics\Direct3D12\CommandList.h" />
     <ClInclude Include="Graphics\Direct3D12\Device.h" />
     <ClInclude Include="Graphics\Direct3D12\DeviceManager.h" />
     <ClInclude Include="Graphics\Direct3D12\Factory.h" />
     <ClInclude Include="Graphics\DirectX12.h" />
-    <ClInclude Include="Graphics\GraphicsTypes.h" />
     <ClInclude Include="Graphics\GRIS\Backends\D3D12RenderBackend.h" />
     <ClInclude Include="Graphics\GRIS\Backends\GLRenderBackend.h" />
     <ClInclude Include="Graphics\GRIS\Backends\RenderBackend.h" />
     <ClInclude Include="Graphics\GRIS\Backends\RenderBackendDeclaration.h" />
     <ClInclude Include="Graphics\GRIS\Backends\VKRenderBackend.h" />
+    <ClInclude Include="Graphics\GRIS\RenderGraph.h" />
     <ClInclude Include="Graphics\GRIS\RenderInterface.h" />
+    <ClInclude Include="Graphics\GraphicsTypes.h" />
     <ClInclude Include="Graphics\Handles\ResourceHandle.h" />
     <ClInclude Include="Graphics\Handles\ResourceHandleManager.h" />
-    <ClInclude Include="Graphics\Scene\Material.h" />
     <ClInclude Include="Graphics\PipelineInfos.h" />
-    <ClInclude Include="Graphics\GRIS\RenderGraph.h" />
-    <ClInclude Include="Graphics\StaticPipelines.h" />
     <ClInclude Include="Graphics\Scene\Frustum.h" />
+    <ClInclude Include="Graphics\Scene\Material.h" />
+    <ClInclude Include="Graphics\Scene\MaterialCache.h" />
+    <ClInclude Include="Graphics\Scene\Mesh.h" />
+    <ClInclude Include="Graphics\Scene\MeshCache.h" />
+    <ClInclude Include="Graphics\ShaderConstants.h" />
+    <ClInclude Include="Graphics\StaticPipelines.h" />
     <ClInclude Include="Graphics\Utility\GraphicsIO.h" />
     <ClInclude Include="Graphics\Utility\MeshGeneration.h" />
-    <ClInclude Include="Graphics\ShaderConstants.h" />
-    <ClInclude Include="Graphics\Utility\ShaderReflection.h" />
+    <ClInclude Include="Graphics\Utility\Noise.h" />
     <ClInclude Include="Graphics\Utility\Transforms.h" />
     <ClInclude Include="Graphics\VertexLayout.h" />
     <ClInclude Include="Graphics\Vulkan.h" />
@@ -336,8 +181,6 @@
     <ClInclude Include="Graphics\Vulkan\Swapchain.h" />
     <ClInclude Include="Graphics\Vulkan\Texture.h" />
     <ClInclude Include="Graphics\Vulkan\TypeConversions.h" />
-    <ClInclude Include="Graph\Node.h" />
-    <ClInclude Include="Handles\Handle.h" />
     <ClInclude Include="JobPool.h" />
     <ClInclude Include="Physics\PhysicsConstants.h" />
     <ClInclude Include="ThirdParty\ImGui\imconfig.h" />
@@ -352,37 +195,282 @@
     <ClInclude Include="Window\GLFWWindow.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include=".clang-format" />
+    <ClCompile Include="Application.cpp" />
+    <ClCompile Include="ECS\Components\Procedural\FFTOceanComponent.cpp" />
+    <ClCompile Include="ECS\Components\Procedural\ProceduralDisplacementComponent.cpp" />
+    <ClCompile Include="ECS\EntityManager.cpp" />
+    <ClCompile Include="ECS\SharedComponents\SceneComponent.cpp" />
+    <ClCompile Include="ECS\Systems\Behaviour\EntityFollowSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Debug\DebugDrawSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Input\InputSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Lighting\LightUpdateSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Lighting\ShadowMapSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Physics\MotionSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Physics\PlayerMoveSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Procedural\FFTOceanSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Procedural\ProceduralDisplacementSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\AtmosphereSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\FullscreenRenderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Rendering\ModelRenderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Resources\MaterialLoaderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Resources\MeshLoaderSystem.cpp" />
+    <ClCompile Include="ECS\Systems\Scene\CameraSystem.cpp" />
+    <ClCompile Include="ECS\Systems\UI\ImGuiSystem.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\CommandList.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\Device.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\DeviceManager.cpp" />
+    <ClCompile Include="Graphics\Direct3D12\Factory.cpp" />
+    <ClCompile Include="Graphics\GRIS\Backends\D3D12RenderBackend.cpp" />
+    <ClCompile Include="Graphics\GRIS\Backends\GLRenderBackend.cpp" />
+    <ClCompile Include="Graphics\GRIS\Backends\VKRenderBackend.cpp" />
+    <ClCompile Include="Graphics\GRIS\RenderGraph.cpp" />
+    <ClCompile Include="Graphics\GRIS\RenderInterface.cpp" />
+    <ClCompile Include="Graphics\GraphicsTypes.cpp" />
+    <ClCompile Include="Graphics\Handles\ResourceHandleManager.cpp" />
+    <ClCompile Include="Graphics\PipelineInfos.cpp" />
+    <ClCompile Include="Graphics\Scene\Frustum.cpp" />
+    <ClCompile Include="Graphics\Scene\Material.cpp" />
+    <ClCompile Include="Graphics\Scene\MaterialCache.cpp" />
+    <ClCompile Include="Graphics\Scene\Mesh.cpp" />
+    <ClCompile Include="Graphics\Scene\MeshCache.cpp" />
+    <ClCompile Include="Graphics\ShaderConstants.cpp" />
+    <ClCompile Include="Graphics\StaticPipelines.cpp" />
+    <ClCompile Include="Graphics\Utility\GraphicsIO.cpp" />
+    <ClCompile Include="Graphics\Utility\MeshGeneration.cpp" />
+    <ClCompile Include="Graphics\Utility\Noise.cpp" />
+    <ClCompile Include="Graphics\Utility\Transforms.cpp" />
+    <ClCompile Include="Graphics\VertexLayout.cpp" />
+    <ClCompile Include="Graphics\Vulkan\BarriersHelper.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Buffer.cpp" />
+    <ClCompile Include="Graphics\Vulkan\CommandBuffer.cpp" />
+    <ClCompile Include="Graphics\Vulkan\CommandBufferPool.cpp" />
+    <ClCompile Include="Graphics\Vulkan\CommandPoolManager.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DebugUtilsLabel.cpp" />
+    <ClCompile Include="Graphics\Vulkan\DescriptorPool.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Device.cpp">
+      <ObjectFileName>$(IntDir)\Device1.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Graphics\Vulkan\DeviceManager.cpp">
+      <ObjectFileName>$(IntDir)\DeviceManager1.obj</ObjectFileName>
+    </ClCompile>
+    <ClCompile Include="Graphics\Vulkan\Instance.cpp" />
+    <ClCompile Include="Graphics\Vulkan\PipelineCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\RenderPassCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\SamplerCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Shader.cpp" />
+    <ClCompile Include="Graphics\Vulkan\ShaderCache.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Surface.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Swapchain.cpp" />
+    <ClCompile Include="Graphics\Vulkan\Texture.cpp" />
+    <ClCompile Include="Graphics\Vulkan\TypeConversions.cpp" />
+    <ClCompile Include="JobPool.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_glfw.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_tables.cpp" />
+    <ClCompile Include="ThirdParty\ImGui\imgui_widgets.cpp" />
+    <ClCompile Include="UI\UserInterface.cpp" />
+    <ClCompile Include="Window\GLFWWindow.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\DOMAIN_WARP.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/DOMAIN_WARP_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/DOMAIN_WARP_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\FFTOCEAN_BUTTERFLY.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FFTOCEAN_BUTTERFLY_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FFTOCEAN_BUTTERFLY_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\FFTOCEAN_BUTTERFLYTEX.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FFTOCEAN_BUTTERFLYTEX_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FFTOCEAN_BUTTERFLYTEX_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\FFTOCEAN_FOURIERCOMPONENTS.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FFTOCEAN_FOURIERCOMPONENTS_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FFTOCEAN_FOURIERCOMPONENTS_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\FFTOCEAN_INVERSIONPERMUTATION.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FFTOCEAN_INVERSIONPERMUTATION_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FFTOCEAN_INVERSIONPERMUTATION_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\FFTOCEAN_SPECTRA.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FFTOCEAN_SPECTRA_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FFTOCEAN_SPECTRA_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\RAYMARCH.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/RAYMARCH_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/RAYMARCH_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\SIMPLEX_NOISE.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/SIMPLEX_NOISE_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/SIMPLEX_NOISE_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Compute\WHITE_NOISE.comp">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_COMP.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/WHITE_NOISE_COMP.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/WHITE_NOISE_COMP.spv</Outputs>
+      <Message>Compiling Compute Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\DEBUG.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/DEBUG_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/DEBUG_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\DEFAULT_TEX.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/DEFAULT_TEX_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/DEFAULT_TEX_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\EMPTY.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/EMPTY_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/EMPTY_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\FFTOCEAN_RENDER.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FFTOCEAN_RENDER_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FFTOCEAN_RENDER_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\FULLSCREEN.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FULLSCREEN_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FULLSCREEN_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\FULLSCREEN_2DTEX.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FULLSCREEN_2DTEX_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FULLSCREEN_2DTEX_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\NOISE.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/NOISE_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/NOISE_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\PBR_TEX.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/PBR_TEX_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/PBR_TEX_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\PHONG_TEX.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/PHONG_TEX_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/PHONG_TEX_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\SKYBOX.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/SKYBOX_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/SKYBOX_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Fragment\TERRAIN.frag">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_FRAG.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/TERRAIN_FRAG.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/TERRAIN_FRAG.spv</Outputs>
+      <Message>Compiling Fragment/Pixel Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Vertex\DEBUG.vert">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_VERT.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/DEBUG_VERT.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/DEBUG_VERT.spv</Outputs>
+      <Message>Compiling Vertex Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Vertex\DEFAULT_UV.vert">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_VERT.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/DEFAULT_UV_VERT.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/DEFAULT_UV_VERT.spv</Outputs>
+      <Message>Compiling Vertex Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Vertex\FFTOCEAN_RENDER.vert">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_VERT.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FFTOCEAN_RENDER_VERT.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FFTOCEAN_RENDER_VERT.spv</Outputs>
+      <Message>Compiling Vertex Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Vertex\FULLSCREEN.vert">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_VERT.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/FULLSCREEN_VERT.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/FULLSCREEN_VERT.spv</Outputs>
+      <Message>Compiling Vertex Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Vertex\PHONG_TEX.vert">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_VERT.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/PHONG_TEX_VERT.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/PHONG_TEX_VERT.spv</Outputs>
+      <Message>Compiling Vertex Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Vertex\SHADOWMAP.vert">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_VERT.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/SHADOWMAP_VERT.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/SHADOWMAP_VERT.spv</Outputs>
+      <Message>Compiling Vertex Shader %(Identity)</Message>
+    </CustomBuild>
+    <CustomBuild Include="Data\Shaders\GLSL\Vertex\TERRAIN.vert">
+      <FileType>Document</FileType>
+      <Command>glslc -O %(FullPath) -o $(IntDir)/Shaders/%(Filename)_VERT.spv</Command>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Debug Static64|x64'">../intermediate/Debug/Static64/Debug/Engine/Shaders/TERRAIN_VERT.spv</Outputs>
+      <Outputs Condition="'$(Configuration)|$(Platform)'=='Release Static64|x64'">../intermediate/Release/Static64/Release/Engine/Shaders/TERRAIN_VERT.spv</Outputs>
+      <Message>Compiling Vertex Shader %(Identity)</Message>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Build\Emporium\Emporium.vcxproj">
+      <Project>{934058FD-7F0D-B308-A826-A1B09452E896}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin
-$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin
-$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin32
-$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <LocalDebuggerEnvironment>PATH=$(VULKAN_SDK)\Third-Party\Bin32
-$(LocalDebuggerEnvironment)</LocalDebuggerEnvironment>
-    <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
-    <RunCodeAnalysis>true</RunCodeAnalysis>
-    <EnableClangTidyCodeAnalysis>true</EnableClangTidyCodeAnalysis>
-  </PropertyGroup>
 </Project>

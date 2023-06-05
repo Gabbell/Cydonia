@@ -14,6 +14,7 @@ namespace CYD
 {
 void CameraSystem::tick( double /*deltaS*/ )
 {
+   // Write component
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    CYDASSERT( m_entities.size() <= SceneComponent::MAX_VIEWS );

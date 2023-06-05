@@ -1,0 +1,536 @@
+{
+  "PIPELINES": [
+    {
+      "NAME": "DEBUG",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "DEBUG_VERT",
+      "FRAGMENT_SHADER": "DEBUG_FRAG",
+      "POLYGON_MODE": "FILL",
+      "VERTEX_LAYOUT": [
+        {
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGBA32F"
+        }
+      ],
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "Model",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "VERTEX",
+          "SIZE": 64
+        },
+        {
+          "NAME": "EnvironmentView",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "DebugParams",
+          "TYPE": "UBO",
+          "STAGE": "FRAGMENT",
+          "SET": 0,
+          "BINDING": 1
+        }
+      ]
+    },
+    {
+      "NAME": "TERRAIN",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "TERRAIN_VERT",
+      "FRAGMENT_SHADER": "TERRAIN_FRAG",
+      "POLYGON_MODE": "FILL",
+      "VERTEX_LAYOUT": [
+        {
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGBA32F"
+        }
+      ],
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "Model",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "VERTEX",
+          "SIZE": 64
+        },
+        {
+          "NAME": "EnvironmentView",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "DirectionalLight",
+          "TYPE": "UBO",
+          "STAGE": "FRAGMENT",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "DISPLACEMENT",
+          "TYPE": "SAMPLER",
+          "STAGE": "VERTEX",
+          "SET": 1,
+          "BINDING": 5
+        }
+      ]
+    },
+    {
+      "NAME": "FULLSCREEN",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "FULLSCREEN_VERT",
+      "FRAGMENT_SHADER": "FULLSCREEN_FRAG",
+      "PRIMITIVE": "TRIANGLE_STRIPS",
+      "POLYGON_MODE": "FILL"
+    },
+    {
+      "NAME": "FULLSCREEN_2DTEX",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "FULLSCREEN_VERT",
+      "FRAGMENT_SHADER": "FULLSCREEN_2DTEX_FRAG",
+      "PRIMITIVE": "TRIANGLE_STRIPS",
+      "POLYGON_MODE": "FILL",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "texSampler",
+          "TYPE": "SAMPLER",
+          "STAGE": "FRAGMENT",
+          "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "OCEAN_RENDER",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "FFTOCEAN_RENDER_VERT",
+      "FRAGMENT_SHADER": "FFTOCEAN_RENDER_FRAG",
+      "POLYGON_MODE": "LINE",
+      "VERTEX_LAYOUT": [
+        {
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGBA32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGB32F"
+        }
+      ],
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "Model",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "VERTEX",
+          "SIZE": 64
+        },
+        {
+          "NAME": "EnvironmentView",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "displacement",
+          "TYPE": "SAMPLER",
+          "STAGE": "VERTEX, FRAGMENT",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "DirectionalLight",
+          "TYPE": "UBO",
+          "STAGE": "FRAGMENT",
+          "SET": 0,
+          "BINDING": 2
+        }
+      ]
+    },
+    {
+      "NAME": "SHADOWMAP_GENERATION",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "SHADOWMAP_VERT",
+      "FRAGMENT_SHADER": "EMPTY_FRAG",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "model",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "VERTEX",
+          "SIZE": 64
+        },
+        {
+          "NAME": "EnvironmentView",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "PBR",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "PBR_TEX_VERT",
+      "FRAGMENT_SHADER": "PBR_TEX_FRAG",
+      "VERTEX_LAYOUT": [
+        {
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGBA32F"
+        }
+      ],
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "model",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "VERTEX",
+          "SIZE": 64
+        },
+        {
+          "NAME": "EnvironmentView",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "DirectionalLight",
+          "TYPE": "UBO",
+          "STAGE": "FRAGMENT",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "ALBEDO",
+          "TYPE": "SAMPLER",
+          "STAGE": "FRAGMENT",
+          "SET": 1,
+          "BINDING": 0
+        },
+        {
+          "NAME": "NORMALS",
+          "TYPE": "SAMPLER",
+          "STAGE": "FRAGMENT",
+          "SET": 1,
+          "BINDING": 1
+        },
+        {
+          "NAME": "METALNESS",
+          "TYPE": "SAMPLER",
+          "STAGE": "FRAGMENT",
+          "SET": 1,
+          "BINDING": 2
+        },
+        {
+          "NAME": "ROUGHNESS",
+          "TYPE": "SAMPLER",
+          "STAGE": "FRAGMENT",
+          "SET": 1,
+          "BINDING": 3
+        },
+        {
+          "NAME": "AMBIENT_OCCLUSION",
+          "TYPE": "SAMPLER",
+          "STAGE": "FRAGMENT",
+          "SET": 1,
+          "BINDING": 4
+        }
+      ]
+    },
+    {
+      "NAME": "PHILLIPS_SPECTRA_GENERATION",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "FFTOCEAN_SPECTRA_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "OceanParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "spectrum1",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "spectrum2",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 1
+        }
+      ]
+    },
+    {
+      "NAME": "BUTTERFLY_TEX_GENERATION",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "FFTOCEAN_BUTTERFLYTEX_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "OceanParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "butterflyTexture",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "bitReversed",
+          "TYPE": "BUFFER",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 1
+        }
+      ]
+    },
+    {
+      "NAME": "FOURIER_COMPONENTS",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "FFTOCEAN_FOURIERCOMPONENTS_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "OceanParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "tilde_hkt_dy",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "tilde_hkt_dx",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "tilde_hkt_dz",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "spectrum1",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 3
+        },
+        {
+          "NAME": "spectrum2",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 4
+        }
+      ]
+    },
+    {
+      "NAME": "BUTTERFLY_OPERATIONS",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "FFTOCEAN_BUTTERFLY_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "OceanParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "butterflyTexture",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "pingpong0",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "pingpong1",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 2
+        }
+      ]
+    },
+    {
+      "NAME": "INVERSION_PERMUTATION",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "FFTOCEAN_INVERSIONPERMUTATION_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "OceanParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "displacement",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "pingpong0",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "pingpong1",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 2
+        }
+      ]
+    },
+    {
+      "NAME": "WHITE_NOISE",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "WHITE_NOISE_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "NoiseParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "noiseImage",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "SIMPLEX_NOISE",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "SIMPLEX_NOISE_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "NoiseParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "noiseImage",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "DOMAIN_WARP",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "DOMAIN_WARP_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "NoiseParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 48
+        },
+        {
+          "NAME": "noiseImage",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "RAYMARCH",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "RAYMARCH_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "RaymarchParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 36
+        },
+        {
+          "NAME": "outImage",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    }
+  ]
+}

@@ -2,13 +2,6 @@
 
 #include <cstdio>
 
-// Cydonia Asserts
-// Available only in debug
-
-#if defined( _DEBUG )
-#define CYD_ASSERTIONS_ENABLED 1
-#endif
-
 #if CYD_ASSERTIONS_ENABLED
 #define CYDASSERT( EXPR )                                                       \
    if( !( EXPR ) )                                                              \

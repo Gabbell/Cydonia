@@ -19,6 +19,8 @@
 #include <Graphics/Vulkan/Surface.h>
 #include <Graphics/Vulkan/Swapchain.h>
 #include <Graphics/Vulkan/Texture.h>
+#include <Graphics/Vulkan/SamplerCache.h>
+#include <Graphics/Vulkan/TypeConversions.h>
 
 #include <ThirdParty/ImGui/imgui_impl_glfw.h>
 #include <ThirdParty/ImGui/imgui_impl_vulkan.h>
@@ -207,7 +209,7 @@ class VKRenderBackendImp
    {
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
-      if( viewport.width > 0 && viewport.height > 0 )
+      if( viewport.width != 0 && viewport.height != 0 )
       {
          cmdBuffer->setViewport( viewport );
       }
@@ -483,6 +485,28 @@ class VKRenderBackendImp
       auto deviceBuffer = m_mainDevice.createBuffer( size, name );
 
       return m_coreHandles.add( deviceBuffer, HandleType::BUFFER );
+   }
+
+   void* addDebugTexture( TextureHandle textureHandle )
+   {
+      if( textureHandle )
+      {
+         vk::SamplerCache& samplerCache = m_mainDevice.getSamplerCache();
+         VkSampler vkSampler            = samplerCache.findOrCreate( {} );
+
+         auto texture = static_cast<vk::Texture*>( m_coreHandles.get( textureHandle ) );
+         return ImGui_ImplVulkan_AddTexture(
+             vkSampler,
+             texture->getVKImageView(),
+             vk::TypeConversions::cydToVkImageLayout( texture->getLayout() ) );
+      }
+
+      return nullptr;
+   }
+
+   void removeDebugTexture( void* texture )
+   {
+      ImGui_ImplVulkan_RemoveTexture( static_cast<VkDescriptorSet>( texture ) );
    }
 
    void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
@@ -852,6 +876,16 @@ BufferHandle VKRenderBackend::createUniformBuffer( size_t size, const std::strin
 BufferHandle VKRenderBackend::createBuffer( size_t size, const std::string_view name )
 {
    return _imp->createBuffer( size, name );
+}
+
+void* VKRenderBackend::addDebugTexture( TextureHandle textureHandle )
+{
+   return _imp->addDebugTexture( textureHandle );
+}
+
+void VKRenderBackend::removeDebugTexture( void* texture )
+{
+   return _imp->removeDebugTexture( texture );
 }
 
 void VKRenderBackend::copyToBuffer(

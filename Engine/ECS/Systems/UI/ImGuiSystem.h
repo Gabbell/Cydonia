@@ -12,10 +12,14 @@ namespace CYD
 class ImGuiSystem final : public CommonSystem<>
 {
   public:
-   ImGuiSystem() = default;
+   ImGuiSystem() = delete;
+   ImGuiSystem( const EntityManager& entityManager );
    NON_COPIABLE( ImGuiSystem );
-   virtual ~ImGuiSystem() = default;
+   virtual ~ImGuiSystem();
 
    void tick( double deltaS ) override;
+
+  private:
+   const EntityManager& m_entityManager;
 };
 }

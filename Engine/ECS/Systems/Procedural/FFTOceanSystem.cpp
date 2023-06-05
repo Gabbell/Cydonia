@@ -1,6 +1,8 @@
 #include <ECS/Systems/Procedural/FFTOceanSystem.h>
 
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/StaticPipelines.h>
+
 #include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
 
@@ -32,7 +34,7 @@ static void Initialize( FFTOceanComponent& ocean )
 
 static void computeDisplacement(
     CmdListHandle cmdList,
-    const MaterialComponent& /*material*/,
+    const StaticMaterialComponent& /*material*/,
     FFTOceanComponent& ocean,  // Make this const?
     FourierComponent fourierComponent )
 {
@@ -134,7 +136,7 @@ void FFTOceanSystem::tick( double deltaS )
 {
    for( const auto& entityEntry : m_entities )
    {
-      MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
+      StaticMaterialComponent& material = *std::get<StaticMaterialComponent*>( entityEntry.arch );
       FFTOceanComponent& ocean    = *std::get<FFTOceanComponent*>( entityEntry.arch );
 
       // First time run

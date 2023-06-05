@@ -2,9 +2,7 @@
 
 #include <functional>  // for std::hash
 
-#if( _DEBUG )
-    #define CYD_DEBUG 1
-
+#if( CYD_DEBUG )
     #define REF( EXPR )   \
        do                 \
        {                  \
@@ -15,6 +13,8 @@
 // Forward including handles
 #define FWDHANDLE( obj ) typedef struct obj##_T* obj;
 #define FWDFLAG( obj ) typedef uint32_t obj;
+
+#define ARRSIZE( obj ) sizeof( obj ) / sizeof( obj[0] )
 
 // Add to a class to make it copiable
 #define COPIABLE( ClassName )                          \

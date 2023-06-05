@@ -15,28 +15,37 @@
  */
 namespace CYD
 {
-struct MaterialDescription
-{
-   void addTexture( const TextureDescription& texDesc, const std::string& path = "" );
-
-   static constexpr uint8_t MAX_TEXTURE_HANDLES = 8;
-   static constexpr uint8_t MAX_BUFFER_HANDLES  = 8;
-
-   std::array<TextureDescription, MAX_TEXTURE_HANDLES> textureDescs;
-   std::array<std::string, MAX_TEXTURE_HANDLES> texturePaths;
-
-   uint32_t textureCount = 0;
-   uint32_t bufferCount  = 0;
-};
-
 class Material
 {
   public:
-   Material() = default;
-   Material( const std::string& name, const MaterialDescription& desc )
-       : m_name( name ), m_desc( desc )
+   enum TextureSlot
    {
-   }
+      ALBEDO            = 0,
+      DIFFUSE           = 0,
+      NORMALS           = 1,
+      METALNESS         = 2,
+      ROUGHNESS         = 3,
+      GLOSSINESS        = 3,
+      AMBIENT_OCCLUSION = 4,
+      DISPLACEMENT      = 5,
+      COUNT
+   };
+
+   struct Description
+   {
+      void addTexture( const TextureDescription& texDesc, const std::string& path = "" );
+
+      static constexpr uint8_t MAX_BUFFER_HANDLES = 8;
+
+      std::array<TextureDescription, TextureSlot::COUNT> textureDescs;
+      std::array<std::string, TextureSlot::COUNT> texturePaths;
+
+      uint32_t textureCount = 0;
+      uint32_t bufferCount  = 0;
+   };
+
+   Material() = default;
+   Material( const std::string& name, const Description& desc ) : m_name( name ), m_desc( desc ) {}
    MOVABLE( Material );
    ~Material();
 
@@ -47,17 +56,17 @@ class Material
    void bind( CmdListHandle cmdList, uint8_t set ) const;
 
    // For externally managed materials
-   void updateTexture( TextureHandle texture, uint32_t binding );
+   void updateTexture( TextureHandle texture, TextureSlot slot );
 
   private:
    std::string m_name = "Unknown Material";
 
    // Resource Descriptions
-   MaterialDescription m_desc;
+   Description m_desc;
 
    // GPU Resources
-   std::array<TextureHandle, MaterialDescription::MAX_TEXTURE_HANDLES> m_textures = {};
-   std::array<BufferHandle, MaterialDescription::MAX_BUFFER_HANDLES> m_buffers    = {};
+   std::array<TextureHandle, TextureSlot::COUNT> m_textures = {};
+   std::array<BufferHandle, TextureSlot::COUNT> m_buffers   = {};
 
    bool m_loaded = false;
 };

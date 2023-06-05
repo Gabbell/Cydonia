@@ -10,8 +10,8 @@ namespace CYD
 EntityManager::EntityManager()
 {
    // Initializing shared components
-   m_sharedComponents[(size_t)SharedComponentType::INPUT]  = new InputComponent();
-   m_sharedComponents[(size_t)SharedComponentType::SCENE]  = new SceneComponent();
+   m_sharedComponents[(size_t)SharedComponentType::INPUT] = new InputComponent();
+   m_sharedComponents[(size_t)SharedComponentType::SCENE] = new SceneComponent();
 }
 
 EntityManager::~EntityManager()
@@ -42,12 +42,12 @@ void EntityManager::tick( double deltaS )
    }
 }
 
-EntityHandle EntityManager::createEntity()
+EntityHandle EntityManager::createEntity( std::string_view name )
 {
    // Building entity
    static int uid            = 0;
    const EntityHandle handle = uid++;
-   m_entities[handle]  = Entity( handle );
+   m_entities[handle]        = Entity( handle, name );
 
    return handle;
 }

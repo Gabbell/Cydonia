@@ -1,0 +1,12 @@
+// Sets
+#define MATERIAL_SET 1
+
+// Bindings
+#define ALBEDO_SLOT 0
+#define DIFFUSE_SLOT 0
+#define NORMALS_SLOT 1
+#define METALNESS_SLOT 2
+#define ROUGHNESS_SLOT 3
+#define GLOSSINESS_SLOT 3
+#define AMBIENT_OCCLUSION_SLOT 4
+#define DISPLACEMENT_SLOT 5

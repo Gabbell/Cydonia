@@ -21,7 +21,7 @@ void LightUpdateSystem::tick( double deltaS )
 
       // Updating light transform
       transform.position = glm::vec3(
-          25.0f * std::cos( 0.50f * timeElapsed ), 10.0f, 25.0f * std::sin( 0.50f * timeElapsed ) );
+          25.0f * std::cos( 0.50f * timeElapsed ), 20.0f, 25.0f * std::sin( 0.50f * timeElapsed ) );
 
       const glm::vec3 direction = glm::normalize( -transform.position );
 

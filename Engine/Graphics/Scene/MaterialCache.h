@@ -24,7 +24,7 @@ class MaterialCache final
 
    MaterialIndex getMaterialByName( const std::string& name ) const;
 
-   MaterialIndex addMaterial( const std::string& name, const MaterialDescription& desc );
+   MaterialIndex addMaterial( const std::string& name, const Material::Description& desc );
    void removeMaterial( MaterialIndex index );
 
    // Loads, unloads and binds GPU resources
@@ -32,7 +32,7 @@ class MaterialCache final
    void unload( MaterialIndex index );
    void bind( CmdListHandle cmdList, MaterialIndex index, uint8_t set ) const;
 
-   void updateMaterial( MaterialIndex, TextureHandle texture, uint32_t binding );
+   void updateMaterial( MaterialIndex, TextureHandle texture, Material::TextureSlot slot );
 
   private:
    void initializeStaticMaterials();

@@ -16,9 +16,8 @@ namespace CYD
 class RenderableComponent final : public BaseComponent
 {
   public:
-   RenderableComponent() = default;
    RenderableComponent( bool castsShadows = false, bool visible = true )
-       : isVisible( visible ), castsShadows( castsShadows )
+       : castsShadows( castsShadows ), isVisible( visible )
    {
    }
    COPIABLE( RenderableComponent );

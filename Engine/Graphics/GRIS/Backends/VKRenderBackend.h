@@ -129,6 +129,9 @@ class VKRenderBackend final : public RenderBackend
 
    BufferHandle createBuffer( size_t size, const std::string_view name ) override;
 
+   void* addDebugTexture( TextureHandle textureHandle ) override;
+   void removeDebugTexture( void* texture ) override;
+
    void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
        override;
 

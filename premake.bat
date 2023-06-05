@@ -1,0 +1,1 @@
+cmd /c "premake5 --file=premake-cydonia.lua vs2022"
