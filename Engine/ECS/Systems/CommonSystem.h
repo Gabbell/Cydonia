@@ -73,7 +73,7 @@ class CommonSystem : public BaseSystem
    NON_COPIABLE( CommonSystem );
    virtual ~CommonSystem() = default;
 
-    void assignEntityManager( EntityManager* ecs ) { m_ecs = ecs; }
+   void assignEntityManager( EntityManager* ecs ) { m_ecs = ecs; }
 
    // If the system is not watching any entity, no need to tick
    bool hasToTick() const noexcept override { return !m_entities.empty(); }
@@ -85,9 +85,10 @@ class CommonSystem : public BaseSystem
 
       // Make sure that if the entity previously matched, we are not doubling components
       const auto it = std::find_if(
-          m_entities.cbegin(), m_entities.cend(), [entry]( const EntityEntry& desiredEntry ) {
-             return entry.handle == desiredEntry.handle;
-          } );
+          m_entities.cbegin(),
+          m_entities.cend(),
+          [entry]( const EntityEntry& desiredEntry )
+          { return entry.handle == desiredEntry.handle; } );
 
       if( it == m_entities.cend() )
       {
@@ -104,9 +105,8 @@ class CommonSystem : public BaseSystem
                     m_entities.cbegin(),
                     m_entities.cend(),
                     entry,
-                    [this]( const EntityEntry& first, const EntityEntry& second ) {
-                       return _compareEntities( first, second );
-                    } ),
+                    [this]( const EntityEntry& first, const EntityEntry& second )
+                    { return _compareEntities( first, second ); } ),
                 std::move( entry ) );
          }
       }
@@ -119,9 +119,8 @@ class CommonSystem : public BaseSystem
           std::remove_if(
               m_entities.begin(),
               m_entities.end(),
-              [&entity]( const EntityEntry& entry ) {
-                 return entity.getHandle() == entry.handle;
-              } ),
+              [&entity]( const EntityEntry& entry )
+              { return entity.getHandle() == entry.handle; } ),
           m_entities.end() );
    }
 

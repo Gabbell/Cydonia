@@ -18,8 +18,8 @@ class RenderBackend
    NON_COPIABLE( RenderBackend );
    virtual ~RenderBackend() = default;
 
-   virtual bool initializeUI() { return false; }
-   virtual void uninitializeUI() {}
+   virtual bool initializeUIBackend() { return false; }
+   virtual void uninitializeUIBackend() {}
    virtual void drawUI( CmdListHandle /*cmdList*/ ) {}
 
    virtual void cleanup() = 0;
@@ -28,15 +28,14 @@ class RenderBackend
 
    // Command Buffers/Lists
    // ==============================================================================================
+   virtual CmdListHandle getMainCommandList() const = 0;
    virtual CmdListHandle
    createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable ) = 0;
 
-   virtual void startRecordingCommandList( CmdListHandle cmdList ) = 0;
-   virtual void endRecordingCommandList( CmdListHandle cmdList )   = 0;
-   virtual void submitCommandList( CmdListHandle cmdList )         = 0;
-   virtual void resetCommandList( CmdListHandle cmdList )          = 0;
-   virtual void waitOnCommandList( CmdListHandle cmdList )         = 0;
-   virtual void destroyCommandList( CmdListHandle cmdList )        = 0;
+   virtual void submitCommandList( CmdListHandle cmdList )  = 0;
+   virtual void resetCommandList( CmdListHandle cmdList )   = 0;
+   virtual void waitOnCommandList( CmdListHandle cmdList )  = 0;
+   virtual void destroyCommandList( CmdListHandle cmdList ) = 0;
 
    virtual void syncOnCommandList( CmdListHandle /*from*/, CmdListHandle /*to*/ ) {}
 
@@ -117,7 +116,8 @@ class RenderBackend
 
    virtual BufferHandle createBuffer( size_t size, const std::string_view name ) = 0;
 
-   virtual void* addDebugTexture( TextureHandle /*textureHandle*/ ) { return nullptr; };
+   virtual void* addDebugTexture( TextureHandle /*texture*/ ) { return nullptr; };
+   virtual void updateDebugTexture( CmdListHandle /*cmdList*/, TextureHandle /*texture*/ ) { return; }
    virtual void removeDebugTexture( void* /*texture*/ ){};
 
    virtual void

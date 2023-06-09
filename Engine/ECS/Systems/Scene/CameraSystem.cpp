@@ -1,10 +1,13 @@
 #include <ECS/Systems/Scene/CameraSystem.h>
 
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/RenderGraph.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Scene/CameraComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
+
+#include <Profiling.h>
 
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -14,6 +17,8 @@ namespace CYD
 {
 void CameraSystem::tick( double /*deltaS*/ )
 {
+   CYDTRACE( "CameraSystem" );
+
    // Write component
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
@@ -68,16 +73,6 @@ void CameraSystem::tick( double /*deltaS*/ )
    }
 
    // Transferring all the views to one buffer
-   CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "CameraSystem" );
-
-   GRIS::StartRecordingCommandList( transferList );
-
    GRIS::CopyToBuffer( scene.viewsBuffer, &scene.views, 0, sizeof( scene.views ) );
-
-   GRIS::EndRecordingCommandList( transferList );
-
-   GRIS::SubmitCommandList( transferList );
-   GRIS::WaitOnCommandList( transferList );
-   GRIS::DestroyCommandList( transferList );
 }
 }

@@ -18,7 +18,12 @@ class ProceduralDisplacementComponent final : public BaseComponent
        Noise::Type type,
        uint32_t width,
        uint32_t height,
-       uint32_t seed = 0 );
+       uint32_t seed );
+   ProceduralDisplacementComponent(
+       Noise::Type type,
+       uint32_t width,
+       uint32_t height,
+       float speed );
    COPIABLE( ProceduralDisplacementComponent );
    virtual ~ProceduralDisplacementComponent();
 
@@ -26,11 +31,12 @@ class ProceduralDisplacementComponent final : public BaseComponent
 
    float scale = 1.0f;
 
-   Noise::Type type     = Noise::Type::WHITE_NOISE;
+   Noise::Type type           = Noise::Type::WHITE_NOISE;
    Noise::ShaderParams params = {};
 
-   uint32_t width  = 0;
-   uint32_t height = 0;
+   float timeMultiplier = 0.0f;
+   uint32_t width       = 0;
+   uint32_t height      = 0;
 
    TextureHandle texture;
 

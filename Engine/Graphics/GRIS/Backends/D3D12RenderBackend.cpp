@@ -34,15 +34,13 @@ class D3D12RenderBackendImp
 
    void waitUntilIdle() const {};
 
+   CmdListHandle getMainCommandList() const { return {}; }
+
    CmdListHandle
    createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
    {
       return {};
    }
-
-   void startRecordingCommandList( CmdListHandle cmdList ) const {}
-
-   void endRecordingCommandList( CmdListHandle cmdList ) const {}
 
    void submitCommandList( CmdListHandle cmdList ) const {}
 
@@ -221,22 +219,14 @@ D3D12RenderBackend::~D3D12RenderBackend() { delete _imp; }
 void D3D12RenderBackend::cleanup() { _imp->cleanup(); }
 void D3D12RenderBackend::waitUntilIdle() { _imp->waitUntilIdle(); }
 
+CmdListHandle D3D12RenderBackend::getMainCommandList() const { return _imp->getMainCommandList(); }
+
 CmdListHandle D3D12RenderBackend::createCommandList(
     QueueUsageFlag usage,
     const std::string_view name,
     bool presentable )
 {
    return _imp->createCommandList( usage, name, presentable );
-}
-
-void D3D12RenderBackend::startRecordingCommandList( CmdListHandle cmdList )
-{
-   _imp->startRecordingCommandList( cmdList );
-}
-
-void D3D12RenderBackend::endRecordingCommandList( CmdListHandle cmdList )
-{
-   _imp->endRecordingCommandList( cmdList );
 }
 
 void D3D12RenderBackend::submitCommandList( CmdListHandle cmdList )

@@ -27,12 +27,17 @@ class CommandPoolManager final
 {
   public:
    CommandPoolManager() = delete;
-   CommandPoolManager( const Device& device, const uint32_t nbFamilies );
+   CommandPoolManager( const Device& device, const uint32_t nbFamilies, const uint32_t nbFrames );
    NON_COPIABLE( CommandPoolManager );
    ~CommandPoolManager() = default;
 
-   CommandBuffer*
-   acquire( CYD::QueueUsageFlag usage, const std::string_view name, bool presentable );
+   CommandBuffer* acquire(
+       CYD::QueueUsageFlag usage,
+       const std::string_view name,
+       bool presentable,
+       uint32_t currentFrame );
+
+   void waitOnFrame( uint32_t currentFrame );
 
    void cleanup();
 
@@ -42,10 +47,11 @@ class CommandPoolManager final
    const Device& m_device;
 
    uint32_t m_nbFamilies;
+   uint32_t m_nbFrames;
 
-   using PoolsPerQueueFamily = std::vector<CommandBufferPool>;
+   using PoolsPerQueueFamily         = std::vector<CommandBufferPool>;  // Number of queue families
+   using PoolsPerQueueFamilyPerFrame = std::vector<PoolsPerQueueFamily>;  // In-flight frames
 
-   // One vector of command pools of each queue family per thread
-   std::unordered_map<std::thread::id, PoolsPerQueueFamily> m_commandPools;
+   std::unordered_map<std::thread::id, PoolsPerQueueFamilyPerFrame> m_commandPools;
 };
 }

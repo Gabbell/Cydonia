@@ -12,6 +12,8 @@
 #include <ECS/EntityManager.h>
 #include <ECS/SharedComponents/InputComponent.h>
 
+#include <Profiling.h>
+
 namespace CYD
 {
 // ================================================================================================
@@ -24,12 +26,12 @@ ProceduralDisplacementSystem::ProceduralDisplacementSystem( MaterialCache& mater
 ProceduralDisplacementSystem::~ProceduralDisplacementSystem() { Noise::Uninitialize(); }
 
 // ================================================================================================
-void ProceduralDisplacementSystem::tick( double /*deltaS*/ )
+void ProceduralDisplacementSystem::tick( double deltaS )
 {
+   CYDTRACE( "ProceduralDisplacementSystem" );
+
    // Start command list recording
    const CmdListHandle cmdList = GRIS::CreateCommandList( COMPUTE, "ProceduralDisplacementSystem" );
-
-   GRIS::StartRecordingCommandList( cmdList );
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
@@ -61,12 +63,16 @@ void ProceduralDisplacementSystem::tick( double /*deltaS*/ )
          noise.resolutionChanged = false;
       }
 
-      if( noise.needsUpdate )
+      const bool needUpdate = noise.needsUpdate || noise.timeMultiplier > 0.0f;
+      if( needUpdate )
       {
+         noise.params.seed += noise.timeMultiplier * static_cast<float>( deltaS );
+
          GRIS::BindPipeline( cmdList, Noise::GetPipeline( noise.type ) );
 
          GRIS::UpdateConstantBuffer(
              cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( noise.params ), &noise.params );
+
          GRIS::BindImage( cmdList, noise.texture, 0, 0 );
 
          constexpr float localSizeX = 16.0f;
@@ -79,8 +85,6 @@ void ProceduralDisplacementSystem::tick( double /*deltaS*/ )
          noise.needsUpdate = false;
       }
    }
-
-   GRIS::EndRecordingCommandList( cmdList );
 
    RenderGraph::AddPass( cmdList );
 }

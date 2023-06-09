@@ -6,10 +6,14 @@
 #include <ECS/EntityManager.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
+#include <Profiling.h>
+
 namespace CYD
 {
 void LightUpdateSystem::tick( double deltaS )
 {
+   CYDTRACE( "LightUpdateSystem" );
+
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    static double timeElapsed = 0;
@@ -41,14 +45,6 @@ void LightUpdateSystem::tick( double deltaS )
    timeElapsed += deltaS;
 
    // Updating UBOs
-   CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "LightUpdateSystem" );
-
-   GRIS::StartRecordingCommandList( transferList );
-
    GRIS::CopyToBuffer( scene.lightsBuffer, &scene.lights, 0, sizeof( SceneComponent::LightUBO ) );
-
-   GRIS::EndRecordingCommandList( transferList );
-
-   RenderGraph::AddPass( transferList );
 }
 }

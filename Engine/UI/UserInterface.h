@@ -1,5 +1,7 @@
 #pragma once
 
+#include <Graphics/Handles/ResourceHandle.h>
+
 #include <ECS/Components/ComponentTypes.h>
 
 namespace CYD
@@ -10,24 +12,36 @@ class ProceduralDisplacementComponent;
 
 namespace UI
 {
+void Initialize();
+void Uninitialize();
+
+// Main Menus
 void DrawMainMenuBar(
+    CmdListHandle cmdList,
     bool& drawECSWindow,
     bool& drawMaterialsWindow,
     bool& drawPipelinesWindow,
-    bool& drawAboutWindow );
+    bool& drawAboutWindow,
+    bool& drawStatsOverlay );
 
-void DrawMainWindow();
-void DrawAboutWindow();
+void DrawMainWindow( CmdListHandle cmdList );
+void DrawAboutWindow( CmdListHandle cmdList );
+void DrawStatsOverlay( CmdListHandle cmdList );
 
 // ECS
-void DrawECSWindow( const EntityManager& entityManager );
-void DrawComponentsMenu( ComponentType type, const BaseComponent* component );
-void DrawProceduralDisplacementComponentMenu( const ProceduralDisplacementComponent& displacement );
+void DrawECSWindow( CmdListHandle cmdList, const EntityManager& entityManager );
+void DrawComponentsMenu(
+    CmdListHandle cmdList,
+    ComponentType type,
+    const BaseComponent* component );
+void DrawProceduralDisplacementComponentMenu(
+    CmdListHandle cmdList,
+    const ProceduralDisplacementComponent& displacement );
 
 // Materials
-void DrawMaterialsWindow();
+void DrawMaterialsWindow( CmdListHandle cmdList );
 
 // Pipelines
-void DrawPipelinesWindow();
+void DrawPipelinesWindow( CmdListHandle cmdList );
 }
 }

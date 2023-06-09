@@ -2,6 +2,8 @@
 
 #include <cstdint>
 
+#include <Common/Include.h>
+
 namespace CYD
 {
 // TODO Make these available at the game layer. Should be able to create custom components
@@ -24,7 +26,8 @@ enum class ComponentType : int16_t
    // ==============================================================================================
    MATERIAL,
    MESH,
-   RENDERABLE,
+   FORWARD_RENDERABLE,
+   DEFERRED_RENDERABLE,
    FULLSCREEN,
 
    // Procedural
@@ -46,8 +49,31 @@ enum class ComponentType : int16_t
    // Debug
    // ==============================================================================================
    DEBUG_DRAW,
-   DEBUG_SPHERE,
 
    COUNT  // Keep at the end
 };
+
+static const char* GetComponentName( ComponentType type )
+{
+   static constexpr char COMPONENT_NAMES[][32] = {
+       "Transform",
+       "Camera",
+       "Light",
+       "Material",
+       "Mesh",
+       "Forward Renderable",
+       "Deferred Renderable",
+       "Fullscreen",
+       "Procedural Displacement",
+       "Procedural Material",
+       "Ocean",
+       "Atmosphere",
+       "Motion",
+       "Entity Follow",
+       "Debug Draw" };
+
+   static_assert( ARRSIZE( COMPONENT_NAMES ) == static_cast<size_t>( ComponentType::COUNT ) );
+
+   return COMPONENT_NAMES[static_cast<size_t>( type )];
+}
 }

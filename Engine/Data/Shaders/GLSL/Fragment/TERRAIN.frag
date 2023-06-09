@@ -32,7 +32,8 @@ vec3 calcLightContribution( vec3 normal )
    vec3 ambient = ambientStrength * lightColor;
 
    // Diffuse
-   vec3 lightDir = normalize( vec3( lights.position ) - worldPos );
+   //vec3 lightDir = normalize( vec3( lights.position ) - worldPos );
+   vec3 lightDir = normalize( vec3( -0.5, 0.5, -0.5 ) );
    float diff    = max( dot( normal, lightDir ), 0.0 );
    vec3 diffuse  = diff * lightColor;
 

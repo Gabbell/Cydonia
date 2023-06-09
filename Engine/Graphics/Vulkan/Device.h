@@ -72,6 +72,7 @@ class Device final
    void cleanup();  // Clean up unused resources
 
    void waitUntilIdle(); // CPU wait until device is done working
+   void waitOnFrame( uint32_t currentFrame );
 
    // Getters
    VkPhysicalDevice getPhysicalDevice() const noexcept { return m_physDevice; }
@@ -111,7 +112,6 @@ class Device final
    void _populateQueueFamilies();
    void _createLogicalDevice();
    void _fetchQueues();
-   void _createDescriptorPool();
 
    // Common buffer function
    Buffer* _createBuffer(

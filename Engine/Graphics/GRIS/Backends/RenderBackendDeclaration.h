@@ -17,8 +17,8 @@
       NON_COPIABLE( NAME );                                                                        \
       virtual ~NAME();                                                                             \
                                                                                                    \
-      bool initializeUI() override;                                                                \
-      void uninitializeUI() override;                                                              \
+      bool initializeUIBackend() override;                                                                \
+      void uninitializeUIBackend() override;                                                              \
       void drawUI( CmdListHandle cmdList ) override;                                               \
                                                                                                    \
       void cleanup() override;                                                                     \

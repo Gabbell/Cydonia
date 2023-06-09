@@ -54,6 +54,7 @@ class Swapchain final
    const VkSemaphore& getSemToSignal() const noexcept { return m_renderDoneSems[m_currentFrame]; }
 
    uint32_t getImageCount() const { return m_imageCount; }
+   uint32_t getCurrentFrame() const { return m_currentFrame; }
 
    void setToLoad() { m_shouldLoad = true; }
 

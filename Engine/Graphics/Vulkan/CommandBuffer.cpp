@@ -22,13 +22,7 @@ namespace vk
 {
 static constexpr uint32_t INITIAL_RESOURCE_TO_UPDATE_COUNT = 32;
 
-CommandBuffer::CommandBuffer()
-{
-   m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 );
-
-   // TODO Make this static, it is class-wide
-   _initStateValidationTable();
-}
+CommandBuffer::CommandBuffer() { m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 ); }
 
 void CommandBuffer::incUse() { ( *m_useCount )++; }
 void CommandBuffer::decUse()
@@ -42,22 +36,21 @@ void CommandBuffer::decUse()
    ( *m_useCount )--;
 }
 
-void CommandBuffer::_initStateValidationTable()
-{
-   // Initialize all valid states [currentState][desiredState]
-   m_stateValidationTable[State::ACQUIRED][State::RECORDING]  = true;
-   m_stateValidationTable[State::RECORDING][State::STANDBY]   = true;
-   m_stateValidationTable[State::STANDBY][State::SUBMITTED]   = true;
-   m_stateValidationTable[State::STANDBY][State::SUBMITTED]   = true;
-   m_stateValidationTable[State::SUBMITTED][State::COMPLETED] = true;
-   m_stateValidationTable[State::COMPLETED][State::FREE]      = true;
-   m_stateValidationTable[State::FREE][State::RELEASED]       = true;
-   m_stateValidationTable[State::RELEASED][State::ACQUIRED]   = true;
-}
-
 bool CommandBuffer::_isValidStateTransition( State desiredState )
 {
-   if( m_stateValidationTable[m_state][desiredState] )
+   // Initialize all valid states [currentState][desiredState]
+   static bool stateValidationTable[NUMBER_OF_STATES][NUMBER_OF_STATES] = {};
+   stateValidationTable[State::ACQUIRED][State::ACQUIRED]               = true;
+   stateValidationTable[State::ACQUIRED][State::RECORDING]              = true;
+   stateValidationTable[State::RECORDING][State::STANDBY]               = true;
+   stateValidationTable[State::STANDBY][State::SUBMITTED]               = true;
+   stateValidationTable[State::STANDBY][State::SUBMITTED]               = true;
+   stateValidationTable[State::SUBMITTED][State::COMPLETED]             = true;
+   stateValidationTable[State::COMPLETED][State::FREE]                  = true;
+   stateValidationTable[State::FREE][State::RELEASED]                   = true;
+   stateValidationTable[State::RELEASED][State::ACQUIRED]               = true;
+
+   if( stateValidationTable[m_state][desiredState] )
    {
       m_state = desiredState;
       return true;
@@ -192,6 +185,7 @@ void CommandBuffer::release()
       m_semsToSignal.clear();
 
       m_pDevice = nullptr;
+      m_name    = DEFAULT_CMDBUFFER_NAME;
    }
 }
 
@@ -209,7 +203,7 @@ bool CommandBuffer::isCompleted()
 
 void CommandBuffer::waitForCompletion() const
 {
-   vkWaitForFences( m_pDevice->getVKDevice(), 1, &m_vkFence, VK_TRUE, UINTMAX_MAX );
+   vkWaitForFences( m_pDevice->getVKDevice(), 1, &m_vkFence, VK_TRUE, UINT64_MAX );
 }
 
 template <class T>

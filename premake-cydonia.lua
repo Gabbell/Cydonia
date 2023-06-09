@@ -1,6 +1,6 @@
 workspace "Cydonia"
 	location "Build"
-	configurations { "Debug", "Release" }
+	configurations { "Debug", "Release", "Profiling" }
 	startproject "VKSandbox"
 
 	objdir "intermediate"
@@ -10,6 +10,13 @@ workspace "Cydonia"
 	filter "configurations:Debug"
 		defines { "CYD_DEBUG", "CYD_ASSERTIONS_ENABLED" }
 		symbols "On"
+
+	filter "configurations:Profiling"
+		defines { "NDEBUG",
+				  "TRACY_ENABLE",
+				  "CYD_ASSERTIONS_ENABLED",
+				  "CYD_PROFILING" }
+		optimize "On"
 
 	filter "configurations:Release"
 		defines { "NDEBUG" }
@@ -38,7 +45,9 @@ project "Engine"
 				  "Emporium",
 				  "include",
 				  "$(VULKAN_SDK)/include" }
+
 	libdirs { "lib/%{cfg.architecture}" }
+	
 	links { "Emporium",
 			"glfw3",
 			"$(VULKAN_SDK)/lib/vulkan-1.lib",
@@ -47,8 +56,21 @@ project "Engine"
 			"d3dcompiler" }
 
 	-- Adding all file types, including shaders as we custom build them
-	files { "Engine/**.h",
-			"Engine/**.cpp",
+	files { "Engine/*.h",
+			"Engine/*.cpp",
+			"Engine/ECS/**.h",
+			"Engine/ECS/**.cpp",
+			"Engine/Graphics/**.h",
+			"Engine/Graphics/**.cpp",
+			"Engine/Physics/**.h",
+			"Engine/Physics/**.cpp",
+			"Engine/UI/**.h",
+			"Engine/UI/**.cpp",
+			"Engine/Window/**.h",
+			"Engine/Window/**.cpp",
+			"Engine/ThirdParty/ImGui/**.h",
+			"Engine/ThirdParty/ImGui/**.cpp",
+			"Engine/ThirdParty/Tracy/TracyClient.cpp",
 			"Engine/Data/Shaders/GLSL/**.comp",
 			"Engine/Data/Shaders/GLSL/**.vert",
 			"Engine/Data/Shaders/GLSL/**.frag",
@@ -104,8 +126,22 @@ project "VKSandbox"
 	includedirs { "VKSandbox", "Engine", "Emporium", "include" }
 	links { "Engine" }
 
-	files { "VKSandbox/**.h", "VKSandbox/**.cpp" }
+	files { "VKSandbox/**.h",
+			"VKSandbox/**.cpp",
+			"VKSandbox/CydoniaIcon.png" }
+
+	filter {}
 
 	filter { 'system:windows' }
-		files { 'resources.rc', '**.ico' }
-		vpaths { ['Resources/*'] = { '*.rc', '**.ico' }
+		files { 'VKSandbox/VKSandbox.rc', '**.ico' }
+
+	filter {}
+
+	filter "files:VKSandbox/CydoniaIcon.png"
+		buildmessage "Copying Icon %{file.abspath}"
+
+		buildcommands {
+			"{COPY} %{file.abspath} %{cfg.targetdir}"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }

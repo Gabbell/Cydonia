@@ -33,13 +33,12 @@ class D3D12RenderBackend final : public RenderBackend
 
    // Command Buffers/Lists
    // ==============================================================================================
+   CmdListHandle getMainCommandList() const override;
    CmdListHandle createCommandList(
        QueueUsageFlag usage,
        const std::string_view name,
        bool presentable ) override;
 
-   void startRecordingCommandList( CmdListHandle cmdList ) override;
-   void endRecordingCommandList( CmdListHandle cmdList ) override;
    void submitCommandList( CmdListHandle cmdList ) override;
    void resetCommandList( CmdListHandle cmdList ) override;
    void waitOnCommandList( CmdListHandle cmdList ) override;

@@ -4,6 +4,8 @@
 
 #include <Graphics/GRIS/RenderInterface.h>
 
+#include <Profiling.h>
+
 namespace CYD::RenderGraph
 {
 static std::vector<CmdListHandle> s_cmdLists;
@@ -12,6 +14,11 @@ void AddPass( CmdListHandle cmdList ) { s_cmdLists.push_back( cmdList ); }
 
 void Execute()
 {
+   CYDTRACE( "RenderGraph Execute" );
+
+   // Appending main command list
+   AddPass( GRIS::GetMainCommandList() );
+
    if( s_cmdLists.empty() )
    {
       CYDASSERT( !"Nothing to render?" );

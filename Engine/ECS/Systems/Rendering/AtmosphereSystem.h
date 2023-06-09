@@ -5,14 +5,13 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Rendering/AtmosphereComponent.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
 
 // ================================================================================================
 // Definition
 // ================================================================================================
 namespace CYD
 {
-class AtmosphereSystem final : public CommonSystem<RenderableComponent, AtmosphereComponent>
+class AtmosphereSystem final : public CommonSystem<AtmosphereComponent>
 {
   public:
    AtmosphereSystem() = default;

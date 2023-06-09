@@ -5,6 +5,8 @@
 
 #include <Graphics/Scene/MeshCache.h>
 
+#include <Profiling.h>
+
 namespace CYD
 {
 static bool findMesh( MeshComponent& mesh, MeshCache& cache )
@@ -26,9 +28,9 @@ static bool findMesh( MeshComponent& mesh, MeshCache& cache )
 
 void MeshLoaderSystem::tick( double /*deltaS*/ )
 {
-   CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "MeshLoaderSystem" );
-
-   GRIS::StartRecordingCommandList( transferList );
+   CYDTRACE( "MeshLoaderSystem" );
+   
+   const CmdListHandle cmdList = GRIS::GetMainCommandList();
 
    for( const auto& entityEntry : m_entities )
    {
@@ -36,7 +38,7 @@ void MeshLoaderSystem::tick( double /*deltaS*/ )
 
       if( !mesh.asset.empty() && !findMesh( mesh, m_meshCache ) )
       {
-         m_meshCache.loadMeshFromPath( transferList, mesh.asset );
+         m_meshCache.loadMeshFromPath( cmdList, mesh.asset );
 
          const bool foundMesh = findMesh( mesh, m_meshCache );
          CYDASSERT( foundMesh && "MeshLoaderSystem: A named mesh could not be loaded" );
@@ -45,9 +47,5 @@ void MeshLoaderSystem::tick( double /*deltaS*/ )
 
    // We don't want to spend more time on loading these entities' resources
    m_entities.clear();
-
-   GRIS::EndRecordingCommandList( transferList );
-
-   RenderGraph::AddPass( transferList );
 }
 }

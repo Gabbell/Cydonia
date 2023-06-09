@@ -28,7 +28,7 @@ Swapchain::Swapchain( Device& device, const Surface& surface, const CYD::Swapcha
 
 static uint32_t chooseImageCount( uint32_t desiredCount, const VkSurfaceCapabilitiesKHR& caps )
 {
-   return std::clamp( desiredCount, caps.minImageCount, caps.maxImageCount);
+   return std::clamp( desiredCount, caps.minImageCount, caps.maxImageCount );
 }
 
 static VkExtent2D chooseExtent( const CYD::Extent2D& extent, const VkSurfaceCapabilitiesKHR& caps )
@@ -73,7 +73,10 @@ static VkSurfaceFormatKHR chooseFormat(
    desiredFormat.colorSpace = TypeConversions::cydToVkSpace( space );
 
    auto it = std::find_if(
-       formats.begin(), formats.end(), [&desiredFormat]( const VkSurfaceFormatKHR& format ) {
+       formats.begin(),
+       formats.end(),
+       [&desiredFormat]( const VkSurfaceFormatKHR& format )
+       {
           return format.format == desiredFormat.format &&
                  format.colorSpace == desiredFormat.colorSpace;
        } );
@@ -364,13 +367,13 @@ void Swapchain::present()
    const VkQueue presentQueue = m_device.getQueueFromUsage( CYD::QueueUsage::GRAPHICS, true );
    if( presentQueue )
    {
-      VkSwapchainKHR swapChains[]    = { m_vkSwapchain };
-      VkSemaphore signalSemaphores[] = { m_renderDoneSems[m_currentFrame] };
+      VkSwapchainKHR swapChains[]  = { m_vkSwapchain };
+      VkSemaphore waitSemaphores[] = { m_renderDoneSems[m_currentFrame] };
 
       VkPresentInfoKHR presentInfo   = {};
       presentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
       presentInfo.waitSemaphoreCount = 1;
-      presentInfo.pWaitSemaphores    = signalSemaphores;
+      presentInfo.pWaitSemaphores    = waitSemaphores;
       presentInfo.swapchainCount     = 1;
       presentInfo.pSwapchains        = swapChains;
       presentInfo.pImageIndices      = &m_imageIndex;

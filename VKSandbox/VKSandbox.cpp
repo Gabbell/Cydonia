@@ -14,7 +14,7 @@
 
 #include <ECS/Systems/Input/InputSystem.h>
 #include <ECS/Systems/Lighting/LightUpdateSystem.h>
-#include <ECS/Systems/Rendering/ModelRenderSystem.h>
+#include <ECS/Systems/Rendering/ForwardRenderSystem.h>
 #include <ECS/Systems/Debug/DebugDrawSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
@@ -25,18 +25,20 @@
 #include <ECS/Systems/UI/ImGuiSystem.h>
 
 #include <ECS/Components/Physics/MotionComponent.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
+#include <ECS/Components/Rendering/ForwardRenderableComponent.h>
 #include <ECS/Components/Rendering/StaticMaterialComponent.h>
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
 
 #if CYD_DEBUG
-#include <ECS/Components/Debug/DebugSphereComponent.h>
+#include <ECS/Components/Debug/DebugDrawComponent.h>
 #endif
 
 #include <ECS/SharedComponents/InputComponent.h>
 #include <ECS/EntityManager.h>
 
 #include <Window/GLFWWindow.h>
+
+#include <Profiling.h>
 
 namespace CYD
 {
@@ -75,7 +77,7 @@ void VKSandbox::preLoop()
 
    // Rendering
    m_ecs->addSystem<LightUpdateSystem>();
-   m_ecs->addSystem<ModelRenderSystem>( *m_materials );
+   m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
 
    // Debug
 #if CYD_DEBUG
@@ -86,8 +88,7 @@ void VKSandbox::preLoop()
    m_ecs->addSystem<ImGuiSystem>( *m_ecs );
 
    // Creating terrain mesh and debug sphere
-   CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER );
-   GRIS::StartRecordingCommandList( transferList );
+   CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Initial Transfer" );
 
    std::vector<Vertex> terrainGridVerts;
    std::vector<uint32_t> terrainGridIndices;
@@ -99,10 +100,9 @@ void VKSandbox::preLoop()
    MeshGeneration::Icosphere( sphereVerts, sphereIndices, 2 );
    m_meshes->loadMesh( transferList, "DEBUG_SPHERE", sphereVerts, sphereIndices );
 
-   GRIS::EndRecordingCommandList( transferList );
    GRIS::SubmitCommandList( transferList );
-
    GRIS::WaitOnCommandList( transferList );
+   GRIS::DestroyCommandList( transferList );
 
    // Adding entities
    // =============================================================================================
@@ -112,42 +112,25 @@ void VKSandbox::preLoop()
    m_ecs->assign<MotionComponent>( player );
    m_ecs->assign<CameraComponent>( player, "MAIN" );
 
-   const EntityHandle sun = m_ecs->createEntity();
-   m_ecs->assign<RenderableComponent>( sun );
+   const EntityHandle sun = m_ecs->createEntity( "Sun" );
    m_ecs->assign<TransformComponent>( sun );
    m_ecs->assign<LightComponent>( sun );
 
 #if CYD_DEBUG
-   m_ecs->assign<DebugSphereComponent>( sun );
+   m_ecs->assign<DebugDrawComponent>( sun, DebugDrawComponent::Type::SPHERE );
 #endif
 
    const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
-   m_ecs->assign<RenderableComponent>( terrain );
+   m_ecs->assign<ForwardRenderableComponent>( terrain );
    m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 100.0f ) );
    m_ecs->assign<MeshComponent>( terrain, "TERRAIN" );
-   m_ecs->assign<ProceduralDisplacementComponent>( terrain, Noise::Type::SIMPLEX_NOISE, 200, 200 );
+   m_ecs->assign<ProceduralDisplacementComponent>(
+       terrain, Noise::Type::DOMAIN_WARP, 200, 200, 0.25f );
    m_ecs->assign<StaticMaterialComponent>( terrain, "TERRAIN", "SOLO_TEX_R32F" );
 }
 
 void VKSandbox::tick( double deltaS )
 {
-   static double timeAccum    = 0;
-   static uint32_t fpsAccum   = 0;
-   static uint32_t frameAccum = 0;
-
-   timeAccum += deltaS;
-   fpsAccum += static_cast<uint32_t>( 1.0 / deltaS );
-   frameAccum++;
-
-   if( timeAccum > 1.0 )
-   {
-      printf( "Average FPS: %d\n", fpsAccum / frameAccum );
-
-      timeAccum  = 0.0;
-      fpsAccum   = 0;
-      frameAccum = 0;
-   }
-
    GRIS::PrepareFrame();
 
    m_ecs->tick( deltaS );
@@ -166,7 +149,6 @@ VKSandbox::~VKSandbox()
    m_meshes.reset();
 
    // Core uninitializers
-   GRIS::UninitializeUI();
    GRIS::UninitRenderBackend();
    Noise::Uninitialize();
    StaticPipelines::Uninitialize();

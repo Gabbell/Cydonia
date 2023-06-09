@@ -151,8 +151,6 @@ void FFTOceanSystem::tick( double deltaS )
 
       const CmdListHandle cmdList = GRIS::CreateCommandList( COMPUTE );
 
-      GRIS::StartRecordingCommandList( cmdList );
-
       const uint32_t resolution     = ocean.params.resolution;
       const uint32_t numberOfStages = static_cast<uint32_t>( std::log2( resolution ) );
 
@@ -289,8 +287,6 @@ void FFTOceanSystem::tick( double deltaS )
       computeDisplacement( cmdList, material, ocean, FourierComponent::X );
       computeDisplacement( cmdList, material, ocean, FourierComponent::Y );
       computeDisplacement( cmdList, material, ocean, FourierComponent::Z );
-
-      GRIS::EndRecordingCommandList( cmdList );
 
       RenderGraph::AddPass( cmdList );
    }

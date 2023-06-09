@@ -335,5 +335,11 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 
+# We want to keep the lib folders
 !lib/x64
 !lib/x86
+
+# We want to get rid of these generated folders
+intermediate/
+Build/
+bin/

@@ -6,13 +6,15 @@
 #include "Graphics/StaticPipelines.h"
 #include "Graphics/Scene/MaterialCache.h"
 
+#include <Profiling.h>
+
 namespace CYD
 {
 void MaterialLoaderSystem::tick( double /*deltaS*/ )
 {
-   CmdListHandle transferList = GRIS::CreateCommandList( TRANSFER, "MaterialLoaderSystem" );
+   CYDTRACE( "MaterialLoaderSystem" );
 
-   GRIS::StartRecordingCommandList( transferList );
+   const CmdListHandle cmdList = GRIS::GetMainCommandList();
 
    for( const auto& entityEntry : m_entities )
    {
@@ -26,7 +28,7 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
          CYDASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
          CYDASSERT( material.materialIdx != INVALID_MATERIAL_IDX );
 
-         m_materials.load( transferList, material.materialIdx );
+         m_materials.load( cmdList, material.materialIdx );
       }
 
       material.isLoaded = true;
@@ -34,9 +36,5 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
 
    // We don't want to spend more time on loading these entities' resources
    m_entities.clear();
-
-   GRIS::EndRecordingCommandList( transferList );
-
-   RenderGraph::AddPass( transferList );
 }
 }

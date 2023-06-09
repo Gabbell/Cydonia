@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-layout( set = 0, binding = 1 ) uniform DebugParams
+layout( set = 0, binding = 1 ) uniform DebugParameters
 {
 	vec4 color;
 };

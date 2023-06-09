@@ -35,6 +35,8 @@ class CommandBufferPool final
    MOVABLE( CommandBufferPool );
    ~CommandBufferPool();
 
+   void waitUntilDone();
+
    void cleanup();
 
    const VkCommandPool& getVKCommandPool() const { return m_vkPool; }
@@ -53,6 +55,7 @@ class CommandBufferPool final
    // Command Buffer Pool
    static constexpr uint32_t MAX_CMD_BUFFERS_IN_FLIGHT = 16;
    std::vector<CommandBuffer> m_cmdBuffers;
+   uint32_t m_cmdBuffersInUse = 0;
 
    VkCommandPool m_vkPool = nullptr;
 

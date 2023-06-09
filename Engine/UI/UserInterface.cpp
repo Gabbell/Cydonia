@@ -9,36 +9,19 @@
 
 namespace CYD::UI
 {
-static TextureHandle s_cydoniaHandle = {};
-static ImTextureID s_cydoniaLogo     = nullptr;
-static ImTextureID s_noiseTexture    = nullptr;
+static ImTextureID s_noiseTexture = nullptr;
 
-static const char* GetComponentName( ComponentType type )
-{
-   static constexpr char COMPONENT_NAMES[static_cast<size_t>( ComponentType::COUNT )][32] = {
-       "Transform",
-       "Camera",
-       "Light",
-       "Material",
-       "Mesh",
-       "Renderable",
-       "Fullscreen",
-       "Procedural Displacement",
-       "Ocean",
-       "Atmosphere",
-       "Motion",
-       "Entity Follow",
-       "Debug Draw",
-       "Debug Sphere" };
+void Initialize() { GRIS::InitializeUIBackend(); }
 
-   return COMPONENT_NAMES[static_cast<size_t>( type )];
-}
+void Uninitialize() { GRIS::UninitializeUIBackend(); }
 
 void DrawMainMenuBar(
+    CmdListHandle cmdList,
     bool& drawECSWindow,
     bool& drawMaterialsWindow,
     bool& drawPipelinesWindow,
-    bool& drawAboutWindow )
+    bool& drawAboutWindow,
+    bool& drawStatsOverlay )
 {
    ImGui::ShowDemoWindow();
 
@@ -71,6 +54,8 @@ void DrawMainMenuBar(
    // Debug Menu
    if( ImGui::BeginMenu( "Debug" ) )
    {
+      ImGui::MenuItem( "Statistics", "Ctrl-T", &drawStatsOverlay );
+
       if( ImGui::MenuItem( "Reload Shaders", "Ctrl-R" ) )
       {
          // GRIS::ReloadShaders();
@@ -86,33 +71,49 @@ void DrawMainMenuBar(
    ImGui::EndMainMenuBar();
 }
 
-void DrawMainWindow()
+void DrawMainWindow( CmdListHandle /*cmdList*/ ) {}
+
+void DrawAboutWindow( CmdListHandle /*cmdList*/ )
 {
-   // const ImGuiIO& io = ImGui::GetIO();
-   // ImVec2 windowSize = io.DisplaySize;
+   const ImGuiIO& io = ImGui::GetIO();
 
-   // ImGui::SetNextWindowSize( windowSize );
-   // ImGui::SetNextWindowPos( { 0.0f, 0.0f } );
-   // ImGui::Begin( "Main", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground
-   // );
+   ImGui::SetNextWindowPos(
+       ImVec2( io.DisplaySize.x * 0.5f, io.DisplaySize.y * 0.5f ),
+       ImGuiCond_Always,
+       ImVec2( 0.5f, 0.5f ) );
 
-   // windowSize.x *= 0.1f;
-   // windowSize.y *= 0.33f;
-   // ImGui::BeginChild( "Cydonia", windowSize, true );
-   // ImGui::Text( "Hello" );
-   // ImGui::EndChild();
+   ImGui::Begin(
+       "About",
+       nullptr,
+       ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
+           ImGuiWindowFlags_AlwaysAutoResize );
 
-   // ImGui::End();
-}
-
-void DrawAboutWindow()
-{
-   ImGui::Begin( "About" );
+   ImGui::Text( "CYDONIA" );
+   ImGui::Separator();
+   ImGui::Text( "Version: 1.0.0" );
 
    ImGui::End();
 }
 
-void DrawECSWindow( const EntityManager& entityManager )
+void DrawStatsOverlay( CmdListHandle /*cmdList*/ )
+{
+   ImGui::SetNextWindowBgAlpha( 0.25f );
+
+   ImGui::Begin(
+       "Stats", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize );
+
+   ImGui::Text( "Statistics" );
+
+   ImGui::Separator();
+
+   const ImGuiIO& io = ImGui::GetIO();
+   ImGui::Text( "Frametime: %.3f ms (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate );
+   ImGui::Text( "Command Buffers: [0: %d, 1: %d]", 0, 0 );
+
+   ImGui::End();
+}
+
+void DrawECSWindow( CmdListHandle cmdList, const EntityManager& entityManager )
 {
    ImGui::Begin( "ECS (Entity Manager)" );
 
@@ -136,7 +137,7 @@ void DrawECSWindow( const EntityManager& entityManager )
             if( ImGui::TreeNodeEx(
                     GetComponentName( componentsPair.first ), ImGuiTreeNodeFlags_SpanAvailWidth ) )
             {
-               DrawComponentsMenu( componentsPair.first, componentsPair.second );
+               DrawComponentsMenu( cmdList, componentsPair.first, componentsPair.second );
                ImGui::TreePop();
             }
          }
@@ -148,7 +149,7 @@ void DrawECSWindow( const EntityManager& entityManager )
    ImGui::End();
 }
 
-void DrawComponentsMenu( ComponentType type, const BaseComponent* component )
+void DrawComponentsMenu( CmdListHandle cmdList, ComponentType type, const BaseComponent* component )
 {
    switch( type )
    {
@@ -156,7 +157,7 @@ void DrawComponentsMenu( ComponentType type, const BaseComponent* component )
       {
          const ProceduralDisplacementComponent& displacement =
              *static_cast<const ProceduralDisplacementComponent*>( component );
-         DrawProceduralDisplacementComponentMenu( displacement );
+         DrawProceduralDisplacementComponentMenu( cmdList, displacement );
          break;
       }
       default:
@@ -166,7 +167,9 @@ void DrawComponentsMenu( ComponentType type, const BaseComponent* component )
    }
 }
 
-void DrawProceduralDisplacementComponentMenu( const ProceduralDisplacementComponent& displacement )
+void DrawProceduralDisplacementComponentMenu(
+    CmdListHandle cmdList,
+    const ProceduralDisplacementComponent& displacement )
 {
    // Hello darkness, my old friend
    ProceduralDisplacementComponent& notConst =
@@ -190,22 +193,18 @@ void DrawProceduralDisplacementComponentMenu( const ProceduralDisplacementCompon
    triggerUpdate |= ImGui::SliderFloat( "Frequency", &notConst.params.frequency, 0.0f, 10.0f );
    triggerUpdate |= ImGui::SliderFloat( "Lacunarity", &notConst.params.lacunarity, 1.0f, 10.0f );
    triggerUpdate |= ImGui::SliderFloat( "Exponent", &notConst.params.exponent, 0.0f, 5.0f );
-   triggerUpdate |= ImGui::Checkbox( "Absolute", (bool*)&notConst.params.absolute );
+   triggerUpdate |= ImGui::Checkbox( "Ridged", (bool*)&notConst.params.ridged );
    triggerUpdate |= ImGui::Checkbox( "Invert", (bool*)&notConst.params.invert );
    triggerUpdate |= ImGui::SliderInt( "Octaves", (int*)&notConst.params.octaves, 1, 10 );
 
    notConst.needsUpdate |= triggerUpdate;
 
-   if( s_noiseTexture )
-   {
-      GRIS::RemoveDebugTexture( s_noiseTexture );
-      s_noiseTexture = nullptr;
-   }
-
    if( s_noiseTexture == nullptr )
    {
       s_noiseTexture = GRIS::AddDebugTexture( displacement.texture );
    }
+   
+   GRIS::UpdateDebugTexture( cmdList, displacement.texture );
 
    ImGui::Text( "Noise Texture" );
    float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
@@ -215,14 +214,14 @@ void DrawProceduralDisplacementComponentMenu( const ProceduralDisplacementCompon
    ImGui::Image( s_noiseTexture, dimensions );
 }
 
-void DrawMaterialsWindow()
+void DrawMaterialsWindow(CmdListHandle /*cmdList*/)
 {
    ImGui::Begin( "Materials" );
    ImGui::Text( "LOL" );
    ImGui::End();
 }
 
-void DrawPipelinesWindow()
+void DrawPipelinesWindow(CmdListHandle /*cmdList*/)
 {
    //
 }

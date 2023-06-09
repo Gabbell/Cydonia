@@ -20,6 +20,6 @@ class FullscreenComponent final : public BaseComponent
    COPIABLE( FullscreenComponent );
    virtual ~FullscreenComponent() = default;
 
-   static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
+   static constexpr ComponentType TYPE = ComponentType::FULLSCREEN;
 };
 }

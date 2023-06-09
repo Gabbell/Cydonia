@@ -4,6 +4,8 @@
 
 #include <Window/GLFWWindow.h>
 
+#include <Profiling.h>
+
 #include <chrono>
 #include <memory>
 
@@ -34,8 +36,12 @@ void Application::startLoop()
       // Reset clock
       start = std::chrono::high_resolution_clock::now();
 
+      Trace::FrameStart(); // Profiling
+
       // User overloaded tick
       tick( deltaS.count() );
+
+      Trace::FrameEnd(); // Profiling
 
       // Determine if the main window was asked to be closed
       m_running = m_window->isRunning();

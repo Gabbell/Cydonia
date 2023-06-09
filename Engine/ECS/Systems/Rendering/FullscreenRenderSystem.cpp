@@ -12,10 +12,7 @@ namespace CYD
 void FullscreenRenderSystem::tick( double /*deltaS*/ )
 {
    // Start command list recording
-   const CmdListHandle cmdList =
-       GRIS::CreateCommandList( GRAPHICS, "FullscreenRenderSystem", true );
-
-   GRIS::StartRecordingCommandList( cmdList );
+   const CmdListHandle cmdList = GRIS::GetMainCommandList();
 
    // Dynamic state
    GRIS::SetViewport( cmdList, {} );
@@ -38,7 +35,8 @@ void FullscreenRenderSystem::tick( double /*deltaS*/ )
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
-      const StaticMaterialComponent& material = *std::get<StaticMaterialComponent*>( entityEntry.arch );
+      const StaticMaterialComponent& material =
+          *std::get<StaticMaterialComponent*>( entityEntry.arch );
 
       // Material
       if( prevMaterial != material.materialIdx )
@@ -52,8 +50,6 @@ void FullscreenRenderSystem::tick( double /*deltaS*/ )
    }
 
    GRIS::EndRendering( cmdList );
-
-   GRIS::EndRecordingCommandList( cmdList );
 
    RenderGraph::AddPass( cmdList );
 }

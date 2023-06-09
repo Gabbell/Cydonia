@@ -5,7 +5,7 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
+#include <ECS/Components/Rendering/DeferredRenderableComponent.h>
 #include <ECS/Components/Rendering/MeshComponent.h>
 
 // ================================================================================================
@@ -14,7 +14,7 @@
 namespace CYD
 {
 class ShadowMapSystem final
-    : public CommonSystem<TransformComponent, RenderableComponent, MeshComponent>
+    : public CommonSystem<TransformComponent, DeferredRenderableComponent, MeshComponent>
 {
   public:
    ShadowMapSystem() = default;

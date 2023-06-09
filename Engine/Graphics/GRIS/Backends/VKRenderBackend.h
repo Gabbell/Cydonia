@@ -27,8 +27,8 @@ class VKRenderBackend final : public RenderBackend
    NON_COPIABLE( VKRenderBackend );
    virtual ~VKRenderBackend();
 
-   bool initializeUI() override;
-   void uninitializeUI() override;
+   bool initializeUIBackend() override;
+   void uninitializeUIBackend() override;
    void drawUI( CmdListHandle cmdList ) override;
 
    void cleanup() override;
@@ -37,13 +37,12 @@ class VKRenderBackend final : public RenderBackend
 
    // Command Buffers/Lists
    // ==============================================================================================
+   CmdListHandle getMainCommandList() const override;
    CmdListHandle createCommandList(
        QueueUsageFlag usage,
        const std::string_view name,
        bool presentable ) override;
 
-   void startRecordingCommandList( CmdListHandle cmdList ) override;
-   void endRecordingCommandList( CmdListHandle cmdList ) override;
    void submitCommandList( CmdListHandle cmdList ) override;
    void resetCommandList( CmdListHandle cmdList ) override;
    void waitOnCommandList( CmdListHandle cmdList ) override;
@@ -129,7 +128,8 @@ class VKRenderBackend final : public RenderBackend
 
    BufferHandle createBuffer( size_t size, const std::string_view name ) override;
 
-   void* addDebugTexture( TextureHandle textureHandle ) override;
+   void* addDebugTexture( TextureHandle texture ) override;
+   void updateDebugTexture( CmdListHandle cmdList, TextureHandle texture ) override;
    void removeDebugTexture( void* texture ) override;
 
    void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )

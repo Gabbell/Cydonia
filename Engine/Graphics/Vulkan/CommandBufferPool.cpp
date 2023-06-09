@@ -31,28 +31,55 @@ CommandBuffer* CommandBufferPool::createCommandBuffer(
     CYD::QueueUsageFlag usage,
     const std::string_view name )
 {
-   // Check to see if we have a free spot for a command buffer. Either one that is already released
-   // or one that has been completed, freed and is not in use anymore
-   auto it =
-       std::find_if( m_cmdBuffers.rbegin(), m_cmdBuffers.rend(), []( CommandBuffer& cmdBuffer ) {
-          return cmdBuffer.isReleased() || ( cmdBuffer.isFree() && !cmdBuffer.inUse() );
-       } );
+   // Check to see if we have a free spot for a command buffer. Either one that is already
+   // released or one that has been completed, freed and is not in use anymore
+   auto it = std::find_if(
+       m_cmdBuffers.rbegin(),
+       m_cmdBuffers.rend(),
+       []( CommandBuffer& cmdBuffer )
+       { return cmdBuffer.isReleased() || ( cmdBuffer.isFree() && !cmdBuffer.inUse() ); } );
 
    if( it != m_cmdBuffers.rend() )
    {
-      // We found an unused command buffer that can be replaced. Make sure its previous sync objects
-      // are released
+      // We found an unused command buffer that can be replaced. Make sure its previous sync
+      // objects are released
       if( it->isFree() )
       {
          it->release();
       }
 
       it->acquire( *m_pDevice, *this, usage, name );
+      m_cmdBuffersInUse++;
       return &*it;
    }
 
    CYDASSERT( !"CommandBufferPool: Too many command buffers in flight" );
    return nullptr;
+}
+
+void CommandBufferPool::waitUntilDone()
+{
+   // Too many command buffers in flight, CPU wait until one of the fences gets signaled
+   std::vector<VkFence> vkFences;
+   vkFences.reserve( m_cmdBuffers.size() );
+   for( CommandBuffer& cmdBuffer : m_cmdBuffers )
+   {
+      if( cmdBuffer.isSubmitted() )
+      {
+         vkFences.push_back( cmdBuffer.getVKFence() );
+      }
+   }
+
+   if( !vkFences.empty() )
+   {
+      // Wait for one 120fps frame maximum
+      const VkResult result = vkWaitForFences(
+          m_pDevice->getVKDevice(),
+          static_cast<uint32_t>( vkFences.size() ),
+          vkFences.data(),
+          false,
+          UINT64_MAX );
+   }
 }
 
 void CommandBufferPool::cleanup()
@@ -64,6 +91,7 @@ void CommandBufferPool::cleanup()
          // This command buffer is valid and has finished execution. Release the resources linked to
          // it but not the sync objects as other parts of the API could still be using them
          cmdBuffer.free();
+         m_cmdBuffersInUse--;
       }
    }
 }

@@ -35,8 +35,8 @@ bool InitRenderBackend( API api, const Window& window );
 void UninitRenderBackend();
 
 // For API specific implementations of UI
-bool InitializeUI();
-void UninitializeUI();
+bool InitializeUIBackend();
+void UninitializeUIBackend();
 void DrawUI( CmdListHandle cmdList );
 
 // Cleanup rendering resources
@@ -47,12 +47,11 @@ void WaitUntilIdle();
 
 // Command Buffers/Lists
 // ===============================================================================================
+CmdListHandle GetMainCommandList();
 CmdListHandle CreateCommandList(
     QueueUsageFlag usage,
     const std::string_view name = "",
     bool presentable            = false );
-void StartRecordingCommandList( CmdListHandle cmdList );
-void EndRecordingCommandList( CmdListHandle cmdList );
 void SubmitCommandList( CmdListHandle cmdList );
 
 // TODO Parallel work submission
@@ -153,6 +152,7 @@ BufferHandle CreateUniformBuffer( size_t size, const std::string_view name );
 BufferHandle CreateBuffer( size_t size, const std::string_view name );
 
 void* AddDebugTexture( TextureHandle texture );
+void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle texture );
 void RemoveDebugTexture( void* texture );
 
 void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size );

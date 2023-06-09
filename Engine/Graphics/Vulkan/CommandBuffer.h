@@ -81,6 +81,8 @@ class CommandBuffer final
    // Returns the semaphore that will be signaled when this command buffer is done execution
    VkSemaphore getDoneSemaphore() const;
 
+   const std::string_view getName() const { return m_name; }
+
    // Status
    // =============================================================================================
    bool isReleased() const noexcept { return m_state == State::RELEASED; }
@@ -176,10 +178,6 @@ class CommandBuffer final
       NUMBER_OF_STATES
    };
 
-   // Contains all the valid state transitions
-   bool m_stateValidationTable[NUMBER_OF_STATES][NUMBER_OF_STATES] = {};
-
-   void _initStateValidationTable();
    bool _isValidStateTransition( State desiredState );
 
    // Descriptor Sets and Binding

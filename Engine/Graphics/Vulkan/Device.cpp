@@ -47,10 +47,10 @@ Device::Device(
 
    m_descPool           = std::make_unique<DescriptorPool>( *this );
    m_commandPoolManager = std::make_unique<CommandPoolManager>(
-       *this, static_cast<uint32_t>( m_queueFamilies.size() ) );
-   m_renderPasses       = std::make_unique<RenderPassCache>( *this );
-   m_pipelines          = std::make_unique<PipelineCache>( *this );
-   m_samplers           = std::make_unique<SamplerCache>( *this );
+       *this, static_cast<uint32_t>( m_queueFamilies.size() ), 3 );
+   m_renderPasses = std::make_unique<RenderPassCache>( *this );
+   m_pipelines    = std::make_unique<PipelineCache>( *this );
+   m_samplers     = std::make_unique<SamplerCache>( *this );
 }
 
 void Device::_populateQueueFamilies()
@@ -154,7 +154,7 @@ CommandBuffer* Device::createCommandBuffer(
     const std::string_view name,
     bool presentable )
 {
-   return m_commandPoolManager->acquire( usage, name, presentable );
+   return m_commandPoolManager->acquire( usage, name, presentable, m_swapchain->getCurrentFrame() );
 }
 
 // =================================================================================================
@@ -231,9 +231,10 @@ Buffer* Device::createBuffer( size_t size, const std::string_view name )
 Texture* Device::createTexture( const CYD::TextureDescription& desc )
 {
    // Check to see if we have a free spot for a texture.
-   auto it = std::find_if( m_textures.rbegin(), m_textures.rend(), []( Texture& texture ) {
-      return !texture.inUse();
-   } );
+   auto it = std::find_if(
+       m_textures.rbegin(),
+       m_textures.rend(),
+       []( Texture& texture ) { return !texture.inUse(); } );
 
    if( it != m_textures.rend() )
    {
@@ -292,6 +293,10 @@ void Device::cleanup()
 // Synchronization
 
 void Device::waitUntilIdle() { vkDeviceWaitIdle( m_vkDevice ); }
+void Device::waitOnFrame( uint32_t currentFrame )
+{
+   m_commandPoolManager->waitOnFrame( currentFrame );
+}
 
 // =================================================================================================
 // Getters

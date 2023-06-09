@@ -41,10 +41,8 @@ void AtmosphereSystem::tick( double /*deltaS*/ )
     }
     const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
 
-   const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, "AtmosphereSystem", true );
+   const CmdListHandle cmdList = GRIS::GetMainCommandList();
    
-   GRIS::StartRecordingCommandList( cmdList );
-
    // Dynamic state
    GRIS::SetViewport( cmdList, scene.viewport );
    GRIS::SetScissor( cmdList, scene.scissor );
@@ -66,10 +64,5 @@ void AtmosphereSystem::tick( double /*deltaS*/ )
 
    //    GRIS::EndRendering( renderList );
    }
-
-   GRIS::EndRecordingCommandList( cmdList );
-
-   GRIS::SubmitCommandList( cmdList );
-   GRIS::DestroyCommandList( cmdList );
 }
 }

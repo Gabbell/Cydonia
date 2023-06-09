@@ -7,58 +7,65 @@
 
 #include <UI/UserInterface.h>
 
+#include <Profiling.h>
+
 namespace CYD
 {
 static bool s_drawECSWindow       = false;
 static bool s_drawMaterialsWindow = false;
 static bool s_drawPipelinesWindow = false;
 static bool s_drawAboutWindow     = false;
+static bool s_drawStatsOverlay    = false;
 
 ImGuiSystem::ImGuiSystem( const EntityManager& entityManager ) : m_entityManager( entityManager )
 {
-   GRIS::InitializeUI();
+   UI::Initialize();
 }
-ImGuiSystem::~ImGuiSystem() { GRIS::UninitializeUI(); }
+ImGuiSystem::~ImGuiSystem() { UI::Uninitialize(); }
 
 void ImGuiSystem::tick( double /*deltaS*/ )
 {
+   CYDTRACE( "ImGuiSystem" );
+
+   const CmdListHandle cmdList = GRIS::GetMainCommandList();
+
    // Setting up interface
-   UI::DrawMainWindow();
-   UI::DrawMainMenuBar( s_drawECSWindow, s_drawMaterialsWindow, s_drawPipelinesWindow, s_drawAboutWindow );
+   UI::DrawMainWindow( cmdList );
+   UI::DrawMainMenuBar(
+       cmdList,
+       s_drawECSWindow,
+       s_drawMaterialsWindow,
+       s_drawPipelinesWindow,
+       s_drawAboutWindow,
+       s_drawStatsOverlay );
 
    if( s_drawECSWindow )
    {
-      UI::DrawECSWindow( m_entityManager );
+      UI::DrawECSWindow( cmdList, m_entityManager );
    }
 
    if( s_drawMaterialsWindow )
    {
-      UI::DrawMaterialsWindow();
+      UI::DrawMaterialsWindow( cmdList );
    }
 
    if( s_drawPipelinesWindow )
    {
-      UI::DrawPipelinesWindow();
+      UI::DrawPipelinesWindow( cmdList );
    }
 
    if( s_drawAboutWindow )
    {
-      UI::DrawAboutWindow();
+      UI::DrawAboutWindow( cmdList );
    }
 
-   // Render UI
-   const CmdListHandle cmdList = GRIS::CreateCommandList( GRAPHICS, "ImGuiSystem", true );
-
-   GRIS::StartRecordingCommandList( cmdList );
+   if( s_drawStatsOverlay )
+   {
+      UI::DrawStatsOverlay( cmdList );
+   }
 
    GRIS::BeginRendering( cmdList );
-
    GRIS::DrawUI( cmdList );
-
    GRIS::EndRendering( cmdList );
-
-   GRIS::EndRecordingCommandList( cmdList );
-
-   RenderGraph::AddPass( cmdList );
 }
 }

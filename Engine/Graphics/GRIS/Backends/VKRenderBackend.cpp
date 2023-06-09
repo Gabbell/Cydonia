@@ -44,20 +44,21 @@ class VKRenderBackendImp
    {
       // Initializing swapchain on main device
       SwapchainInfo scInfo = {};
-      scInfo.imageCount    = 2;  // Double buffered
+      scInfo.imageCount    = 2;
       scInfo.extent        = window.getExtent();
       scInfo.format        = PixelFormat::BGRA8_UNORM;
       scInfo.space         = ColorSpace::SRGB_NONLINEAR;
-      scInfo.mode          = PresentMode::IMMEDIATE;
+      scInfo.mode          = PresentMode::FIFO; // Immediate makes my GPU scream in 3000fps
 
       m_mainSwapchain = m_mainDevice.createSwapchain( scInfo );
+      m_mainCmdBuffers.resize( 2 );
 
       vk::DebugUtilsLabel::Initialize( m_mainDevice );
    }
 
    ~VKRenderBackendImp() = default;
 
-   bool initializeUI()
+   bool initializeUIBackend()
    {
       // Initialize ImGui
       ImGui_ImplGlfw_InitForVulkan( m_window.getGLFWwindow(), true );
@@ -89,15 +90,16 @@ class VKRenderBackendImp
       ImGui_ImplVulkan_Init( &init_info, m_mainSwapchain->getRenderPass() );
 
       // Loading fonts
-      const auto cmdBuffer = m_mainDevice.createCommandBuffer( GRAPHICS, "ImGui Font Loading" );
+      const CmdListHandle cmdList = createCommandList( GRAPHICS, "ImGui Font Loading", false );
+      auto cmdBuffer              = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
-      cmdBuffer->startRecording();
+      // const auto cmdBuffer = m_mainDevice.createCommandBuffer( GRAPHICS, "ImGui Font Loading" );
 
       ImGui_ImplVulkan_CreateFontsTexture( cmdBuffer->getVKBuffer() );
 
-      cmdBuffer->endRecording();
-      cmdBuffer->submit();
-      cmdBuffer->waitForCompletion();
+      submitCommandList( cmdList );
+      waitOnCommandList( cmdList );
+      destroyCommandList( cmdList );
 
       ImGui_ImplVulkan_DestroyFontUploadObjects();
 
@@ -106,7 +108,7 @@ class VKRenderBackendImp
       return true;
    }
 
-   void uninitializeUI()
+   void uninitializeUIBackend()
    {
       ImGui_ImplVulkan_Shutdown();
       ImGui_ImplGlfw_Shutdown();
@@ -128,28 +130,23 @@ class VKRenderBackendImp
 
    void waitUntilIdle() const { m_mainDevice.waitUntilIdle(); }
 
+   CmdListHandle getMainCommandList() const
+   {
+      return m_mainCmdBuffers[m_mainSwapchain->getCurrentFrame()];
+   }
+
    CmdListHandle
    createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
    {
       const auto cmdBuffer = m_mainDevice.createCommandBuffer( usage, name, presentable );
-      return m_coreHandles.add( cmdBuffer, HandleType::CMDLIST );
-   }
-
-   void startRecordingCommandList( CmdListHandle cmdList ) const
-   {
-      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       cmdBuffer->startRecording();
-   }
-
-   void endRecordingCommandList( CmdListHandle cmdList ) const
-   {
-      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->endRecording();
+      return m_coreHandles.add( cmdBuffer, HandleType::CMDLIST );
    }
 
    void submitCommandList( CmdListHandle cmdList ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->endRecording();
       cmdBuffer->submit();
    }
 
@@ -218,8 +215,11 @@ class VKRenderBackendImp
          // This is a null viewport, give a default one instead
          const VkExtent2D& swapchainExtent = m_mainSwapchain->getVKExtent();
 
-         const Viewport defaultViewport =
-             Viewport( 0.0f, 0.0f, swapchainExtent.width, swapchainExtent.height );
+         const Viewport defaultViewport = Viewport(
+             0.0f,
+             0.0f,
+             static_cast<float>( swapchainExtent.width ),
+             static_cast<float>( swapchainExtent.height ) );
 
          cmdBuffer->setViewport( defaultViewport );
       }
@@ -239,7 +239,7 @@ class VKRenderBackendImp
          const VkExtent2D& swapchainExtent = m_mainSwapchain->getVKExtent();
 
          const Rectangle defaultScissor =
-             Rectangle( { 0.0f, 0.0f }, { swapchainExtent.width, swapchainExtent.height } );
+             Rectangle( { 0, 0 }, { swapchainExtent.width, swapchainExtent.height } );
 
          cmdBuffer->setScissor( defaultScissor );
       }
@@ -319,6 +319,7 @@ class VKRenderBackendImp
       auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
 
+      // TODO Maybe not GENERAL?
       vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::GENERAL );
       cmdBuffer->bindImage( texture, binding, set );
    }
@@ -487,21 +488,32 @@ class VKRenderBackendImp
       return m_coreHandles.add( deviceBuffer, HandleType::BUFFER );
    }
 
-   void* addDebugTexture( TextureHandle textureHandle )
+   void* addDebugTexture( TextureHandle texture )
    {
-      if( textureHandle )
+      if( texture )
       {
          vk::SamplerCache& samplerCache = m_mainDevice.getSamplerCache();
          VkSampler vkSampler            = samplerCache.findOrCreate( {} );
 
-         auto texture = static_cast<vk::Texture*>( m_coreHandles.get( textureHandle ) );
+         auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
          return ImGui_ImplVulkan_AddTexture(
              vkSampler,
-             texture->getVKImageView(),
-             vk::TypeConversions::cydToVkImageLayout( texture->getLayout() ) );
+             vkTexture->getVKImageView(),
+             vk::TypeConversions::cydToVkImageLayout( vkTexture->getLayout() ) );
       }
 
       return nullptr;
+   }
+
+   void updateDebugTexture( CmdListHandle cmdList, TextureHandle texture )
+   {
+      if( texture )
+      {
+         auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+         auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
+
+         vk::Barriers::ImageMemory( cmdBuffer, vkTexture, CYD::ImageLayout::GENERAL );
+      }
    }
 
    void removeDebugTexture( void* texture )
@@ -563,7 +575,7 @@ class VKRenderBackendImp
       }
    }
 
-   void prepareFrame() const
+   void prepareFrame()
    {
       if( m_hasUI )
       {
@@ -572,7 +584,15 @@ class VKRenderBackendImp
          ImGui::NewFrame();
       }
 
+      const uint32_t currentFrame = m_mainSwapchain->getCurrentFrame();
+
+      // CPU wait for all work to be done for this frame before acquiring next image
+      // Otherwise, there is a possibility that we feed the GPU too much and cap our CPU-side resource limits
+      m_mainDevice.waitOnFrame( currentFrame );
       m_mainSwapchain->acquireImage();
+
+      m_mainCmdBuffers[currentFrame] = createCommandList(
+          QueueUsage::GRAPHICS | QueueUsage::TRANSFER, "Main Command List", true );
    }
 
    void beginRendering( CmdListHandle cmdList ) const
@@ -633,7 +653,7 @@ class VKRenderBackendImp
       cmdBuffer->dispatch( workX, workY, workZ );
    }
 
-   void presentFrame() const
+   void presentFrame()
    {
       if( m_hasUI )
       {
@@ -670,6 +690,7 @@ class VKRenderBackendImp
    vk::DeviceManager m_devices;
 
    vk::Device& m_mainDevice;
+
    vk::Swapchain* m_mainSwapchain;
 
    HandleManager m_coreHandles;
@@ -678,6 +699,8 @@ class VKRenderBackendImp
    // the command list is getting destroyed
    using CmdListDependencyMap = std::unordered_map<CmdListHandle, std::vector<vk::Buffer*>>;
    CmdListDependencyMap m_cmdListDeps;
+
+   std::vector<CmdListHandle> m_mainCmdBuffers;  // One per frame in-flight
 
    bool m_hasUI = false;
 };
@@ -690,11 +713,13 @@ VKRenderBackend::VKRenderBackend( const Window& window ) : _imp( new VKRenderBac
 
 VKRenderBackend::~VKRenderBackend() { delete _imp; }
 
-bool VKRenderBackend::initializeUI() { return _imp->initializeUI(); }
-void VKRenderBackend::uninitializeUI() { _imp->uninitializeUI(); }
+bool VKRenderBackend::initializeUIBackend() { return _imp->initializeUIBackend(); }
+void VKRenderBackend::uninitializeUIBackend() { _imp->uninitializeUIBackend(); }
 void VKRenderBackend::drawUI( CmdListHandle cmdList ) { _imp->drawUI( cmdList ); }
 void VKRenderBackend::cleanup() { _imp->cleanup(); }
 void VKRenderBackend::waitUntilIdle() { _imp->waitUntilIdle(); }
+
+CmdListHandle VKRenderBackend::getMainCommandList() const { return _imp->getMainCommandList(); }
 
 CmdListHandle VKRenderBackend::createCommandList(
     QueueUsageFlag usage,
@@ -702,16 +727,6 @@ CmdListHandle VKRenderBackend::createCommandList(
     bool presentable )
 {
    return _imp->createCommandList( usage, name, presentable );
-}
-
-void VKRenderBackend::startRecordingCommandList( CmdListHandle cmdList )
-{
-   _imp->startRecordingCommandList( cmdList );
-}
-
-void VKRenderBackend::endRecordingCommandList( CmdListHandle cmdList )
-{
-   _imp->endRecordingCommandList( cmdList );
 }
 
 void VKRenderBackend::submitCommandList( CmdListHandle cmdList )
@@ -883,10 +898,12 @@ void* VKRenderBackend::addDebugTexture( TextureHandle textureHandle )
    return _imp->addDebugTexture( textureHandle );
 }
 
-void VKRenderBackend::removeDebugTexture( void* texture )
+void VKRenderBackend::updateDebugTexture( CmdListHandle cmdList, TextureHandle textureHandle )
 {
-   return _imp->removeDebugTexture( texture );
+   _imp->updateDebugTexture( cmdList, textureHandle );
 }
+
+void VKRenderBackend::removeDebugTexture( void* texture ) { _imp->removeDebugTexture( texture ); }
 
 void VKRenderBackend::copyToBuffer(
     BufferHandle bufferHandle,

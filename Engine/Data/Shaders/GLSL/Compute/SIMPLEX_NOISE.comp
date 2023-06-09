@@ -12,30 +12,7 @@ void main()
    uv      = uv * vec2( params.width / params.height, 1.0 ) + params.seed;
 
    // Fractal Brownian Motion (FBM)
-   float finalNoise = 0.0;
-
-   // Initial frequency and amplitude for first octave
-   float frequency = params.frequency;
-   float amplitude = params.amplitude;
-
-   mat2 rot = mat2( cos( 0.5 ), sin( 0.5 ), -sin( 0.5 ), cos( 0.50 ) );
-   for( uint i = 0; i < params.octaves; ++i )
-   {
-      float noiseValue = snoise( uv * frequency);
-      if( params.absolute ) noiseValue = abs( noiseValue );
-
-      finalNoise += amplitude * noiseValue;
-
-      amplitude *= params.gain;
-      frequency *= params.lacunarity;
-
-      uv = uv * rot; // Rotate UV to reduce axial bias
-   }
-
-   if( isnan( finalNoise ) ) finalNoise = 0.0;         // If is nan, just clamp to 0.0
-   if( params.invert ) finalNoise = 1.0 - finalNoise;  // Invert the values
-
-   finalNoise = pow( finalNoise, params.exponent );  // Apply exponent
+   float finalNoise = fbm( uv );
 
    imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( vec3( finalNoise ), 1.0 ) );
 }

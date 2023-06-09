@@ -8,6 +8,8 @@
 #include <Graphics/GRIS/Backends/VKRenderBackend.h>
 #include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
 
+#include <Profiling.h>
+
 #include <ThirdParty/ImGui/imgui.h>
 
 #include <cstdio>
@@ -44,39 +46,46 @@ bool InitRenderBackend( API api, const Window& window )
 
 void UninitRenderBackend() { delete b; }
 
-bool InitializeUI()
+bool InitializeUIBackend()
 {
    IMGUI_CHECKVERSION();
    ImGui::CreateContext();
    ImGui::StyleColorsDark();
 
-   return b->initializeUI();
+   return b->initializeUIBackend();
 }
 
-void UninitializeUI()
+void UninitializeUIBackend()
 {
-   b->uninitializeUI();
+   b->uninitializeUIBackend();
 
    ImGui::DestroyContext();
 }
 
-void DrawUI( CmdListHandle cmdList ) { b->drawUI( cmdList ); }
+void DrawUI( CmdListHandle cmdList )
+{
+   CYDTRACE( "Draw UI" );
+   b->drawUI( cmdList );
+}
 
-void RenderBackendCleanup() { b->cleanup(); }
+void RenderBackendCleanup()
+{
+   CYDTRACE( "Render Backend Cleanup" );
+   b->cleanup();
+}
 
 void WaitUntilIdle() { b->waitUntilIdle(); }
 
 // =================================================================================================
 // Command Buffers/Lists
 //
+CmdListHandle GetMainCommandList() { return b->getMainCommandList(); }
 CmdListHandle
 CreateCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
 {
    return b->createCommandList( usage, name, presentable );
 }
 
-void StartRecordingCommandList( CmdListHandle cmdList ) { b->startRecordingCommandList( cmdList ); }
-void EndRecordingCommandList( CmdListHandle cmdList ) { b->endRecordingCommandList( cmdList ); }
 void SubmitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
 void SubmitCommandLists( const std::vector<CmdListHandle>& /*cmdLists*/ ) {}
 void ResetCommandList( CmdListHandle cmdList ) { b->resetCommandList( cmdList ); }
@@ -328,7 +337,11 @@ BufferHandle CreateBuffer( size_t size, const std::string_view name )
    return b->createBuffer( size, name );
 }
 
-void* AddDebugTexture( TextureHandle textureHandle ) { return b->addDebugTexture( textureHandle ); }
+void* AddDebugTexture( TextureHandle texture ) { return b->addDebugTexture( texture ); }
+void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle textureHandle )
+{
+   return b->updateDebugTexture( cmdList, textureHandle );
+};
 void RemoveDebugTexture( void* texture ) { b->removeDebugTexture( texture ); }
 
 void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
@@ -350,7 +363,11 @@ void DestroyBuffer( BufferHandle bufferHandle ) { b->destroyBuffer( bufferHandle
 // =================================================================================================
 // Drawing
 //
-void PrepareFrame() { b->prepareFrame(); }
+void PrepareFrame()
+{
+   CYDTRACE( "Prepare Frame" );
+   b->prepareFrame();
+}
 
 void BeginRendering( CmdListHandle cmdList ) { b->beginRendering( cmdList ); }
 
@@ -399,7 +416,11 @@ void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t w
    b->dispatch( cmdList, workX, workY, workZ );
 }
 
-void PresentFrame() { b->presentFrame(); }
+void PresentFrame()
+{
+   CYDTRACE( "Present Frame" );
+   b->presentFrame();
+}
 
 void BeginDebugRange( CmdListHandle cmdList, const char* name, const std::array<float, 4>& color )
 {
