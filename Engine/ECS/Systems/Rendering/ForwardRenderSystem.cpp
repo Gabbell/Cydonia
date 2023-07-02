@@ -82,6 +82,8 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
    if( scene.shadowMap )
    {
       SamplerInfo sampler;
+      sampler.useCompare  = true; // For PCF
+      sampler.compare     = CompareOperator::LESS;
       sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
       sampler.borderColor = BorderColor::OPAQUE_WHITE;
       GRIS::BindTexture( cmdList, scene.shadowMap, sampler, 2, 1 );
@@ -106,9 +108,8 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       }
 
       const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const MaterialComponent& material =
-          *std::get<MaterialComponent*>( entityEntry.arch );
-      const MeshComponent& mesh = *std::get<MeshComponent*>( entityEntry.arch );
+      const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
+      const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
       // Pipeline
       // ==========================================================================================

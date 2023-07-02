@@ -221,6 +221,18 @@ enum class BorderColor
    OPAQUE_WHITE,
 };
 
+enum class CompareOperator
+{
+   NEVER,
+   LESS,
+   EQUAL,
+   LESS_EQUAL,
+   GREATER,
+   GREATER_EQUAL,
+   NOT_EQUAL,
+   ALWAYS
+};
+
 // ================================================================================================
 // Basic structs
 struct TextureDescription
@@ -299,7 +311,9 @@ struct SamplerInfo
    }
    bool operator==( const SamplerInfo& other ) const;
    bool useAnisotropy      = true;
+   bool useCompare         = false;
    float maxAnisotropy     = 16.0f;
+   CompareOperator compare = CompareOperator::ALWAYS;
    Filter magFilter        = Filter::LINEAR;
    Filter minFilter        = Filter::LINEAR;
    AddressMode addressMode = AddressMode::CLAMP_TO_EDGE;

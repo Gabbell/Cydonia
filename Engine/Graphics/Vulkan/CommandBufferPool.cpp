@@ -76,7 +76,7 @@ void CommandBufferPool::waitUntilDone()
           m_pDevice->getVKDevice(),
           static_cast<uint32_t>( vkFences.size() ),
           vkFences.data(),
-          false,
+          true,
           UINT64_MAX );
    }
 }

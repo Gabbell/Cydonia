@@ -65,6 +65,7 @@ void VKSandbox::preLoop()
 {
    // Systems Initialization
    // =============================================================================================
+
    // Core
    m_ecs->addSystem<InputSystem>( *m_window );
    m_ecs->addSystem<CameraSystem>();
@@ -94,7 +95,7 @@ void VKSandbox::preLoop()
    // UI
    m_ecs->addSystem<ImGuiSystem>( *m_ecs );
 
-   // Creating terrain mesh and debug sphere
+   // Creating terrain mesh
    // =============================================================================================
    CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Initial Transfer" );
 

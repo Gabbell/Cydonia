@@ -48,7 +48,7 @@ class VKRenderBackendImp
       scInfo.extent        = window.getExtent();
       scInfo.format        = PixelFormat::RGBA8_UNORM;
       scInfo.space         = ColorSpace::SRGB_NONLINEAR;
-      scInfo.mode          = PresentMode::FIFO;  // Immediate makes my GPU scream in 3000fps
+      scInfo.mode          = PresentMode::IMMEDIATE;  // Immediate makes my GPU scream in 3000fps
 
       m_mainSwapchain = m_mainDevice.createSwapchain( scInfo );
       m_mainCmdBuffers.resize( scInfo.imageCount );

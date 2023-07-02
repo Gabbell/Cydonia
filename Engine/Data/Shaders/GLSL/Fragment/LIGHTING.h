@@ -15,7 +15,7 @@ struct Light
 };
 
 layout( set = 1, binding = 1 ) uniform Lights { Light lights[MAX_LIGHTS]; };
-layout( set = 1, binding = 2 ) uniform sampler2D shadowMap;
+layout( set = 1, binding = 2 ) uniform sampler2DShadow shadowMap;
 
 // ================================================================================================
 
@@ -58,42 +58,32 @@ vec3 ComputeLightBlinnPhong(
    return ( ambientTerm + shadowFactor * ( diffuseTerm + specularTerm ) );
 }
 
-float CalculateShadow( vec4 shadowCoords, float bias, vec2 offset )
-{
-   // By default, we want no shadows
-   // If sampling outside of expected range, return no shadow
-   float shadow = 1.0;
-   if( shadowCoords.z > -1.0 && shadowCoords.z < 1.0 )
-   {
-      float dist = texture( shadowMap, shadowCoords.xy + offset ).r;
-      if( shadowCoords.w > 0.0 && dist < ( shadowCoords.z - bias ) )
-      {
-         shadow = 0.0;
-      }
-   }
-
-   return shadow;
-}
-
 float ShadowPCF( vec4 shadowCoords, vec3 normal, vec3 worldPos )
 {
    // ShadowCoords are NDC coordinates of the current fragment from the point of view of the light
    shadowCoords = shadowCoords / shadowCoords.w;
 
+   if( shadowCoords.z <= -1.0 || shadowCoords.z >= 1.0 || shadowCoords.w <= 0.0 )
+   {
+      return 1.0;
+   }
+
    // Calculate bias (based on depth map resolution and slope)
    vec3 lightDir = normalize( lights[0].position.xyz - worldPos );
-   float bias    = max( 0.05 * ( 1.0 - dot( normal, lightDir ) ), 0.005 );
+   float bias    = 0.0; //max( 0.05 * ( 1.0 - dot( normal, lightDir ) ), 0.005 );
 
    // PCF
    vec2 texelSize = 1.0 / textureSize( shadowMap, 0 );
    float shadow   = 0.0;
-   int range      = 4;
+   int range      = 1; // 9 Samples
    int count      = 0;
    for( int x = -range; x <= range; ++x )
    {
       for( int y = -range; y <= range; ++y )
       {
-         shadow += CalculateShadow( shadowCoords, bias, vec2( x, y ) * texelSize );
+         vec2 offset          = vec2( x, y ) * texelSize;
+         vec3 curShadowCoords = vec3( shadowCoords.xy + offset, shadowCoords.z - bias );
+         shadow += texture( shadowMap, curShadowCoords );
          count++;
       }
    }

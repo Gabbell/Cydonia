@@ -31,8 +31,8 @@ const VkSampler SamplerCache::findOrCreate( const CYD::SamplerInfo& info )
    samplerInfo.maxAnisotropy           = info.maxAnisotropy;
    samplerInfo.borderColor             = TypeConversions::cydToVkBorderColor( info.borderColor );
    samplerInfo.unnormalizedCoordinates = VK_FALSE;
-   samplerInfo.compareEnable           = VK_FALSE;
-   samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
+   samplerInfo.compareEnable           = info.useCompare;
+   samplerInfo.compareOp               = TypeConversions::cydToVkCompareOp( info.compare );
    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
    VkSampler vkSampler;

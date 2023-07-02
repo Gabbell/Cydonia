@@ -8,6 +8,7 @@
 enum VkIndexType : int;
 enum VkFormat : int;
 enum VkColorSpaceKHR : int;
+enum VkCompareOp : int;
 enum VkAttachmentLoadOp : int;
 enum VkAttachmentStoreOp : int;
 enum VkPrimitiveTopology : int;
@@ -37,5 +38,6 @@ VkFilter cydToVkFilter( CYD::Filter filter );
 VkBorderColor cydToVkBorderColor( CYD::BorderColor borderColor );
 VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode );
 VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout );
+VkCompareOp cydToVkCompareOp( CYD::CompareOperator op );
 uint32_t getAspectMask( CYD::PixelFormat format );
 }

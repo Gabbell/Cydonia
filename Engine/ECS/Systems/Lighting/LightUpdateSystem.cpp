@@ -9,9 +9,6 @@
 
 #include <Profiling.h>
 
-// TODO REMOVE
-#include <glm/gtx/string_cast.hpp>
-
 namespace CYD
 {
 void LightUpdateSystem::tick( double deltaS )

@@ -291,6 +291,32 @@ VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout )
    return VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
+VkCompareOp cydToVkCompareOp( CYD::CompareOperator op)
+{
+   switch( op )
+   {
+      case CYD::CompareOperator::NEVER:
+         return VK_COMPARE_OP_NEVER;;
+      case CYD::CompareOperator::LESS:
+         return VK_COMPARE_OP_LESS;
+      case CYD::CompareOperator::EQUAL:
+         return VK_COMPARE_OP_EQUAL;
+      case CYD::CompareOperator::LESS_EQUAL:
+         return VK_COMPARE_OP_LESS_OR_EQUAL;
+      case CYD::CompareOperator::GREATER:
+         return VK_COMPARE_OP_GREATER;
+      case CYD::CompareOperator::GREATER_EQUAL:
+         return VK_COMPARE_OP_GREATER_OR_EQUAL;
+      case CYD::CompareOperator::NOT_EQUAL:
+         return VK_COMPARE_OP_NOT_EQUAL;
+      case CYD::CompareOperator::ALWAYS:
+         return VK_COMPARE_OP_ALWAYS;
+   }
+
+   CYD_ASSERT( !"TypeConversions:: Unrecognized compare operator" );
+   return VK_COMPARE_OP_ALWAYS;
+}
+
 VkImageAspectFlags getAspectMask( CYD::PixelFormat format )
 {
    switch( format )
