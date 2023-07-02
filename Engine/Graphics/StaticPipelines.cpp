@@ -36,7 +36,7 @@ static ShaderResourceType StringToResourceType( const std::string& typeString )
       return ShaderResourceType::STORAGE;
    }
 
-   CYDASSERT( !"Pipelines: Could not recognize string as a shader resource type" );
+   CYD_ASSERT( !"Pipelines: Could not recognize string as a shader resource type" );
    return ShaderResourceType::UNIFORM;
 }
 
@@ -56,6 +56,10 @@ static PipelineStageFlag StringToShaderStageFlags( const std::string& stagesStri
    {
       shaderStages |= PipelineStage::COMPUTE_STAGE;
    }
+   if( stagesString.find( "GRAPHICS" ) != std::string::npos )
+   {
+      shaderStages |= PipelineStage::ALL_GRAPHICS_STAGES;
+   }
 
    return shaderStages;
 }
@@ -71,7 +75,7 @@ static DrawPrimitive StringToPrimitiveType( const std::string& primString )
       return DrawPrimitive::TRIANGLE_STRIPS;
    }
 
-   CYDASSERT( !"Pipelines: Could not recognize string as a primitive draw type" );
+   CYD_ASSERT( !"Pipelines: Could not recognize string as a primitive draw type" );
    return DrawPrimitive::TRIANGLES;
 }
 
@@ -90,7 +94,7 @@ static PolygonMode StringToPolygonMode( const std::string& polyModeString )
       return PolygonMode::POINT;
    }
 
-   CYDASSERT( !"Pipelines: Could not recognize string as a polygon mode" );
+   CYD_ASSERT( !"Pipelines: Could not recognize string as a polygon mode" );
    return PolygonMode::FILL;
 }
 
@@ -105,7 +109,7 @@ static PixelFormat StringToPixelFormat( const std::string& formatString )
       return PixelFormat::RGB32F;
    }
 
-   CYDASSERT( !"Pipelines: Could not recognize string as a pixel format" );
+   CYD_ASSERT( !"Pipelines: Could not recognize string as a pixel format" );
    return PixelFormat::RGBA32F;
 }
 
@@ -117,7 +121,7 @@ bool Initialize()
 
    if( !pipelinesFile.is_open() )
    {
-      CYDASSERT( !"StaticPipelines: Could not find render pipelines file" );
+      CYD_ASSERT( !"StaticPipelines: Could not find render pipelines file" );
       return false;
    }
 
@@ -143,10 +147,10 @@ bool Initialize()
       {
          const PipelineInfo* pipInfo = s_pipelines[i];
 
-         CYDASSERT( pipInfo );
+         CYD_ASSERT( pipInfo );
          if( pipInfo->name == pipName )
          {
-            CYDASSERT( !"Pipelines: Name already taken, ignoring" );
+            CYD_ASSERT( !"Pipelines: Name already taken, ignoring" );
             shouldIgnore = true;
          }
       }
@@ -232,7 +236,7 @@ bool Initialize()
       }
       else
       {
-         CYDASSERT( !"Pipelines: Pipeline type string not recognized" );
+         CYD_ASSERT( !"Pipelines: Pipeline type string not recognized" );
          continue;
       }
 
@@ -245,8 +249,14 @@ bool Initialize()
             const std::string resourceType = resource["TYPE"];
             if( resourceType == "CONSTANT_BUFFER" )
             {
+               uint32_t offset                  = 0;
+               if( resource.find( "OFFSET" ) != resource.end() )
+               {
+                  offset = resource["OFFSET"];
+               }
+
                const PushConstantRange constantBuffer = {
-                   StringToShaderStageFlags( resource["STAGE"] ), 0, resource["SIZE"] };
+                   StringToShaderStageFlags( resource["STAGE"] ), offset, resource["SIZE"] };
 
                newPipeline->pipLayout.ranges.push_back( constantBuffer );
             }

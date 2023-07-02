@@ -54,7 +54,7 @@ static VkBool32 errorCallback(
    // If the severity is error, we want to assert immediately
    if( messageSeverity == VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT )
    {
-      CYDASSERT( !"Fix validation layers" );
+      CYD_ASSERT( !"Fix validation layers" );
    }
 
    return VK_FALSE;
@@ -159,7 +159,7 @@ void Instance::_createVKInstance()
    // Use these validation layers if this is a debug build
 #if CYD_DEBUG
    m_layers.push_back( "VK_LAYER_KHRONOS_validation" );
-   CYDASSERT( checkValidationLayerSupport( m_layers ) );
+   CYD_ASSERT( checkValidationLayerSupport( m_layers ) );
 #endif
 
    const std::vector<const char*>& extensions = m_window.getExtensionsFromGLFW();

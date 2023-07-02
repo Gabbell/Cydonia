@@ -58,11 +58,15 @@ static void subdivide(
     uint32_t subdivision,
     float divisionPerEdge )
 {
+   const glm::vec3 n0 = glm::normalize( p0 );
+   const glm::vec3 n1 = glm::normalize( p1 );
+   const glm::vec3 n2 = glm::normalize( p2 );
+
    if( subdivision == 0 )
    {
-      const Vertex v0( p0 );
-      const Vertex v1( p1 );
-      const Vertex v2( p2 );
+      const Vertex v0( p0, n0 );
+      const Vertex v1( p1, n1 );
+      const Vertex v2( p2, n2 );
 
       // We're at the lowest level of subdivision, add the vertices
       if( uniqueVertices.count( v0 ) == 0 )
@@ -88,11 +92,8 @@ static void subdivide(
       return;
    }
 
-   // Projecting onto a sphere by normalizing the vectors so that they all have a distance of 1 from
+   // We are using the normals so that we are projecting onto a sphere and so that they all have a distance of 1 from
    // the origin of the sphere
-   const glm::vec3 n0 = glm::normalize( p0 );
-   const glm::vec3 n1 = glm::normalize( p1 );
-   const glm::vec3 n2 = glm::normalize( p2 );
 
    // The division factor to get this many points per edge per subdivision
    const glm::vec3 points[6] = {

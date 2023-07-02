@@ -82,12 +82,21 @@ class D3D12RenderBackendImp
    {
    }
 
+   void bindTexture(
+       CmdListHandle cmdList,
+       TextureHandle texHandle,
+       const SamplerInfo& smapler,
+       uint32_t binding,
+       uint32_t set ) const
+   {
+   }
+
    void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
        const
    {
       if( !texHandle )
       {
-         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
+         CYD_ASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
          return;
       }
    }
@@ -189,9 +198,23 @@ class D3D12RenderBackendImp
 
    void endRendering( CmdListHandle cmdList ) const {}
 
-   void drawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) const {}
+   void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) const {}
 
-   void drawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) const {}
+   void drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) const {}
+
+   void drawInstanced(
+       CmdListHandle cmdList,
+       size_t vertexCount,
+       size_t instanceCount,
+       size_t firstVertex,
+       size_t firstInstance ) const {};
+
+   void drawIndexedInstanced(
+       CmdListHandle cmdList,
+       size_t indexCount,
+       size_t instanceCount,
+       size_t firstIndex,
+       size_t firstInstance ) const {};
 
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) const {}
 
@@ -295,6 +318,16 @@ void D3D12RenderBackend::bindTexture(
     uint32_t binding )
 {
    _imp->bindTexture( cmdList, texHandle, binding, set );
+}
+
+void D3D12RenderBackend::bindTexture(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    const SamplerInfo& sampler,
+    uint32_t set,
+    uint32_t binding )
+{
+   _imp->bindTexture( cmdList, texHandle, sampler, binding, set );
 }
 
 void D3D12RenderBackend::bindImage(
@@ -447,20 +480,34 @@ void D3D12RenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmd
 
 void D3D12RenderBackend::endRendering( CmdListHandle cmdList ) { _imp->endRendering( cmdList ); }
 
-void D3D12RenderBackend::drawVertices(
-    CmdListHandle cmdList,
-    size_t vertexCount,
-    size_t firstVertex )
+void D3D12RenderBackend::draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
 {
-   _imp->drawVertices( cmdList, vertexCount, firstVertex );
+   _imp->draw( cmdList, vertexCount, firstVertex );
 }
 
-void D3D12RenderBackend::drawVerticesIndexed(
+void D3D12RenderBackend::drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )
+{
+   _imp->drawIndexed( cmdList, indexCount, firstIndex );
+}
+
+void D3D12RenderBackend::drawInstanced(
+    CmdListHandle cmdList,
+    size_t vertexCount,
+    size_t instanceCount,
+    size_t firstVertex,
+    size_t firstInstance )
+{
+   _imp->drawInstanced( cmdList, vertexCount, instanceCount, firstVertex, firstInstance );
+}
+
+void D3D12RenderBackend::drawIndexedInstanced(
     CmdListHandle cmdList,
     size_t indexCount,
-    size_t firstIndex )
+    size_t instanceCount,
+    size_t firstIndex,
+    size_t firstInstance )
 {
-   _imp->drawVerticesIndexed( cmdList, indexCount, firstIndex );
+   _imp->drawIndexedInstanced( cmdList, indexCount, instanceCount, firstIndex, firstInstance );
 }
 
 void D3D12RenderBackend::dispatch(

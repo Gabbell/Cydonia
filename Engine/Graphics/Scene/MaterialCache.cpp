@@ -84,7 +84,7 @@ static PixelFormat StringToPixelFormat( const std::string& formatString )
       return PixelFormat::RGBA8_UNORM;
    }
 
-   CYDASSERT( !"Materials: Could not recognize string as a pixel format" );
+   CYD_ASSERT( !"Materials: Could not recognize string as a pixel format" );
    return PixelFormat::RGBA32F;
 }
 
@@ -103,7 +103,7 @@ static ImageType StringToTextureType( const std::string& formatString )
       return ImageType::TEXTURE_3D;
    }
 
-   CYDASSERT( !"Materials: Could not recognize string as a texture type" );
+   CYD_ASSERT( !"Materials: Could not recognize string as a texture type" );
    return ImageType::TEXTURE_2D;
 }
 
@@ -115,7 +115,7 @@ void MaterialCache::initializeStaticMaterials()
 
    if( !materialsFile.is_open() )
    {
-      CYDASSERT( !"StaticMaterials: Could not find materials file" );
+      CYD_ASSERT( !"StaticMaterials: Could not find materials file" );
       return;
    }
 
@@ -135,7 +135,7 @@ void MaterialCache::initializeStaticMaterials()
       const auto& dupIt = m_materialNames.find( materialName );
       if( dupIt != m_materialNames.end() )
       {
-         CYDASSERT( !"Materials: Name already taken, ignoring" );
+         CYD_ASSERT( !"Materials: Name already taken, ignoring" );
          continue;
       }
 #endif

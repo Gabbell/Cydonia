@@ -11,9 +11,6 @@
 
 #include <algorithm>
 
-// Double-buffered
-static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
-
 namespace vk
 {
 Swapchain::Swapchain( Device& device, const Surface& surface, const CYD::SwapchainInfo& info )
@@ -122,7 +119,7 @@ static VkPresentModeKHR choosePresentMode(
          desiredMode = VK_PRESENT_MODE_MAILBOX_KHR;
          break;
       default:
-         CYDASSERT( !"Swapchain: Present mode not supported" );
+         CYD_ASSERT( !"Swapchain: Present mode not supported" );
    }
 
    auto it = std::find( presentModes.begin(), presentModes.end(), desiredMode );
@@ -172,7 +169,7 @@ void Swapchain::_createSwapchain( const CYD::SwapchainInfo& info )
    createInfo.oldSwapchain = VK_NULL_HANDLE;
 
    VkResult result = vkCreateSwapchainKHR( vkDevice, &createInfo, nullptr, &m_vkSwapchain );
-   CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create swapchain" );
+   CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create swapchain" );
 
    vkGetSwapchainImagesKHR( vkDevice, m_vkSwapchain, &m_imageCount, nullptr );
    m_images.resize( m_imageCount );
@@ -202,7 +199,7 @@ void Swapchain::_createImageViews()
 
       VkResult result =
           vkCreateImageView( m_device.getVKDevice(), &createInfo, nullptr, &m_imageViews[i] );
-      CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create image views" );
+      CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create image views" );
    }
 }
 
@@ -226,7 +223,7 @@ void Swapchain::_createDepthResources()
    imageInfo.sharingMode       = VK_SHARING_MODE_EXCLUSIVE;
 
    result = vkCreateImage( m_device.getVKDevice(), &imageInfo, nullptr, &m_depthImage );
-   CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image" );
+   CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image" );
 
    VkMemoryRequirements memRequirements;
    vkGetImageMemoryRequirements( m_device.getVKDevice(), m_depthImage, &memRequirements );
@@ -238,7 +235,7 @@ void Swapchain::_createDepthResources()
        memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
    result = vkAllocateMemory( m_device.getVKDevice(), &allocInfo, nullptr, &m_depthImageMemory );
-   CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not allocate depth image memory" );
+   CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not allocate depth image memory" );
 
    vkBindImageMemory( m_device.getVKDevice(), m_depthImage, m_depthImageMemory, 0 );
 
@@ -254,7 +251,7 @@ void Swapchain::_createDepthResources()
    imageviewInfo.subresourceRange.layerCount     = 1;
 
    result = vkCreateImageView( m_device.getVKDevice(), &imageviewInfo, nullptr, &m_depthImageView );
-   CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image view" );
+   CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image view" );
 }
 
 void Swapchain::_createSyncObjects()
@@ -274,7 +271,7 @@ void Swapchain::_createSyncObjects()
               m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] ) !=
               VK_SUCCESS )
       {
-         CYDASSERT( !"Swapchain: Could not create sync objects" );
+         CYD_ASSERT( !"Swapchain: Could not create sync objects" );
       }
    }
 }
@@ -331,7 +328,7 @@ void Swapchain::_createFramebuffers( const CYD::SwapchainInfo& info )
 
       VkResult result = vkCreateFramebuffer(
           m_device.getVKDevice(), &framebufferInfo, nullptr, &m_frameBuffers[i] );
-      CYDASSERT( result == VK_SUCCESS && "Swapchain: Could not create framebuffer" );
+      CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create framebuffer" );
    }
 }
 
@@ -360,7 +357,7 @@ void Swapchain::acquireImage()
 
 void Swapchain::present()
 {
-   CYDASSERT(
+   CYD_ASSERT(
        m_ready &&
        "Swapchain: No image was acquired before presenting. Are you rendering to the swapchain?" );
 
@@ -385,7 +382,7 @@ void Swapchain::present()
    }
    else
    {
-      CYDASSERT( !"Swapchain: Could not get a present queue" );
+      CYD_ASSERT( !"Swapchain: Could not get a present queue" );
    }
 
    // We have presented, the next rendering should clear the swapchain

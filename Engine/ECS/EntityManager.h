@@ -73,7 +73,7 @@ class EntityManager final
       auto it = m_entities.find( handle );
       if( it == m_entities.end() )
       {
-         CYDASSERT( !"ECS: Could not find entity" );
+         CYD_ASSERT( !"ECS: Could not find entity" );
          return;
       }
 
@@ -130,7 +130,7 @@ class EntityManager final
       auto it = m_entities.find( handle );
       if( it == m_entities.end() )
       {
-         CYDASSERT( !"ECS: Could not find entity" );
+         CYD_ASSERT( !"ECS: Could not find entity" );
          return;
       }
 
@@ -161,6 +161,7 @@ class EntityManager final
    }
 
    const Entities& getEntities() const { return m_entities; };
+   const SharedComponents& getSharedComponents() const { return m_sharedComponents; }
 
   private:
    // All entities currently managed by the manager (all entities in the world)

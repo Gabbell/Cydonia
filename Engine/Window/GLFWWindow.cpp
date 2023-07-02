@@ -13,12 +13,12 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
 {
    if( !glfwInit() )
    {
-      CYDASSERT_AND_RETURN( !"GLFW: Init failed", false );
+      CYD_ASSERT_AND_RETURN( !"GLFW: Init failed", false );
    }
 
    if( !glfwVulkanSupported() )
    {
-      CYDASSERT_AND_RETURN( !"GLFW: Vulkan not supported", false );
+      CYD_ASSERT_AND_RETURN( !"GLFW: Vulkan not supported", false );
    }
 
    m_extent = { width, height };
@@ -26,7 +26,7 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
    // Creating GLFWwindow
    glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );  // Tell GLFW we do not need a GL context
    m_glfwWindow = glfwCreateWindow( width, height, title, nullptr, nullptr );
-   CYDASSERT_AND_RETURN( m_glfwWindow && "Could not create GLFW window", false );
+   CYD_ASSERT_AND_RETURN( m_glfwWindow && "Could not create GLFW window", false );
 
    // Assigning icon
    GLFWimage images[1];

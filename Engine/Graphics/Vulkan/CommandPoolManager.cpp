@@ -52,7 +52,7 @@ CommandBuffer* CommandPoolManager::acquire(
       return poolIt->createCommandBuffer( usage, name );
    }
 
-   CYDASSERT( !"Failed to find adequate command pool" );
+   CYD_ASSERT( !"Failed to find adequate command pool" );
    return nullptr;
 }
 

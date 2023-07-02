@@ -13,7 +13,7 @@ PipelineIndex s_noisePipelines[] = {
     INVALID_PIPELINE_IDX };
 
 const char* s_noiseNames[] =
-    { "WHITE_NOISE", "SIMPLEX_NOISE", "DOMAIN_WARP", "BLUE_NOISE", "WORLEY_NOISE" };
+    { "WHITE_NOISE", "SIMPLEX_NOISE", "VORONOI_NOISE", "BLUE_NOISE", "DOMAIN_WARP" };
 
 static_assert( ARRSIZE( s_noisePipelines ) == static_cast<size_t>( Type::COUNT ) );
 static_assert( ARRSIZE( s_noiseNames ) == static_cast<size_t>( Type::COUNT ) );

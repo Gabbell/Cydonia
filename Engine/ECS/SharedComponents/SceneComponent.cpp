@@ -25,5 +25,6 @@ SceneComponent::~SceneComponent()
 
    GRIS::DestroyBuffer( lightsBuffer );
    GRIS::DestroyBuffer( viewsBuffer );
+   GRIS::DestroyTexture( shadowMap );
 }
 }

@@ -28,10 +28,11 @@ ProceduralDisplacementSystem::~ProceduralDisplacementSystem() { Noise::Uninitial
 // ================================================================================================
 void ProceduralDisplacementSystem::tick( double deltaS )
 {
-   CYDTRACE( "ProceduralDisplacementSystem" );
+   CYD_TRACE( "ProceduralDisplacementSystem" );
 
    // Start command list recording
    const CmdListHandle cmdList = GRIS::CreateCommandList( COMPUTE, "ProceduralDisplacementSystem" );
+   CYD_GPUTRACE( cmdList, "ProceduralDisplacementSystem" );
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
@@ -40,16 +41,16 @@ void ProceduralDisplacementSystem::tick( double deltaS )
       ProceduralDisplacementComponent& noise =
           *std::get<ProceduralDisplacementComponent*>( entityEntry.arch );
 
-      const StaticMaterialComponent& material =
-          *std::get<StaticMaterialComponent*>( entityEntry.arch );
+      const MaterialComponent& material =
+          *std::get<MaterialComponent*>( entityEntry.arch );
 
       if( noise.resolutionChanged )
       {
          GRIS::DestroyTexture( noise.texture );
 
          TextureDescription noiseTexDesc;
-         noiseTexDesc.width  = noise.params.width;
-         noiseTexDesc.height = noise.params.height;
+         noiseTexDesc.width  = noise.width;
+         noiseTexDesc.height = noise.height;
          noiseTexDesc.size   = noiseTexDesc.width * noiseTexDesc.height * sizeof( float );
          noiseTexDesc.type   = ImageType::TEXTURE_2D;
          noiseTexDesc.format = PixelFormat::R32F;
@@ -77,8 +78,8 @@ void ProceduralDisplacementSystem::tick( double deltaS )
 
          constexpr float localSizeX = 16.0f;
          constexpr float localSizeY = 16.0f;
-         uint32_t groupsX = static_cast<uint32_t>( std::ceil( noise.params.width / localSizeX ) );
-         uint32_t groupsY = static_cast<uint32_t>( std::ceil( noise.params.height / localSizeY ) );
+         uint32_t groupsX = static_cast<uint32_t>( std::ceil( noise.width / localSizeX ) );
+         uint32_t groupsY = static_cast<uint32_t>( std::ceil( noise.height / localSizeY ) );
 
          GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
 

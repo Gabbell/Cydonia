@@ -23,7 +23,7 @@ void ShaderConstants::Entry::addConstant( uint32_t id, T value )
    const auto it = m_constantInfos.find( id );
    if( it != m_constantInfos.end() )
    {
-      CYDASSERT( !"ShaderConstants: Cannot overwrite constants" );
+      CYD_ASSERT( !"ShaderConstants: Cannot overwrite constants" );
       return;
    }
 

@@ -57,7 +57,7 @@ const Entity* EntityManager::getEntity( EntityHandle handle ) const
    const auto it = m_entities.find( handle );
    if( it == m_entities.end() )
    {
-      CYDASSERT( !"Tried to get an entity that does not exist" );
+      CYD_ASSERT( !"Tried to get an entity that does not exist" );
       return nullptr;
    }
 
@@ -69,7 +69,7 @@ void EntityManager::removeEntity( EntityHandle handle )
    const auto it = m_entities.find( handle );
    if( it == m_entities.end() )
    {
-      CYDASSERT( !"Tried to remove an entity that does not exist" );
+      CYD_ASSERT( !"Tried to remove an entity that does not exist" );
       return;
    }
 

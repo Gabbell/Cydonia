@@ -112,6 +112,8 @@ class CommandBuffer final
    void bindPipeline( const CYD::ComputePipelineInfo& info );
 
    void bindTexture( Texture* texture, uint8_t binding, uint8_t set );
+   void
+   bindTexture( Texture* texture, const CYD::SamplerInfo& sampler, uint8_t binding, uint8_t set );
    void bindImage( Texture* texture, uint8_t binding, uint8_t set );
    void bindBuffer( Buffer* buffer, uint8_t binding, uint8_t set, uint32_t offset, uint32_t range );
    void bindUniformBuffer(
@@ -128,9 +130,9 @@ class CommandBuffer final
    void beginRendering( Swapchain& swapchain );
    void beginRendering(
        const CYD::FramebufferInfo& targetsInfo,
-       const std::vector<const Texture*>& targets );
+       const std::vector<Texture*>& targets );
    void nextPass() const;
-   void endRendering() const;
+   void endRendering();
 
    // Dynamic State
    // =============================================================================================
@@ -139,8 +141,9 @@ class CommandBuffer final
 
    // Drawing
    // =============================================================================================
-   void draw( size_t vertexCount, size_t firstVertex );
-   void drawIndexed( size_t indexCount, size_t firstIndex );
+   void draw( size_t vertexCount, size_t instanceCount, size_t firstVertex, size_t firstInstance );
+   void
+   drawIndexed( size_t indexCount, size_t instanceCount, size_t firstIndex, size_t firstInstance );
 
    // Compute
    // =============================================================================================
@@ -197,6 +200,8 @@ class CommandBuffer final
    template <class T>
    void _addDependency( T* dependency );
 
+   void _setRenderArea( int offsetX, int offsetY, uint32_t width, uint32_t height );
+
    // Member Variables
    // =============================================================================================
    const Device* m_pDevice          = nullptr;
@@ -211,7 +216,9 @@ class CommandBuffer final
    VkPipelineLayout m_boundPipLayout = nullptr;
 
    VkRenderPass m_boundRenderPass = nullptr;
+   CYD::Rectangle m_renderArea;
    std::optional<CYD::FramebufferInfo> m_boundTargetsInfo;
+   std::vector<Texture*> m_targets;
    uint32_t m_currentSubpass = 0;
 
    // To keep in scope for destruction
@@ -239,6 +246,7 @@ class CommandBuffer final
 
    std::vector<BufferBinding> m_buffersToUpdate;
    std::vector<TextureBinding> m_texturesToUpdate;
+   std::vector<VkSampler> m_samplers;
 
    // Resource Dependencies
    std::unordered_set<CommandBuffer*> m_cmdBuffersInUse;

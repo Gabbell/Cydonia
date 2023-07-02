@@ -44,14 +44,14 @@ class VKRenderBackendImp
    {
       // Initializing swapchain on main device
       SwapchainInfo scInfo = {};
-      scInfo.imageCount    = 2;
+      scInfo.imageCount    = vk::Swapchain::MAX_FRAMES_IN_FLIGHT;
       scInfo.extent        = window.getExtent();
-      scInfo.format        = PixelFormat::BGRA8_UNORM;
+      scInfo.format        = PixelFormat::RGBA8_UNORM;
       scInfo.space         = ColorSpace::SRGB_NONLINEAR;
-      scInfo.mode          = PresentMode::FIFO; // Immediate makes my GPU scream in 3000fps
+      scInfo.mode          = PresentMode::FIFO;  // Immediate makes my GPU scream in 3000fps
 
       m_mainSwapchain = m_mainDevice.createSwapchain( scInfo );
-      m_mainCmdBuffers.resize( 2 );
+      m_mainCmdBuffers.resize( scInfo.imageCount );
 
       vk::DebugUtilsLabel::Initialize( m_mainDevice );
    }
@@ -70,7 +70,7 @@ class VKRenderBackendImp
 
       if( queueFamily.queues.empty() )
       {
-         CYDASSERT( !"Could not find a graphics queue to initialize UI" );
+         CYD_ASSERT( !"Could not find a graphics queue to initialize UI" );
          return false;
       }
 
@@ -205,44 +205,13 @@ class VKRenderBackendImp
    void setViewport( CmdListHandle cmdList, const Viewport& viewport ) const
    {
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-
-      if( viewport.width != 0 && viewport.height != 0 )
-      {
-         cmdBuffer->setViewport( viewport );
-      }
-      else
-      {
-         // This is a null viewport, give a default one instead
-         const VkExtent2D& swapchainExtent = m_mainSwapchain->getVKExtent();
-
-         const Viewport defaultViewport = Viewport(
-             0.0f,
-             0.0f,
-             static_cast<float>( swapchainExtent.width ),
-             static_cast<float>( swapchainExtent.height ) );
-
-         cmdBuffer->setViewport( defaultViewport );
-      }
+      cmdBuffer->setViewport( viewport );
    }
 
    void setScissor( CmdListHandle cmdList, const Rectangle& scissor ) const
    {
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-
-      if( scissor.extent.width > 0 && scissor.extent.height > 0 )
-      {
-         cmdBuffer->setScissor( scissor );
-      }
-      else
-      {
-         // This is a null scissor, give a default one instead
-         const VkExtent2D& swapchainExtent = m_mainSwapchain->getVKExtent();
-
-         const Rectangle defaultScissor =
-             Rectangle( { 0, 0 }, { swapchainExtent.width, swapchainExtent.height } );
-
-         cmdBuffer->setScissor( defaultScissor );
-      }
+      cmdBuffer->setScissor( scissor );
    }
 
    void bindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo ) const
@@ -261,7 +230,7 @@ class VKRenderBackendImp
    {
       if( !bufferHandle )
       {
-         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid vertex buffer" );
+         CYD_ASSERT( !"VKRenderBackend: Tried to bind an invalid vertex buffer" );
          return;
       }
 
@@ -279,7 +248,7 @@ class VKRenderBackendImp
    {
       if( !bufferHandle )
       {
-         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid index buffer" );
+         CYD_ASSERT( !"VKRenderBackend: Tried to bind an invalid index buffer" );
          return;
       }
 
@@ -297,7 +266,7 @@ class VKRenderBackendImp
    {
       if( !texHandle )
       {
-         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
+         CYD_ASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
          return;
       }
 
@@ -307,20 +276,37 @@ class VKRenderBackendImp
       cmdBuffer->bindTexture( texture, binding, set );
    }
 
-   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
-       const
+   void bindTexture(
+       CmdListHandle cmdList,
+       TextureHandle texHandle,
+       const SamplerInfo& sampler,
+       uint32_t binding,
+       uint32_t set ) const
    {
       if( !texHandle )
       {
-         CYDASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
+         CYD_ASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
          return;
       }
 
       auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
 
-      // TODO Maybe not GENERAL?
-      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::GENERAL );
+      cmdBuffer->bindTexture( texture, sampler, binding, set );
+   }
+
+   void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
+       const
+   {
+      if( !texHandle )
+      {
+         CYD_ASSERT( !"VKRenderBackend: Tried to bind an invalid texture" );
+         return;
+      }
+
+      auto cmdBuffer     = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      const auto texture = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
+
       cmdBuffer->bindImage( texture, binding, set );
    }
 
@@ -397,11 +383,7 @@ class VKRenderBackendImp
 
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
 
-      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::TRANSFER_DST );
-
       cmdBuffer->uploadBufferToTex( staging, texture );
-
-      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::SHADER_READ );
 
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
@@ -419,11 +401,7 @@ class VKRenderBackendImp
 
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
 
-      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::TRANSFER_DST );
-
       cmdBuffer->uploadBufferToTex( staging, texture );
-
-      vk::Barriers::ImageMemory( cmdBuffer, texture, CYD::ImageLayout::SHADER_READ );
 
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
@@ -496,6 +474,7 @@ class VKRenderBackendImp
          VkSampler vkSampler            = samplerCache.findOrCreate( {} );
 
          auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
+
          return ImGui_ImplVulkan_AddTexture(
              vkSampler,
              vkTexture->getVKImageView(),
@@ -505,15 +484,13 @@ class VKRenderBackendImp
       return nullptr;
    }
 
-   void updateDebugTexture( CmdListHandle cmdList, TextureHandle texture )
+   void updateDebugTexture( CmdListHandle /*cmdList*/, TextureHandle /*texture */ )
    {
-      if( texture )
-      {
-         auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-         auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
-
-         vk::Barriers::ImageMemory( cmdBuffer, vkTexture, CYD::ImageLayout::GENERAL );
-      }
+      // if( texture )
+      //{
+      //   auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      //   auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
+      //}
    }
 
    void removeDebugTexture( void* texture )
@@ -587,8 +564,10 @@ class VKRenderBackendImp
       const uint32_t currentFrame = m_mainSwapchain->getCurrentFrame();
 
       // CPU wait for all work to be done for this frame before acquiring next image
-      // Otherwise, there is a possibility that we feed the GPU too much and cap our CPU-side resource limits
+      // Otherwise, there is a possibility that we feed the GPU too much and cap our CPU-side
+      // resource limits
       m_mainDevice.waitOnFrame( currentFrame );
+
       m_mainSwapchain->acquireImage();
 
       m_mainCmdBuffers[currentFrame] = createCommandList(
@@ -606,8 +585,10 @@ class VKRenderBackendImp
        const FramebufferInfo& targetsInfo,
        const std::vector<TextureHandle>& targets ) const
    {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+
       // Fetching textures
-      std::vector<const vk::Texture*> vkTextures;
+      std::vector<vk::Texture*> vkTextures;
       vkTextures.reserve( targets.size() );
       for( const auto& texture : targets )
       {
@@ -615,7 +596,6 @@ class VKRenderBackendImp
          vkTextures.push_back( vkTexture );
       }
 
-      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       cmdBuffer->beginRendering( targetsInfo, vkTextures );
    }
 
@@ -631,24 +611,43 @@ class VKRenderBackendImp
       cmdBuffer->endRendering();
    }
 
-   void drawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) const
+   void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->draw( vertexCount, firstVertex );
+      cmdBuffer->draw( vertexCount, 1, firstVertex, 0 );
    }
 
-   void drawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) const
+   void drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->drawIndexed( indexCount, firstIndex );
+      cmdBuffer->drawIndexed( indexCount, 1, firstIndex, 0 );
+   }
+
+   void drawInstanced(
+       CmdListHandle cmdList,
+       size_t vertexCount,
+       size_t instanceCount,
+       size_t firstVertex,
+       size_t firstInstance )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->draw( vertexCount, instanceCount, firstVertex, firstInstance );
+   }
+
+   void drawIndexedInstanced(
+       CmdListHandle cmdList,
+       size_t indexCount,
+       size_t instanceCount,
+       size_t firstIndex,
+       size_t firstInstance )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->drawIndexed( indexCount, instanceCount, firstIndex, firstInstance );
    }
 
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-
-      vk::Barriers::Pipeline(
-          cmdBuffer, CYD::PipelineStage::COMPUTE_STAGE, CYD::PipelineStage::COMPUTE_STAGE );
 
       cmdBuffer->dispatch( workX, workY, workZ );
    }
@@ -785,41 +784,51 @@ void VKRenderBackend::bindIndexBuffer(
 void VKRenderBackend::bindTexture(
     CmdListHandle cmdList,
     TextureHandle texHandle,
-    uint32_t set,
-    uint32_t binding )
+    uint32_t binding,
+    uint32_t set )
 {
-   _imp->bindTexture( cmdList, texHandle, set, binding );
+   _imp->bindTexture( cmdList, texHandle, binding, set );
+}
+
+void VKRenderBackend::bindTexture(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    const SamplerInfo& sampler,
+    uint32_t binding,
+    uint32_t set )
+{
+   _imp->bindTexture( cmdList, texHandle, sampler, binding, set );
 }
 
 void VKRenderBackend::bindImage(
     CmdListHandle cmdList,
     TextureHandle texHandle,
-    uint32_t set,
-    uint32_t binding )
+    uint32_t binding,
+    uint32_t set )
 {
-   _imp->bindImage( cmdList, texHandle, set, binding );
+   _imp->bindImage( cmdList, texHandle, binding, set );
 }
 
 void VKRenderBackend::bindBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
-    uint32_t set,
     uint32_t binding,
+    uint32_t set,
     uint32_t offset,
     uint32_t range )
 {
-   _imp->bindBuffer( cmdList, bufferHandle, set, binding, offset, range );
+   _imp->bindBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
 void VKRenderBackend::bindUniformBuffer(
     CmdListHandle cmdList,
     BufferHandle bufferHandle,
-    uint32_t set,
     uint32_t binding,
+    uint32_t set,
     uint32_t offset,
     uint32_t range )
 {
-   _imp->bindUniformBuffer( cmdList, bufferHandle, set, binding, offset, range );
+   _imp->bindUniformBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
 void VKRenderBackend::setViewport( CmdListHandle cmdList, const Viewport& viewport )
@@ -950,17 +959,34 @@ void VKRenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmdLis
 
 void VKRenderBackend::endRendering( CmdListHandle cmdList ) { _imp->endRendering( cmdList ); }
 
-void VKRenderBackend::drawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
+void VKRenderBackend::draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
 {
-   _imp->drawVertices( cmdList, vertexCount, firstVertex );
+   _imp->draw( cmdList, vertexCount, firstVertex );
 }
 
-void VKRenderBackend::drawVerticesIndexed(
+void VKRenderBackend::drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )
+{
+   _imp->drawIndexed( cmdList, indexCount, firstIndex );
+}
+
+void VKRenderBackend::drawInstanced(
+    CmdListHandle cmdList,
+    size_t vertexCount,
+    size_t instanceCount,
+    size_t firstVertex,
+    size_t firstInstance )
+{
+   _imp->drawInstanced( cmdList, vertexCount, instanceCount, firstVertex, firstInstance );
+}
+
+void VKRenderBackend::drawIndexedInstanced(
     CmdListHandle cmdList,
     size_t indexCount,
-    size_t firstIndex )
+    size_t instanceCount,
+    size_t firstIndex,
+    size_t firstInstance )
 {
-   _imp->drawVerticesIndexed( cmdList, indexCount, firstIndex );
+   _imp->drawIndexedInstanced( cmdList, indexCount, instanceCount, firstIndex, firstInstance );
 }
 
 void VKRenderBackend::dispatch(

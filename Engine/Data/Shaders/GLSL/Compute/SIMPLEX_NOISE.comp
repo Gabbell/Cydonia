@@ -6,13 +6,47 @@ layout( local_size_x = 16, local_size_y = 16 ) in;
 
 layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
 
+// Fractal Brownian Motion
+float FBM( vec2 uv )
+{
+   float finalNoise = 0.0f;
+
+   // Initial frequency and amplitude for first octave
+   float frequency = params.frequency;
+   float amplitude = params.amplitude;
+
+   mat2 rot = mat2( cos( 0.5 ), sin( 0.5 ), -sin( 0.5 ), cos( 0.50 ) );
+   for( uint i = 0; i < params.octaves; ++i )
+   {
+      float noiseValue = SimplexNoise( uv * frequency );
+      if( params.ridged )
+      {
+         noiseValue = abs( noiseValue );
+      }
+      else
+      {
+         noiseValue = noiseValue * 0.5 + 0.5;
+      }
+
+      finalNoise += amplitude * noiseValue;
+
+      amplitude *= params.gain;
+      frequency *= params.lacunarity;
+
+      uv = uv * rot;  // Rotate UV to reduce axial bias
+   }
+
+   return NoiseFinalize( finalNoise );
+}
+
 void main()
 {
-   vec2 uv = gl_GlobalInvocationID.xy / vec2( params.width, params.height );
-   uv      = uv * vec2( params.width / params.height, 1.0 ) + params.seed;
+   vec2 dims = imageSize( noiseImage );
+   vec2 uv   = gl_GlobalInvocationID.xy / dims;
+   uv        = uv * vec2( dims.x / dims.y, 1.0 ) + params.seed;  // Aspect ratio corrected
 
    // Fractal Brownian Motion (FBM)
-   float finalNoise = fbm( uv );
+   float finalNoise = FBM( uv );
 
    imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( vec3( finalNoise ), 1.0 ) );
 }

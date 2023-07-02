@@ -16,7 +16,7 @@ ShaderCache::~ShaderCache() = default;
 
 void ShaderCache::_initializeAllShaders()
 {
-   CYDASSERT(
+   CYD_ASSERT(
        std::filesystem::exists( SPIRV_SHADER_DIR ) &&
        "ShaderCache: Could not find compiled shader directory" );
 
@@ -37,7 +37,7 @@ const Shader* ShaderCache::getShader( const std::string& shaderName )
    {
       return it->second.get();
    }
-   CYDASSERT( !"ShaderCache: Could not find shader in cache" );
+   CYD_ASSERT( !"ShaderCache: Could not find shader in cache" );
    return nullptr;
 }
 }

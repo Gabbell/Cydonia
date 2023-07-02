@@ -56,7 +56,7 @@ DescriptorPool::DescriptorPool( const Device& device ) : m_device( device )
    VkResult result =
        vkCreateDescriptorPool( m_device.getVKDevice(), &poolInfo, nullptr, &m_vkDescPool );
 
-   CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Could not create descriptor pool" );
+   CYD_ASSERT( result == VK_SUCCESS && "DescriptorPool: Could not create descriptor pool" );
 }
 
 VkDescriptorSet DescriptorPool::allocate( const CYD::ShaderSetInfo& layout ) const
@@ -71,7 +71,7 @@ VkDescriptorSet DescriptorPool::allocate( const CYD::ShaderSetInfo& layout ) con
 
    VkDescriptorSet vkDescSet;
    VkResult result = vkAllocateDescriptorSets( m_device.getVKDevice(), &allocInfo, &vkDescSet );
-   CYDASSERT( result == VK_SUCCESS && "DescriptorPool: Failed to solo allocate descriptor set" );
+   CYD_ASSERT( result == VK_SUCCESS && "DescriptorPool: Failed to solo allocate descriptor set" );
 
    return vkDescSet;
 }

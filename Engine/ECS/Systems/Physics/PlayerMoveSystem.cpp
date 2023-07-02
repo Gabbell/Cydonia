@@ -84,7 +84,7 @@ void PlayerMoveSystem::tick( double deltaS )
       const float magSquared = glm::length2( motion.velocity );
 
       // Rounding to 0 if the velocity is small
-      if( magSquared < 0.001f )
+      if( magSquared < 0.25f )
       {
          motion.velocity = glm::vec3( 0.0f );
       }

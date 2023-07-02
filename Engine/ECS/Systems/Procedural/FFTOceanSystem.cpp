@@ -24,17 +24,16 @@ enum class FourierComponent  // To compute the displacement for a specific compo
 
 static void Initialize( FFTOceanComponent& ocean )
 {
-   ocean.butterflyOperationsPip  = StaticPipelines::FindByName( "BUTTERFLY_OPERATIONS" );
-   ocean.inversionPermutationPip = StaticPipelines::FindByName( "INVERSION_PERMUTATION" );
-   ocean.philipsSpectraGenPip = StaticPipelines::FindByName( "PHILLIPS_SPECTRA_GENERATION" );
-   ocean.butterflyTexGenerationPip =
-       StaticPipelines::FindByName( "BUTTERFLY_TEX_GENERATION" );
-   ocean.fourierComponentsPip = StaticPipelines::FindByName( "FOURIER_COMPONENTS" );
+   ocean.butterflyOperationsPip    = StaticPipelines::FindByName( "BUTTERFLY_OPERATIONS" );
+   ocean.inversionPermutationPip   = StaticPipelines::FindByName( "INVERSION_PERMUTATION" );
+   ocean.philipsSpectraGenPip      = StaticPipelines::FindByName( "PHILLIPS_SPECTRA_GENERATION" );
+   ocean.butterflyTexGenerationPip = StaticPipelines::FindByName( "BUTTERFLY_TEX_GENERATION" );
+   ocean.fourierComponentsPip      = StaticPipelines::FindByName( "FOURIER_COMPONENTS" );
 }
 
 static void computeDisplacement(
     CmdListHandle cmdList,
-    const StaticMaterialComponent& /*material*/,
+    const MaterialComponent& /*material*/,
     FFTOceanComponent& ocean,  // Make this const?
     FourierComponent fourierComponent )
 {
@@ -136,7 +135,7 @@ void FFTOceanSystem::tick( double deltaS )
 {
    for( const auto& entityEntry : m_entities )
    {
-      StaticMaterialComponent& material = *std::get<StaticMaterialComponent*>( entityEntry.arch );
+      MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
       FFTOceanComponent& ocean    = *std::get<FFTOceanComponent*>( entityEntry.arch );
 
       // First time run

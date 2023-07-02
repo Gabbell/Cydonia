@@ -41,7 +41,7 @@ class Entity final
    template <class Component>
    void addComponent( Component* pComponent )
    {
-      CYDASSERT( pComponent && "Entity: Tried to assign a null component" );
+      CYD_ASSERT( pComponent && "Entity: Tried to assign a null component" );
 
       if constexpr( std::is_base_of_v<BaseComponent, Component> )
       {
@@ -49,7 +49,7 @@ class Entity final
          if( it != m_components.end() )
          {
             // Component has already been assigned to this entity
-            CYDASSERT( !"Entity: Cannot overwrite components" );
+            CYD_ASSERT( !"Entity: Cannot overwrite components" );
             return;
          }
 
@@ -61,7 +61,7 @@ class Entity final
          if( it != m_sharedComponents.end() )
          {
             // Component has already been assigned to this entity
-            CYDASSERT( "!Entity: Cannot overwrite components" );
+            CYD_ASSERT( "!Entity: Cannot overwrite components" );
             return;
          }
 

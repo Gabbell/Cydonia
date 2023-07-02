@@ -53,7 +53,7 @@ CommandBuffer* CommandBufferPool::createCommandBuffer(
       return &*it;
    }
 
-   CYDASSERT( !"CommandBufferPool: Too many command buffers in flight" );
+   CYD_ASSERT( !"CommandBufferPool: Too many command buffers in flight" );
    return nullptr;
 }
 
@@ -72,7 +72,6 @@ void CommandBufferPool::waitUntilDone()
 
    if( !vkFences.empty() )
    {
-      // Wait for one 120fps frame maximum
       const VkResult result = vkWaitForFences(
           m_pDevice->getVKDevice(),
           static_cast<uint32_t>( vkFences.size() ),
@@ -105,7 +104,7 @@ void CommandBufferPool::_createCommandBufferPool()
        VK_COMMAND_POOL_CREATE_TRANSIENT_BIT | VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
    VkResult result = vkCreateCommandPool( m_pDevice->getVKDevice(), &poolInfo, nullptr, &m_vkPool );
-   CYDASSERT( result == VK_SUCCESS && "CommandBufferPool: Could not create command pool" );
+   CYD_ASSERT( result == VK_SUCCESS && "CommandBufferPool: Could not create command pool" );
 }
 
 CommandBufferPool::~CommandBufferPool()

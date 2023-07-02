@@ -16,7 +16,7 @@ Surface::Surface( const CYD::Window& window, const Instance& instance )
 {
    VkResult result = glfwCreateWindowSurface(
        m_instance.getVKInstance(), m_window.getGLFWwindow(), nullptr, &m_vkSurface );
-   CYDASSERT( result == VK_SUCCESS && "Surface: Could not create surface" );
+   CYD_ASSERT( result == VK_SUCCESS && "Surface: Could not create surface" );
 }
 
 Surface::~Surface()

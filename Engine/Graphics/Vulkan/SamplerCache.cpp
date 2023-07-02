@@ -23,14 +23,13 @@ const VkSampler SamplerCache::findOrCreate( const CYD::SamplerInfo& info )
    samplerInfo.magFilter           = TypeConversions::cydToVkFilter( info.magFilter );
    samplerInfo.minFilter           = TypeConversions::cydToVkFilter( info.minFilter );
 
-   VkSamplerAddressMode addressMode =
-       TypeConversions::cydToVkAddressMode( info.addressMode );
+   VkSamplerAddressMode addressMode    = TypeConversions::cydToVkAddressMode( info.addressMode );
    samplerInfo.addressModeU            = addressMode;
    samplerInfo.addressModeV            = addressMode;
    samplerInfo.addressModeW            = addressMode;
    samplerInfo.anisotropyEnable        = info.useAnisotropy;
    samplerInfo.maxAnisotropy           = info.maxAnisotropy;
-   samplerInfo.borderColor             = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+   samplerInfo.borderColor             = TypeConversions::cydToVkBorderColor( info.borderColor );
    samplerInfo.unnormalizedCoordinates = VK_FALSE;
    samplerInfo.compareEnable           = VK_FALSE;
    samplerInfo.compareOp               = VK_COMPARE_OP_ALWAYS;
@@ -38,9 +37,9 @@ const VkSampler SamplerCache::findOrCreate( const CYD::SamplerInfo& info )
 
    VkSampler vkSampler;
    VkResult result = vkCreateSampler( m_device.getVKDevice(), &samplerInfo, nullptr, &vkSampler );
-   CYDASSERT( result == VK_SUCCESS && "SamplerCache: Could not create sampler" );
+   CYD_ASSERT( result == VK_SUCCESS && "SamplerCache: Could not create sampler" );
 
-   return m_samplers.insert( {info, vkSampler} ).first->second;
+   return m_samplers.insert( { info, vkSampler } ).first->second;
 }
 
 SamplerCache::~SamplerCache()

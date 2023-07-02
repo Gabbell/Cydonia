@@ -15,6 +15,7 @@ enum VkPolygonMode : int;
 enum VkImageLayout : int;
 enum VkDescriptorType : int;
 enum VkFilter : int;
+enum VkBorderColor : int;
 enum VkSamplerAddressMode : int;
 
 // ================================================================================================
@@ -33,6 +34,7 @@ uint32_t cydToVkPipelineStages( CYD::PipelineStageFlag stages );
 uint32_t cydToVkShaderStages( CYD::PipelineStageFlag stages );
 VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type );
 VkFilter cydToVkFilter( CYD::Filter filter );
+VkBorderColor cydToVkBorderColor( CYD::BorderColor borderColor );
 VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode );
 VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout );
 uint32_t getAspectMask( CYD::PixelFormat format );

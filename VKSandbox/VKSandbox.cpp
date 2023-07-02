@@ -14,6 +14,7 @@
 
 #include <ECS/Systems/Input/InputSystem.h>
 #include <ECS/Systems/Lighting/LightUpdateSystem.h>
+#include <ECS/Systems/Lighting/ShadowMapSystem.h>
 #include <ECS/Systems/Rendering/ForwardRenderSystem.h>
 #include <ECS/Systems/Debug/DebugDrawSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
@@ -22,12 +23,14 @@
 #include <ECS/Systems/Physics/MotionSystem.h>
 #include <ECS/Systems/Procedural/ProceduralDisplacementSystem.h>
 #include <ECS/Systems/Scene/CameraSystem.h>
+#include <ECS/Systems/Scene/InstanceUpdateSystem.h>
 #include <ECS/Systems/UI/ImGuiSystem.h>
 
 #include <ECS/Components/Physics/MotionComponent.h>
-#include <ECS/Components/Rendering/ForwardRenderableComponent.h>
-#include <ECS/Components/Rendering/StaticMaterialComponent.h>
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
+#include <ECS/Components/Rendering/RenderableComponent.h>
+#include <ECS/Components/Rendering/MaterialComponent.h>
+#include <ECS/Components/Transforms/InstancedComponent.h>
 
 #if CYD_DEBUG
 #include <ECS/Components/Debug/DebugDrawComponent.h>
@@ -39,6 +42,8 @@
 #include <Window/GLFWWindow.h>
 
 #include <Profiling.h>
+
+#include <cstdlib>
 
 namespace CYD
 {
@@ -63,6 +68,7 @@ void VKSandbox::preLoop()
    // Core
    m_ecs->addSystem<InputSystem>( *m_window );
    m_ecs->addSystem<CameraSystem>();
+   m_ecs->addSystem<InstanceUpdateSystem>();
 
    // Resources
    m_ecs->addSystem<MeshLoaderSystem>( *m_meshes );
@@ -77,6 +83,7 @@ void VKSandbox::preLoop()
 
    // Rendering
    m_ecs->addSystem<LightUpdateSystem>();
+   m_ecs->addSystem<ShadowMapSystem>( *m_materials );
    m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
 
    // Debug
@@ -88,17 +95,13 @@ void VKSandbox::preLoop()
    m_ecs->addSystem<ImGuiSystem>( *m_ecs );
 
    // Creating terrain mesh and debug sphere
+   // =============================================================================================
    CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Initial Transfer" );
 
    std::vector<Vertex> terrainGridVerts;
    std::vector<uint32_t> terrainGridIndices;
-   MeshGeneration::Grid( terrainGridVerts, terrainGridIndices, 1000, 1000 );
+   MeshGeneration::Grid( terrainGridVerts, terrainGridIndices, 1024, 1024 );
    m_meshes->loadMesh( transferList, "TERRAIN", terrainGridVerts, terrainGridIndices );
-
-   std::vector<Vertex> sphereVerts;
-   std::vector<uint32_t> sphereIndices;
-   MeshGeneration::Icosphere( sphereVerts, sphereIndices, 2 );
-   m_meshes->loadMesh( transferList, "DEBUG_SPHERE", sphereVerts, sphereIndices );
 
    GRIS::SubmitCommandList( transferList );
    GRIS::WaitOnCommandList( transferList );
@@ -108,12 +111,12 @@ void VKSandbox::preLoop()
    // =============================================================================================
    const EntityHandle player = m_ecs->createEntity( "Player" );
    m_ecs->assign<InputComponent>( player );
-   m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 5.0f, 0.0f ) );
+   m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 15.0f, 0.0f ) );
    m_ecs->assign<MotionComponent>( player );
    m_ecs->assign<CameraComponent>( player, "MAIN" );
 
    const EntityHandle sun = m_ecs->createEntity( "Sun" );
-   m_ecs->assign<TransformComponent>( sun );
+   m_ecs->assign<TransformComponent>( sun, glm::vec3( 0.0f, 40.0f, 0.0f ) );
    m_ecs->assign<LightComponent>( sun );
 
 #if CYD_DEBUG
@@ -121,12 +124,19 @@ void VKSandbox::preLoop()
 #endif
 
    const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
-   m_ecs->assign<ForwardRenderableComponent>( terrain );
+   m_ecs->assign<RenderableComponent>( terrain );
    m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 100.0f ) );
    m_ecs->assign<MeshComponent>( terrain, "TERRAIN" );
    m_ecs->assign<ProceduralDisplacementComponent>(
-       terrain, Noise::Type::DOMAIN_WARP, 200, 200, 0.25f );
-   m_ecs->assign<StaticMaterialComponent>( terrain, "TERRAIN", "SOLO_TEX_R32F" );
+       terrain, Noise::Type::SIMPLEX_NOISE, 1024, 1024, 0.0f );
+   m_ecs->assign<MaterialComponent>( terrain, "TERRAIN", "SOLO_TEX_R32F" );
+
+   // const EntityHandle spheres = m_ecs->createEntity( "Spheres" );
+   // m_ecs->assign<RenderableComponent>( spheres );
+   // m_ecs->assign<TransformComponent>( spheres );
+   // m_ecs->assign<InstancedComponent>( spheres, InstancedComponent::MAX_INSTANCES );
+   // m_ecs->assign<MeshComponent>( spheres, "DEBUG_SPHERE" );
+   // m_ecs->assign<MaterialComponent>( spheres, "PBR_CONSTANT", "NO_MATERIAL" );
 }
 
 void VKSandbox::tick( double deltaS )
@@ -144,6 +154,8 @@ void VKSandbox::tick( double deltaS )
 
 VKSandbox::~VKSandbox()
 {
+   GRIS::WaitUntilIdle();
+
    m_ecs.reset();
    m_materials.reset();
    m_meshes.reset();

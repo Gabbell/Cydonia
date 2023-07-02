@@ -9,20 +9,24 @@
 namespace CYD::Trace
 {
 #if CYD_PROFILING
-#define CYDTRACE( name )    \
+#define CYD_TRACE( name )   \
    TracyCZone( ctx, true ); \
    const CYD::Trace::CPUScoped cpuTrace( ctx, name )
-
-#define CYDGPUTRACE( cmdList, name ) const CYD::Trace::GPUScoped gpuTrace( cmdList, name )
 #else
-#define CYDTRACE( name )
-#define CYDGPUTRACE( cmdList, name )
+#define CYD_TRACE( name )
+
+#endif
+
+#if CYD_GPU_PROFILING
+#define CYD_GPUTRACE( cmdList, name ) const CYD::Trace::GPUScoped gpuTrace( cmdList, name )
+#else
+#define CYD_GPUTRACE( cmdList, name )
 #endif
 
 void FrameStart();
 void FrameEnd();
 
-class CPUScoped
+class CPUScoped final
 {
   public:
    CPUScoped() = delete;
@@ -34,7 +38,7 @@ class CPUScoped
    TracyCZoneCtx m_ctx;
 };
 
-class GPUScoped
+class GPUScoped final
 {
   public:
    GPUScoped() = delete;

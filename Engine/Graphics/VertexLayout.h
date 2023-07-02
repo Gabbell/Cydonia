@@ -41,13 +41,16 @@ class Vertex final
 {
   public:
    Vertex() = default;
-   explicit Vertex( const glm::vec3& position ) : pos( position ) {}
+   explicit Vertex( const glm::vec3& position, const glm::vec3& normal )
+       : pos( position ), normal( normal )
+   {
+   }
    COPIABLE( Vertex );
    ~Vertex() = default;
 
    bool operator==( const Vertex& other ) const
    {
-      return pos == other.pos && col == other.col && uv == other.uv;
+      return pos == other.pos && col == other.col && normal == other.normal && uv == other.uv;
    }
 
    glm::vec3 pos;

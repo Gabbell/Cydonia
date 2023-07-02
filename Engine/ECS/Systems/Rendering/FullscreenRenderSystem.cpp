@@ -35,8 +35,8 @@ void FullscreenRenderSystem::tick( double /*deltaS*/ )
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
-      const StaticMaterialComponent& material =
-          *std::get<StaticMaterialComponent*>( entityEntry.arch );
+      const MaterialComponent& material =
+          *std::get<MaterialComponent*>( entityEntry.arch );
 
       // Material
       if( prevMaterial != material.materialIdx )

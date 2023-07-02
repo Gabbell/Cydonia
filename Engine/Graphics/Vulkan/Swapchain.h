@@ -41,6 +41,9 @@ class Swapchain final
    NON_COPIABLE( Swapchain );
    ~Swapchain();
 
+   // Double-buffered
+   static constexpr uint32_t MAX_FRAMES_IN_FLIGHT = 2;
+
    bool isReady() const { return m_ready; }
 
    // For render pass begin info

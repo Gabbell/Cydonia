@@ -4,9 +4,14 @@
 
 #include <ECS/Components/ComponentTypes.h>
 
+#include <Graphics/Handles/ResourceHandle.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
+// ================================================================================================
+// Definition
+// ================================================================================================
 namespace CYD
 {
 class TransformComponent final : public BaseComponent

@@ -1,17 +1,15 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-// Constant buffer
-// =================================================================================================
-layout( push_constant ) uniform PushConstant { mat4 model; };
+#include "INSTANCING.h"
 
-// View and environment
-// =================================================================================================
+layout( push_constant ) uniform PushModel { layout( offset = 0 ) mat4 modelMat; };
+
 layout( set = 0, binding = 0 ) uniform EnvironmentView
 {
    vec4 pos;
-   mat4 view;
-   mat4 proj;
+   mat4 viewMat;
+   mat4 projMat;
 };
 
 // Vertex Inputs
@@ -31,11 +29,13 @@ layout( location = 3 ) out vec3 camPos;
 // =================================================================================================
 void main()
 {
-   worldPos = vec3( model * vec4( inPosition, 1.0 ) );  // World coordinates
-   camPos = vec3( pos );
+   mat4x4 finalModelMat = modelMat * mat4( instances[gl_InstanceIndex].modelMat );
+
+   worldPos = vec3( finalModelMat * vec4( inPosition, 1.0 ) );  // World coordinates
+   camPos   = vec3( pos );
 
    outTexCoord = inTexCoord.xy;
-   outNormal   = normalize( vec3( model * vec4( inNormal, 0.0 ) ) );
+   outNormal   = normalize( vec3( finalModelMat * vec4( inNormal, 0.0 ) ) );
 
-   gl_Position = proj * view * vec4( worldPos, 1.0 );
+   gl_Position = projMat * viewMat * vec4( worldPos, 1.0 );
 }

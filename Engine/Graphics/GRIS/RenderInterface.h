@@ -94,6 +94,12 @@ void BindTexture(
     TextureHandle texHandle,
     uint32_t binding,
     uint32_t set = 0 );
+void BindTexture(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    const SamplerInfo& sampler,
+    uint32_t binding,
+    uint32_t set = 0 );
 void BindImage(
     CmdListHandle cmdList,
     TextureHandle texHandle,

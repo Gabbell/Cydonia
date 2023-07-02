@@ -28,7 +28,7 @@ static bool findMesh( MeshComponent& mesh, MeshCache& cache )
 
 void MeshLoaderSystem::tick( double /*deltaS*/ )
 {
-   CYDTRACE( "MeshLoaderSystem" );
+   CYD_TRACE( "MeshLoaderSystem" );
    
    const CmdListHandle cmdList = GRIS::GetMainCommandList();
 
@@ -41,7 +41,7 @@ void MeshLoaderSystem::tick( double /*deltaS*/ )
          m_meshCache.loadMeshFromPath( cmdList, mesh.asset );
 
          const bool foundMesh = findMesh( mesh, m_meshCache );
-         CYDASSERT( foundMesh && "MeshLoaderSystem: A named mesh could not be loaded" );
+         CYD_ASSERT( foundMesh && "MeshLoaderSystem: A named mesh could not be loaded" );
       }
    }
 

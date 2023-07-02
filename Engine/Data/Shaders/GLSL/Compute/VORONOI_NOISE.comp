@@ -1,0 +1,75 @@
+#version 450
+
+#include "NOISE.h"
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
+
+// Based on IQ's Basic Voronoi Noise
+// https://www.shadertoy.com/view/MslGD8
+float VoronoiNoise( vec2 x )
+{
+   vec2 n = floor( x );
+   vec2 f = fract( x );
+
+   vec3 m = vec3( 8.0 );
+   for( int j = -1; j <= 1; j++ )
+   {
+      for( int i = -1; i <= 1; i++ )
+      {
+         vec2 g = vec2( float( i ), float( j ) );
+         vec2 o = hash2( n + g );
+         // vec2  r = g - f + o;
+         vec2 r  = g - f + ( 0.5 + 0.5 * sin( params.seed + 6.2831 * o ) );
+         float d = dot( r, r );
+         if( d < m.x ) m = vec3( d, o );
+      }
+   }
+
+   return NoiseFinalize( sqrt( m.x ) );
+}
+
+// Fractal Brownian Motion
+float FBM( vec2 uv )
+{
+   float finalNoise = 0.0f;
+
+   // Initial frequency and amplitude for first octave
+   float frequency = params.frequency;
+   float amplitude = params.amplitude;
+
+   mat2 rot = mat2( cos( 0.5 ), sin( 0.5 ), -sin( 0.5 ), cos( 0.50 ) );
+   for( uint i = 0; i < params.octaves; ++i )
+   {
+      float noiseValue = VoronoiNoise( uv * frequency );
+      if( params.ridged )
+      {
+         noiseValue = abs( noiseValue );
+      }
+      else
+      {
+         noiseValue = noiseValue * 0.5 + 0.5;
+      }
+
+      finalNoise += amplitude * noiseValue;
+
+      amplitude *= params.gain;
+      frequency *= params.lacunarity;
+
+      uv = uv * rot;  // Rotate UV to reduce axial bias
+   }
+
+   return NoiseFinalize( finalNoise );
+}
+
+void main()
+{
+   vec2 dims = imageSize( noiseImage );
+   vec2 uv   = gl_GlobalInvocationID.xy / dims;
+   uv        = uv * vec2( dims.x / dims.y, 1.0 );  // Aspect ratio corrected
+
+   vec3 noiseVal = vec3( FBM( uv ) );
+
+   imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( noiseVal, 1.0 ) );
+}

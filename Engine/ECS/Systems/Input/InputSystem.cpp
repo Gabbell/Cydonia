@@ -45,7 +45,7 @@ InputSystem::InputSystem( const Window& window ) : m_window( window )
 
 void InputSystem::tick( double /*deltaS*/ )
 {
-   CYDTRACE( "InputSystem" );
+   CYD_TRACE( "InputSystem" );
 
    InputComponent& input = m_ecs->getSharedComponent<InputComponent>();
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
@@ -65,12 +65,8 @@ void InputSystem::tick( double /*deltaS*/ )
       input.windowHeight      = height;
 
       // Update viewport and scissor
-      scene.viewport = {
-          0.0f,
-          static_cast<float>( height ),
-          static_cast<float>( width ),
-          -static_cast<float>( height ) };
-      scene.scissor = {
+      scene.viewport = { 0.0f, 0.0f, static_cast<float>( width ), static_cast<float>( height ) };
+      scene.scissor  = {
           { 0, 0 }, { static_cast<uint32_t>( width ), static_cast<uint32_t>( height ) } };
    }
    else

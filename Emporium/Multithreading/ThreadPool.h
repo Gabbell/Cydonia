@@ -6,7 +6,7 @@
 #include <functional>
 #include <future>
 
-namespace CYD
+namespace EMP
 {
 class ThreadPool
 {
@@ -23,7 +23,7 @@ class ThreadPool
    void init( int numberOfThreads );
    void shutdown();
 
-   bool isInit() const { return !_threads.empty(); }
+   bool isInit() const { return !m_threads.empty(); }
 
    // Submit work to the threadpool
    template <typename F, typename... Args>
@@ -36,9 +36,9 @@ class ThreadPool
 
       std::function<void()> voidFunc = [taskPtr]() { ( *taskPtr )(); };
 
-      _queue.enqueue( voidFunc );
+      m_queue.enqueue( voidFunc );
 
-      _conditionalLock.notify_one();
+      m_conditionalLock.notify_one();
 
       return taskPtr->get_future();
    }
@@ -51,14 +51,14 @@ class ThreadPool
       void operator()();
 
      private:
-      int _threadIdx;
-      ThreadPool* _threadPool;
+      int m_threadIdx;
+      ThreadPool* m_threadPool;
    };
 
-   bool _shutdown;
-   std::condition_variable _conditionalLock;
-   std::mutex _conditionalMutex;
-   ThreadSafeQueue<std::function<void()>> _queue;
-   std::vector<std::thread> _threads;
+   bool m_shutdown;
+   std::condition_variable m_conditionalLock;
+   std::mutex m_conditionalMutex;
+   ThreadSafeQueue<std::function<void()>> m_queue;
+   std::vector<std::thread> m_threads;
 };
 }

@@ -8,9 +8,11 @@ layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
 
 void main()
 {
-   vec2 uv = gl_GlobalInvocationID.xy;
+   vec2 dims = imageSize( noiseImage );
+   vec2 uv   = gl_GlobalInvocationID.xy / dims;
+   uv        = uv * vec2( dims.x / dims.y, 1.0 );  // Aspect ratio corrected
 
-   vec3 noiseVal = vec3( goldNoise( uv, params.seed ) );
+   vec3 noiseVal = vec3( GoldNoise( uv ) );
 
    imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( noiseVal, 1.0 ) );
 }

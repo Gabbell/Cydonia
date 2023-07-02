@@ -64,13 +64,13 @@ void UninitializeUIBackend()
 
 void DrawUI( CmdListHandle cmdList )
 {
-   CYDTRACE( "Draw UI" );
+   CYD_TRACE( "Draw UI" );
    b->drawUI( cmdList );
 }
 
 void RenderBackendCleanup()
 {
-   CYDTRACE( "Render Backend Cleanup" );
+   CYD_TRACE( "Render Backend Cleanup" );
    b->cleanup();
 }
 
@@ -170,6 +170,16 @@ void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t bindi
    b->bindTexture( cmdList, texHandle, binding, set );
 }
 
+void BindTexture(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    const SamplerInfo& sampler,
+    uint32_t binding,
+    uint32_t set )
+{
+   b->bindTexture( cmdList, texHandle, sampler, binding, set );
+}
+
 void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
    b->bindImage( cmdList, texHandle, binding, set );
@@ -218,11 +228,11 @@ static TextureHandle LoadImageFromStorage(
     uint32_t layerCount,
     const std::string* paths )
 {
-   CYDASSERT(
+   CYD_ASSERT(
        layerCount <= inputDesc.layers &&
        "VKRenderBackend:: Number of textures could not fit in number of layers" );
 
-   CYDASSERT(
+   CYD_ASSERT(
        inputDesc.width == 0 && inputDesc.height == 0 && inputDesc.size == 0 &&
        "VKRenderBackend: Created a texture with a path but specified dimensions" );
 
@@ -250,7 +260,7 @@ static TextureHandle LoadImageFromStorage(
       if( prevHeight == 0 ) prevHeight = height;
       if( prevLayerSize == 0 ) prevLayerSize = layerSize;
 
-      CYDASSERT(
+      CYD_ASSERT(
           prevWidth == width && prevHeight == height && prevLayerSize == layerSize &&
           "VKRenderBackend: Dimension mismatch" );
 
@@ -365,7 +375,7 @@ void DestroyBuffer( BufferHandle bufferHandle ) { b->destroyBuffer( bufferHandle
 //
 void PrepareFrame()
 {
-   CYDTRACE( "Prepare Frame" );
+   CYD_TRACE( "Prepare Frame" );
    b->prepareFrame();
 }
 
@@ -385,30 +395,32 @@ void EndRendering( CmdListHandle cmdList ) { b->endRendering( cmdList ); }
 
 void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
 {
-   b->drawVertices( cmdList, vertexCount, firstVertex );
+   b->draw( cmdList, vertexCount, firstVertex );
 }
 
 void DrawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )
 {
-   b->drawVerticesIndexed( cmdList, indexCount, firstIndex );
+   b->drawIndexed( cmdList, indexCount, firstIndex );
 }
 
 void DrawInstanced(
-    CmdListHandle /*cmdList*/,
-    size_t /*vertexCount*/,
-    size_t /*instanceCount*/,
-    size_t /*firstVertex*/,
-    size_t /*firstInstance*/ )
+    CmdListHandle cmdList,
+    size_t vertexCount,
+    size_t instanceCount,
+    size_t firstVertex,
+    size_t firstInstance )
 {
+   b->drawInstanced( cmdList, vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
 void DrawIndexedInstanced(
-    CmdListHandle /*cmdList*/,
-    size_t /*indexCount*/,
-    size_t /*instanceCount*/,
-    size_t /*firstIndex*/,
-    size_t /*firstInstance*/ )
+    CmdListHandle cmdList,
+    size_t indexCount,
+    size_t instanceCount,
+    size_t firstIndex,
+    size_t firstInstance )
 {
+   b->drawIndexedInstanced( cmdList, indexCount, instanceCount, firstIndex, firstInstance );
 }
 
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )
@@ -418,7 +430,7 @@ void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t w
 
 void PresentFrame()
 {
-   CYDTRACE( "Present Frame" );
+   CYD_TRACE( "Present Frame" );
    b->presentFrame();
 }
 

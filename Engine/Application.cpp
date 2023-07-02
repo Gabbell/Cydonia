@@ -1,8 +1,8 @@
 #include <Application.h>
 
-#include <JobPool.h>
-
 #include <Window/GLFWWindow.h>
+
+#include <Multithreading/ThreadPool.h>
 
 #include <Profiling.h>
 
@@ -17,7 +17,8 @@ Application::Application( uint32_t width, uint32_t height, const char* title )
    m_window = std::make_unique<Window>();
    m_window->init( width, height, title );
 
-   JobPool::Initialize();  // Initialize job pool with maximum number of threads
+   m_threadPool = std::make_unique<EMP::ThreadPool>();
+   m_threadPool->init( std::thread::hardware_concurrency() );
 }
 
 void Application::startLoop()
@@ -36,12 +37,12 @@ void Application::startLoop()
       // Reset clock
       start = std::chrono::high_resolution_clock::now();
 
-      Trace::FrameStart(); // Profiling
+      Trace::FrameStart();  // Profiling
 
       // User overloaded tick
       tick( deltaS.count() );
 
-      Trace::FrameEnd(); // Profiling
+      Trace::FrameEnd();  // Profiling
 
       // Determine if the main window was asked to be closed
       m_running = m_window->isRunning();

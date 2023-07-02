@@ -3,7 +3,7 @@
 #include <mutex>
 #include <queue>
 
-namespace CYD
+namespace EMP
 {
 template <typename T>
 class ThreadSafeQueue
@@ -16,37 +16,37 @@ class ThreadSafeQueue
    bool empty()
    {
       std::unique_lock<std::mutex> lock( _mutex );
-      return _queue.empty();
+      return m_queue.empty();
    }
 
    int size()
    {
       std::unique_lock<std::mutex> lock( _mutex );
-      return _queue.size();
+      return m_queue.size();
    }
 
    void enqueue( T& elem )
    {
       std::unique_lock<std::mutex> lock( _mutex );
-      _queue.push( elem );
+      m_queue.push( elem );
    }
 
    bool dequeue( T& elem )
    {
       std::unique_lock<std::mutex> lock( _mutex );
 
-      if( _queue.empty() )
+      if( m_queue.empty() )
       {
          return false;
       }
-      elem = std::move( _queue.front() );
+      elem = std::move( m_queue.front() );
 
-      _queue.pop();
+      m_queue.pop();
       return true;
    }
 
   private:
    std::mutex _mutex;
-   std::queue<T> _queue;
+   std::queue<T> m_queue;
 };
 }

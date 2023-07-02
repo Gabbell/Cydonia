@@ -28,9 +28,9 @@ DeviceManager::DeviceManager(
    VkResult result = vkEnumeratePhysicalDevices(
        instance.getVKInstance(), &physicalDeviceCount, physicalDevices.data() );
 
-   CYDASSERT( result == VK_SUCCESS && "DeviceManager: Could not enumerate physical devices" );
+   CYD_ASSERT( result == VK_SUCCESS && "DeviceManager: Could not enumerate physical devices" );
 
-   CYDASSERT( !physicalDevices.empty() && "DeviceManager: No devices supporting Vulkan" );
+   CYD_ASSERT( !physicalDevices.empty() && "DeviceManager: No devices supporting Vulkan" );
 
    // TODO Add support for multiple devices
    for( const auto& physDevice : physicalDevices )
@@ -131,13 +131,13 @@ bool DeviceManager::_checkDeviceExtensionSupport( const VkPhysicalDevice& physDe
 
 Device& DeviceManager::getMainDevice() const
 {
-   CYDASSERT( !m_devices.empty() && "DeviceManager: There were no devices" );
+   CYD_ASSERT( !m_devices.empty() && "DeviceManager: There were no devices" );
    return *m_devices[0];
 }
 
 Swapchain& DeviceManager::getMainSwapchain() const
 {
-   CYDASSERT( !m_devices.empty() && "DeviceManager: There were no devices" );
+   CYD_ASSERT( !m_devices.empty() && "DeviceManager: There were no devices" );
    return m_devices[0]->getSwapchain();
 }
 

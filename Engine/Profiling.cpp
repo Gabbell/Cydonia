@@ -39,13 +39,13 @@ static const std::array<float, 4> GetFloat4ColorFromName( const char* name )
 
 CPUScoped::CPUScoped( TracyCZoneCtx ctx, const char* name ) : m_ctx( ctx )
 {
-   TracyCZoneName( m_ctx, name, strlen(name) );
+   TracyCZoneName( m_ctx, name, strlen( name ) );
    TracyCZoneColor( m_ctx, GetU32ColorFromName( name ) );
 }
 
 CPUScoped::~CPUScoped() { TracyCZoneEnd( m_ctx ); }
 
-GPUScoped::GPUScoped( CmdListHandle cmdList, const char* name )
+GPUScoped::GPUScoped( CmdListHandle cmdList, const char* name ) : m_cmdList( cmdList )
 {
    if( m_cmdList )
    {

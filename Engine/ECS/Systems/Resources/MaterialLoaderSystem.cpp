@@ -12,21 +12,21 @@ namespace CYD
 {
 void MaterialLoaderSystem::tick( double /*deltaS*/ )
 {
-   CYDTRACE( "MaterialLoaderSystem" );
+   CYD_TRACE( "MaterialLoaderSystem" );
 
    const CmdListHandle cmdList = GRIS::GetMainCommandList();
 
    for( const auto& entityEntry : m_entities )
    {
-      StaticMaterialComponent& material = *std::get<StaticMaterialComponent*>( entityEntry.arch );
+      MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
 
       if( !material.isLoaded )
       {
          material.pipelineIdx = StaticPipelines::FindByName( material.pipelineName );
          material.materialIdx = m_materials.getMaterialByName( material.materialName );
 
-         CYDASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
-         CYDASSERT( material.materialIdx != INVALID_MATERIAL_IDX );
+         CYD_ASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
+         CYD_ASSERT( material.materialIdx != INVALID_MATERIAL_IDX );
 
          m_materials.load( cmdList, material.materialIdx );
       }

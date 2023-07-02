@@ -135,8 +135,8 @@
           const std::vector<TextureHandle>& targets ) override;                                    \
       void nextPass( CmdListHandle cmdList ) override;                                             \
       void endRendering( CmdListHandle cmdList ) override;                                         \
-      void drawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) override; \
-      void drawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )      \
+      void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) override; \
+      void drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )      \
           override;                                                                                \
       void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )       \
           override;                                                                                \

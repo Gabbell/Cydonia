@@ -9,11 +9,11 @@
 
 namespace vk::Barriers
 {
-void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::ImageLayout targetLayout )
+void ImageMemory( VkCommandBuffer cmdBuffer, Texture* texture, CYD::ImageLayout targetLayout )
 {
-   CYDASSERT( texture && "BarriersHelper: No texture passed to make barrier" );
+   CYD_ASSERT( texture && "BarriersHelper: No texture passed to make barrier" );
 
-   const CYD::ImageLayout initialLayout    = texture->getLayout();
+   const CYD::ImageLayout initialLayout      = texture->getLayout();
    const CYD::PipelineStageFlag targetStages = texture->getStages();
 
    // If the layout is the same, don't even insert the barrier. The only point of this barrier is to
@@ -37,80 +37,89 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::ImageLa
    barrier.subresourceRange.layerCount     = texture->getLayers();
 
    // These paremeters are dynamic based on the current command buffer and texture state
-   VkPipelineStageFlags srcPipelineStage = 0;
-   VkPipelineStageFlags dstPipelineStage = 0;
+   VkPipelineStageFlags srcStageMask = 0;
+   VkPipelineStageFlags dstStageMask = 0;
 
    switch( initialLayout )
    {
       case CYD::ImageLayout::UNKNOWN:
       case CYD::ImageLayout::GENERAL:
          barrier.srcAccessMask |= 0;
-         srcPipelineStage |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+         srcStageMask |= VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+         break;
+      case CYD::ImageLayout::COLOR_ATTACHMENT:
+         barrier.srcAccessMask |= VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+         srcStageMask |= VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+         break;
+      case CYD::ImageLayout::DEPTH_STENCIL_ATTACHMENT:
+         barrier.srcAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+         srcStageMask |= VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
          break;
       case CYD::ImageLayout::TRANSFER_DST:
          barrier.srcAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
-         srcPipelineStage |= VK_PIPELINE_STAGE_TRANSFER_BIT;
+         srcStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
          break;
       default:
-         CYDASSERT( !"BarriersHelper: Could not determine source access mask based on current image layout for barrier" );
+         CYD_ASSERT( !"BarriersHelper: Could not determine source access mask based on current image layout for barrier" );
    }
 
    switch( targetLayout )
    {
       case CYD::ImageLayout::TRANSFER_DST:
          barrier.dstAccessMask |= VK_ACCESS_TRANSFER_WRITE_BIT;
+         dstStageMask |= VK_PIPELINE_STAGE_TRANSFER_BIT;
          break;
       case CYD::ImageLayout::SHADER_READ:
          barrier.dstAccessMask |= VK_ACCESS_SHADER_READ_BIT;
+         if( targetStages & CYD::PipelineStage::FRAGMENT_STAGE )
+         {
+            dstStageMask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+         }
+         if( targetStages & CYD::PipelineStage::COMPUTE_STAGE )
+         {
+            dstStageMask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+         }
+         break;
+      case CYD::ImageLayout::DEPTH_STENCIL_READ:
+         barrier.dstAccessMask |= VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+         if( targetStages & CYD::PipelineStage::FRAGMENT_STAGE )
+         {
+            dstStageMask |= VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+         }
+         if( targetStages & CYD::PipelineStage::COMPUTE_STAGE )
+         {
+            dstStageMask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+         }
          break;
       case CYD::ImageLayout::GENERAL:
          barrier.dstAccessMask |= VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+         if( targetStages & CYD::PipelineStage::FRAGMENT_STAGE )
+         {
+            dstStageMask |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+         }
+         if( targetStages & CYD::PipelineStage::COMPUTE_STAGE )
+         {
+            dstStageMask |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
+         }
          break;
       default:
-         CYDASSERT( !"BarriersHelper: Could not determine destination access mask based on target image layout for barrier" );
-   }
-
-   if( targetLayout == CYD::ImageLayout::TRANSFER_DST )
-   {
-      dstPipelineStage |= VK_PIPELINE_STAGE_TRANSFER_BIT;
-   }
-   else if(
-       ( targetLayout == CYD::ImageLayout::SHADER_READ ) ||
-       ( targetLayout == CYD::ImageLayout::GENERAL ) )
-   {
-      if( targetStages & CYD::PipelineStage::FRAGMENT_STAGE )
-      {
-         dstPipelineStage |= VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-      }
-      if( targetStages & CYD::PipelineStage::COMPUTE_STAGE )
-      {
-         dstPipelineStage |= VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT;
-      }
+         CYD_ASSERT( !"BarriersHelper: Could not determine destination access mask based on target image layout for barrier" );
    }
 
    vkCmdPipelineBarrier(
-       cmdBuffer->getVKBuffer(),
-       srcPipelineStage,
-       dstPipelineStage,
-       0,
-       0,
-       nullptr,
-       0,
-       nullptr,
-       1,
-       &barrier );
+       cmdBuffer, srcStageMask, dstStageMask, 0, 0, nullptr, 0, nullptr, 1, &barrier );
 
    // Updating layout
    texture->setLayout( targetLayout );
 }
 
 void Pipeline(
-    const CommandBuffer* cmdBuffer,
+    VkCommandBuffer cmdBuffer,
     CYD::PipelineStageFlag sourceStage,
     CYD::PipelineStageFlag destStage )
 {
    vkCmdPipelineBarrier(
-       cmdBuffer->getVKBuffer(),
+       cmdBuffer,
        vk::TypeConversions::cydToVkPipelineStages( sourceStage ),
        vk::TypeConversions::cydToVkPipelineStages( destStage ),
        0,

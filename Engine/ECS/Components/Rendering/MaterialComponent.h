@@ -15,16 +15,16 @@
  */
 namespace CYD
 {
-class StaticMaterialComponent final : public BaseComponent
+class MaterialComponent final : public BaseComponent
 {
   public:
-   StaticMaterialComponent() = default;
-   StaticMaterialComponent( std::string_view pipelineName, std::string_view materialName )
+   MaterialComponent() = default;
+   MaterialComponent( std::string_view pipelineName, std::string_view materialName = "" )
        : pipelineName( pipelineName ), materialName( materialName )
    {
    }
-   COPIABLE( StaticMaterialComponent );
-   virtual ~StaticMaterialComponent() = default;
+   COPIABLE( MaterialComponent );
+   virtual ~MaterialComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::MATERIAL;
 

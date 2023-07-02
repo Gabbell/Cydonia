@@ -30,7 +30,7 @@ DeviceManager::DeviceManager( const Factory& factory ) : m_factory( factory )
 
 Device& DeviceManager::getMainDevice() const
 {
-   CYDASSERT( !m_devices.empty() && "DeviceManager: There were no devices" );
+   CYD_ASSERT( !m_devices.empty() && "DeviceManager: There were no devices" );
    return *m_devices[0];
 }
 

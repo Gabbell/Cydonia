@@ -17,10 +17,11 @@ class Vertex;
 class MeshCache final
 {
   public:
-   MeshCache() = default;
+   MeshCache();
    NON_COPIABLE( MeshCache );
    virtual ~MeshCache() = default;
 
+   // TODO
    // void cleanup();
 
    const Mesh& getMesh( const std::string_view name );
@@ -33,6 +34,8 @@ class MeshCache final
        const std::vector<uint32_t>& indices );
 
   private:
+   void _initDefaultMeshes();
+
    static constexpr uint32_t INITIAL_AMOUNT_RESOURCES = 128;
 
    std::unordered_map<std::string, Mesh> m_meshes;

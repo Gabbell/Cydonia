@@ -2,22 +2,30 @@
 
 #include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/Utility/Transforms.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
 #include <Profiling.h>
 
+// TODO REMOVE
+#include <glm/gtx/string_cast.hpp>
+
 namespace CYD
 {
 void LightUpdateSystem::tick( double deltaS )
 {
-   CYDTRACE( "LightUpdateSystem" );
+   CYD_TRACE( "LightUpdateSystem" );
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    static double timeElapsed = 0;
 
+   CYD_ASSERT_AND_RETURN(
+       m_entities.size() <= SceneComponent::MAX_LIGHTS && "Too many lights in the scene", return; );
+
+   uint32_t lightIdx = 0;
    for( const auto& entityEntry : m_entities )
    {
       const LightComponent& light   = *std::get<LightComponent*>( entityEntry.arch );
@@ -25,26 +33,53 @@ void LightUpdateSystem::tick( double deltaS )
 
       // Updating light transform
       transform.position = glm::vec3(
-          25.0f * std::cos( 0.50f * timeElapsed ), 20.0f, 25.0f * std::sin( 0.50f * timeElapsed ) );
+          25.0f * std::cos( 0.50f * timeElapsed ),
+          transform.position.y,
+          25.0f * std::sin( 0.50f * timeElapsed ) );
 
-      const glm::vec3 direction = glm::normalize( -transform.position );
+      // Finding view in the scene
+      const std::string viewName = "LightView " + std::to_string( lightIdx );
+      auto it = std::find( scene.viewNames.begin(), scene.viewNames.end(), viewName );
+      if( it == scene.viewNames.end() )
+      {
+         // Could not find the view, seeing if there's a free spot
+         it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "" );
+         if( it == scene.viewNames.end() )
+         {
+            CYD_ASSERT( !"Something went wrong when trying to find a free view UBO spot" );
+            return;
+         }
+      }
 
-      transform.rotation = glm::quatLookAt( direction, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+      const uint32_t viewIdx =
+          static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
+
+      // Naming this view
+      scene.viewNames[viewIdx] = viewName;
+
+      SceneComponent::ViewShaderParams& view = scene.views[viewIdx];
+
+      view.position = glm::vec4( transform.position, 1.0f );
+
+      view.viewMat = glm::lookAt(
+          transform.position, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, 1.0f, 0.0f ) );
+
+      view.projMat = Transform::Ortho( -50.0f, 50.0f, -50.0f, 50.0f, -100.0f, 100.0f );
 
       // Updating scene
-      scene.lights[0].viewMat =
-          glm::toMat4( glm::conjugate( transform.rotation ) ) *
-          glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling ) *
-          glm::translate( glm::mat4( 1.0f ), -transform.position );
+      scene.lights[lightIdx].position = glm::vec4( transform.position, 1.0f );
+      scene.lights[lightIdx].direction =
+          -glm::vec4( view.viewMat[0][2], view.viewMat[1][2], view.viewMat[2][2], 0.0f );
+      scene.lights[lightIdx].color   = light.color;
+      scene.lights[lightIdx].enabled = glm::vec4( light.enabled, false, false, false );
 
-      scene.lights[0].position = glm::vec4( transform.position, 1.0f );
-      scene.lights[0].color    = light.color;
-      scene.lights[0].enabled  = glm::vec4( light.enabled, false, false, false );
+      lightIdx++;
    }
 
    timeElapsed += deltaS;
 
    // Updating UBOs
-   GRIS::CopyToBuffer( scene.lightsBuffer, &scene.lights, 0, sizeof( SceneComponent::LightUBO ) );
+   const size_t sizeToUpdate = sizeof( SceneComponent::LightShaderParams ) * m_entities.size();
+   GRIS::CopyToBuffer( scene.lightsBuffer, &scene.lights, 0, sizeToUpdate );
 }
 }

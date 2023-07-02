@@ -41,7 +41,7 @@ Shader::Shader( const Device& device, const std::string& shaderPath )
 void Shader::_readShaderFile()
 {
    std::ifstream shaderFile( m_shaderPath, std::ios::ate | std::ios::binary );
-   CYDASSERT( shaderFile.is_open() && "Shader: Could not open shader file" );
+   CYD_ASSERT( shaderFile.is_open() && "Shader: Could not open shader file" );
 
    size_t shaderSize = static_cast<size_t>( shaderFile.tellg() );
 
@@ -61,7 +61,7 @@ void Shader::_createShaderModule()
 
    VkResult result =
        vkCreateShaderModule( m_device.getVKDevice(), &createInfo, nullptr, &m_vkShader );
-   CYDASSERT( result == VK_SUCCESS && "Shader: Could not create shader module" );
+   CYD_ASSERT( result == VK_SUCCESS && "Shader: Could not create shader module" );
 }
 
 Shader::~Shader() { vkDestroyShaderModule( m_device.getVKDevice(), m_vkShader, nullptr ); }

@@ -14,7 +14,7 @@ void Buffer::decUse()
 {
    if( m_useCount->load() == 0 )
    {
-      CYDASSERT( !"Buffer: Decrementing use count would go below 0" );
+      CYD_ASSERT( !"Buffer: Decrementing use count would go below 0" );
       return;
    }
 
@@ -33,7 +33,7 @@ void Buffer::acquire(
    m_size       = size;
    m_memoryType = memoryType;
 
-   CYDASSERT(
+   CYD_ASSERT(
        ( m_useCount->load() ) == 0 &&
        "Buffer: Use count was not 0. This buffer was probably not released" );
 
@@ -70,7 +70,7 @@ void Buffer::acquire(
    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
    VkResult result = vkCreateBuffer( m_pDevice->getVKDevice(), &bufferInfo, nullptr, &m_vkBuffer );
-   CYDASSERT( result == VK_SUCCESS && "Buffer: Could not create buffer" );
+   CYD_ASSERT( result == VK_SUCCESS && "Buffer: Could not create buffer" );
 
    _allocateMemory();
 
@@ -81,7 +81,7 @@ void Buffer::release()
 {
    if( m_pDevice )
    {
-      CYDASSERT( m_useCount->load() == 0 && "Buffer: released a still used buffer" );
+      CYD_ASSERT( m_useCount->load() == 0 && "Buffer: released a still used buffer" );
 
       vkDestroyBuffer( m_pDevice->getVKDevice(), m_vkBuffer, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
@@ -99,13 +99,13 @@ void Buffer::copy( const void* pData, size_t offset, size_t size )
 {
    if( !( m_memoryType & CYD::MemoryType::HOST_VISIBLE ) )
    {
-      CYDASSERT( !"Buffer: Cannot copy to buffer, buffer memory not host visible" );
+      CYD_ASSERT( !"Buffer: Cannot copy to buffer, buffer memory not host visible" );
       return;
    }
 
    if( ( offset + size ) > m_size )
    {
-      CYDASSERT( !"Buffer: Offset + size surpasses allocated buffer size" );
+      CYD_ASSERT( !"Buffer: Offset + size surpasses allocated buffer size" );
       return;
    }
 
@@ -118,21 +118,21 @@ void Buffer::_mapMemory()
 {
    if( !( m_memoryType & CYD::MemoryType::HOST_VISIBLE ) )
    {
-      CYDASSERT( !"Buffer: Cannot map memory, buffer memory not host visible" );
+      CYD_ASSERT( !"Buffer: Cannot map memory, buffer memory not host visible" );
       return;
    }
 
    // TODO Add offsets to create chunking buffers
    const VkResult result =
        vkMapMemory( m_pDevice->getVKDevice(), m_vkMemory, 0, m_size, 0, &m_data );
-   CYDASSERT( result == VK_SUCCESS && "Buffer: Mapping memory failed" );
+   CYD_ASSERT( result == VK_SUCCESS && "Buffer: Mapping memory failed" );
 }
 
 void Buffer::_unmapMemory()
 {
    if( !( m_memoryType & CYD::MemoryType::HOST_VISIBLE ) )
    {
-      CYDASSERT( !"Buffer: Cannot unmap memory, buffer memory not host visible" );
+      CYD_ASSERT( !"Buffer: Cannot unmap memory, buffer memory not host visible" );
       return;
    }
 
@@ -170,7 +170,7 @@ void Buffer::_allocateMemory()
        m_pDevice->findMemoryType( memRequirements.memoryTypeBits, memoryProperty );
 
    VkResult result = vkAllocateMemory( m_pDevice->getVKDevice(), &allocInfo, nullptr, &m_vkMemory );
-   CYDASSERT( result == VK_SUCCESS && "Buffer: Could not allocate device memory" );
+   CYD_ASSERT( result == VK_SUCCESS && "Buffer: Could not allocate device memory" );
 
    vkBindBufferMemory( m_pDevice->getVKDevice(), m_vkBuffer, m_vkMemory, 0 );
 }

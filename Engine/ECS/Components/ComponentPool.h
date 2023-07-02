@@ -63,13 +63,13 @@ class ComponentPool final : public BaseComponentPool
          }
       }
 
-      CYDASSERT( !"ComponentPool: Ran out of slots" );
+      CYD_ASSERT( !"ComponentPool: Ran out of slots" );
       return nullptr;
    }
 
    void releaseComponent( int32_t poolIdx ) override
    {
-      CYDASSERT( poolIdx >= 0 && "ComponentPool: Trying to release an invalid component" );
+      CYD_ASSERT( poolIdx >= 0 && "ComponentPool: Trying to release an invalid component" );
 
       m_components[poolIdx] = {};
       m_slots[poolIdx] = false;  // Freeing slot

@@ -13,6 +13,11 @@ namespace CYD
 class Window;
 }
 
+namespace EMP
+{
+class ThreadPool;
+}
+
 // =================================================================================================
 // Definition
 // =================================================================================================
@@ -33,6 +38,7 @@ class Application
    virtual void postLoop();             // Executed when the application comes out of the main loop
 
    std::unique_ptr<Window> m_window;
+   std::unique_ptr<EMP::ThreadPool> m_threadPool;
 
   private:
    bool m_running = false;

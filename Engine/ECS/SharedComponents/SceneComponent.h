@@ -28,15 +28,15 @@ class SceneComponent final : public BaseSharedComponent
    Rectangle scissor = { 0, 0, 0, 0 };
 
    // UBO Data
-   struct LightUBO
+   struct LightShaderParams
    {
-      glm::mat4 viewMat;
       glm::vec4 position;
+      glm::vec4 direction;
       glm::vec4 color;
       glm::vec4 enabled;
    };
 
-   struct ViewUBO
+   struct ViewShaderParams
    {
       glm::vec4 position;
       glm::mat4 viewMat;
@@ -44,20 +44,23 @@ class SceneComponent final : public BaseSharedComponent
    };
 
    static constexpr uint32_t MAX_VIEWS  = 8;
-   static constexpr uint32_t MAX_LIGHTS = 1;
+   static constexpr uint32_t MAX_LIGHTS = 3;
 
-   ViewUBO views[MAX_VIEWS]    = {};
-   LightUBO lights[MAX_LIGHTS] = {};
+   ViewShaderParams views[MAX_VIEWS]    = {};
+   LightShaderParams lights[MAX_LIGHTS] = {};
 
    // Ressource Handles
    BufferHandle lightsBuffer;
    BufferHandle viewsBuffer;
+
+   // TODO This shouldn't be here, not a very elegant solution
+   TextureHandle shadowMap;
 
 #if CYD_DEBUG
    BufferHandle debugParamsBuffer;
 #endif
 
    // Scene Tracking
-   std::array<std::string_view, MAX_VIEWS> viewNames;
+   std::array<std::string, MAX_VIEWS> viewNames;
 };
 }

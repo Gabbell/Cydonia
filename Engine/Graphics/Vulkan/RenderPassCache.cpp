@@ -86,7 +86,7 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
             break;
          }
          default:
-            CYDASSERT( !"RenderPass: Attachment type not supported" );
+            CYD_ASSERT( !"RenderPass: Attachment type not supported" );
       }
 
       attachmentDescs.push_back( vkAttachment );
@@ -99,7 +99,7 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
 
    if( !depthRefs.empty() )
    {
-      CYDASSERT( depthRefs.size() == 1 && "Multi depth attachment not supported" );
+      CYD_ASSERT( depthRefs.size() == 1 && "Multi depth attachment not supported" );
 
       // We have a depth attachment reference
       subpass.pDepthStencilAttachment = &depthRefs[0];
@@ -131,7 +131,7 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
    VkRenderPass renderPass;
    VkResult result =
        vkCreateRenderPass( m_device.getVKDevice(), &renderPassInfo, nullptr, &renderPass );
-   CYDASSERT( result == VK_SUCCESS && "RenderPass: Could not create default render pass" );
+   CYD_ASSERT( result == VK_SUCCESS && "RenderPass: Could not create default render pass" );
 
    return m_renderPasses.insert( { targetsInfo, renderPass } ).first->second;
 }

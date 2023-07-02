@@ -12,19 +12,15 @@ enum class Type
 {
    WHITE_NOISE,
    SIMPLEX_NOISE,
-   DOMAIN_WARP,
+   VORONOI_NOISE,
    BLUE_NOISE,
-   WORLEY_NOISE,
+   DOMAIN_WARP,
    COUNT
 };
 
 struct ShaderParams
 {
-   ShaderParams() = default;
-   ShaderParams( uint32_t width, uint32_t height, uint32_t seed = 1 )
-       : seed( static_cast<float>( seed ) ), width( width ), height( height )
-   {
-   }
+   ShaderParams( uint32_t seed = 1 ) : seed( static_cast<float>( seed ) ) {}
 
    float seed       = 1.0f;  // Helps with randomization
    float amplitude  = 1.0f;
@@ -35,8 +31,6 @@ struct ShaderParams
    uint32_t ridged  = false;
    uint32_t invert  = false;
    uint32_t octaves = 1;
-   uint32_t width;
-   uint32_t height;
 };
 
 void Initialize();

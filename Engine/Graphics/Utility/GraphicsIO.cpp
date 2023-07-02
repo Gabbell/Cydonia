@@ -28,7 +28,7 @@ void GraphicsIO::LoadMesh(
 
    bool res = tinyobj::LoadObj(
        &attrib, &shapes, &materials, &warn, &err, ( MESH_PATH + path + ".obj" ).c_str() );
-   CYDASSERT( res && "Model loading failed" );
+   CYD_ASSERT( res && "Model loading failed" );
 
    vertices.reserve( shapes[0].mesh.num_face_vertices.size() );
    indices.reserve( shapes[0].mesh.indices.size() );
@@ -100,7 +100,7 @@ void* GraphicsIO::LoadImage(
          break;
       default:
          // TODO Format to pixel size function
-         CYDASSERT( !"Not implemented" );
+         CYD_ASSERT( !"Not implemented" );
    }
 
    size = width * height * GetPixelSizeInBytes( format );

@@ -1,28 +1,28 @@
 #include <Multithreading/ThreadPool.h>
 
-namespace CYD
+namespace EMP
 {
-ThreadPool::ThreadPool() : _shutdown( false ) {}
+ThreadPool::ThreadPool() : m_shutdown( false ) {}
 
 void ThreadPool::init( int numberOfThreads )
 {
-   _threads.resize( numberOfThreads );
-   for( int i = 0; i < _threads.size(); i++ )
+   m_threads.resize( numberOfThreads );
+   for( int i = 0; i < m_threads.size(); i++ )
    {
-      _threads[i] = std::thread( ThreadWorker( this, i ) );
+      m_threads[i] = std::thread( ThreadWorker( this, i ) );
    }
 }
 
 void ThreadPool::shutdown()
 {
-   _shutdown = true;
-   _conditionalLock.notify_all();
+   m_shutdown = true;
+   m_conditionalLock.notify_all();
 
-   for( int i = 0; i < _threads.size(); ++i )
+   for( int i = 0; i < m_threads.size(); ++i )
    {
-      if( _threads[i].joinable() )
+      if( m_threads[i].joinable() )
       {
-         _threads[i].join();
+         m_threads[i].join();
       }
    }
 }
@@ -30,7 +30,7 @@ void ThreadPool::shutdown()
 ThreadPool::~ThreadPool() { shutdown(); }
 
 ThreadPool::ThreadWorker::ThreadWorker( ThreadPool* threadPool, const int threadIdx )
-    : _threadPool( threadPool ), _threadIdx( threadIdx )
+    : m_threadPool( threadPool ), m_threadIdx( threadIdx )
 {
 }
 
@@ -38,15 +38,15 @@ void ThreadPool::ThreadWorker::operator()()
 {
    std::function<void()> function;
    bool dequeued;
-   while( !_threadPool->_shutdown )
+   while( !m_threadPool->m_shutdown )
    {
       {
-         std::unique_lock<std::mutex> lock( _threadPool->_conditionalMutex );
-         if( _threadPool->_queue.empty() )
+         std::unique_lock<std::mutex> lock( m_threadPool->m_conditionalMutex );
+         if( m_threadPool->m_queue.empty() )
          {
-            _threadPool->_conditionalLock.wait( lock );
+            m_threadPool->m_conditionalLock.wait( lock );
          }
-         dequeued = _threadPool->_queue.dequeue( function );
+         dequeued = m_threadPool->m_queue.dequeue( function );
       }
       if( dequeued )
       {

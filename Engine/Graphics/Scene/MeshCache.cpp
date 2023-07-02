@@ -6,12 +6,35 @@
 #include <Graphics/VertexLayout.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/Utility/GraphicsIO.h>
+#include <Graphics/Utility/MeshGeneration.h>
 
 namespace CYD
 {
 // Asset Paths Constants
 // ================================================================================================
-static constexpr char MESH_PATH[]     = "../Engine/Data/Meshes/";
+static constexpr char MESH_PATH[] = "../Engine/Data/Meshes/";
+
+MeshCache::MeshCache()
+{
+   // Initialize default meshes
+   _initDefaultMeshes();
+}
+
+void MeshCache::_initDefaultMeshes()
+{
+   CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Init Default Meshes" );
+
+//#if CYD_DEBUG
+   std::vector<Vertex> verts;
+   std::vector<uint32_t> indices;
+   MeshGeneration::Icosphere( verts, indices, 2 );
+   loadMesh( transferList, "DEBUG_SPHERE", verts, indices );
+//#endif
+
+   GRIS::SubmitCommandList( transferList );
+   GRIS::WaitOnCommandList( transferList );
+   GRIS::DestroyCommandList( transferList );
+}
 
 const Mesh& MeshCache::getMesh( const std::string_view name )
 {

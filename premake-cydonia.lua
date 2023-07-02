@@ -1,5 +1,5 @@
 workspace "Cydonia"
-	location "Build"
+	location "build"
 	configurations { "Debug", "Release", "Profiling" }
 	startproject "VKSandbox"
 
@@ -8,14 +8,17 @@ workspace "Cydonia"
 	debugdir "bin/%{cfg.buildcfg}"
 
 	filter "configurations:Debug"
-		defines { "CYD_DEBUG", "CYD_ASSERTIONS_ENABLED" }
+		defines { "CYD_DEBUG",
+				  "CYD_ASSERTIONS_ENABLED",
+				  "CYD_GPU_PROFILING" }
 		symbols "On"
 
 	filter "configurations:Profiling"
 		defines { "NDEBUG",
 				  "TRACY_ENABLE",
 				  "CYD_ASSERTIONS_ENABLED",
-				  "CYD_PROFILING" }
+				  "CYD_PROFILING",
+				  "CYD_GPU_PROFILING" }
 		optimize "On"
 
 	filter "configurations:Release"
@@ -39,6 +42,7 @@ project "Engine"
 	cppdialect "C++20"
 	kind "StaticLib"
 	architecture "x86_64"
+	linkoptions { "-IGNORE:4006" }
 
 	-- Linking dependencies and include
 	includedirs { "Engine",
@@ -84,7 +88,7 @@ project "Engine"
 		buildmessage "Compiling Compute Shader %{file.abspath}"
 
 		buildcommands {
-			"glslc -O %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_COMP.spv"
+			"glslc -Os %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_COMP.spv"
 		}
 
 		buildoutputs { "%{cfg.targetdir}/Shaders/%{file.basename}_COMP.spv" }
@@ -93,7 +97,7 @@ project "Engine"
 		buildmessage "Compiling Vertex Shader %{file.abspath}"
 
 		buildcommands {
-			"glslc -O %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_VERT.spv"
+			"glslc -Os %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_VERT.spv"
 		}
 
 		buildoutputs { "%{cfg.targetdir}/Shaders/%{file.basename}_VERT.spv" }
@@ -102,7 +106,7 @@ project "Engine"
 		buildmessage "Compiling Fragment/Pixel Shader %{file.abspath}"
 
 		buildcommands {
-			"glslc -O %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_FRAG.spv"
+			"glslc -Os %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_FRAG.spv"
 		}
 
 		buildoutputs { "%{cfg.targetdir}/Shaders/%{file.basename}_FRAG.spv" }

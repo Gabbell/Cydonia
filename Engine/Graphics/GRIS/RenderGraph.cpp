@@ -14,14 +14,14 @@ void AddPass( CmdListHandle cmdList ) { s_cmdLists.push_back( cmdList ); }
 
 void Execute()
 {
-   CYDTRACE( "RenderGraph Execute" );
+   CYD_TRACE( "RenderGraph Execute" );
 
    // Appending main command list
    AddPass( GRIS::GetMainCommandList() );
 
    if( s_cmdLists.empty() )
    {
-      CYDASSERT( !"Nothing to render?" );
+      CYD_ASSERT( !"Nothing to render?" );
       return;
    }
 

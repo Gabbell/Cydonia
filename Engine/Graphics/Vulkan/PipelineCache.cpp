@@ -71,7 +71,7 @@ VkDescriptorSetLayout PipelineCache::findOrCreate( const CYD::ShaderSetInfo& sha
    VkDescriptorSetLayout descSetLayout;
    VkResult result =
        vkCreateDescriptorSetLayout( m_device.getVKDevice(), &layoutInfo, nullptr, &descSetLayout );
-   CYDASSERT( result == VK_SUCCESS && "PipelineCache: Could not create descriptor set layout" );
+   CYD_ASSERT( result == VK_SUCCESS && "PipelineCache: Could not create descriptor set layout" );
 
    return m_descSetLayouts.insert( { shaderSetInfo, descSetLayout } ).first->second;
 }
@@ -113,7 +113,7 @@ VkPipelineLayout PipelineCache::findOrCreate( const CYD::PipelineLayoutInfo& pip
    VkPipelineLayout pipLayout;
    const VkResult result =
        vkCreatePipelineLayout( m_device.getVKDevice(), &pipelineLayoutInfo, nullptr, &pipLayout );
-   CYDASSERT( result == VK_SUCCESS && "PipelineCache: Could not create pipeline layout" );
+   CYD_ASSERT( result == VK_SUCCESS && "PipelineCache: Could not create pipeline layout" );
 
    return m_pipLayouts.insert( { pipLayoutInfo, pipLayout } ).first->second;
 }
@@ -179,7 +179,7 @@ VkPipeline PipelineCache::findOrCreate( const CYD::ComputePipelineInfo& pipInfo 
    VkPipeline pipeline;
    const VkResult result = vkCreateComputePipelines(
        m_device.getVKDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline );
-   CYDASSERT( result == VK_SUCCESS && "PipelineCache: Could not create compute pipeline" );
+   CYD_ASSERT( result == VK_SUCCESS && "PipelineCache: Could not create compute pipeline" );
 
    return m_computePipelines.insert( { pipInfo, pipeline } ).first->second;
 }
@@ -321,7 +321,7 @@ VkPipeline PipelineCache::findOrCreate(
    rasterizer.rasterizerDiscardEnable = VK_FALSE;
    rasterizer.polygonMode             = TypeConversions::cydToVkPolyMode( pipInfo.polyMode );
    rasterizer.lineWidth               = 1.0f;
-   rasterizer.cullMode                = VK_CULL_MODE_NONE;
+   rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
    rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
    rasterizer.depthBiasEnable         = VK_FALSE;
 
@@ -404,7 +404,7 @@ VkPipeline PipelineCache::findOrCreate(
    const VkResult result = vkCreateGraphicsPipelines(
        m_device.getVKDevice(), nullptr, 1, &pipelineInfo, nullptr, &pipeline );
 
-   CYDASSERT( result == VK_SUCCESS && "Could not create pipeline" );
+   CYD_ASSERT( result == VK_SUCCESS && "Could not create pipeline" );
 
    return m_graphicsPipelines.insert( { pipInfo, pipeline } ).first->second;
 }

@@ -66,7 +66,7 @@ void PipelineLayoutInfo::addBinding(
    {
       // This binding already exists, abort
       // TODO WARNING
-      CYDASSERT_AND_RETURN( !"This binding already exists, skipping", return; );
+      CYD_ASSERT_AND_RETURN( !"This binding already exists, skipping", return; );
    }
 
    ShaderBindingInfo& info = shaderBindings.emplace_back();

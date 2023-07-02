@@ -3,12 +3,17 @@
 #include <Graphics/Handles/ResourceHandle.h>
 
 #include <ECS/Components/ComponentTypes.h>
+#include <ECS/SharedComponents/SharedComponentType.h>
 
 namespace CYD
 {
 class EntityManager;
 class BaseComponent;
+class BaseSharedComponent;
+class TransformComponent;
+class RenderableComponent;
 class ProceduralDisplacementComponent;
+class SceneComponent;
 
 namespace UI
 {
@@ -34,9 +39,16 @@ void DrawComponentsMenu(
     CmdListHandle cmdList,
     ComponentType type,
     const BaseComponent* component );
+void DrawSharedComponentsMenu(
+    CmdListHandle cmdList,
+    SharedComponentType type,
+    const BaseSharedComponent* component );
+void DrawTransformComponentMenu( CmdListHandle cmdList, const TransformComponent& transform );
+void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable );
 void DrawProceduralDisplacementComponentMenu(
     CmdListHandle cmdList,
     const ProceduralDisplacementComponent& displacement );
+void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& scene );
 
 // Materials
 void DrawMaterialsWindow( CmdListHandle cmdList );

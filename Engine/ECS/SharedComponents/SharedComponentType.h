@@ -13,4 +13,14 @@ enum class SharedComponentType : uint8_t
    SCENE,
    COUNT  //  Keep at the end
 };
+
+static const char* GetSharedComponentName( SharedComponentType type )
+{
+   static constexpr char SHARED_COMPONENT_NAMES[][32] = { "Input", "Scene" };
+
+   static_assert(
+       ARRSIZE( SHARED_COMPONENT_NAMES ) == static_cast<size_t>( SharedComponentType::COUNT ) );
+
+   return SHARED_COMPONENT_NAMES[static_cast<size_t>( type )];
+}
 }

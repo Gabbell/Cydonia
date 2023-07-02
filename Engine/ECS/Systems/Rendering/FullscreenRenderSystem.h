@@ -4,7 +4,7 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Rendering/StaticMaterialComponent.h>
+#include <ECS/Components/Rendering/MaterialComponent.h>
 #include <ECS/Components/Rendering/FullscreenComponent.h>
 
 // ================================================================================================
@@ -14,7 +14,7 @@ namespace CYD
 {
 class MaterialCache;
 
-class FullscreenRenderSystem final : public CommonSystem<StaticMaterialComponent, FullscreenComponent>
+class FullscreenRenderSystem final : public CommonSystem<MaterialComponent, FullscreenComponent>
 {
   public:
    FullscreenRenderSystem() = delete;

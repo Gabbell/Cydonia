@@ -40,4 +40,27 @@ void TranslateLocal( glm::vec3& position, const glm::quat& rotation, const glm::
 {
    Translate( position, glm::rotate( rotation, translation ) );
 }
+
+glm::mat4
+GetModelMatrix( const glm::vec3& scaling, const glm::quat& rotation, const glm::vec3& position )
+{
+   glm::mat4 translate = glm::translate( glm::mat4( 1.0f ), position );
+   glm::mat4 rotate    = glm::toMat4( glm::conjugate( rotation ) );
+   glm::mat4 scale     = glm::scale( glm::mat4( 1.0f ), scaling );
+   return rotate * translate * scale;
+}
+
+glm::mat4 Perspective( float fov, float aspectRatio, float near, float far )
+{
+   glm::mat4 proj = glm::perspectiveZO( glm::radians( fov ), aspectRatio, near, far );
+   proj[1][1] *= -1.0f; // Invert Y
+   return proj;
+}
+
+glm::mat4 Ortho( float left, float right, float bottom, float top, float near, float far )
+{
+   glm::mat4 proj = glm::orthoZO( left, right, bottom, top, near, far );
+   proj[1][1] *= -1.0f; // Invert Y
+   return proj;
+}
 }

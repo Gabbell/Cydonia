@@ -25,9 +25,10 @@ ImGuiSystem::~ImGuiSystem() { UI::Uninitialize(); }
 
 void ImGuiSystem::tick( double /*deltaS*/ )
 {
-   CYDTRACE( "ImGuiSystem" );
+   CYD_TRACE( "ImGuiSystem" );
 
    const CmdListHandle cmdList = GRIS::GetMainCommandList();
+   CYD_GPUTRACE( cmdList, "ImGuiSystem" );
 
    // Setting up interface
    UI::DrawMainWindow( cmdList );

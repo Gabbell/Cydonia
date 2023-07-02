@@ -5,7 +5,8 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/Components/Rendering/DeferredRenderableComponent.h>
+#include <ECS/Components/Rendering/RenderableComponent.h>
+#include <ECS/Components/Rendering/MaterialComponent.h>
 #include <ECS/Components/Rendering/MeshComponent.h>
 
 // ================================================================================================
@@ -13,14 +14,23 @@
 // ================================================================================================
 namespace CYD
 {
-class ShadowMapSystem final
-    : public CommonSystem<TransformComponent, DeferredRenderableComponent, MeshComponent>
+class MaterialCache;
+
+class ShadowMapSystem final : public CommonSystem<
+                                  RenderableComponent,
+                                  TransformComponent,
+                                  MaterialComponent,
+                                  MeshComponent>
 {
   public:
-   ShadowMapSystem() = default;
+   ShadowMapSystem() = delete;
+   ShadowMapSystem( const MaterialCache& materials ) : m_materials( materials ) {}
    NON_COPIABLE( ShadowMapSystem );
    virtual ~ShadowMapSystem() = default;
 
    void tick( double deltaS ) override;
+
+  private:
+   const MaterialCache& m_materials;
 };
 }

@@ -9,7 +9,7 @@ ProceduralDisplacementComponent::ProceduralDisplacementComponent(
     uint32_t width,
     uint32_t height,
     uint32_t seed )
-    : type( noiseType ), params( width, height, seed )
+    : type( noiseType ), width( width ), height( height ), params( seed )
 {
 }
 
@@ -18,7 +18,7 @@ ProceduralDisplacementComponent::ProceduralDisplacementComponent(
     uint32_t width,
     uint32_t height,
     float speed )
-    : type( noiseType ), params( width, height ), timeMultiplier( speed )
+    : type( noiseType ), width( width ), height( height ), timeMultiplier( speed )
 {
 }
 

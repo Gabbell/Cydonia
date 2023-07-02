@@ -68,6 +68,12 @@ class D3D12RenderBackend final : public RenderBackend
        TextureHandle texHandle,
        uint32_t set,
        uint32_t binding ) override;
+   void bindTexture(
+       CmdListHandle cmdList,
+       TextureHandle texHandle,
+       const SamplerInfo& sampler,
+       uint32_t set,
+       uint32_t binding ) override;
    void bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t set, uint32_t binding )
        override;
    void bindBuffer(
@@ -142,8 +148,20 @@ class D3D12RenderBackend final : public RenderBackend
        const std::vector<TextureHandle>& targets ) override;
    void nextPass( CmdListHandle cmdList ) override;
    void endRendering( CmdListHandle cmdList ) override;
-   void drawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) override;
-   void drawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) override;
+   void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) override;
+   void drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) override;
+   void drawInstanced(
+       CmdListHandle cmdList,
+       size_t vertexCount,
+       size_t instanceCount,
+       size_t firstVertex,
+       size_t firstInstance ) override;
+   void drawIndexedInstanced(
+       CmdListHandle cmdList,
+       size_t indexCount,
+       size_t instanceCount,
+       size_t firstIndex,
+       size_t firstInstance ) override;
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
    void presentFrame() override;
 

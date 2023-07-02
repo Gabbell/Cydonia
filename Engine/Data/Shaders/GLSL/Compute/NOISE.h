@@ -12,8 +12,6 @@ layout( push_constant ) uniform NoiseParameters
    bool ridged;
    bool invert;
    uint octaves;
-   uint width;
-   uint height;
 }
 params;
 
@@ -23,7 +21,12 @@ vec3 mod289( vec3 x ) { return x - floor( x * ( 1.0 / 289.0 ) ) * 289.0; }
 vec2 mod289( vec2 x ) { return x - floor( x * ( 1.0 / 289.0 ) ) * 289.0; }
 vec3 permute( vec3 x ) { return mod289( ( ( x * 34.0 ) + 1.0 ) * x ); }
 
-float hash( float n ) { return fract( sin( n ) * 43758.5453 ); }
+float hash1( float n ) { return fract( sin( n ) * 43758.5453 ); }
+vec2 hash2( vec2 p )
+{
+   p = vec2( dot( p, vec2( 127.1, 311.7 ) ), dot( p, vec2( 269.5, 183.3 ) ) );
+   return fract( sin( p ) * 43758.5453 );
+}
 
 float rand( vec2 p )
 {
@@ -33,9 +36,28 @@ float rand( vec2 p )
 }
 
 // White Noise implementation using the golden ratio
-float goldNoise( in vec2 xy, in float seed )
+// https://www.shadertoy.com/view/ltB3zD
+float GoldNoise( in vec2 xy )
 {
-   return fract( tan( distance( xy * PHI, xy ) * seed ) * xy.x );
+   return fract( tan( distance( xy * PHI, xy ) * params.seed ) * xy.x );
+}
+
+float NoiseFinalize( float noiseValue )
+{
+   // Apply exponent
+   noiseValue = pow( noiseValue, params.exponent );
+
+   // Sanitizing output
+   if( isnan( noiseValue ) ) noiseValue = 0.0;  // If is nan, just clamp to 0.0
+   if( isinf( noiseValue ) ) noiseValue = 1.0;
+
+   // Clamping. Maybe this should be optional?
+   noiseValue = clamp( noiseValue, 0.0, 1.0 );
+
+   // Invert the values
+   if( params.invert ) noiseValue = 1.0 - noiseValue;
+
+   return noiseValue;
 }
 
 // Description : GLSL 2D simplex noise function
@@ -47,7 +69,7 @@ float goldNoise( in vec2 xy, in float seed )
 //  Distributed under the MIT License. See LICENSE file.
 //  https://github.com/ashima/webgl-noise
 //
-float snoise( vec2 v )
+float SimplexNoise( vec2 v )
 {
    // Precompute values for skewed triangular grid
    const vec4 C = vec4(
@@ -99,50 +121,4 @@ float snoise( vec2 v )
    g.x    = a0.x * x0.x + h.x * x0.y;
    g.yz   = a0.yz * vec2( x1.x, x2.x ) + h.yz * vec2( x1.y, x2.y );
    return 130.0 * dot( m, g );
-}
-
-// Fractal Brownian Motion
-float fbm( vec2 uv )
-{
-   float finalNoise = 0.0f;
-
-   // Initial frequency and amplitude for first octave
-   float frequency = params.frequency;
-   float amplitude = params.amplitude;
-
-   mat2 rot = mat2( cos( 0.5 ), sin( 0.5 ), -sin( 0.5 ), cos( 0.50 ) );
-   for( uint i = 0; i < params.octaves; ++i )
-   {
-      float noiseValue = snoise( uv * frequency );
-      if( params.ridged )
-      {
-         noiseValue = abs( noiseValue );
-      }
-      else
-      {
-         noiseValue = noiseValue * 0.5 + 0.5;
-      }
-
-      finalNoise += amplitude * noiseValue;
-
-      amplitude *= params.gain;
-      frequency *= params.lacunarity;
-
-      uv = uv * rot;  // Rotate UV to reduce axial bias
-   }
-
-   // Apply exponent
-   finalNoise = pow( finalNoise, params.exponent );
-
-   // Sanitizing output
-   if( isnan( finalNoise ) ) finalNoise = 0.0;  // If is nan, just clamp to 0.0
-   if( isinf( finalNoise ) ) finalNoise = 1.0;
-
-   // Clamping. Maybe this should be optional?
-   finalNoise = clamp( finalNoise, 0.0, 1.0 );
-
-   // Invert the values
-   if( params.invert ) finalNoise = 1.0 - finalNoise;
-
-   return finalNoise;
 }

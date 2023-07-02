@@ -15,6 +15,7 @@
 #include <Graphics/Vulkan/Buffer.h>
 #include <Graphics/Vulkan/Texture.h>
 #include <Graphics/Vulkan/TypeConversions.h>
+#include <Graphics/Vulkan/BarriersHelper.h>
 
 #include <array>
 
@@ -29,7 +30,7 @@ void CommandBuffer::decUse()
 {
    if( m_useCount->load() == 0 )
    {
-      CYDASSERT( !"CommandBuffer: Decrementing use count would go below 0" );
+      CYD_ASSERT( !"CommandBuffer: Decrementing use count would go below 0" );
       return;
    }
 
@@ -56,7 +57,7 @@ bool CommandBuffer::_isValidStateTransition( State desiredState )
       return true;
    }
 
-   CYDASSERT( !"CommandBuffer: Invalid state transition detected" );
+   CYD_ASSERT( !"CommandBuffer: Invalid state transition detected" );
 
    return false;
 }
@@ -82,15 +83,15 @@ void CommandBuffer::acquire(
 
       VkResult result =
           vkAllocateCommandBuffers( m_pDevice->getVKDevice(), &allocInfo, &m_vkCmdBuffer );
-      CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not allocate command buffer" );
+      CYD_ASSERT( result == VK_SUCCESS && "CommandBuffer: Could not allocate command buffer" );
 
       VkFenceCreateInfo fenceInfo = {};
       fenceInfo.sType             = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 
       result = vkCreateFence( m_pDevice->getVKDevice(), &fenceInfo, nullptr, &m_vkFence );
-      CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create fence" );
+      CYD_ASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create fence" );
 
-      CYDASSERT(
+      CYD_ASSERT(
           ( m_semsToSignal.empty() && m_semsToWait.empty() ) &&
           "CommandBuffer: Still have semaphores during acquire" );
 
@@ -101,7 +102,7 @@ void CommandBuffer::acquire(
 
       result = vkCreateSemaphore(
           m_pDevice->getVKDevice(), &semaphoreInfo, nullptr, &m_semsToSignal[0] );
-      CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create semaphore" );
+      CYD_ASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create semaphore" );
 
       m_defaultSampler = m_pDevice->getSamplerCache().findOrCreate( {} );
 
@@ -291,7 +292,7 @@ void CommandBuffer::startRecording()
       beginInfo.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 
       const VkResult result = vkBeginCommandBuffer( m_vkCmdBuffer, &beginInfo );
-      CYDASSERT(
+      CYD_ASSERT(
           result == VK_SUCCESS && "CommandBuffer: Failed to begin recording of command buffer" );
    }
 }
@@ -301,7 +302,7 @@ void CommandBuffer::endRecording()
    if( _isValidStateTransition( State::STANDBY ) )
    {
       const VkResult result = vkEndCommandBuffer( m_vkCmdBuffer );
-      CYDASSERT(
+      CYD_ASSERT(
           result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
 
       m_boundPip        = nullptr;
@@ -330,7 +331,7 @@ void CommandBuffer::reset()
 
 void CommandBuffer::updatePushConstants( const CYD::PushConstantRange& range, const void* pData )
 {
-   CYDASSERT( m_boundPipLayout && "CommandBuffer: No currently bound pipeline layout" );
+   CYD_ASSERT( m_boundPipLayout && "CommandBuffer: No currently bound pipeline layout" );
 
    vkCmdPushConstants(
        m_vkCmdBuffer,
@@ -362,7 +363,7 @@ static bool samePipeline( const CYD::PipelineInfo* lhs, const CYD::PipelineInfo*
 
 void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
 {
-   CYDASSERT(
+   CYD_ASSERT(
        m_boundRenderPass && "CommandBuffer: Cannot bind pipeline because not in a render pass" );
 
    if( samePipeline( &info, m_boundPipInfo.get() ) ) return;
@@ -371,7 +372,7 @@ void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
 
    VkPipelineLayout pipLayout = m_pDevice->getPipelineCache().findOrCreate( info.pipLayout );
 
-   CYDASSERT(
+   CYD_ASSERT(
        pipeline && pipLayout &&
        "CommandBuffer: Could not find or create pipeline in pipeline stash" );
 
@@ -389,7 +390,7 @@ void CommandBuffer::bindPipeline( const CYD::ComputePipelineInfo& info )
 
    VkPipelineLayout pipLayout = m_pDevice->getPipelineCache().findOrCreate( info.pipLayout );
 
-   CYDASSERT(
+   CYD_ASSERT(
        pipeline && pipLayout &&
        "CommandBuffer: Could not find or create pipeline in pipeline stash" );
 
@@ -425,13 +426,35 @@ void CommandBuffer::bindTexture( Texture* texture, uint8_t binding, uint8_t set 
    m_texturesToUpdate.emplace_back(
        texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, binding, set );
 
+   m_samplers.push_back( m_defaultSampler );
+
+   _addDependency( texture );
+}
+
+void CommandBuffer::bindTexture(
+    Texture* texture,
+    const CYD::SamplerInfo& sampler,
+    uint8_t binding,
+    uint8_t set )
+{
+   // Will need to update this texture's descriptor set before next draw
+   m_texturesToUpdate.emplace_back(
+       texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, binding, set );
+
+   m_samplers.push_back( m_pDevice->getSamplerCache().findOrCreate( sampler ) );
+
    _addDependency( texture );
 }
 
 void CommandBuffer::bindImage( Texture* texture, uint8_t binding, uint8_t set )
 {
+   // TODO Maybe not GENERAL?
+   Barriers::ImageMemory( m_vkCmdBuffer, texture, CYD::ImageLayout::GENERAL );
+
    // Will need to update this image descriptor set before next draw
    m_texturesToUpdate.emplace_back( texture, CYD::ShaderResourceType::STORAGE_IMAGE, binding, set );
+
+   m_samplers.push_back( m_defaultSampler );
 
    // TODO Eventually we will need more info when binding an image (level for mipmaps for example)
    _addDependency( texture );
@@ -467,43 +490,85 @@ void CommandBuffer::bindUniformBuffer(
 
 void CommandBuffer::setViewport( const CYD::Viewport& viewport ) const
 {
-   VkViewport vkViewport = {
-       viewport.offsetX,
-       viewport.offsetY,
-       viewport.width,
-       viewport.height,
-       viewport.minDepth,
-       viewport.maxDepth };
+   VkViewport vkViewport;
+   if( viewport.width == 0 || viewport.height == 0 )
+   {
+      CYD_ASSERT(
+          m_renderArea.extent.width > 0 && m_renderArea.extent.height > 0 &&
+          "CommandBuffer:: Could not automatically determine viewport size" );
+
+      // Default viewport
+      vkViewport = {
+          static_cast<float>( m_renderArea.offset.x ),
+          static_cast<float>( m_renderArea.offset.y ),
+          static_cast<float>( m_renderArea.extent.width ),
+          static_cast<float>( m_renderArea.extent.height ),
+          0.0f,
+          1.0f };
+   }
+   else
+   {
+      vkViewport = {
+          viewport.offsetX,
+          viewport.offsetY,
+          viewport.width,
+          viewport.height,
+          viewport.minDepth,
+          viewport.maxDepth };
+   }
+
    vkCmdSetViewport( m_vkCmdBuffer, 0, 1, &vkViewport );
 }
 
 void CommandBuffer::setScissor( const CYD::Rectangle& scissor ) const
 {
-   VkRect2D vkScissor = {
-       scissor.offset.x, scissor.offset.y, scissor.extent.width, scissor.extent.height };
+   VkRect2D vkScissor;
+   if( scissor.extent.width == 0 || scissor.extent.height == 0 )
+   {
+      CYD_ASSERT(
+          m_renderArea.extent.width > 0 && m_renderArea.extent.height > 0 &&
+          "CommandBuffer:: Could not automatically determine scissor size" );
+
+      // Default scissor
+      vkScissor = {
+          m_renderArea.offset.x,
+          m_renderArea.offset.y,
+          m_renderArea.extent.width,
+          m_renderArea.extent.height };
+   }
+   else
+   {
+      vkScissor = {
+          scissor.offset.x, scissor.offset.y, scissor.extent.width, scissor.extent.height };
+   }
+
    vkCmdSetScissor( m_vkCmdBuffer, 0, 1, &vkScissor );
 }
 
 void CommandBuffer::beginRendering( Swapchain& swapchain )
 {
    VkRenderPass renderPass = swapchain.getRenderPass();
-   CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
+   CYD_ASSERT( renderPass && "CommandBuffer: Could not find render pass" );
 
    m_boundRenderPass = renderPass;
+
+   const VkExtent2D& extent = swapchain.getVKExtent();
 
    VkRenderPassBeginInfo passBeginInfo = {};
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass;
    passBeginInfo.framebuffer           = swapchain.getCurrentFramebuffer();
    passBeginInfo.renderArea.offset     = { 0, 0 };
-   passBeginInfo.renderArea.extent     = swapchain.getVKExtent();
+   passBeginInfo.renderArea.extent     = extent;
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = { 0.2f, 0.2f, 0.2f, 1.0f };
-   clearValues[1]                          = { 1.0f, 0 };
+   clearValues[0]                          = { 0.2f, 0.2f, 0.2f, 1.0f };  // Color
+   clearValues[1]                          = { 1.0f, 0 };                 // Depth/Stencil
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
+
+   _setRenderArea( 0, 0, extent.width, extent.height );
 
    vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
 
@@ -513,22 +578,28 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
 
 void CommandBuffer::beginRendering(
     const CYD::FramebufferInfo& targetsInfo,
-    const std::vector<const Texture*>& targets )
+    const std::vector<Texture*>& targets )
 {
    VkRenderPass renderPass = m_pDevice->getRenderPassCache().findOrCreate( targetsInfo );
-   CYDASSERT( renderPass && "CommandBuffer: Could not find render pass" );
+   CYD_ASSERT( renderPass && "CommandBuffer: Could not find render pass" );
+   CYD_ASSERT( !targets.empty() && "CommandBuffer: No render targets" );
+   CYD_ASSERT(
+       targets.size() == targetsInfo.attachments.size() &&
+       "CommandBuffer: Mismatch attachments and targets" );
 
    m_boundRenderPass  = renderPass;
    m_boundTargetsInfo = targetsInfo;
+   m_targets          = targets;
    m_currentSubpass   = 0;
 
-   const uint32_t commonWidth  = targets[0]->getWidth();
-   const uint32_t commonHeight = targets[0]->getHeight();
+   const uint32_t commonWidth  = m_targets[0]->getWidth();
+   const uint32_t commonHeight = m_targets[0]->getHeight();
 
    // Fetching image views for framebuffer
+   std::vector<VkClearValue> clearValues;
    std::vector<VkImageView> vkImageViews;
-   vkImageViews.reserve( targets.size() );
-   for( const auto& texture : targets )
+   vkImageViews.reserve( m_targets.size() );
+   for( const auto& texture : m_targets )
    {
       // All textures should have the same dimensions for this renderpass/framebuffer
       if( texture->getWidth() == commonWidth && texture->getHeight() == commonHeight )
@@ -537,7 +608,19 @@ void CommandBuffer::beginRendering(
       }
       else
       {
-         CYDASSERT( !"CommandBuffer: Mismatched dimensions for framebuffer" );
+         CYD_ASSERT( !"CommandBuffer: Mismatched dimensions for framebuffer" );
+      }
+
+      // Clear
+      if( texture->getPixelFormat() == CYD::PixelFormat::D32_SFLOAT )
+      {
+         texture->setLayout( CYD::ImageLayout::DEPTH_STENCIL_ATTACHMENT );
+         clearValues.push_back( { 1.0f, 0.0f } );
+      }
+      else
+      {
+         texture->setLayout( CYD::ImageLayout::COLOR_ATTACHMENT );
+         clearValues.push_back( { 0.0f, 0.0f, 0.0f, 1.0f } );
       }
    }
 
@@ -554,7 +637,7 @@ void CommandBuffer::beginRendering(
    const VkResult result =
        vkCreateFramebuffer( m_pDevice->getVKDevice(), &framebufferInfo, nullptr, &vkFramebuffer );
 
-   CYDASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create framebuffer" );
+   CYD_ASSERT( result == VK_SUCCESS && "CommandBuffer: Could not create framebuffer" );
 
    m_curFramebuffers.push_back( vkFramebuffer );
 
@@ -565,14 +648,17 @@ void CommandBuffer::beginRendering(
    passBeginInfo.renderArea.offset     = { 0, 0 };
    passBeginInfo.renderArea.extent     = { commonWidth, commonHeight };
 
-   std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = { 0.0f, 0.0f, 0.0f, 1.0f };
-   clearValues[1]                          = { 1.0f, 0.0f };
-
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
 
+   _setRenderArea( 0, 0, commonWidth, commonHeight );
+
    vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
+}
+
+void CommandBuffer::_setRenderArea( int offsetX, int offsetY, uint32_t width, uint32_t height )
+{
+   m_renderArea = { { offsetX, offsetY }, { width, height } };
 }
 
 VkDescriptorSet CommandBuffer::_findOrAllocateDescSet( size_t prevSize, uint8_t set )
@@ -643,10 +729,14 @@ void CommandBuffer::_prepareDescriptorSets()
       writeDescSets.push_back( std::move( descriptorWrite ) );
    }
 
-   for( const TextureBinding& entry : m_texturesToUpdate )
+   CYD_ASSERT( m_texturesToUpdate.size() == m_samplers.size() );
+   for( uint32_t i = 0; i < m_texturesToUpdate.size(); ++i )
    {
+      const TextureBinding& entry = m_texturesToUpdate[i];
+      VkSampler sampler           = m_samplers[i];
+
       VkDescriptorImageInfo imageInfo = {};
-      imageInfo.sampler               = m_defaultSampler;
+      imageInfo.sampler               = sampler;
       imageInfo.imageView             = entry.resource->getVKImageView();
       imageInfo.imageLayout = TypeConversions::cydToVkImageLayout( entry.resource->getLayout() );
       imageInfos.push_back( imageInfo );
@@ -684,7 +774,7 @@ void CommandBuffer::_prepareDescriptorSets()
          bindPoint = VK_PIPELINE_BIND_POINT_COMPUTE;
          break;
       default:
-         CYDASSERT( !"CommandBuffer: Could not determine pipeline bind point for descriptors" );
+         CYD_ASSERT( !"CommandBuffer: Could not determine pipeline bind point for descriptors" );
    }
 
    // Determine how to bind descriptor sets in the case of noncontinuous sets. Usually, this is a
@@ -719,15 +809,20 @@ void CommandBuffer::_prepareDescriptorSets()
    m_setsToBind.fill( nullptr );
    m_buffersToUpdate.clear();
    m_texturesToUpdate.clear();
+   m_samplers.clear();
 }
 
-void CommandBuffer::draw( size_t vertexCount, size_t firstVertex )
+void CommandBuffer::draw(
+    size_t vertexCount,
+    size_t instanceCount,
+    size_t firstVertex,
+    size_t firstInstance )
 {
-   CYDASSERT(
+   CYD_ASSERT(
        m_usage & CYD::QueueUsage::GRAPHICS &&
        "CommandBuffer: Command buffer does not support graphics usage" );
 
-   CYDASSERT(
+   CYD_ASSERT(
        m_boundPip && m_boundPipInfo && ( m_boundPipInfo->type == CYD::PipelineType::GRAPHICS ) &&
        "CommandBuffer: Cannot draw because no pipeline was bound" );
 
@@ -736,18 +831,22 @@ void CommandBuffer::draw( size_t vertexCount, size_t firstVertex )
    vkCmdDraw(
        m_vkCmdBuffer,
        static_cast<uint32_t>( vertexCount ),
-       1,
+       static_cast<uint32_t>( instanceCount ),
        static_cast<uint32_t>( firstVertex ),
-       0 );
+       static_cast<uint32_t>( firstInstance ) );
 }
 
-void CommandBuffer::drawIndexed( size_t indexCount, size_t firstIndex )
+void CommandBuffer::drawIndexed(
+    size_t indexCount,
+    size_t instanceCount,
+    size_t firstIndex,
+    size_t firstInstance )
 {
-   CYDASSERT(
+   CYD_ASSERT(
        m_usage & CYD::QueueUsage::GRAPHICS &&
        "CommandBuffer: Command Buffer does not support graphics usage" );
 
-   CYDASSERT(
+   CYD_ASSERT(
        m_boundPip && m_boundPipInfo && ( m_boundPipInfo->type == CYD::PipelineType::GRAPHICS ) &&
        "CommandBuffer: Cannot draw because no pipeline was bound" );
 
@@ -756,46 +855,72 @@ void CommandBuffer::drawIndexed( size_t indexCount, size_t firstIndex )
    vkCmdDrawIndexed(
        m_vkCmdBuffer,
        static_cast<uint32_t>( indexCount ),
-       1,
+       static_cast<uint32_t>( instanceCount ),
        static_cast<uint32_t>( firstIndex ),
        0,
-       0 );
+       static_cast<uint32_t>( firstInstance ) );
 }
 
 void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
 {
-   CYDASSERT(
+   CYD_ASSERT(
        m_usage & CYD::QueueUsage::COMPUTE &&
        "CommandBuffer: Command Buffer does not support compute usage" );
 
-   CYDASSERT(
+   CYD_ASSERT(
        m_boundPip && m_boundPipInfo && m_boundPipInfo->type == CYD::PipelineType::COMPUTE &&
        "CommandBuffer: Cannot dispatch because no proper pipeline was bound" );
 
    _prepareDescriptorSets();
+
+   Barriers::Pipeline(
+       m_vkCmdBuffer, CYD::PipelineStage::COMPUTE_STAGE, CYD::PipelineStage::COMPUTE_STAGE );
 
    vkCmdDispatch( m_vkCmdBuffer, workX, workY, workZ );
 }
 
 void CommandBuffer::nextPass() const
 {
-   CYDASSERT(
+   CYD_ASSERT(
        m_boundRenderPass &&
        "CommandBuffer: Cannot go to the next pass if there was no render pass to begin with!" );
 
    vkCmdNextSubpass( m_vkCmdBuffer, VK_SUBPASS_CONTENTS_INLINE );
 }
 
-void CommandBuffer::endRendering() const
+void CommandBuffer::endRendering()
 {
-   CYDASSERT( m_boundRenderPass && "CommandBuffer: Cannot end a pass that was never started!" );
+   CYD_ASSERT( m_boundRenderPass && "CommandBuffer: Cannot end a pass that was never started!" );
 
    vkCmdEndRenderPass( m_vkCmdBuffer );
+
+   // Set the target layout outside of the render pass
+   // This code assumes that we are reading the texture afterwards. If we were to write again into
+   // it in the next render pass, this probably will not work.
+   for( const auto& texture : m_targets )
+   {
+      CYD::ImageLayout targetLayout;
+      switch( texture->getPixelFormat() )
+      {
+         case CYD::PixelFormat::D32_SFLOAT:
+            targetLayout = CYD::ImageLayout::DEPTH_STENCIL_READ;
+            break;
+         default:
+            targetLayout = CYD::ImageLayout::SHADER_READ;
+      }
+
+      Barriers::ImageMemory( m_vkCmdBuffer, texture, targetLayout );
+   }
+
+   Barriers::Pipeline(
+       m_vkCmdBuffer, CYD::PipelineStage::ALL_STAGES, CYD::PipelineStage::ALL_STAGES );
+
+   m_targets.clear();
 }
 
 void CommandBuffer::copyBuffer( Buffer* src, Buffer* dst )
 {
-   CYDASSERT(
+   CYD_ASSERT(
        src->getSize() == dst->getSize() &&
        "CommandBuffer: Source and destination sizes are not the same" );
 
@@ -809,9 +934,11 @@ void CommandBuffer::copyBuffer( Buffer* src, Buffer* dst )
 
 void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
 {
-   CYDASSERT(
+   CYD_ASSERT(
        src->getSize() == dst->getSize() &&
        "CommandBuffer: Source and destination sizes are not the same" );
+
+   Barriers::ImageMemory( m_vkCmdBuffer, dst, CYD::ImageLayout::TRANSFER_DST );
 
    // Copying data from buffer to texture
    VkBufferImageCopy region               = {};
@@ -832,6 +959,8 @@ void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
        1,
        &region );
+
+   Barriers::ImageMemory( m_vkCmdBuffer, dst, CYD::ImageLayout::SHADER_READ );
 
    _addDependency( src );
    _addDependency( dst );
@@ -855,7 +984,7 @@ void CommandBuffer::submit()
       const Device::QueueFamily& queueFamily =
           m_pDevice->getQueueFamilyFromIndex( m_pPool->getFamilyIndex() );
 
-      CYDASSERT(
+      CYD_ASSERT(
           !queueFamily.queues.empty() && "CommandBuffer: Could not find queue to submit to" );
 
       // TODO Dynamic submission to multiple queues

@@ -2,6 +2,7 @@
 
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
+#include <Graphics/Utility/Transforms.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Scene/CameraComponent.h>
@@ -17,12 +18,12 @@ namespace CYD
 {
 void CameraSystem::tick( double /*deltaS*/ )
 {
-   CYDTRACE( "CameraSystem" );
+   CYD_TRACE( "CameraSystem" );
 
    // Write component
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
-   CYDASSERT( m_entities.size() <= SceneComponent::MAX_VIEWS );
+   CYD_ASSERT( m_entities.size() <= SceneComponent::MAX_VIEWS );
 
    for( const auto& entityEntry : m_entities )
    {
@@ -37,33 +38,36 @@ void CameraSystem::tick( double /*deltaS*/ )
          it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "" );
          if( it == scene.viewNames.end() )
          {
-            CYDASSERT( !"Something went wrong when trying to find a free view UBO spot" );
+            CYD_ASSERT( !"Something went wrong when trying to find a free view UBO spot" );
             return;
          }
       }
 
-      const uint32_t uboIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
+      const uint32_t viewIdx =
+          static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
 
       // Naming this view
-      scene.viewNames[uboIdx] = camera.viewName;
+      scene.viewNames[viewIdx] = camera.viewName;
 
       // Getting the right view UBO at this index and updating it
-      SceneComponent::ViewUBO& view = scene.views[uboIdx];
+      SceneComponent::ViewShaderParams& view = scene.views[viewIdx];
 
       view.position = glm::vec4( transform.position, 1.0f );
 
-      view.viewMat = glm::toMat4( glm::conjugate( transform.rotation ) ) *
-                     glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / transform.scaling ) *
-                     glm::translate( glm::mat4( 1.0f ), -transform.position );
+      const glm::vec3 viewDir = glm::vec4( 0.0f, 0.0f, -1.0f, 1.0f ) *
+                                glm::toMat4( glm::conjugate( transform.rotation ) );
+
+      view.viewMat = glm::lookAt(
+          transform.position, transform.position + viewDir, glm::vec3( 0.0f, 1.0f, 0.0f ) );
 
       switch( camera.projMode )
       {
          case CameraComponent::ProjectionMode::PERSPECTIVE:
-            view.projMat = glm::perspectiveZO(
-                glm::radians( camera.fov ), camera.aspectRatio, camera.near, camera.far );
+            view.projMat =
+                Transform::Perspective( camera.fov, camera.aspectRatio, camera.near, camera.far );
             break;
          case CameraComponent::ProjectionMode::ORTHOGRAPHIC:
-            view.projMat = glm::orthoZO(
+            view.projMat = Transform::Ortho(
                 camera.left, camera.right, camera.bottom, camera.top, camera.near, camera.far );
             break;
          case CameraComponent::ProjectionMode::UNKNOWN:

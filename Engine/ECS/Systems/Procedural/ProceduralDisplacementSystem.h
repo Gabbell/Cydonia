@@ -5,7 +5,7 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
-#include <ECS/Components/Rendering/StaticMaterialComponent.h>
+#include <ECS/Components/Rendering/MaterialComponent.h>
 
 // ================================================================================================
 // Definition
@@ -15,7 +15,7 @@ namespace CYD
 class MaterialCache;
 
 class ProceduralDisplacementSystem final
-    : public CommonSystem<ProceduralDisplacementComponent, StaticMaterialComponent>
+    : public CommonSystem<ProceduralDisplacementComponent, MaterialComponent>
 {
   public:
    ProceduralDisplacementSystem() = delete;

@@ -33,7 +33,7 @@ void Texture::release()
 {
    if( m_pDevice )
    {
-      CYDASSERT( m_useCount->load() == 0 && "Texture: released a still used texture" );
+      CYD_ASSERT( m_useCount->load() == 0 && "Texture: released a still used texture" );
 
       vkDestroyImageView( m_pDevice->getVKDevice(), m_vkImageView, nullptr );
       vkDestroyImage( m_pDevice->getVKDevice(), m_vkImage, nullptr );
@@ -60,7 +60,7 @@ void Texture::decUse()
 {
    if( m_useCount->load() == 0 )
    {
-      CYDASSERT(
+      CYD_ASSERT(
           !"Tried to decrease a resource usage counter to below 0. Probably a scope problem." );
       return;
    }
@@ -130,7 +130,7 @@ void Texture::_createImage()
    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
    VkResult result = vkCreateImage( m_pDevice->getVKDevice(), &imageInfo, nullptr, &m_vkImage );
-   CYDASSERT( result == VK_SUCCESS && "Texture: Could not create image" );
+   CYD_ASSERT( result == VK_SUCCESS && "Texture: Could not create image" );
 }
 
 void Texture::_allocateMemory()
@@ -145,7 +145,7 @@ void Texture::_allocateMemory()
        memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
 
    VkResult result = vkAllocateMemory( m_pDevice->getVKDevice(), &allocInfo, nullptr, &m_vkMemory );
-   CYDASSERT( result == VK_SUCCESS && "Texture: Could not allocate memory" );
+   CYD_ASSERT( result == VK_SUCCESS && "Texture: Could not allocate memory" );
 
    vkBindImageMemory( m_pDevice->getVKDevice(), m_vkImage, m_vkMemory, 0 );
 }
@@ -180,7 +180,7 @@ void Texture::_createImageView()
    }
    else
    {
-      CYDASSERT( !"Texture: Could not determine image view type" );
+      CYD_ASSERT( !"Texture: Could not determine image view type" );
    }
 
    viewInfo.format                          = TypeConversions::cydToVkFormat( m_format );
@@ -192,7 +192,7 @@ void Texture::_createImageView()
 
    VkResult result =
        vkCreateImageView( m_pDevice->getVKDevice(), &viewInfo, nullptr, &m_vkImageView );
-   CYDASSERT( result == VK_SUCCESS && "Texture: Could not create image view" );
+   CYD_ASSERT( result == VK_SUCCESS && "Texture: Could not create image view" );
 }
 
 Texture::~Texture() { release(); }

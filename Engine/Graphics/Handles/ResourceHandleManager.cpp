@@ -32,14 +32,14 @@ Handle HandleManager::add( void* p, HandleType handleType )
 {
    uint32_t type = static_cast<uint32_t>( handleType );
 
-   CYDASSERT( _activeEntryCount < ( MAX_ENTRIES - 1 ) );
+   CYD_ASSERT( _activeEntryCount < ( MAX_ENTRIES - 1 ) );
 
-   CYDASSERT( type >= 0 && type <= 31 );
+   CYD_ASSERT( type >= 0 && type <= 31 );
 
    const int newIndex = _firstFreeEntry;
-   CYDASSERT( newIndex < MAX_ENTRIES );
-   CYDASSERT( _entries[newIndex]._active == false );
-   CYDASSERT( !_entries[newIndex]._endOfList );
+   CYD_ASSERT( newIndex < MAX_ENTRIES );
+   CYD_ASSERT( _entries[newIndex]._active == false );
+   CYD_ASSERT( !_entries[newIndex]._endOfList );
 
    _firstFreeEntry                   = _entries[newIndex]._nextFreeIndex;
    _entries[newIndex]._nextFreeIndex = 0;
@@ -59,8 +59,8 @@ Handle HandleManager::add( void* p, HandleType handleType )
 void HandleManager::update( Handle handle, void* newData )
 {
    const int index = handle._index;
-   CYDASSERT( _entries[index]._counter == handle._counter );
-   CYDASSERT( _entries[index]._active == true );
+   CYD_ASSERT( _entries[index]._counter == handle._counter );
+   CYD_ASSERT( _entries[index]._active == true );
 
    _entries[index]._entry = newData;
 }
@@ -68,8 +68,8 @@ void HandleManager::update( Handle handle, void* newData )
 void HandleManager::remove( const Handle handle )
 {
    const uint32_t index = handle._index;
-   CYDASSERT( _entries[index]._counter == handle._counter );
-   CYDASSERT( _entries[index]._active == true );
+   CYD_ASSERT( _entries[index]._counter == handle._counter );
+   CYD_ASSERT( _entries[index]._active == true );
 
    _entries[index]._nextFreeIndex = _firstFreeEntry;
    _entries[index]._active        = 0;

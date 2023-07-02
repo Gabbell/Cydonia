@@ -25,7 +25,7 @@ void AtmosphereSystem::tick( double /*deltaS*/ )
 {
     if( m_entities.size() > 1 )
     {
-       CYDASSERT( !"AtmosphereSystem: More than one atmosphere? Huh?" );
+       CYD_ASSERT( !"AtmosphereSystem: More than one atmosphere? Huh?" );
        return;
     }
 
@@ -36,7 +36,7 @@ void AtmosphereSystem::tick( double /*deltaS*/ )
     if( it == scene.viewNames.end() )
     {
        // TODO WARNING
-       CYDASSERT( !"Could not find main view, skipping render tick" );
+       CYD_ASSERT( !"Could not find main view, skipping render tick" );
        return;
     }
     const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );

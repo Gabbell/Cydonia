@@ -214,6 +214,13 @@ enum class AddressMode
    MIRROR_CLAMP_TO_EDGE,
 };
 
+enum class BorderColor
+{
+   OPAQUE_BLACK,
+   TRANSPARENT_BLACK,
+   OPAQUE_WHITE,
+};
+
 // ================================================================================================
 // Basic structs
 struct TextureDescription
@@ -285,12 +292,18 @@ struct FramebufferInfo
 
 struct SamplerInfo
 {
+   SamplerInfo() = default;
+   SamplerInfo( Filter magFilter, Filter minFilter, AddressMode addressMode )
+       : magFilter( magFilter ), minFilter( minFilter ), addressMode( addressMode )
+   {
+   }
    bool operator==( const SamplerInfo& other ) const;
    bool useAnisotropy      = true;
    float maxAnisotropy     = 16.0f;
    Filter magFilter        = Filter::LINEAR;
    Filter minFilter        = Filter::LINEAR;
-   AddressMode addressMode = AddressMode::REPEAT;
+   AddressMode addressMode = AddressMode::CLAMP_TO_EDGE;
+   BorderColor borderColor = BorderColor::OPAQUE_BLACK;
 };
 }
 

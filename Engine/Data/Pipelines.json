@@ -86,11 +86,18 @@
           "BINDING": 0
         },
         {
-          "NAME": "DirectionalLight",
+          "NAME": "Lights",
           "TYPE": "UBO",
           "STAGE": "FRAGMENT",
-          "SET": 0,
+          "SET": 1,
           "BINDING": 1
+        },
+        {
+          "NAME": "ShadowMap",
+          "TYPE": "SAMPLER",
+          "STAGE": "FRAGMENT",
+          "SET": 1,
+          "BINDING": 2
         },
         {
           "NAME": "DISPLACEMENT",
@@ -181,13 +188,31 @@
       ]
     },
     {
-      "NAME": "SHADOWMAP_GENERATION",
+      "NAME": "TERRAIN_SHADOWMAP",
       "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "SHADOWMAP_VERT",
+      "VERTEX_SHADER": "TERRAIN_STRIPPED_VERT",
       "FRAGMENT_SHADER": "EMPTY_FRAG",
+      "VERTEX_LAYOUT": [
+        {
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGBA32F"
+        }
+      ],
       "SHADER_RESOURCES": [
         {
-          "NAME": "model",
+          "NAME": "Model",
           "TYPE": "CONSTANT_BUFFER",
           "STAGE": "VERTEX",
           "SIZE": 64
@@ -198,6 +223,13 @@
           "STAGE": "VERTEX",
           "SET": 0,
           "BINDING": 0
+        },
+        {
+          "NAME": "DISPLACEMENT",
+          "TYPE": "SAMPLER",
+          "STAGE": "VERTEX",
+          "SET": 1,
+          "BINDING": 5
         }
       ]
     },
@@ -279,6 +311,67 @@
           "STAGE": "FRAGMENT",
           "SET": 1,
           "BINDING": 4
+        }
+      ]
+    },
+    {
+      "NAME": "PBR_CONSTANT",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "DEFAULT_INSTANCED_VERT",
+      "FRAGMENT_SHADER": "PBR_CONSTANT_FRAG",
+      "VERTEX_LAYOUT": [
+        {
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGBA32F"
+        }
+      ],
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "PushModel",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "VERTEX",
+          "OFFSET": 0,
+          "SIZE": 64
+        },
+        {
+          "NAME": "PushMaterial",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "FRAGMENT",
+          "OFFSET": 64,
+          "SIZE": 32
+        },
+        {
+          "NAME": "EnvironmentView",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+        "NAME": "InstancesData",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "Lights",
+          "TYPE": "UBO",
+          "STAGE": "FRAGMENT",
+          "SET": 1,
+          "BINDING": 1
         }
       ]
     },
@@ -461,7 +554,7 @@
           "NAME": "NoiseParameters",
           "TYPE": "CONSTANT_BUFFER",
           "STAGE": "COMPUTE",
-          "SIZE": 48
+          "SIZE": 36
         },
         {
           "NAME": "noiseImage",
@@ -481,7 +574,27 @@
           "NAME": "NoiseParameters",
           "TYPE": "CONSTANT_BUFFER",
           "STAGE": "COMPUTE",
-          "SIZE": 48
+          "SIZE": 36
+        },
+        {
+          "NAME": "noiseImage",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "VORONOI_NOISE",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "VORONOI_NOISE_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "NoiseParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 36
         },
         {
           "NAME": "noiseImage",
@@ -501,7 +614,7 @@
           "NAME": "NoiseParameters",
           "TYPE": "CONSTANT_BUFFER",
           "STAGE": "COMPUTE",
-          "SIZE": 48
+          "SIZE": 36
         },
         {
           "NAME": "noiseImage",

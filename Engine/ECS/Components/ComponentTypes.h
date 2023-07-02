@@ -16,6 +16,7 @@ enum class ComponentType : int16_t
    // Scene
    // ==============================================================================================
    TRANSFORM,
+   INSTANCED,
    CAMERA,
 
    // Lighting
@@ -26,8 +27,7 @@ enum class ComponentType : int16_t
    // ==============================================================================================
    MATERIAL,
    MESH,
-   FORWARD_RENDERABLE,
-   DEFERRED_RENDERABLE,
+   RENDERABLE,
    FULLSCREEN,
 
    // Procedural
@@ -57,12 +57,12 @@ static const char* GetComponentName( ComponentType type )
 {
    static constexpr char COMPONENT_NAMES[][32] = {
        "Transform",
+       "Instanced",
        "Camera",
        "Light",
        "Material",
        "Mesh",
-       "Forward Renderable",
-       "Deferred Renderable",
+       "Renderable",
        "Fullscreen",
        "Procedural Displacement",
        "Procedural Material",

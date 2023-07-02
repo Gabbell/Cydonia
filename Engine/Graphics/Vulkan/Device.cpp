@@ -131,7 +131,7 @@ void Device::_createLogicalDevice()
    deviceInfo.pEnabledFeatures        = &deviceFeatures;
 
    VkResult result = vkCreateDevice( m_physDevice, &deviceInfo, nullptr, &m_vkDevice );
-   CYDASSERT( result == VK_SUCCESS && "Device: Could not create logical device" );
+   CYD_ASSERT( result == VK_SUCCESS && "Device: Could not create logical device" );
 }
 
 void Device::_fetchQueues()
@@ -178,7 +178,7 @@ Buffer* Device::_createBuffer(
       return &*it;
    }
 
-   CYDASSERT( !"Device: Too many buffers in flight" );
+   CYD_ASSERT( !"Device: Too many buffers in flight" );
    return nullptr;
 }
 
@@ -245,7 +245,7 @@ Texture* Device::createTexture( const CYD::TextureDescription& desc )
       return &*it;
    }
 
-   CYDASSERT( !"Device: Too many textures in flight" );
+   CYD_ASSERT( !"Device: Too many textures in flight" );
    return nullptr;
 }
 
@@ -254,7 +254,7 @@ Texture* Device::createTexture( const CYD::TextureDescription& desc )
 
 Swapchain* Device::createSwapchain( const CYD::SwapchainInfo& scInfo )
 {
-   CYDASSERT( !m_swapchain.get() && "Device: Swapchain already created" );
+   CYD_ASSERT( !m_swapchain.get() && "Device: Swapchain already created" );
 
    if( !m_swapchain.get() && supportsPresentation() )
    {
@@ -303,7 +303,7 @@ void Device::waitOnFrame( uint32_t currentFrame )
 
 const Device::QueueFamily& Device::getQueueFamilyFromIndex( uint32_t familyIndex ) const
 {
-   CYDASSERT( familyIndex < m_queueFamilies.size() );
+   CYD_ASSERT( familyIndex < m_queueFamilies.size() );
    return m_queueFamilies[familyIndex];
 }
 
@@ -377,13 +377,13 @@ Device::~Device()
    cleanup();
 
    // Checking for any leaking resources
-   CYDASSERT(
+   CYD_ASSERT(
        std::find_if(
            m_buffers.begin(),
            m_buffers.end(),
            []( const Buffer& buffer ) { return buffer.getVKBuffer(); } ) == m_buffers.end() &&
        "Device: Some buffers are leaking" );
-   CYDASSERT(
+   CYD_ASSERT(
        std::find_if(
            m_textures.begin(),
            m_textures.end(),

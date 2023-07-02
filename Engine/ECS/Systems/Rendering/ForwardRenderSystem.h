@@ -5,9 +5,9 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/Components/Rendering/StaticMaterialComponent.h>
+#include <ECS/Components/Rendering/MaterialComponent.h>
 #include <ECS/Components/Rendering/MeshComponent.h>
-#include <ECS/Components/Rendering/ForwardRenderableComponent.h>
+#include <ECS/Components/Rendering/RenderableComponent.h>
 
 // ================================================================================================
 // Definition
@@ -17,10 +17,10 @@ namespace CYD
 class MaterialCache;
 
 class ForwardRenderSystem final : public CommonSystem<
+                                      RenderableComponent,
                                       TransformComponent,
                                       MeshComponent,
-                                      StaticMaterialComponent,
-                                      ForwardRenderableComponent>
+                                      MaterialComponent>
 {
   public:
    ForwardRenderSystem() = delete;

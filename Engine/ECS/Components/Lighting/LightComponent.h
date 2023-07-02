@@ -37,7 +37,7 @@ class LightComponent final : public BaseComponent
 
    Type type = Type::DIRECTIONAL;
 
-   glm::vec4 color = glm::vec4( 100.0f );
+   glm::vec4 color = glm::vec4( 1.0f );
 
    TextureHandle shadowMap;  // Optional
 

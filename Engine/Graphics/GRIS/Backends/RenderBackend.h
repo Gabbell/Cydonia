@@ -62,6 +62,12 @@ class RenderBackend
        TextureHandle texHandle,
        uint32_t binding,
        uint32_t set ) = 0;
+   virtual void bindTexture(
+       CmdListHandle cmdList,
+       TextureHandle texHandle,
+       const SamplerInfo& sampler,
+       uint32_t binding,
+       uint32_t set ) = 0;
    virtual void
    bindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set ) = 0;
    virtual void bindBuffer(
@@ -117,7 +123,10 @@ class RenderBackend
    virtual BufferHandle createBuffer( size_t size, const std::string_view name ) = 0;
 
    virtual void* addDebugTexture( TextureHandle /*texture*/ ) { return nullptr; };
-   virtual void updateDebugTexture( CmdListHandle /*cmdList*/, TextureHandle /*texture*/ ) { return; }
+   virtual void updateDebugTexture( CmdListHandle /*cmdList*/, TextureHandle /*texture*/ )
+   {
+      return;
+   }
    virtual void removeDebugTexture( void* /*texture*/ ){};
 
    virtual void
@@ -135,12 +144,23 @@ class RenderBackend
    virtual void beginRendering(
        CmdListHandle cmdList,
        const FramebufferInfo& targetsInfo,
-       const std::vector<TextureHandle>& targets )                                            = 0;
-   virtual void nextPass( CmdListHandle cmdList )                                             = 0;
-   virtual void endRendering( CmdListHandle cmdList )                                         = 0;
-   virtual void drawVertices( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) = 0;
-   virtual void
-   drawVerticesIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) = 0;
+       const std::vector<TextureHandle>& targets )                                         = 0;
+   virtual void nextPass( CmdListHandle cmdList )                                          = 0;
+   virtual void endRendering( CmdListHandle cmdList )                                      = 0;
+   virtual void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )      = 0;
+   virtual void drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) = 0;
+   virtual void drawInstanced(
+       CmdListHandle cmdList,
+       size_t vertexCount,
+       size_t instanceCount,
+       size_t firstVertex,
+       size_t firstInstance ) = 0;
+   virtual void drawIndexedInstanced(
+       CmdListHandle cmdList,
+       size_t indexCount,
+       size_t instanceCount,
+       size_t firstIndex,
+       size_t firstInstance ) = 0;
    virtual void
    dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) = 0;
    virtual void presentFrame()                                                       = 0;

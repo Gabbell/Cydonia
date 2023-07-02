@@ -4,7 +4,7 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Rendering/StaticMaterialComponent.h>
+#include <ECS/Components/Rendering/MaterialComponent.h>
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 
 // ================================================================================================
@@ -15,7 +15,7 @@ This system is used to generate a displacement field for entities that have an F
 */
 namespace CYD
 {
-class FFTOceanSystem final : public CommonSystem<StaticMaterialComponent, FFTOceanComponent>
+class FFTOceanSystem final : public CommonSystem<MaterialComponent, FFTOceanComponent>
 {
   public:
    FFTOceanSystem() = default;
