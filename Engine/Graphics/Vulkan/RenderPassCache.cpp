@@ -55,7 +55,7 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
             colorRefs.push_back( presentationAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-            
+
             attachmentIdx++;
             break;
          }
@@ -81,6 +81,20 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
             depthRefs.push_back( depthAttachmentRef );
 
             vkAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+            attachmentIdx++;
+            break;
+         }
+         case CYD::AttachmentType::DEPTH:
+         {
+             // Needs VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures 
+            VkAttachmentReference depthAttachmentRef = {};
+            depthAttachmentRef.attachment            = attachmentIdx;
+            depthAttachmentRef.layout                = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
+
+            depthRefs.push_back( depthAttachmentRef );
+
+            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 
             attachmentIdx++;
             break;

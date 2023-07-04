@@ -563,7 +563,7 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
 
    std::array<VkClearValue, 2> clearValues = {};
    clearValues[0]                          = { 0.2f, 0.2f, 0.2f, 1.0f };  // Color
-   clearValues[1]                          = { 1.0f, 0 };                 // Depth/Stencil
+   clearValues[1]                          = { 0.0f, 0 };                 // Depth/Stencil
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -615,7 +615,7 @@ void CommandBuffer::beginRendering(
       if( texture->getPixelFormat() == CYD::PixelFormat::D32_SFLOAT )
       {
          texture->setLayout( CYD::ImageLayout::DEPTH_STENCIL_ATTACHMENT );
-         clearValues.push_back( { 1.0f, 0.0f } );
+         clearValues.push_back( { 0.0f, 0.0f } );
       }
       else
       {
@@ -916,6 +916,7 @@ void CommandBuffer::endRendering()
        m_vkCmdBuffer, CYD::PipelineStage::ALL_STAGES, CYD::PipelineStage::ALL_STAGES );
 
    m_targets.clear();
+   m_renderArea = {};
 }
 
 void CommandBuffer::copyBuffer( Buffer* src, Buffer* dst )

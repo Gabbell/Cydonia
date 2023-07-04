@@ -54,6 +54,7 @@ void LightUpdateSystem::tick( double deltaS )
       // Naming this view
       scene.viewNames[viewIdx] = viewName;
 
+      // Updating view
       SceneComponent::ViewShaderParams& view = scene.views[viewIdx];
 
       view.position = glm::vec4( transform.position, 1.0f );
@@ -61,7 +62,7 @@ void LightUpdateSystem::tick( double deltaS )
       view.viewMat = glm::lookAt(
           transform.position, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, 1.0f, 0.0f ) );
 
-      view.projMat = Transform::Ortho( -50.0f, 50.0f, -50.0f, 50.0f, -100.0f, 100.0f );
+      view.projMat = Transform::OrthoReverseZ( -71.0f, 71.0f, -71.0f, 71.0f, -100.0f, 100.0f );
 
       // Updating scene
       scene.lights[lightIdx].position = glm::vec4( transform.position, 1.0f );

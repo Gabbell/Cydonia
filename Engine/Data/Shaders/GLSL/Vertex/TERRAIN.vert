@@ -31,7 +31,7 @@ layout( location = 3 ) in vec4 inColor;  // Not used
 layout( location = 0 ) out vec2 outUV;
 layout( location = 1 ) out vec3 outNormal;
 layout( location = 2 ) out vec3 outWorldPos;
-layout( location = 3 ) out vec3 outCamPos;
+layout( location = 3 ) out vec3 outCamPos; // No need for interpolant
 layout( location = 4 ) out vec4 outShadowCoord;
 
 // =================================================================================================
@@ -66,13 +66,11 @@ vec3 getNormals( vec2 uv )
 }
 
 // Transforms NDC space [-1, 1] in xy to UV space [0, 1]
-const float depthBias = -0.005;
-
 // clang-format off
 const mat4 biasMat = mat4( 0.5, 0.0, 0.0, 0.0,
                            0.0, 0.5, 0.0, 0.0,
                            0.0, 0.0, 1.0, 0.0,
-                           0.5, 0.5, depthBias, 1.0 );
+                           0.5, 0.5, 0.0, 1.0 );
 // clang-format on
 
 // =================================================================================================

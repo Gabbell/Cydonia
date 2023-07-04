@@ -57,10 +57,24 @@ glm::mat4 Perspective( float fov, float aspectRatio, float near, float far )
    return proj;
 }
 
+glm::mat4 PerspectiveReverseZ( float fov, float aspectRatio, float near, float far )
+{
+   glm::mat4 proj = glm::perspectiveZO( glm::radians( fov ), aspectRatio, far, near);
+   proj[1][1] *= -1.0f;  // Invert Y
+   return proj;
+}
+
 glm::mat4 Ortho( float left, float right, float bottom, float top, float near, float far )
 {
    glm::mat4 proj = glm::orthoZO( left, right, bottom, top, near, far );
    proj[1][1] *= -1.0f; // Invert Y
+   return proj;
+}
+
+glm::mat4 OrthoReverseZ( float left, float right, float bottom, float top, float near, float far )
+{
+   glm::mat4 proj = glm::orthoZO( left, right, bottom, top, far, near );
+   proj[1][1] *= -1.0f;  // Invert Y
    return proj;
 }
 }

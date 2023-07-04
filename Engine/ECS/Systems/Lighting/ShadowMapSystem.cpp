@@ -79,9 +79,8 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       if( !renderable.isShadowCasting ) continue;
 
       const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const MaterialComponent& material =
-          *std::get<MaterialComponent*>( entityEntry.arch );
-      const MeshComponent& mesh = *std::get<MeshComponent*>( entityEntry.arch );
+      const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
+      const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
       const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "LightView 0" );
       if( it == scene.viewNames.end() )

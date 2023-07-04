@@ -71,6 +71,12 @@
           "FORMAT": "RGBA32F"
         }
       ],
+      "DEPTH_STENCIL": {
+        "DEPTH_TEST_ENABLE": true,
+        "STENCIL_TEST_ENABLE": false,
+        "DEPTH_WRITE_ENABLE": true,
+        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+      },
       "SHADER_RESOURCES": [
         {
           "NAME": "Model",
@@ -98,6 +104,63 @@
           "STAGE": "FRAGMENT",
           "SET": 1,
           "BINDING": 2
+        },
+        {
+          "NAME": "DISPLACEMENT",
+          "TYPE": "SAMPLER",
+          "STAGE": "VERTEX",
+          "SET": 1,
+          "BINDING": 5
+        }
+      ]
+    },
+    {
+      "NAME": "TERRAIN_SHADOWMAP",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "TERRAIN_STRIPPED_VERT",
+      "FRAGMENT_SHADER": "EMPTY_FRAG",
+      "VERTEX_LAYOUT": [
+        {
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGBA32F"
+        }
+      ],
+      "DEPTH_STENCIL": {
+        "DEPTH_TEST_ENABLE": true,
+        "STENCIL_TEST_ENABLE": false,
+        "DEPTH_WRITE_ENABLE": true,
+        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+      },
+      "RASTERIZER": {
+        "DEPTH_BIAS_ENABLE": true,
+        "DEPTH_CONSTANT": -83886.08,
+        "DEPTH_SLOPE_SCALE": -1.75
+      },
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "Model",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "VERTEX",
+          "SIZE": 64
+        },
+        {
+          "NAME": "EnvironmentView",
+          "TYPE": "UBO",
+          "STAGE": "VERTEX",
+          "SET": 0,
+          "BINDING": 0
         },
         {
           "NAME": "DISPLACEMENT",
@@ -184,52 +247,6 @@
           "STAGE": "FRAGMENT",
           "SET": 0,
           "BINDING": 2
-        }
-      ]
-    },
-    {
-      "NAME": "TERRAIN_SHADOWMAP",
-      "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "TERRAIN_STRIPPED_VERT",
-      "FRAGMENT_SHADER": "EMPTY_FRAG",
-      "VERTEX_LAYOUT": [
-        {
-          "LOCATION": 0,
-          "FORMAT": "RGB32F"
-        },
-        {
-          "LOCATION": 1,
-          "FORMAT": "RGB32F"
-        },
-        {
-          "LOCATION": 2,
-          "FORMAT": "RGB32F"
-        },
-        {
-          "LOCATION": 3,
-          "FORMAT": "RGBA32F"
-        }
-      ],
-      "SHADER_RESOURCES": [
-        {
-          "NAME": "Model",
-          "TYPE": "CONSTANT_BUFFER",
-          "STAGE": "VERTEX",
-          "SIZE": 64
-        },
-        {
-          "NAME": "EnvironmentView",
-          "TYPE": "UBO",
-          "STAGE": "VERTEX",
-          "SET": 0,
-          "BINDING": 0
-        },
-        {
-          "NAME": "DISPLACEMENT",
-          "TYPE": "SAMPLER",
-          "STAGE": "VERTEX",
-          "SET": 1,
-          "BINDING": 5
         }
       ]
     },
@@ -360,7 +377,7 @@
           "BINDING": 0
         },
         {
-        "NAME": "InstancesData",
+          "NAME": "InstancesData",
           "TYPE": "UBO",
           "STAGE": "VERTEX",
           "SET": 0,

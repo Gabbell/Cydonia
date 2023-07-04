@@ -63,11 +63,11 @@ void CameraSystem::tick( double /*deltaS*/ )
       switch( camera.projMode )
       {
          case CameraComponent::ProjectionMode::PERSPECTIVE:
-            view.projMat =
-                Transform::Perspective( camera.fov, camera.aspectRatio, camera.near, camera.far );
+            view.projMat = Transform::PerspectiveReverseZ(
+                camera.fov, camera.aspectRatio, camera.near, camera.far );
             break;
          case CameraComponent::ProjectionMode::ORTHOGRAPHIC:
-            view.projMat = Transform::Ortho(
+            view.projMat = Transform::OrthoReverseZ(
                 camera.left, camera.right, camera.bottom, camera.top, camera.near, camera.far );
             break;
          case CameraComponent::ProjectionMode::UNKNOWN:

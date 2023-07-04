@@ -29,33 +29,28 @@ vec3 LinearToGamma( vec3 color )
    return vec3( pow( color.r, 1.0 / 2.2 ), pow( color.g, 1.0 / 2.2 ), pow( color.b, 1.0 / 2.2 ) );
 }
 
-vec3 ComputeLightBlinnPhong(
-    vec3 lightRadiance,
-    vec3 lightDir,
-    vec3 viewDir,
-    vec3 normal,
-    float shadowFactor )
+float ConstantAmbient()
 {
-   const float ambientStrength  = 0.1;
+   const float ambientTerm = 0.1;
+   return ambientTerm;
+}
+
+float LambertianDiffuse( vec3 lightDir, vec3 normal )
+{
+   const float diffuseTerm = clamp( dot( normal, lightDir ), 0.0, 1.0 );
+   return diffuseTerm;
+}
+
+float BlinnPhongSpecular( vec3 lightDir, vec3 viewDir, vec3 normal )
+{
    const float specularStrength = 0.5;
 
-   // Ambient
-   vec3 ambientTerm = ambientStrength * lightRadiance;
-
-   // Lambertian Diffuse
-   float diff       = clamp( dot( normal, lightDir ), 0.0, 1.0 );
-   vec3 diffuseTerm = diff * lightRadiance;
-
    // Specular
-   vec3 specularTerm = vec3( 0.0, 0.0, 0.0 );
-   if( diff != 0.0 )  // Don't add a specular component when the diffuse dot product is 0
-   {
-      vec3 halfDir = normalize( lightDir + viewDir );
-      float spec   = pow( clamp( dot( normal, halfDir ), 0.0, 1.0 ), 16.0 );
-      specularTerm = specularStrength * spec * lightRadiance;
-   }
+   const vec3 halfDir       = normalize( lightDir + viewDir );
+   const float spec         = pow( clamp( dot( normal, halfDir ), 0.0, 1.0 ), 16.0 );
+   const float specularTerm = specularStrength * spec;
 
-   return ( ambientTerm + shadowFactor * ( diffuseTerm + specularTerm ) );
+   return specularTerm;
 }
 
 float ShadowPCF( vec4 shadowCoords, vec3 normal, vec3 worldPos )
@@ -69,24 +64,42 @@ float ShadowPCF( vec4 shadowCoords, vec3 normal, vec3 worldPos )
    }
 
    // Calculate bias (based on depth map resolution and slope)
-   vec3 lightDir = normalize( lights[0].position.xyz - worldPos );
-   float bias    = 0.0; //max( 0.05 * ( 1.0 - dot( normal, lightDir ) ), 0.005 );
+   const vec3 lightDir = normalize( lights[0].position.xyz - worldPos );
 
    // PCF
-   vec2 texelSize = 1.0 / textureSize( shadowMap, 0 );
-   float shadow   = 0.0;
-   int range      = 1; // 9 Samples
-   int count      = 0;
+   const vec2 texelSize = 1.0 / textureSize( shadowMap, 0 );
+   const int range      = 1;  // 9 Samples
+   int count            = 0;
+   float shadow         = 0.0;
    for( int x = -range; x <= range; ++x )
    {
       for( int y = -range; y <= range; ++y )
       {
-         vec2 offset          = vec2( x, y ) * texelSize;
-         vec3 curShadowCoords = vec3( shadowCoords.xy + offset, shadowCoords.z - bias );
+         const vec2 offset          = vec2( x, y ) * texelSize;
+         const vec3 curShadowCoords = vec3( shadowCoords.xy + offset, shadowCoords.z );
          shadow += texture( shadowMap, curShadowCoords );
          count++;
       }
    }
 
-   return shadow /= count;
+   shadow /= count;
+
+   // Edge fade
+   /*
+   const float fade      = 0.01;  // Last 1% of shadow result are linearly faded
+   const float startFade = 1.0 - fade;
+
+   const vec2 ndcShadowCoords = shadowCoords.xy * 2.0 - 1.0;  // XY from -1.0 to 1.0 centered
+   const float maxCoord =
+       clamp( max( abs( ndcShadowCoords.x ), abs( ndcShadowCoords.y ) ), 0.0, 1.0 );
+
+   float edgeFade = 1.0;
+   if( maxCoord > startFade && maxCoord <= 1.0 )
+   {
+      const float t = ( maxCoord - startFade ) / fade;
+      edgeFade      = mix( 1.0, 0.0, t );
+   }
+   */
+
+   return shadow;
 }

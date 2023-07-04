@@ -16,5 +16,7 @@ glm::mat4
 GetModelMatrix( const glm::vec3& scaling, const glm::quat& rotation, const glm::vec3& position );
 
 glm::mat4 Ortho( float left, float right, float bottom, float top, float near, float far );
+glm::mat4 OrthoReverseZ( float left, float right, float bottom, float top, float near, float far );
 glm::mat4 Perspective( float fov, float aspectRatio, float near, float far );
+glm::mat4 PerspectiveReverseZ( float fov, float aspectRatio, float near, float far );
 }

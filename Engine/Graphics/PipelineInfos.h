@@ -40,6 +40,21 @@ struct ShaderSetInfo
    std::vector<ShaderBindingInfo> shaderBindings;
 };
 
+struct RasterizerState
+{
+   bool useDepthBias         = false;
+   float depthBiasConstant   = 0.0f;
+   float depthBiasSlopeScale = 0.0f;
+};
+
+struct DepthStencilState
+{
+   bool useDepthTest              = false;
+   bool useStencilTest            = false;
+   bool depthWrite                = false;
+   CompareOperator depthCompareOp = CompareOperator::ALWAYS;
+};
+
 struct PipelineLayoutInfo
 {
    bool operator==( const PipelineLayoutInfo& other ) const;
@@ -48,7 +63,7 @@ struct PipelineLayoutInfo
        ShaderResourceType type,
        PipelineStageFlag stages,
        uint8_t binding,
-       uint8_t set = 0,
+       uint8_t set                 = 0,
        const std::string_view name = "" );
 
    std::vector<PushConstantRange> ranges;
@@ -138,7 +153,8 @@ struct GraphicsPipelineInfo final : public PipelineInfo
 
    std::vector<std::string> shaders;
    VertexLayout vertLayout;
-   // PipelineState pipState; // TODO PSO hints
+   DepthStencilState dsState;
+   RasterizerState rasterizer;
    DrawPrimitive drawPrim;
    PolygonMode polyMode;
    Extent2D extent;

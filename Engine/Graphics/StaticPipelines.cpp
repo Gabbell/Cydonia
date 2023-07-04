@@ -113,6 +113,45 @@ static PixelFormat StringToPixelFormat( const std::string& formatString )
    return PixelFormat::RGBA32F;
 }
 
+static CompareOperator StringToCompareOp( const std::string& operatorString )
+{
+   if( operatorString == "NEVER" )
+   {
+      return CompareOperator::NEVER;
+   }
+   if( operatorString == "LESS" )
+   {
+      return CompareOperator::LESS;
+   }
+   if( operatorString == "EQUAL" )
+   {
+      return CompareOperator::EQUAL;
+   }
+   if( operatorString == "LESS_EQUAL" )
+   {
+      return CompareOperator::LESS_EQUAL;
+   }
+   if( operatorString == "GREATER" )
+   {
+      return CompareOperator::GREATER;
+   }
+   if( operatorString == "GREATER_EQUAL" )
+   {
+      return CompareOperator::GREATER_EQUAL;
+   }
+   if( operatorString == "NOT_EQUAL" )
+   {
+      return CompareOperator::NOT_EQUAL;
+   }
+   if( operatorString == "ALWAYS" )
+   {
+      return CompareOperator::ALWAYS;
+   }
+
+   CYD_ASSERT( !"Pipelines: Could not recognize string as a compare operator" );
+   return CompareOperator::ALWAYS;
+}
+
 bool Initialize()
 {
    // Parse pipeline infos from JSON description
@@ -129,7 +168,7 @@ bool Initialize()
 
    const auto& pipelines = pipelineDescriptions.front();
 
-   printf( "======== Initializing Static Pipelines ========\n");
+   printf( "======== Initializing Static Pipelines ========\n" );
 
    // A pipeline is what is used during a render stage
    for( uint32_t pipIdx = 0; pipIdx < pipelines.size(); ++pipIdx )
@@ -190,11 +229,11 @@ bool Initialize()
          }
 
          // Parsing vertex layout
-         const auto& vertLayoutIt = pipeline.find( "VERTEX_LAYOUT" );
-         if( vertLayoutIt != pipeline.end() )
+         const auto& vertexLayoutIt = pipeline.find( "VERTEX_LAYOUT" );
+         if( vertexLayoutIt != pipeline.end() )
          {
             uint32_t curOffset = 0;
-            for( const auto& attribute : *vertLayoutIt )
+            for( const auto& attribute : *vertexLayoutIt )
             {
                const uint32_t location     = attribute["LOCATION"];
                const PixelFormat vecFormat = StringToPixelFormat( attribute["FORMAT"] );
@@ -224,6 +263,27 @@ bool Initialize()
             }
          }
 
+         // Parsing depth stencil state
+         const auto& depthStencilIt = pipeline.find( "DEPTH_STENCIL" );
+         if( depthStencilIt != pipeline.end() )
+         {
+            const auto& depthStencil       = *depthStencilIt;
+            pipInfo.dsState.useDepthTest   = depthStencil["DEPTH_TEST_ENABLE"];
+            pipInfo.dsState.useStencilTest = depthStencil["STENCIL_TEST_ENABLE"];
+            pipInfo.dsState.depthWrite     = depthStencil["DEPTH_WRITE_ENABLE"];
+            pipInfo.dsState.depthCompareOp = StringToCompareOp(depthStencil["DEPTH_COMPARE_OP"]);
+         }
+
+         // Parsing rasterizer state
+         const auto& rasterizerIt = pipeline.find( "RASTERIZER" );
+         if( rasterizerIt != pipeline.end() )
+         {
+            const auto& rasterizer                 = *rasterizerIt;
+            pipInfo.rasterizer.useDepthBias        = rasterizer["DEPTH_BIAS_ENABLE"];
+            pipInfo.rasterizer.depthBiasConstant   = rasterizer["DEPTH_CONSTANT"];
+            pipInfo.rasterizer.depthBiasSlopeScale = rasterizer["DEPTH_SLOPE_SCALE"];
+         }
+
          newPipeline = new GraphicsPipelineInfo( pipInfo );
       }
       else if( pipelineType == "COMPUTE" )  // COMPUTE PIPELINE
@@ -249,7 +309,7 @@ bool Initialize()
             const std::string resourceType = resource["TYPE"];
             if( resourceType == "CONSTANT_BUFFER" )
             {
-               uint32_t offset                  = 0;
+               uint32_t offset = 0;
                if( resource.find( "OFFSET" ) != resource.end() )
                {
                   offset = resource["OFFSET"];

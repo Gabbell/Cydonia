@@ -255,7 +255,7 @@ void DrawProceduralDisplacementComponentMenu(
       notConst.params.seed = Noise::GenerateRandomSeed();
       triggerUpdate        = true;
    }
-   triggerUpdate |= ImGui::SliderFloat( "Amplitude", &notConst.params.amplitude, 0.0f, 1.0f );
+   triggerUpdate |= ImGui::SliderFloat( "Amplitude", &notConst.params.amplitude, 0.0f, 2.0f );
    triggerUpdate |= ImGui::SliderFloat( "Gain", &notConst.params.gain, 0.0f, 1.0f );
    triggerUpdate |= ImGui::SliderFloat( "Frequency", &notConst.params.frequency, 0.0f, 10.0f );
    triggerUpdate |= ImGui::SliderFloat( "Lacunarity", &notConst.params.lacunarity, 1.0f, 10.0f );

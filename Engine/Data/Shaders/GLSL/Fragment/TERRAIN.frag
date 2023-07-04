@@ -23,15 +23,17 @@ void main()
       someColor = vec3( 0.05, 1.0, 1.0 );
    }
 
-   vec3 normal = normalize( inNormal );
+   const vec3 normal = normalize( inNormal );
 
-   float shadowFactor = ShadowPCF( inShadowCoord, normal, inWorldPos );
+   const Light curLight = lights[0];
+   const vec3 lightDir  = normalize( -curLight.direction.xyz );
+   const vec3 viewDir   = normalize( inCamPos - inWorldPos );
 
-   Light curLight = lights[0];
-   vec3 lightDir  = normalize( -curLight.direction.xyz );
-   vec3 viewDir   = normalize( inCamPos - inWorldPos );
-   vec3 lightContributions =
-       ComputeLightBlinnPhong( curLight.color.rgb, lightDir, viewDir, normal, shadowFactor );
+   const float shadow     = ShadowPCF( inShadowCoord, normal, inWorldPos );
+   const vec3 ambientTerm = curLight.color.rgb * ConstantAmbient();
+   const vec3 diffuseTerm = curLight.color.rgb * LambertianDiffuse( lightDir, normal ) * shadow;
+   const vec3 specularTerm =
+       curLight.color.rgb * BlinnPhongSpecular( lightDir, viewDir, normal ) * shadow;
 
-   outColor = vec4(someColor * lightContributions, 1.0 );
+   outColor = vec4( someColor * ( ambientTerm + diffuseTerm + specularTerm ), 1.0 );
 }

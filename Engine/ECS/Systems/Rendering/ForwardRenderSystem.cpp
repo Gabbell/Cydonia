@@ -74,23 +74,23 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
    }
    const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
 
-   // Dynamic state
-   GRIS::SetViewport( cmdList, scene.viewport );
-   GRIS::SetScissor( cmdList, scene.scissor );
-
    // TODO TEMP
    if( scene.shadowMap )
    {
       SamplerInfo sampler;
-      sampler.useCompare  = true; // For PCF
-      sampler.compare     = CompareOperator::LESS;
+      sampler.useCompare  = true;  // For PCF
+      sampler.compare     = CompareOperator::GREATER_EQUAL;
       sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
-      sampler.borderColor = BorderColor::OPAQUE_WHITE;
+      sampler.borderColor = BorderColor::OPAQUE_BLACK;
       GRIS::BindTexture( cmdList, scene.shadowMap, sampler, 2, 1 );
    }
 
    // Rendering straight to swapchain
    GRIS::BeginRendering( cmdList );
+
+   // Dynamic state
+   GRIS::SetViewport( cmdList, {} );
+   GRIS::SetScissor( cmdList, {} );
 
    // Tracking
    std::string_view prevMesh;
@@ -139,7 +139,6 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       if( renderable.instanceCount )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid Instances Buffer" );
-
          optionalBufferBinding( cmdList, renderable.instancesBuffer, "InstancesData", curPipInfo );
       }
 

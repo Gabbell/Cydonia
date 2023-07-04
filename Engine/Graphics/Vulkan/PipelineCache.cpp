@@ -323,7 +323,9 @@ VkPipeline PipelineCache::findOrCreate(
    rasterizer.lineWidth               = 1.0f;
    rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
    rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-   rasterizer.depthBiasEnable         = VK_FALSE;
+   rasterizer.depthBiasEnable         = pipInfo.rasterizer.useDepthBias;
+   rasterizer.depthBiasConstantFactor = pipInfo.rasterizer.depthBiasConstant;
+   rasterizer.depthBiasSlopeFactor    = pipInfo.rasterizer.depthBiasSlopeScale;
 
    // Multisampling
    VkPipelineMultisampleStateCreateInfo multisampling = {};
@@ -371,11 +373,11 @@ VkPipeline PipelineCache::findOrCreate(
    // little to no effect on performance though
    VkPipelineDepthStencilStateCreateInfo depthStencil = {};
    depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-   depthStencil.depthTestEnable       = VK_TRUE;
-   depthStencil.depthWriteEnable      = VK_TRUE;
-   depthStencil.depthCompareOp        = VK_COMPARE_OP_LESS;
+   depthStencil.depthTestEnable       = pipInfo.dsState.useDepthTest;
+   depthStencil.depthWriteEnable      = pipInfo.dsState.depthWrite;
+   depthStencil.depthCompareOp        = TypeConversions::cydToVkCompareOp(pipInfo.dsState.depthCompareOp);
    depthStencil.depthBoundsTestEnable = VK_FALSE;
-   depthStencil.stencilTestEnable     = VK_FALSE;
+   depthStencil.stencilTestEnable     = pipInfo.dsState.useStencilTest;
    depthStencil.minDepthBounds        = 0.0f;
    depthStencil.maxDepthBounds        = 1.0f;
    depthStencil.front                 = {};
