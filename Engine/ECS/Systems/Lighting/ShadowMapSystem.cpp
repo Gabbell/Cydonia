@@ -1,6 +1,7 @@
 #include <ECS/Systems/Lighting/ShadowMapSystem.h>
 
 #include <Graphics/VertexLayout.h>
+#include <Graphics/Framebuffer.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/Utility/Transforms.h>
 
@@ -13,6 +14,11 @@
 
 namespace CYD
 {
+static constexpr uint32_t SHADOWMAP_DIM     = 2048;
+static bool s_initialized                   = false;
+static PipelineIndex s_shadowmapPipeline    = INVALID_PIPELINE_IDX;
+static RenderPassInfo s_shadowmapRenderpass = {};
+
 static void optionalBufferBinding(
     CmdListHandle cmdList,
     BufferHandle buffer,
@@ -27,9 +33,29 @@ static void optionalBufferBinding(
    }
 }
 
+static void Initialize()
+{
+   s_shadowmapPipeline = StaticPipelines::FindByName( "TERRAIN_SHADOWMAP" );
+
+   Attachment& attachment   = s_shadowmapRenderpass.attachments.emplace_back();
+   attachment.type          = AttachmentType::DEPTH_STENCIL;
+   attachment.format        = PixelFormat::D32_SFLOAT;
+   attachment.loadOp        = LoadOp::CLEAR;
+   attachment.storeOp       = StoreOp::STORE;
+   attachment.initialAccess = Access::UNDEFINED;
+   attachment.nextAccess    = Access::FRAGMENT_SHADER_READ;
+
+   s_initialized = true;
+}
+
 void ShadowMapSystem::tick( double /*deltaS*/ )
 {
    CYD_TRACE( "ShadowMapSystem" );
+
+   if( !s_initialized )
+   {
+      Initialize();
+   }
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
@@ -37,8 +63,8 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
    if( !scene.shadowMap )
    {
       TextureDescription texDesc;
-      texDesc.width  = 2048;
-      texDesc.height = 2048;
+      texDesc.width  = SHADOWMAP_DIM;
+      texDesc.height = SHADOWMAP_DIM;
       texDesc.size   = texDesc.width * texDesc.height * sizeof( float );
       texDesc.type   = ImageType::TEXTURE_2D;
       texDesc.format = PixelFormat::D32_SFLOAT;
@@ -52,20 +78,18 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
    const CmdListHandle cmdList = GRIS::GetMainCommandList();
    CYD_GPUTRACE( cmdList, "ShadowMapSystem" );
 
-   FramebufferInfo framebuffer;
-   framebuffer.attachments.push_back(
-       { PixelFormat::D32_SFLOAT, AttachmentType::DEPTH_STENCIL, LoadOp::CLEAR, StoreOp::STORE } );
+   Framebuffer framebuffer( SHADOWMAP_DIM, SHADOWMAP_DIM );
+   framebuffer.attach( Framebuffer::Index::DEPTH, scene.shadowMap );
 
    // TODO go through this loop once per light view
-   GRIS::BeginRendering( cmdList, framebuffer, { scene.shadowMap } );
+   GRIS::BeginRendering( cmdList, framebuffer, s_shadowmapRenderpass );
 
    GRIS::SetViewport( cmdList, {} );
    GRIS::SetScissor( cmdList, {} );
 
-   const PipelineIndex pipIdx  = StaticPipelines::FindByName( "TERRAIN_SHADOWMAP" );
-   const PipelineInfo* pipInfo = StaticPipelines::Get( pipIdx );
+   const PipelineInfo* pipInfo = StaticPipelines::Get( s_shadowmapPipeline );
 
-   GRIS::BindPipeline( cmdList, pipIdx );
+   GRIS::BindPipeline( cmdList, s_shadowmapPipeline );
 
    // Tracking
    std::string_view prevMesh;

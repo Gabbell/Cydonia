@@ -71,7 +71,7 @@ class Device final
 
    void cleanup();  // Clean up unused resources
 
-   void waitUntilIdle(); // CPU wait until device is done working
+   void waitUntilIdle();  // CPU wait until device is done working
    void waitOnFrame( uint32_t currentFrame );
 
    // Getters

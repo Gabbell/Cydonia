@@ -127,11 +127,11 @@
       void destroyIndexBuffer( IndexBufferHandle bufferHandle ) override;                          \
       void destroyBuffer( BufferHandle bufferHandle ) override;                                    \
                                                                                                    \
-      void prepareFrame() override;                                                                \
+      void beginFrame() override;                                                                \
       void beginRendering( CmdListHandle cmdList ) override;                                       \
       void beginRendering(                                                                         \
           CmdListHandle cmdList,                                                                   \
-          const FramebufferInfo& targetsInfo,                                                      \
+          const RenderPassInfo& targetsInfo,                                                      \
           const std::vector<TextureHandle>& targets ) override;                                    \
       void nextPass( CmdListHandle cmdList ) override;                                             \
       void endRendering( CmdListHandle cmdList ) override;                                         \

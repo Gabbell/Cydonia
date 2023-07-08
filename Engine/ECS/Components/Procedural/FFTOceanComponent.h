@@ -61,12 +61,6 @@ class FFTOceanComponent final : public BaseComponent
    float modulationX = 1.0f;
    float modulationZ = 1.0f;
 
-   PipelineIndex butterflyOperationsPip    = INVALID_PIPELINE_IDX;
-   PipelineIndex inversionPermutationPip   = INVALID_PIPELINE_IDX;
-   PipelineIndex philipsSpectraGenPip      = INVALID_PIPELINE_IDX;
-   PipelineIndex butterflyTexGenerationPip = INVALID_PIPELINE_IDX;
-   PipelineIndex fourierComponentsPip      = INVALID_PIPELINE_IDX;
-
    bool needsInit         = true; // Initialize pipeline indices
    bool needsUpdate       = true; // If we need to update the pre-computed textures
    bool resolutionChanged = true; // If we need to resize the textures

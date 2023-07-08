@@ -32,11 +32,10 @@ enum class ComponentType : int16_t
 
    // Procedural
    // ==============================================================================================
-   //NOISE,
    PROCEDURAL_DISPLACEMENT,
    PROCEDURAL_MATERIAL,
    OCEAN,
-   ATMOSPHERE,
+   FOG,
 
    // Physics
    // ==============================================================================================
@@ -67,7 +66,7 @@ static const char* GetComponentName( ComponentType type )
        "Procedural Displacement",
        "Procedural Material",
        "Ocean",
-       "Atmosphere",
+       "Fog",
        "Motion",
        "Entity Follow",
        "Debug Draw" };

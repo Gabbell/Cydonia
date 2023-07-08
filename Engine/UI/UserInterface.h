@@ -13,6 +13,7 @@ class BaseSharedComponent;
 class TransformComponent;
 class RenderableComponent;
 class ProceduralDisplacementComponent;
+class FogComponent;
 class SceneComponent;
 
 namespace UI
@@ -48,6 +49,7 @@ void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableCompone
 void DrawProceduralDisplacementComponentMenu(
     CmdListHandle cmdList,
     const ProceduralDisplacementComponent& displacement );
+void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog );
 void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& scene );
 
 // Materials

@@ -16,11 +16,8 @@ namespace CYD
 {
 class MaterialCache;
 
-class ShadowMapSystem final : public CommonSystem<
-                                  RenderableComponent,
-                                  TransformComponent,
-                                  MaterialComponent,
-                                  MeshComponent>
+class ShadowMapSystem final
+    : public CommonSystem<RenderableComponent, TransformComponent, MaterialComponent, MeshComponent>
 {
   public:
    ShadowMapSystem() = delete;

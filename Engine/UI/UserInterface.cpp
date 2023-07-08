@@ -7,6 +7,7 @@
 #include <ECS/Components/Transforms/TransformComponent.h>
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
+#include <ECS/Components/Procedural/FogComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
 #include <ThirdParty/ImGui/imgui.h>
@@ -190,6 +191,12 @@ void DrawComponentsMenu( CmdListHandle cmdList, ComponentType type, const BaseCo
          DrawProceduralDisplacementComponentMenu( cmdList, displacement );
          break;
       }
+      case ComponentType::FOG:
+      {
+         const FogComponent& fog = *static_cast<const FogComponent*>( component );
+         DrawFogComponentMenu( cmdList, fog );
+         break;
+      }
       default:
          ImGui::PushStyleColor( ImGuiCol_Text, IM_COL32( 255, 0, 0, 255 ) );
          ImGui::Text( "Unimplemented" );
@@ -281,8 +288,20 @@ void DrawProceduralDisplacementComponentMenu(
    ImGui::Image( s_noiseTexture, dimensions );
 }
 
+void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog )
+{
+   // Hello darkness, my old friend
+   FogComponent& notConst = const_cast<FogComponent&>( fog );
+
+   ImGui::SliderFloat( "A", &notConst.params.a, 0.0f, 5.0f );
+   ImGui::SliderFloat( "B", &notConst.params.b, 0.0f, 5.0f );
+   ImGui::SliderFloat( "Start Fog", &notConst.params.startFog, 0.0f, 1000.0f );
+   ImGui::SliderFloat( "End Fog", &notConst.params.endFog, 0.0f, 1000.0f );
+}
+
 void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable )
 {
+   ImGui::Checkbox( "Is Visible", (bool*)&renderable.isVisible );
    ImGui::Checkbox( "Casts Shadows", (bool*)&renderable.isShadowCasting );
 }
 
@@ -296,9 +315,9 @@ void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& 
    GRIS::UpdateDebugTexture( cmdList, scene.shadowMap );
 
    ImGui::Text( "Shadow Map Texture" );
-   float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
-   float displayHeight = displayWidth * static_cast<float>( 2048.0f ) /
-                         static_cast<float>( 2048.0f );
+   float displayWidth = ImGui::GetWindowWidth() * 0.85f;
+   float displayHeight =
+       displayWidth * static_cast<float>( 2048.0f ) / static_cast<float>( 2048.0f );
    const ImVec2 dimensions( displayWidth, displayHeight );
    ImGui::Image( s_shadowMapTexture, dimensions );
 }

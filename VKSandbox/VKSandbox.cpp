@@ -22,14 +22,15 @@
 #include <ECS/Systems/Physics/PlayerMoveSystem.h>
 #include <ECS/Systems/Physics/MotionSystem.h>
 #include <ECS/Systems/Procedural/ProceduralDisplacementSystem.h>
+#include <ECS/Systems/Procedural/FogSystem.h>
 #include <ECS/Systems/Scene/CameraSystem.h>
-#include <ECS/Systems/Scene/InstanceUpdateSystem.h>
 #include <ECS/Systems/UI/ImGuiSystem.h>
 
 #include <ECS/Components/Physics/MotionComponent.h>
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/MaterialComponent.h>
+#include <ECS/Components/Rendering/FullscreenComponent.h>
 #include <ECS/Components/Transforms/InstancedComponent.h>
 
 #if CYD_DEBUG
@@ -69,7 +70,7 @@ void VKSandbox::preLoop()
    // Core
    m_ecs->addSystem<InputSystem>( *m_window );
    m_ecs->addSystem<CameraSystem>();
-   m_ecs->addSystem<InstanceUpdateSystem>();
+   // m_ecs->addSystem<InstanceUpdateSystem>();
 
    // Resources
    m_ecs->addSystem<MeshLoaderSystem>( *m_meshes );
@@ -86,6 +87,7 @@ void VKSandbox::preLoop()
    m_ecs->addSystem<LightUpdateSystem>();
    m_ecs->addSystem<ShadowMapSystem>( *m_materials );
    m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
+   m_ecs->addSystem<FogSystem>();
 
    // Debug
 #if CYD_DEBUG
@@ -99,9 +101,12 @@ void VKSandbox::preLoop()
    // =============================================================================================
    CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Initial Transfer" );
 
+   // This is not great. We have limited resolution at close views and too many triangles at far distances.
+   // Should use tessellation. This is the reason why the mountain ranges that go through diagonally
+   // the XZ axes look like they were cut by a crinkle-cut scissor. The grid is axis-aligned XZ
    std::vector<Vertex> terrainGridVerts;
    std::vector<uint32_t> terrainGridIndices;
-   MeshGeneration::Grid( terrainGridVerts, terrainGridIndices, 1024, 1024 );
+   MeshGeneration::Grid( terrainGridVerts, terrainGridIndices, 1024, 1024);
    m_meshes->loadMesh( transferList, "TERRAIN", terrainGridVerts, terrainGridIndices );
 
    GRIS::SubmitCommandList( transferList );
@@ -129,24 +134,23 @@ void VKSandbox::preLoop()
    m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 100.0f ) );
    m_ecs->assign<MeshComponent>( terrain, "TERRAIN" );
    m_ecs->assign<ProceduralDisplacementComponent>(
-       terrain, Noise::Type::SIMPLEX_NOISE, 1024, 1024, 0.0f );
+       terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, 0.0f );
    m_ecs->assign<MaterialComponent>( terrain, "TERRAIN", "SOLO_TEX_R32F" );
 
-   // const EntityHandle spheres = m_ecs->createEntity( "Spheres" );
-   // m_ecs->assign<RenderableComponent>( spheres );
-   // m_ecs->assign<TransformComponent>( spheres );
-   // m_ecs->assign<InstancedComponent>( spheres, InstancedComponent::MAX_INSTANCES );
-   // m_ecs->assign<MeshComponent>( spheres, "DEBUG_SPHERE" );
-   // m_ecs->assign<MaterialComponent>( spheres, "PBR_CONSTANT", "NO_MATERIAL" );
+   const EntityHandle fog = m_ecs->createEntity( "Fog" );
+   m_ecs->assign<RenderableComponent>( fog );
+   m_ecs->assign<FogComponent>( fog );
 }
 
 void VKSandbox::tick( double deltaS )
 {
-   GRIS::PrepareFrame();
+   GRIS::BeginFrame();
 
    m_ecs->tick( deltaS );
 
    RenderGraph::Execute();
+
+   GRIS::EndFrame();
 
    GRIS::PresentFrame();
 

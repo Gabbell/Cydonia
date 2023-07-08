@@ -50,6 +50,36 @@ VkFormat cydToVkFormat( CYD::PixelFormat format )
    return VK_FORMAT_B8G8R8A8_UNORM;
 }
 
+CYD::PixelFormat vkToCydFormat( VkFormat format )
+{
+   switch( format )
+   {
+      case VK_FORMAT_B8G8R8A8_UNORM:
+         return CYD::PixelFormat::BGRA8_UNORM;
+      case VK_FORMAT_R8G8B8A8_UNORM:
+         return CYD::PixelFormat::RGBA8_UNORM;
+      case VK_FORMAT_R8G8B8A8_SRGB:
+         return CYD::PixelFormat::RGBA8_SRGB;
+      case VK_FORMAT_R16G16B16A16_SFLOAT:
+         return CYD::PixelFormat::RGBA16F;
+      case VK_FORMAT_R32G32B32A32_SFLOAT:
+         return CYD::PixelFormat::RGBA32F;
+      case VK_FORMAT_R32G32B32_SFLOAT:
+         return CYD::PixelFormat::RGB32F;
+      case VK_FORMAT_R32G32_SFLOAT:
+         return CYD::PixelFormat::RG32F;
+      case VK_FORMAT_R32_SFLOAT:
+         return CYD::PixelFormat::R32F;
+      case VK_FORMAT_D32_SFLOAT:
+         return CYD::PixelFormat::D32_SFLOAT;
+      case VK_FORMAT_R16_UNORM:
+         return CYD::PixelFormat::R16_UNORM;
+   }
+
+   CYD_ASSERT( !"TypeConversions:: Unrecognized pixel format" );
+   return CYD::PixelFormat::BGRA8_UNORM;
+}
+
 VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space )
 {
    switch( space )
@@ -291,12 +321,13 @@ VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout )
    return VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
-VkCompareOp cydToVkCompareOp( CYD::CompareOperator op)
+VkCompareOp cydToVkCompareOp( CYD::CompareOperator op )
 {
    switch( op )
    {
       case CYD::CompareOperator::NEVER:
-         return VK_COMPARE_OP_NEVER;;
+         return VK_COMPARE_OP_NEVER;
+         ;
       case CYD::CompareOperator::LESS:
          return VK_COMPARE_OP_LESS;
       case CYD::CompareOperator::EQUAL:

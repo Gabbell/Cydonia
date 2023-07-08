@@ -37,7 +37,7 @@ float ConstantAmbient()
 
 float LambertianDiffuse( vec3 lightDir, vec3 normal )
 {
-   const float diffuseTerm = clamp( dot( normal, lightDir ), 0.0, 1.0 );
+   const float diffuseTerm = max( dot( normal, lightDir ), 0.0 );
    return diffuseTerm;
 }
 
@@ -47,7 +47,7 @@ float BlinnPhongSpecular( vec3 lightDir, vec3 viewDir, vec3 normal )
 
    // Specular
    const vec3 halfDir       = normalize( lightDir + viewDir );
-   const float spec         = pow( clamp( dot( normal, halfDir ), 0.0, 1.0 ), 16.0 );
+   const float spec         = pow( max( dot( normal, halfDir ), 0.0 ), 16.0 );
    const float specularTerm = specularStrength * spec;
 
    return specularTerm;

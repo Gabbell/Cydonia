@@ -15,10 +15,12 @@ FWDHANDLE( VkImage );
 FWDHANDLE( VkImageView );
 FWDHANDLE( VkDeviceMemory );
 FWDHANDLE( VkDescriptorSet );
+FWDHANDLE( VkSwapchainKHR );
 
 namespace vk
 {
 class Device;
+class Swapchain;
 }
 
 // ================================================================================================
@@ -42,14 +44,14 @@ class Texture final
    uint32_t getLayers() const noexcept { return m_layers; }
    CYD::PixelFormat getPixelFormat() const noexcept { return m_format; }
    CYD::PipelineStageFlag getStages() const noexcept { return m_stages; }
-   CYD::ImageLayout getLayout() const noexcept { return m_layout; }
+   CYD::Access getPreviousAccess() const noexcept { return m_prevAccess; }
 
    const VkImage& getVKImage() const noexcept { return m_vkImage; }
    const VkImageView& getVKImageView() const noexcept { return m_vkImageView; }
 
    bool inUse() const { return ( *m_useCount ) > 0; }
-   
-   void setLayout( CYD::ImageLayout layout ) { m_layout = layout; }
+
+   void setPreviousAccess( CYD::Access access ) { m_prevAccess = access; }
 
    void incUse();
    void decUse();
@@ -62,16 +64,16 @@ class Texture final
    const Device* m_pDevice = nullptr;
 
    // Texture description
-   size_t m_size                 = 0;
-   uint32_t m_width              = 0;
-   uint32_t m_height             = 0;
-   uint32_t m_layers             = 1;  // For 3D images and cube maps
+   size_t m_size     = 0;
+   uint32_t m_width  = 0;
+   uint32_t m_height = 0;
+   uint32_t m_layers = 1;  // For 3D images and cube maps
 
-   CYD::ImageType m_type         = CYD::ImageType::TEXTURE_2D;
-   CYD::PixelFormat m_format     = CYD::PixelFormat::BGRA8_UNORM;
-   CYD::ImageLayout m_layout     = CYD::ImageLayout::UNKNOWN;
+   CYD::ImageType m_type     = CYD::ImageType::TEXTURE_2D;
+   CYD::PixelFormat m_format = CYD::PixelFormat::BGRA8_UNORM;
+   CYD::Access m_prevAccess  = CYD::Access::UNDEFINED;
 
-   CYD::ImageUsageFlag m_usage   = 0;
+   CYD::ImageUsageFlag m_usage     = 0;
    CYD::PipelineStageFlag m_stages = 0;
 
    VkImage m_vkImage         = nullptr;

@@ -36,7 +36,7 @@ bool Attachment::operator==( const Attachment& other ) const
           type == other.type;
 }
 
-bool FramebufferInfo::operator==( const FramebufferInfo& other ) const
+bool RenderPassInfo::operator==( const RenderPassInfo& other ) const
 {
    if( attachments.size() != other.attachments.size() ) return false;
 

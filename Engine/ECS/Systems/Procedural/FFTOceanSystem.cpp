@@ -15,6 +15,13 @@
 
 namespace CYD
 {
+static bool INITIALIZED                        = false;
+static PipelineIndex BUTTERFLY_OPERATIONS_PIP  = INVALID_PIPELINE_IDX;
+static PipelineIndex INVERSION_PERMUTATION_PIP = INVALID_PIPELINE_IDX;
+static PipelineIndex PHILIPS_SPECTRA_GEN_PIP   = INVALID_PIPELINE_IDX;
+static PipelineIndex BUTTERFLY_TEX_GEN_PIP     = INVALID_PIPELINE_IDX;
+static PipelineIndex FOURIER_COMPONENTS_PIP    = INVALID_PIPELINE_IDX;
+
 enum class FourierComponent  // To compute the displacement for a specific component
 {
    X,
@@ -22,13 +29,14 @@ enum class FourierComponent  // To compute the displacement for a specific compo
    Z
 };
 
-static void Initialize( FFTOceanComponent& ocean )
+static void Initialize()
 {
-   ocean.butterflyOperationsPip    = StaticPipelines::FindByName( "BUTTERFLY_OPERATIONS" );
-   ocean.inversionPermutationPip   = StaticPipelines::FindByName( "INVERSION_PERMUTATION" );
-   ocean.philipsSpectraGenPip      = StaticPipelines::FindByName( "PHILLIPS_SPECTRA_GENERATION" );
-   ocean.butterflyTexGenerationPip = StaticPipelines::FindByName( "BUTTERFLY_TEX_GENERATION" );
-   ocean.fourierComponentsPip      = StaticPipelines::FindByName( "FOURIER_COMPONENTS" );
+   BUTTERFLY_OPERATIONS_PIP  = StaticPipelines::FindByName( "BUTTERFLY_OPERATIONS" );
+   INVERSION_PERMUTATION_PIP = StaticPipelines::FindByName( "INVERSION_PERMUTATION" );
+   PHILIPS_SPECTRA_GEN_PIP   = StaticPipelines::FindByName( "PHILLIPS_SPECTRA_GENERATION" );
+   BUTTERFLY_TEX_GEN_PIP     = StaticPipelines::FindByName( "BUTTERFLY_TEX_GENERATION" );
+   FOURIER_COMPONENTS_PIP    = StaticPipelines::FindByName( "FOURIER_COMPONENTS" );
+   INITIALIZED               = true;
 }
 
 static void computeDisplacement(
@@ -41,7 +49,7 @@ static void computeDisplacement(
    const uint32_t numberOfStages = static_cast<uint32_t>( std::log2( resolution ) );
 
    // Cooley-Tukey Radix-2 FFT GPU algorithm
-   GRIS::BindPipeline( cmdList, ocean.butterflyOperationsPip );
+   GRIS::BindPipeline( cmdList, BUTTERFLY_OPERATIONS_PIP );
 
    GRIS::BindImage( cmdList, ocean.butterflyTexture, 0, 0 );
 
@@ -99,7 +107,7 @@ static void computeDisplacement(
    }
 
    // Inversion and permutation shaderpass
-   GRIS::BindPipeline( cmdList, ocean.inversionPermutationPip );
+   GRIS::BindPipeline( cmdList, INVERSION_PERMUTATION_PIP );
 
    // GRIS::BindImage( cmdList, material., 0, 0 );
 
@@ -133,17 +141,16 @@ static void computeDisplacement(
 
 void FFTOceanSystem::tick( double deltaS )
 {
+   // First time run
+   if( !INITIALIZED )
+   {
+      Initialize();
+   }
+
    for( const auto& entityEntry : m_entities )
    {
       MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
       FFTOceanComponent& ocean    = *std::get<FFTOceanComponent*>( entityEntry.arch );
-
-      // First time run
-      if( ocean.needsInit )
-      {
-         Initialize( ocean );
-         ocean.needsInit = false;
-      }
 
       // Updating time elapsed
       ocean.params.time += static_cast<float>( deltaS );
@@ -226,7 +233,7 @@ void FFTOceanSystem::tick( double deltaS )
       if( ocean.needsUpdate )
       {
          // Generate the two Phillips spectrum textures
-         GRIS::BindPipeline( cmdList, ocean.philipsSpectraGenPip );
+         GRIS::BindPipeline( cmdList, PHILIPS_SPECTRA_GEN_PIP );
 
          GRIS::UpdateConstantBuffer(
              cmdList,
@@ -247,7 +254,7 @@ void FFTOceanSystem::tick( double deltaS )
          const size_t indicesDataSize = indices.size() * sizeof( indices[0] );
          GRIS::CopyToBuffer( ocean.bitReversedIndices, indices.data(), 0, indicesDataSize );
 
-         GRIS::BindPipeline( cmdList, ocean.butterflyTexGenerationPip );
+         GRIS::BindPipeline( cmdList, BUTTERFLY_TEX_GEN_PIP );
 
          GRIS::UpdateConstantBuffer(
              cmdList,
@@ -267,7 +274,7 @@ void FFTOceanSystem::tick( double deltaS )
       // ===========================================================================================
 
       // Generating Fourier components time-dependent textures (dy, dx, dz)
-      GRIS::BindPipeline( cmdList, ocean.fourierComponentsPip );
+      GRIS::BindPipeline( cmdList, FOURIER_COMPONENTS_PIP );
 
       GRIS::UpdateConstantBuffer(
           cmdList,

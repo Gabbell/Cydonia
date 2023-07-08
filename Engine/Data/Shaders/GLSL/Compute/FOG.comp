@@ -1,0 +1,85 @@
+#version 450
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform FogParameters
+{
+   float time;
+   float a;
+   float b;
+   float startFog;
+   float endFog;
+}
+params;
+
+layout( set = 0, binding = 0 ) uniform ViewInfo
+{
+   mat4 invProj;
+   mat4 invView;
+   vec4 viewPos;
+   vec4 lightDir;
+}
+viewInfo;
+
+layout( set = 0, binding = 1, rgba32f ) uniform image2D colorImage;
+layout( set = 0, binding = 2 ) uniform sampler2D depthSampler;
+
+// This should be dynamically based on the current skybox
+const vec3 fogColor = vec3( 0.37, 0.59, 0.82 );
+
+float GetLuminance( vec3 color )
+{
+   return clamp( dot( color, vec3( 0.299, 0.587, 0.114 ) ), 0.0, 1.0 );
+}
+
+// Exponential Height Fog
+// Based on https://iquilezles.org/articles/fog/
+vec3 ApplyHeightFog(
+    vec3 inColor,
+    float distance,
+    vec3 worldPos,
+    vec3 viewPos,
+    vec3 viewDir,
+    vec3 lightDir )
+{
+   float fogAmount = ( params.a / params.b ) * exp( -viewPos.y * params.b ) *
+                     ( 1.0 - exp( -distance * viewDir.y * params.b ) ) / viewDir.y;
+   // float sunAmount = max( dot( viewDir, lightDir ), 0.0 );
+
+   fogAmount = clamp( fogAmount, 0.0, 1.0 );
+   return mix( inColor, fogColor, fogAmount );
+}
+
+// Distance fog
+vec3 ApplyDistanceFog( vec3 inColor, float distance )
+{
+   return mix( inColor, fogColor, smoothstep( params.startFog, params.endFog, distance ) );
+}
+
+void main()
+{
+   ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
+
+   vec2 dims = vec2( textureSize( depthSampler, 0 ) );
+   vec2 uv   = gl_GlobalInvocationID.xy / dims;
+
+   vec3 color        = imageLoad( colorImage, ssCoord ).rgb;
+   const float depth = texture( depthSampler, uv ).r;  // From 0 to 1
+
+   // Reconstruct world-space coordinates
+   // Using view-space coordinates is not enough because it doesn't consider
+   // the current view's rotation
+   const vec4 ndc = vec4( uv * 2.0 - 1.0, depth, 1.0 );
+   vec4 worldPos  = viewInfo.invView * viewInfo.invProj * ndc;
+   worldPos       = worldPos / worldPos.w;
+
+   const vec3 viewDir   = normalize( worldPos.xyz - viewInfo.viewPos.xyz );
+   const float distance = distance( worldPos.xyz, viewInfo.viewPos.xyz );
+
+   color = ApplyHeightFog(
+       color, distance, worldPos.xyz, viewInfo.viewPos.xyz, viewDir, viewInfo.lightDir.xyz );
+
+   color = ApplyDistanceFog( color, distance );
+
+   imageStore( colorImage, ssCoord, vec4( color, 1.0 ) );
+}

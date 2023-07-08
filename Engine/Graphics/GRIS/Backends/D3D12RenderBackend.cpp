@@ -5,6 +5,7 @@
 #include <Common/Assert.h>
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/Framebuffer.h>
 #include <Graphics/Handles/ResourceHandleManager.h>
 
 #include <Graphics/Direct3D12/Factory.h>
@@ -73,6 +74,18 @@ class D3D12RenderBackendImp
        uint32_t offset ) const
    {
    }
+
+   void bindMainColor(
+       CmdListHandle cmdList,
+       CYD::ShaderResourceType type,
+       uint32_t binding,
+       uint32_t set ) const {};
+
+   void bindMainDepth(
+       CmdListHandle cmdList,
+       CYD::ShaderResourceType type,
+       uint32_t binding,
+       uint32_t set ) const {};
 
    void bindTexture(
        CmdListHandle cmdList,
@@ -183,14 +196,12 @@ class D3D12RenderBackendImp
 
    void destroyBuffer( BufferHandle bufferHandle ) {}
 
-   void prepareFrame() const {}
+   void beginFrame() const {}
 
    void beginRendering( CmdListHandle cmdList ) const {}
 
-   void beginRendering(
-       CmdListHandle cmdList,
-       const FramebufferInfo& targetsInfo,
-       const std::vector<TextureHandle>& targets ) const
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
+       const
    {
    }
 
@@ -310,6 +321,24 @@ void D3D12RenderBackend::bindIndexBuffer(
 {
    _imp->bindIndexBuffer( cmdList, bufferHandle, type, offset );
 }
+
+void D3D12RenderBackend::bindMainColor(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set )
+{
+   _imp->bindMainColor( cmdList, type, binding, set );
+};
+
+void D3D12RenderBackend::bindMainDepth(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set )
+{
+   _imp->bindMainDepth( cmdList, type, binding, set );
+};
 
 void D3D12RenderBackend::bindTexture(
     CmdListHandle cmdList,
@@ -461,7 +490,7 @@ void D3D12RenderBackend::destroyBuffer( BufferHandle bufferHandle )
    _imp->destroyBuffer( bufferHandle );
 }
 
-void D3D12RenderBackend::prepareFrame() { _imp->prepareFrame(); }
+void D3D12RenderBackend::beginFrame() { _imp->beginFrame(); }
 
 void D3D12RenderBackend::beginRendering( CmdListHandle cmdList )
 {
@@ -470,10 +499,10 @@ void D3D12RenderBackend::beginRendering( CmdListHandle cmdList )
 
 void D3D12RenderBackend::beginRendering(
     CmdListHandle cmdList,
-    const FramebufferInfo& targetsInfo,
-    const std::vector<TextureHandle>& targets )
+    const Framebuffer& fb,
+    const RenderPassInfo& info )
 {
-   _imp->beginRendering( cmdList, targetsInfo, targets );
+   _imp->beginRendering( cmdList, fb, info );
 }
 
 void D3D12RenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmdList ); }

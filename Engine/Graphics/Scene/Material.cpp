@@ -53,6 +53,7 @@ void Material::bind( CmdListHandle cmdList, uint8_t set ) const
    {
       // Set is hardcoded to 1 for materials right now
       // TODO Allow non-contiguous bindings?
+       // TODO Allow different sampling?
       if( m_textures[i] )
       {
          GRIS::BindTexture( cmdList, m_textures[i], i, set );

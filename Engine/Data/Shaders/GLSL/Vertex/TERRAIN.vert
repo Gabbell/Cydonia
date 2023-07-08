@@ -1,23 +1,13 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
+#include "../VIEW.h"
+
 layout( set = 1, binding = 5 ) uniform sampler2D disp;
 
 // Constant buffer
 // =================================================================================================
 layout( push_constant ) uniform PushConstant { mat4 model; };
-
-// View and environment
-// =================================================================================================
-struct View
-{
-   vec4 pos;
-   mat4 view;
-   mat4 proj;
-};
-
-#define MAX_VIEWS 8
-layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
 
 // Vertex Inputs
 // =================================================================================================
@@ -31,26 +21,27 @@ layout( location = 3 ) in vec4 inColor;  // Not used
 layout( location = 0 ) out vec2 outUV;
 layout( location = 1 ) out vec3 outNormal;
 layout( location = 2 ) out vec3 outWorldPos;
-layout( location = 3 ) out vec3 outCamPos; // No need for interpolant
-layout( location = 4 ) out vec4 outShadowCoord;
+layout( location = 3 ) out vec4 outShadowCoord;
 
 // =================================================================================================
 // Bump mapping based on heightmap
 vec3 getNormals( vec2 uv )
 {
    const vec2 texelSize = 1.0 / textureSize( disp, 0 );
-   const vec2 size      = vec2( 2.0 * 2.0 * texelSize.x, 0.0 );
    const ivec3 off      = ivec3( -1, 0, 1 );
+   const vec3 size      = vec3( 2.0 * texelSize.x, 2.0 * texelSize.y, 0.0 );
 
+   // Uses 4 samples to create one normal, effectively "blurring" the normals
+   // I don't think these are scaled properly, noon looks weird
    float hL = textureOffset( disp, uv, off.xy ).r;
    float hR = textureOffset( disp, uv, off.zy ).r;
    float hU = textureOffset( disp, uv, off.yx ).r;
    float hD = textureOffset( disp, uv, off.yz ).r;
 
-   vec3 va = vec3( size.x, hR - hL, size.y );
-   vec3 vb = vec3( size.y, hU - hD, -size.x );
+   vec3 va = vec3( size.x, hR - hL, size.z );
+   vec3 vb = vec3( size.z, hU - hD, -size.y );
 
-/*
+   /*
    // 3 samples variant
    float hO = texture(disp, uv).r;
    float hR = textureOffset( disp, uv, off.zy ).r;
@@ -58,10 +49,8 @@ vec3 getNormals( vec2 uv )
 
    vec3 va = (vec3(size.x, hR - hO, size.y));
    vec3 vb = (vec3(size.y, hU - hO, -size.x));
-*/
+   */
 
-   // In the case of a rectangular texture, the Y component might not be texelSize.x but
-   // something adjusted by the aspect ratio?
    return normalize( cross( va, vb ) );
 }
 
@@ -78,8 +67,6 @@ void main()
 {
    const View mainView  = views[0];
    const View lightView = views[1];
-
-   outCamPos = vec3( mainView.pos );
 
    outUV     = inTexCoords.xy;
    outNormal = getNormals( inTexCoords.xy );

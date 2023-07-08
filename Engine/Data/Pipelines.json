@@ -87,7 +87,7 @@
         {
           "NAME": "EnvironmentView",
           "TYPE": "UBO",
-          "STAGE": "VERTEX",
+          "STAGE": "GRAPHICS",
           "SET": 0,
           "BINDING": 0
         },
@@ -168,6 +168,40 @@
           "STAGE": "VERTEX",
           "SET": 1,
           "BINDING": 5
+        }
+      ]
+    },
+    {
+      "NAME": "FOG_COMPUTE",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "FOG_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "FogParameters",
+          "TYPE": "CONSTANT_BUFFER",
+          "STAGE": "COMPUTE",
+          "SIZE": 20
+        },
+        {
+          "NAME": "viewInfo",
+          "TYPE": "UBO",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "colorImage",
+          "TYPE": "IMAGE",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "depthImage",
+          "TYPE": "SAMPLER",
+          "STAGE": "COMPUTE",
+          "SET": 0,
+          "BINDING": 2
         }
       ]
     },

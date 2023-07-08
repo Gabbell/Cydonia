@@ -31,7 +31,7 @@ float VoronoiNoise( vec2 x )
 }
 
 // Fractal Brownian Motion
-float FBM( vec2 uv )
+float VoronoiFBM( vec2 uv )
 {
    float finalNoise = 0.0f;
 
@@ -69,7 +69,7 @@ void main()
    vec2 uv   = gl_GlobalInvocationID.xy / dims;
    uv        = uv * vec2( dims.x / dims.y, 1.0 );  // Aspect ratio corrected
 
-   vec3 noiseVal = vec3( FBM( uv ) );
+   vec3 noiseVal = vec3( VoronoiFBM( uv ) );
 
    imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( noiseVal, 1.0 ) );
 }

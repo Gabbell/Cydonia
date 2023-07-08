@@ -102,7 +102,8 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
    {
       // Read-only components
       const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      if( renderable.type != RenderableComponent::Type::FORWARD )  // Forward renderables only
+      if( !renderable.isVisible ||
+          renderable.type != RenderableComponent::Type::FORWARD )  // Forward renderables only
       {
          continue;
       }

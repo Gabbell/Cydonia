@@ -22,11 +22,14 @@ FWDHANDLE( VkFence );
 struct VkSurfaceFormatKHR;
 struct VkExtent2D;
 enum VkPresentModeKHR;
+enum VkImageLayout;
 
 namespace vk
 {
 class Device;
 class Surface;
+class Texture;
+class CommandBuffer;
 }
 
 // ================================================================================================
@@ -48,49 +51,68 @@ class Swapchain final
 
    // For render pass begin info
    const VkExtent2D& getVKExtent() const { return *m_extent; }
-   VkFramebuffer getCurrentFramebuffer() const { return m_frameBuffers[m_currentFrame]; }
-   VkRenderPass getRenderPass() const;
 
-   const VkSwapchainKHR& getVKSwapchain() const noexcept { return m_vkSwapchain; }
+   const CYD::RenderPassInfo& getRenderPass() const
+   {
+      return m_renderPasses[m_shouldClear ? 0 : 1];
+   }
+
+   VkFramebuffer getCurrentVKFramebuffer() const { return m_vkFramebuffers[m_currentFrame]; }
+   VkRenderPass getVKRenderPass() const { return m_vkRenderPasses[m_shouldClear ? 0 : 1]; }
+   VkSwapchainKHR getVKSwapchain() const noexcept { return m_vkSwapchain; }
+   VkSemaphore getSemToWait() const noexcept { return m_availableSems[m_currentFrame]; }
+   VkSemaphore getSemToSignal() const noexcept { return m_renderDoneSems[m_currentFrame]; }
+
+   VkImage getColorVKImage() const { return m_colorImages[m_currentFrame]; }
+   VkImageView getColorVKImageView() const { return m_colorImageViews[m_currentFrame]; }
+   CYD::Access getColorVKImageAccess() const { return m_colorImageAccess[m_currentFrame]; }
+
+   VkImage getDepthVKImage() const { return m_depthImages[m_currentFrame]; }
+   VkImageView getDepthVKImageView() const { return m_depthImageViews[m_currentFrame]; }
+   CYD::Access getDepthVKImageAccess() const { return m_depthImageAccess[m_currentFrame]; }
+
    const VkSurfaceFormatKHR& getFormat() const noexcept { return *m_surfaceFormat; }
-   const VkSemaphore& getSemToWait() const noexcept { return m_availableSems[m_currentFrame]; }
-   const VkSemaphore& getSemToSignal() const noexcept { return m_renderDoneSems[m_currentFrame]; }
 
    uint32_t getImageCount() const { return m_imageCount; }
    uint32_t getCurrentFrame() const { return m_currentFrame; }
 
-   void setToLoad() { m_shouldLoad = true; }
+   void setClear( bool shouldClear ) { m_shouldClear = shouldClear; }
+   void transitionColorImage( CommandBuffer* cmdBuffer, CYD::Access nextAccess );
+   void transitionDepthImage( CommandBuffer* cmdBuffer, CYD::Access nextAccess );
 
    void acquireImage();
    void present();
 
   private:
    void _createSwapchain( const CYD::SwapchainInfo& info );
-   void _createImageViews();
-   void _createDepthResources();
+   void _createRenderPasses();
    void _createSyncObjects();
-   void _createFramebuffers( const CYD::SwapchainInfo& info );
+
+   void _createFramebuffers();
 
    // Used to create the swapchain
    Device& m_device;
    const Surface& m_surface;
 
-   VkRenderPass m_clearRenderPass = nullptr;
-   VkRenderPass m_loadRenderPass  = nullptr;
-
    uint32_t m_imageCount = 0;
    uint32_t m_imageIndex = 0;
-   std::vector<VkImageView> m_imageViews;
-   std::vector<VkImage> m_images;
 
-   std::vector<VkFramebuffer> m_frameBuffers;
+   std::vector<VkImage> m_colorImages;
+   std::vector<VkImageView> m_colorImageViews;
+   std::vector<CYD::Access> m_colorImageAccess;
 
-   VkImageView m_depthImageView;
-   VkImage m_depthImage;
-   VkDeviceMemory m_depthImageMemory;
+   std::vector<VkImage> m_depthImages;
+   std::vector<VkImageView> m_depthImageViews;
+   std::vector<CYD::Access> m_depthImageAccess;
+   std::vector<VkDeviceMemory> m_depthImagesMemory;
+
+   std::vector<VkFramebuffer> m_vkFramebuffers;
+
+   CYD::RenderPassInfo m_renderPasses[2];
+   VkRenderPass m_vkRenderPasses[2];
+   bool m_shouldClear = true;
 
    bool m_ready            = false;  // Used to determine if we acquired an image before presenting
-   bool m_shouldLoad       = false;  // Used to determine which render pass to return
    uint32_t m_currentFrame = 0;
    std::vector<VkSemaphore> m_availableSems;
    std::vector<VkSemaphore> m_renderDoneSems;

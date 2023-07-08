@@ -1,9 +1,10 @@
 #pragma once
-#pragma once
+
+#include <Application.h>
 
 #include <Common/Include.h>
 
-#include <Application.h>
+#include <Graphics/Framebuffer.h>
 
 #include <memory>
 
@@ -37,6 +38,7 @@ class VKSandbox final : public Application
    void tick( double deltaS ) override;
 
   private:
+   // ECS and Caches
    std::unique_ptr<EntityManager> m_ecs;
    std::unique_ptr<MeshCache> m_meshes;
    std::unique_ptr<MaterialCache> m_materials;

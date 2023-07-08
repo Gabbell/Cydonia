@@ -5,6 +5,7 @@
 #include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/TypeConversions.h>
+#include <Graphics/Vulkan/Swapchain.h>
 
 namespace vk
 {

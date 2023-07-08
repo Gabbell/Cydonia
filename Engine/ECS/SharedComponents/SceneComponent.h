@@ -28,19 +28,19 @@ class SceneComponent final : public BaseSharedComponent
    Rectangle scissor = { 0, 0, 0, 0 };
 
    // UBO Data
+   struct ViewShaderParams
+   {
+      glm::vec4 position;
+      glm::mat4 viewMat;
+      glm::mat4 projMat;
+   };
+
    struct LightShaderParams
    {
       glm::vec4 position;
       glm::vec4 direction;
       glm::vec4 color;
       glm::vec4 enabled;
-   };
-
-   struct ViewShaderParams
-   {
-      glm::vec4 position;
-      glm::mat4 viewMat;
-      glm::mat4 projMat;
    };
 
    static constexpr uint32_t MAX_VIEWS  = 8;
@@ -50,8 +50,8 @@ class SceneComponent final : public BaseSharedComponent
    LightShaderParams lights[MAX_LIGHTS] = {};
 
    // Ressource Handles
-   BufferHandle lightsBuffer;
    BufferHandle viewsBuffer;
+   BufferHandle lightsBuffer;
 
    // TODO This shouldn't be here, not a very elegant solution
    TextureHandle shadowMap;

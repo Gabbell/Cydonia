@@ -6,13 +6,14 @@
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/Framebuffer.h>
 #include <Graphics/Handles/ResourceHandleManager.h>
 #include <Graphics/Utility/GraphicsIO.h>
-#include <Graphics/Vulkan/BarriersHelper.h>
 #include <Graphics/Vulkan/Buffer.h>
 #include <Graphics/Vulkan/CommandBuffer.h>
 #include <Graphics/Vulkan/DebugUtilsLabel.h>
 #include <Graphics/Vulkan/DescriptorPool.h>
+#include <Graphics/Vulkan/Synchronization.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/DeviceManager.h>
 #include <Graphics/Vulkan/Instance.h>
@@ -20,6 +21,7 @@
 #include <Graphics/Vulkan/Swapchain.h>
 #include <Graphics/Vulkan/Texture.h>
 #include <Graphics/Vulkan/SamplerCache.h>
+#include <Graphics/Vulkan/RenderPassCache.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <ThirdParty/ImGui/imgui_impl_glfw.h>
@@ -42,21 +44,49 @@ class VKRenderBackendImp
          m_devices( m_window, m_instance, m_surface ),
          m_mainDevice( m_devices.getMainDevice() )
    {
+      const CYD::Extent2D extent = window.getExtent();
+      const uint32_t imageCount  = vk::Swapchain::MAX_FRAMES_IN_FLIGHT;
+
       // Initializing swapchain on main device
       SwapchainInfo scInfo = {};
-      scInfo.imageCount    = vk::Swapchain::MAX_FRAMES_IN_FLIGHT;
-      scInfo.extent        = window.getExtent();
+      scInfo.imageCount    = imageCount;
+      scInfo.extent        = extent;
       scInfo.format        = PixelFormat::RGBA8_UNORM;
       scInfo.space         = ColorSpace::SRGB_NONLINEAR;
       scInfo.mode          = PresentMode::FIFO;  // Immediate makes my GPU scream in 3000fps
 
       m_mainSwapchain = m_mainDevice.createSwapchain( scInfo );
-      m_mainCmdBuffers.resize( scInfo.imageCount );
+
+      m_mainCmdBuffers.resize( imageCount );
+
+      // Initializing main render targets
+      CYD::TextureDescription colorDesc;
+      colorDesc.format = vk::TypeConversions::vkToCydFormat( m_mainSwapchain->getFormat().format );
+      colorDesc.type   = CYD::ImageType::TEXTURE_2D;
+      colorDesc.width  = extent.width;
+      colorDesc.height = extent.height;
+      colorDesc.layers = 1;
+      colorDesc.stages = CYD::PipelineStage::COMPUTE_STAGE | CYD::PipelineStage::FRAGMENT_STAGE;
+      colorDesc.usage  = CYD::ImageUsage::COLOR;
+      colorDesc.name   = "Main Color";
+
+      CYD::TextureDescription depthDesc;
+      depthDesc.format = CYD::PixelFormat::D32_SFLOAT;
+      depthDesc.type   = CYD::ImageType::TEXTURE_2D;
+      depthDesc.width  = extent.width;
+      depthDesc.height = extent.height;
+      depthDesc.layers = 1;
+      depthDesc.stages = CYD::PipelineStage::COMPUTE_STAGE | CYD::PipelineStage::FRAGMENT_STAGE;
+      depthDesc.usage  = CYD::ImageUsage::DEPTH_STENCIL;
+      depthDesc.name   = "Main Depth";
 
       vk::DebugUtilsLabel::Initialize( m_mainDevice );
    }
 
-   ~VKRenderBackendImp() = default;
+   ~VKRenderBackendImp()
+   {
+      //
+   }
 
    bool initializeUIBackend()
    {
@@ -87,7 +117,9 @@ class VKRenderBackendImp
       init_info.ImageCount                = m_mainSwapchain->getImageCount();
       init_info.CheckVkResultFn           = nullptr;
 
-      ImGui_ImplVulkan_Init( &init_info, m_mainSwapchain->getRenderPass() );
+      ImGui_ImplVulkan_Init(
+          &init_info,
+          m_mainDevice.getRenderPassCache().findOrCreate( m_mainSwapchain->getRenderPass() ) );
 
       // Loading fonts
       const CmdListHandle cmdList = createCommandList( GRAPHICS, "ImGui Font Loading", false );
@@ -257,6 +289,26 @@ class VKRenderBackendImp
 
       cmdBuffer->bindIndexBuffer( indexBuffer, type, offset );
    }
+
+   void bindMainColor(
+       CmdListHandle cmdList,
+       CYD::ShaderResourceType type,
+       uint32_t binding,
+       uint32_t set )
+   {
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->bindSwapchainColor( *m_mainSwapchain, type, binding, set );
+   };
+
+   void bindMainDepth(
+       CmdListHandle cmdList,
+       CYD::ShaderResourceType type,
+       uint32_t binding,
+       uint32_t set )
+   {
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      cmdBuffer->bindSwapchainDepth( *m_mainSwapchain, type, binding, set );
+   };
 
    void bindTexture(
        CmdListHandle cmdList,
@@ -478,7 +530,7 @@ class VKRenderBackendImp
          return ImGui_ImplVulkan_AddTexture(
              vkSampler,
              vkTexture->getVKImageView(),
-             vk::TypeConversions::cydToVkImageLayout( vkTexture->getLayout() ) );
+             vk::Synchronization::GetLayoutFromAccess( vkTexture->getPreviousAccess() ) );
       }
 
       return nullptr;
@@ -552,7 +604,7 @@ class VKRenderBackendImp
       }
    }
 
-   void prepareFrame()
+   void beginFrame()
    {
       if( m_hasUI )
       {
@@ -570,33 +622,42 @@ class VKRenderBackendImp
 
       m_mainSwapchain->acquireImage();
 
+      m_mainSwapchain->setClear( true );
+
       m_mainCmdBuffers[currentFrame] = createCommandList(
-          QueueUsage::GRAPHICS | QueueUsage::TRANSFER, "Main Command List", true );
+          QueueUsage::GRAPHICS | QueueUsage::TRANSFER | QueueUsage::COMPUTE,
+          "Main Command List",
+          true );
    }
 
-   void beginRendering( CmdListHandle cmdList ) const
+   void beginRendering( CmdListHandle cmdList )
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+
       cmdBuffer->beginRendering( *m_mainSwapchain );
+
+      m_mainSwapchain->setClear( false );
    }
 
-   void beginRendering(
-       CmdListHandle cmdList,
-       const FramebufferInfo& targetsInfo,
-       const std::vector<TextureHandle>& targets ) const
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
+       const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
       // Fetching textures
+      const Framebuffer::Targets& targets = fb.getTargets();
       std::vector<vk::Texture*> vkTextures;
       vkTextures.reserve( targets.size() );
       for( const auto& texture : targets )
       {
          const auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
-         vkTextures.push_back( vkTexture );
+         if( vkTexture )
+         {
+            vkTextures.push_back( vkTexture );
+         }
       }
 
-      cmdBuffer->beginRendering( targetsInfo, vkTextures );
+      cmdBuffer->beginRendering( fb, info, vkTextures );
    }
 
    void nextPass( CmdListHandle cmdList ) const
@@ -650,7 +711,13 @@ class VKRenderBackendImp
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
       cmdBuffer->dispatch( workX, workY, workZ );
+
+      m_mainSwapchain->transitionColorImage( cmdBuffer, CYD::Access::PRESENT );
+      m_mainSwapchain->transitionDepthImage(
+          cmdBuffer, CYD::Access::DEPTH_STENCIL_ATTACHMENT_WRITE );
    }
+
+   void endFrame() {}
 
    void presentFrame()
    {
@@ -689,7 +756,6 @@ class VKRenderBackendImp
    vk::DeviceManager m_devices;
 
    vk::Device& m_mainDevice;
-
    vk::Swapchain* m_mainSwapchain;
 
    HandleManager m_coreHandles;
@@ -780,6 +846,24 @@ void VKRenderBackend::bindIndexBuffer(
 {
    _imp->bindIndexBuffer( cmdList, bufferHandle, type, offset );
 }
+
+void VKRenderBackend::bindMainColor(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set )
+{
+   _imp->bindMainColor( cmdList, type, binding, set );
+};
+
+void VKRenderBackend::bindMainDepth(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set )
+{
+   _imp->bindMainDepth( cmdList, type, binding, set );
+};
 
 void VKRenderBackend::bindTexture(
     CmdListHandle cmdList,
@@ -943,16 +1027,16 @@ void VKRenderBackend::destroyBuffer( BufferHandle bufferHandle )
    _imp->destroyBuffer( bufferHandle );
 }
 
-void VKRenderBackend::prepareFrame() { _imp->prepareFrame(); }
+void VKRenderBackend::beginFrame() { _imp->beginFrame(); }
 
 void VKRenderBackend::beginRendering( CmdListHandle cmdList ) { _imp->beginRendering( cmdList ); }
 
 void VKRenderBackend::beginRendering(
     CmdListHandle cmdList,
-    const FramebufferInfo& targetsInfo,
-    const std::vector<TextureHandle>& targets )
+    const Framebuffer& fb,
+    const RenderPassInfo& info )
 {
-   _imp->beginRendering( cmdList, targetsInfo, targets );
+   _imp->beginRendering( cmdList, fb, info );
 }
 
 void VKRenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmdList ); }
@@ -997,6 +1081,8 @@ void VKRenderBackend::dispatch(
 {
    _imp->dispatch( cmdList, workX, workY, workZ );
 }
+
+void VKRenderBackend::endFrame() { _imp->endFrame(); }
 
 void VKRenderBackend::presentFrame() { _imp->presentFrame(); }
 

@@ -15,6 +15,7 @@
 namespace CYD
 {
 class Window;
+class Framebuffer;
 struct GraphicsPipelineInfo;
 struct ComputePipelineInfo;
 
@@ -45,9 +46,10 @@ void RenderBackendCleanup();
 // Wait until all devices are idle
 void WaitUntilIdle();
 
+CmdListHandle GetMainCommandList();
+
 // Command Buffers/Lists
 // ===============================================================================================
-CmdListHandle GetMainCommandList();
 CmdListHandle CreateCommandList(
     QueueUsageFlag usage,
     const std::string_view name = "",
@@ -89,6 +91,16 @@ template <class Type>
 void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, uint32_t offset = 0 );
 
 // Bind shader resources by binding/set
+void BindMainColor(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set = 0 );
+void BindMainDepth(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set = 0 );
 void BindTexture(
     CmdListHandle cmdList,
     TextureHandle texHandle,
@@ -170,12 +182,9 @@ void DestroyBuffer( BufferHandle bufferHandle );
 
 // Drawing and Presentation
 // ===============================================================================================
-void PrepareFrame();
+void BeginFrame();
 void BeginRendering( CmdListHandle cmdList );
-void BeginRendering(
-    CmdListHandle cmdList,
-    const FramebufferInfo& attachmentsInfo,
-    const std::vector<TextureHandle>& targets );
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info );
 void NextPass( CmdListHandle cmdList );
 void EndRendering( CmdListHandle cmdList );
 void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex = 0 );
@@ -193,6 +202,7 @@ void DrawIndexedInstanced(
     size_t firstIndex    = 0,
     size_t firstInstance = 0 );
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
+void EndFrame();
 void PresentFrame();
 
 // Debug

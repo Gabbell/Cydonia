@@ -32,7 +32,11 @@ class Window final
    bool init( uint32_t width, uint32_t height, const char* title );
 
    bool isRunning() const;
+
    const Extent2D& getExtent() const noexcept { return m_extent; }
+   uint32_t getWidth() const noexcept { return m_extent.width; }
+   uint32_t getHeight() const noexcept { return m_extent.height; }
+
    GLFWwindow* getGLFWwindow() const noexcept { return m_glfwWindow; }
    std::vector<const char*> getExtensionsFromGLFW() const noexcept { return m_extensions; };
 

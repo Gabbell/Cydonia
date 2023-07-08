@@ -26,6 +26,7 @@ namespace vk::TypeConversions
 {
 VkIndexType cydToVkIndexType( CYD::IndexType type );
 VkFormat cydToVkFormat( CYD::PixelFormat format );
+CYD::PixelFormat vkToCydFormat( VkFormat format );
 VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space );
 VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op );
 VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op );

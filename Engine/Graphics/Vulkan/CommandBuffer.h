@@ -25,8 +25,12 @@ FWDHANDLE( VkDescriptorSet );
 FWDHANDLE( VkFramebuffer );
 FWDHANDLE( VkSampler );
 FWDHANDLE( VkBuffer );
+FWDHANDLE( VkImage );
 FWDHANDLE( VkImageView );
 FWDFLAG( VkPipelineStageFlags );
+
+enum VkDescriptorType : int;
+enum VkImageLayout : int;
 
 namespace vk
 {
@@ -43,6 +47,7 @@ namespace CYD
 struct PipelineInfo;
 struct GraphicsPipelineInfo;
 struct ComputePipelineInfo;
+class Framebuffer;
 }
 
 // ================================================================================================
@@ -111,6 +116,16 @@ class CommandBuffer final
    void bindPipeline( const CYD::GraphicsPipelineInfo& info );
    void bindPipeline( const CYD::ComputePipelineInfo& info );
 
+   void bindSwapchainColor(
+       Swapchain& swapchain,
+       CYD::ShaderResourceType type,
+       uint8_t binding,
+       uint8_t set );
+   void bindSwapchainDepth(
+       Swapchain& swapchain,
+       CYD::ShaderResourceType type,
+       uint8_t binding,
+       uint8_t set );
    void bindTexture( Texture* texture, uint8_t binding, uint8_t set );
    void
    bindTexture( Texture* texture, const CYD::SamplerInfo& sampler, uint8_t binding, uint8_t set );
@@ -129,7 +144,8 @@ class CommandBuffer final
    // =============================================================================================
    void beginRendering( Swapchain& swapchain );
    void beginRendering(
-       const CYD::FramebufferInfo& targetsInfo,
+       const CYD::Framebuffer& fb,
+       const CYD::RenderPassInfo& info,
        const std::vector<Texture*>& targets );
    void nextPass() const;
    void endRendering();
@@ -217,7 +233,7 @@ class CommandBuffer final
 
    VkRenderPass m_boundRenderPass = nullptr;
    CYD::Rectangle m_renderArea;
-   std::optional<CYD::FramebufferInfo> m_boundTargetsInfo;
+   std::optional<CYD::RenderPassInfo> m_boundRenderPassInfo;
    std::vector<Texture*> m_targets;
    uint32_t m_currentSubpass = 0;
 
@@ -241,8 +257,16 @@ class CommandBuffer final
    std::vector<DescriptorSetInfo> m_descSets;
 
    // Used for deferred updating and binding of descriptor sets before a draw command
-   using BufferBinding  = CYD::FlatShaderBinding<Buffer>;
-   using TextureBinding = CYD::FlatShaderBinding<Texture>;
+   using BufferBinding = CYD::FlatShaderBinding<Buffer>;
+
+   struct TextureBinding
+   {
+      VkDescriptorType type;
+      VkImageView imageView;
+      VkImageLayout layout;
+      uint32_t binding;
+      uint32_t set;
+   };
 
    std::vector<BufferBinding> m_buffersToUpdate;
    std::vector<TextureBinding> m_texturesToUpdate;

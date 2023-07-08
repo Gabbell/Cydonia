@@ -4,19 +4,20 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Rendering/AtmosphereComponent.h>
+#include <ECS/Components/Rendering/RenderableComponent.h>
+#include <ECS/Components/Procedural/FogComponent.h>
 
 // ================================================================================================
 // Definition
 // ================================================================================================
 namespace CYD
 {
-class AtmosphereSystem final : public CommonSystem<AtmosphereComponent>
+class FogSystem final : public CommonSystem<RenderableComponent, FogComponent>
 {
   public:
-   AtmosphereSystem() = default;
-   NON_COPIABLE( AtmosphereSystem );
-   virtual ~AtmosphereSystem() = default;
+   FogSystem() = default;
+   NON_COPIABLE( FogSystem );
+   virtual ~FogSystem() = default;
 
    void tick( double deltaS ) override;
 };

@@ -132,6 +132,27 @@ enum class ImageLayout
    PRESENT_SRC
 };
 
+enum class Access
+{
+   UNDEFINED,
+   VERTEX_SHADER_READ,
+   FRAGMENT_SHADER_READ,
+   COLOR_ATTACHMENT_READ,
+   DEPTH_STENCIL_ATTACHMENT_READ,
+   COMPUTE_SHADER_READ,
+   TRANSFER_READ,
+   HOST_READ,
+   VERTEX_SHADER_WRITE,
+   FRAGMENT_SHADER_WRITE,
+   COLOR_ATTACHMENT_WRITE,
+   DEPTH_STENCIL_ATTACHMENT_WRITE,
+   COMPUTE_SHADER_WRITE,
+   TRANSFER_WRITE,
+   HOST_WRITE,
+   PRESENT,
+   GENERAL
+};
+
 enum class ColorSpace
 {
    SRGB_NONLINEAR
@@ -192,6 +213,7 @@ enum class ImageType
 enum class ShaderResourceType
 {
    UNIFORM,
+   SAMPLER,
    STORAGE,
    COMBINED_IMAGE_SAMPLER,
    STORAGE_IMAGE,
@@ -286,19 +308,40 @@ struct SwapchainInfo
    PresentMode mode;
 };
 
+union ClearColorValue
+{
+   float f32[4];
+   int32_t i32[4];
+   uint32_t u32[4];
+};
+
+struct ClearDepthStencilValue
+{
+   float depth;
+   uint32_t stencil;
+};
+
+struct ClearValue
+{
+   ClearColorValue color;
+   ClearDepthStencilValue depthStencil;
+};
+
 struct Attachment
 {
    bool operator==( const Attachment& other ) const;
-   PixelFormat format        = PixelFormat::BGRA8_UNORM;
-   AttachmentType type       = AttachmentType::COLOR;
-   LoadOp loadOp             = LoadOp::DONT_CARE;
-   StoreOp storeOp           = StoreOp::DONT_CARE;
-   ImageLayout initialLayout = ImageLayout::UNKNOWN;
+   PixelFormat format   = PixelFormat::BGRA8_UNORM;
+   AttachmentType type  = AttachmentType::COLOR;
+   LoadOp loadOp        = LoadOp::DONT_CARE;
+   StoreOp storeOp      = StoreOp::DONT_CARE;
+   ClearValue clear     = {};
+   Access initialAccess = Access::UNDEFINED;
+   Access nextAccess    = Access::GENERAL;
 };
 
-struct FramebufferInfo
+struct RenderPassInfo
 {
-   bool operator==( const FramebufferInfo& other ) const;
+   bool operator==( const RenderPassInfo& other ) const;
    std::vector<Attachment> attachments;
 };
 
@@ -310,6 +353,7 @@ struct SamplerInfo
    {
    }
    bool operator==( const SamplerInfo& other ) const;
+
    bool useAnisotropy      = true;
    bool useCompare         = false;
    float maxAnisotropy     = 16.0f;
@@ -337,11 +381,11 @@ struct std::hash<CYD::Extent2D>
 };
 
 template <>
-struct std::hash<CYD::FramebufferInfo>
+struct std::hash<CYD::RenderPassInfo>
 {
-   size_t operator()( const CYD::FramebufferInfo& framebufferInfo ) const noexcept
+   size_t operator()( const CYD::RenderPassInfo& info ) const noexcept
    {
-      const std::vector<CYD::Attachment>& attachments = framebufferInfo.attachments;
+      const std::vector<CYD::Attachment>& attachments = info.attachments;
 
       size_t seed = 0;
       for( const auto& attachment : attachments )
@@ -376,9 +420,11 @@ struct std::hash<CYD::Attachment>
    {
       size_t seed = 0;
       hashCombine( seed, attachment.format );
+      hashCombine( seed, attachment.type );
       hashCombine( seed, attachment.loadOp );
       hashCombine( seed, attachment.storeOp );
-      hashCombine( seed, attachment.type );
+      hashCombine( seed, attachment.initialAccess );
+      hashCombine( seed, attachment.nextAccess );
 
       return seed;
    }

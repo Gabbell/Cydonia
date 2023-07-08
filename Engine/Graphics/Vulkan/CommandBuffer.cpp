@@ -4,6 +4,7 @@
 
 #include <Graphics/Vulkan.h>
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/Framebuffer.h>
 
 #include <Graphics/Vulkan/CommandBufferPool.h>
 #include <Graphics/Vulkan/Device.h>
@@ -15,7 +16,7 @@
 #include <Graphics/Vulkan/Buffer.h>
 #include <Graphics/Vulkan/Texture.h>
 #include <Graphics/Vulkan/TypeConversions.h>
-#include <Graphics/Vulkan/BarriersHelper.h>
+#include <Graphics/Vulkan/Synchronization.h>
 
 #include <array>
 
@@ -304,12 +305,6 @@ void CommandBuffer::endRecording()
       const VkResult result = vkEndCommandBuffer( m_vkCmdBuffer );
       CYD_ASSERT(
           result == VK_SUCCESS && "CommandBuffer: Failed to end recording of command buffer" );
-
-      m_boundPip        = nullptr;
-      m_boundPipLayout  = nullptr;
-      m_boundRenderPass = nullptr;
-
-      m_boundPipInfo.reset();
    }
 }
 
@@ -420,13 +415,66 @@ void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, CYD::IndexType type, u
    _addDependency( indexBuffer );
 }
 
+void CommandBuffer::bindSwapchainColor(
+    Swapchain& swapchain,
+    CYD::ShaderResourceType type,
+    uint8_t binding,
+    uint8_t set )
+{
+   if( !m_boundRenderPass )
+   {
+      swapchain.transitionColorImage( this, CYD::Access::GENERAL );
+   }
+
+   // Will need to update this texture's descriptor set before next draw
+   TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
+   textureEntry.type            = TypeConversions::cydToVkDescriptorType( type );
+   textureEntry.imageView       = swapchain.getColorVKImageView();
+   textureEntry.binding         = binding;
+   textureEntry.set             = set;
+   textureEntry.layout = Synchronization::GetLayoutFromAccess( swapchain.getColorVKImageAccess() );
+
+   m_samplers.push_back( m_defaultSampler );
+}
+
+void CommandBuffer::bindSwapchainDepth(
+    Swapchain& swapchain,
+    CYD::ShaderResourceType type,
+    uint8_t binding,
+    uint8_t set )
+{
+   if( !m_boundRenderPass )
+   {
+      swapchain.transitionDepthImage( this, CYD::Access::COMPUTE_SHADER_READ );
+   }
+
+   // Will need to update this texture's descriptor set before next draw
+   TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
+   textureEntry.type            = TypeConversions::cydToVkDescriptorType( type );
+   textureEntry.imageView       = swapchain.getDepthVKImageView();
+   textureEntry.binding         = binding;
+   textureEntry.set             = set;
+   textureEntry.layout = Synchronization::GetLayoutFromAccess( swapchain.getDepthVKImageAccess() );
+
+   m_samplers.push_back( m_defaultSampler );
+}
+
 void CommandBuffer::bindTexture( Texture* texture, uint8_t binding, uint8_t set )
 {
    // Will need to update this texture's descriptor set before next draw
-   m_texturesToUpdate.emplace_back(
-       texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, binding, set );
+   TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
+   textureEntry.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+   textureEntry.imageView       = texture->getVKImageView();
+   textureEntry.binding         = binding;
+   textureEntry.set             = set;
+   textureEntry.layout = Synchronization::GetLayoutFromAccess( texture->getPreviousAccess() );
 
    m_samplers.push_back( m_defaultSampler );
+
+   if( !m_boundRenderPass )
+   {
+      Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
+   }
 
    _addDependency( texture );
 }
@@ -438,10 +486,19 @@ void CommandBuffer::bindTexture(
     uint8_t set )
 {
    // Will need to update this texture's descriptor set before next draw
-   m_texturesToUpdate.emplace_back(
-       texture, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, binding, set );
+   TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
+   textureEntry.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+   textureEntry.imageView       = texture->getVKImageView();
+   textureEntry.binding         = binding;
+   textureEntry.set             = set;
+   textureEntry.layout = Synchronization::GetLayoutFromAccess( texture->getPreviousAccess() );
 
    m_samplers.push_back( m_pDevice->getSamplerCache().findOrCreate( sampler ) );
+
+   if( !m_boundRenderPass )
+   {
+      Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
+   }
 
    _addDependency( texture );
 }
@@ -449,10 +506,15 @@ void CommandBuffer::bindTexture(
 void CommandBuffer::bindImage( Texture* texture, uint8_t binding, uint8_t set )
 {
    // TODO Maybe not GENERAL?
-   Barriers::ImageMemory( m_vkCmdBuffer, texture, CYD::ImageLayout::GENERAL );
+   Synchronization::ImageMemory( this, texture, CYD::Access::GENERAL );
 
    // Will need to update this image descriptor set before next draw
-   m_texturesToUpdate.emplace_back( texture, CYD::ShaderResourceType::STORAGE_IMAGE, binding, set );
+   TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
+   textureEntry.type            = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+   textureEntry.imageView       = texture->getVKImageView();
+   textureEntry.binding         = binding;
+   textureEntry.set             = set;
+   textureEntry.layout = Synchronization::GetLayoutFromAccess( texture->getPreviousAccess() );
 
    m_samplers.push_back( m_defaultSampler );
 
@@ -547,23 +609,24 @@ void CommandBuffer::setScissor( const CYD::Rectangle& scissor ) const
 
 void CommandBuffer::beginRendering( Swapchain& swapchain )
 {
-   VkRenderPass renderPass = swapchain.getRenderPass();
+   VkRenderPass renderPass = swapchain.getVKRenderPass();
    CYD_ASSERT( renderPass && "CommandBuffer: Could not find render pass" );
 
-   m_boundRenderPass = renderPass;
+   m_boundRenderPass     = renderPass;
+   m_boundRenderPassInfo = swapchain.getRenderPass();
 
    const VkExtent2D& extent = swapchain.getVKExtent();
 
    VkRenderPassBeginInfo passBeginInfo = {};
    passBeginInfo.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
    passBeginInfo.renderPass            = m_boundRenderPass;
-   passBeginInfo.framebuffer           = swapchain.getCurrentFramebuffer();
+   passBeginInfo.framebuffer           = swapchain.getCurrentVKFramebuffer();
    passBeginInfo.renderArea.offset     = { 0, 0 };
    passBeginInfo.renderArea.extent     = extent;
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = { 0.2f, 0.2f, 0.2f, 1.0f };  // Color
-   clearValues[1]                          = { 0.0f, 0 };                 // Depth/Stencil
+   clearValues[0]                          = { 0.0f, 0.0f, 0.0f };  // Color
+   clearValues[1]                          = { 0.0f, 0 };           // Depth/Stencil
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -571,38 +634,41 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
    _setRenderArea( 0, 0, extent.width, extent.height );
 
    vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
-
-   // We want the next renders in this swapchain to load the previous result
-   swapchain.setToLoad();
 }
 
 void CommandBuffer::beginRendering(
-    const CYD::FramebufferInfo& targetsInfo,
+    const CYD::Framebuffer& fb,
+    const CYD::RenderPassInfo& info,
     const std::vector<Texture*>& targets )
 {
-   VkRenderPass renderPass = m_pDevice->getRenderPassCache().findOrCreate( targetsInfo );
+   VkRenderPass renderPass = m_pDevice->getRenderPassCache().findOrCreate( info );
    CYD_ASSERT( renderPass && "CommandBuffer: Could not find render pass" );
    CYD_ASSERT( !targets.empty() && "CommandBuffer: No render targets" );
    CYD_ASSERT(
-       targets.size() == targetsInfo.attachments.size() &&
+       targets.size() == info.attachments.size() &&
        "CommandBuffer: Mismatch attachments and targets" );
 
-   m_boundRenderPass  = renderPass;
-   m_boundTargetsInfo = targetsInfo;
-   m_targets          = targets;
-   m_currentSubpass   = 0;
+   m_boundRenderPass     = renderPass;
+   m_boundRenderPassInfo = info;
+   m_targets             = targets;
+   m_currentSubpass      = 0;
 
-   const uint32_t commonWidth  = m_targets[0]->getWidth();
-   const uint32_t commonHeight = m_targets[0]->getHeight();
+   const uint32_t fbWidth  = fb.getWidth();
+   const uint32_t fbHeight = fb.getHeight();
 
    // Fetching image views for framebuffer
    std::vector<VkClearValue> clearValues;
    std::vector<VkImageView> vkImageViews;
    vkImageViews.reserve( m_targets.size() );
-   for( const auto& texture : m_targets )
+   for( uint32_t i = 0; i < targets.size(); ++i )
    {
+      const CYD::Attachment& attachment = info.attachments[i];
+      Texture* texture                  = targets[i];
+
+      if( texture == nullptr ) continue;
+
       // All textures should have the same dimensions for this renderpass/framebuffer
-      if( texture->getWidth() == commonWidth && texture->getHeight() == commonHeight )
+      if( texture->getWidth() == fbWidth && texture->getHeight() == fbHeight )
       {
          vkImageViews.push_back( texture->getVKImageView() );
       }
@@ -614,13 +680,16 @@ void CommandBuffer::beginRendering(
       // Clear
       if( texture->getPixelFormat() == CYD::PixelFormat::D32_SFLOAT )
       {
-         texture->setLayout( CYD::ImageLayout::DEPTH_STENCIL_ATTACHMENT );
-         clearValues.push_back( { 0.0f, 0.0f } );
+         VkClearValue clearValue;
+         clearValue.depthStencil = {
+             attachment.clear.depthStencil.depth, attachment.clear.depthStencil.stencil };
+         clearValues.push_back( std::move( clearValue ) );
       }
       else
       {
-         texture->setLayout( CYD::ImageLayout::COLOR_ATTACHMENT );
-         clearValues.push_back( { 0.0f, 0.0f, 0.0f, 1.0f } );
+         VkClearValue clearValue;
+         memcpy( &clearValue.color, &attachment.clear.color, sizeof( clearValue.color ) );
+         clearValues.push_back( std::move( clearValue ) );
       }
    }
 
@@ -629,8 +698,8 @@ void CommandBuffer::beginRendering(
    framebufferInfo.renderPass              = m_boundRenderPass;
    framebufferInfo.attachmentCount         = static_cast<uint32_t>( vkImageViews.size() );
    framebufferInfo.pAttachments            = vkImageViews.data();
-   framebufferInfo.width                   = commonWidth;
-   framebufferInfo.height                  = commonHeight;
+   framebufferInfo.width                   = fbWidth;
+   framebufferInfo.height                  = fbHeight;
    framebufferInfo.layers                  = 1;
 
    VkFramebuffer vkFramebuffer;
@@ -646,12 +715,12 @@ void CommandBuffer::beginRendering(
    passBeginInfo.renderPass            = m_boundRenderPass;
    passBeginInfo.framebuffer           = vkFramebuffer;
    passBeginInfo.renderArea.offset     = { 0, 0 };
-   passBeginInfo.renderArea.extent     = { commonWidth, commonHeight };
+   passBeginInfo.renderArea.extent     = { fbWidth, fbHeight };
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
 
-   _setRenderArea( 0, 0, commonWidth, commonHeight );
+   _setRenderArea( 0, 0, fbWidth, fbHeight );
 
    vkCmdBeginRenderPass( m_vkCmdBuffer, &passBeginInfo, VK_SUBPASS_CONTENTS_INLINE );
 }
@@ -737,8 +806,8 @@ void CommandBuffer::_prepareDescriptorSets()
 
       VkDescriptorImageInfo imageInfo = {};
       imageInfo.sampler               = sampler;
-      imageInfo.imageView             = entry.resource->getVKImageView();
-      imageInfo.imageLayout = TypeConversions::cydToVkImageLayout( entry.resource->getLayout() );
+      imageInfo.imageView             = entry.imageView;
+      imageInfo.imageLayout           = entry.layout;
       imageInfos.push_back( imageInfo );
 
       VkWriteDescriptorSet descriptorWrite = {};
@@ -746,7 +815,7 @@ void CommandBuffer::_prepareDescriptorSets()
       descriptorWrite.dstSet               = _findOrAllocateDescSet( prevSize, entry.set );
       descriptorWrite.dstBinding           = entry.binding;
       descriptorWrite.dstArrayElement      = 0;
-      descriptorWrite.descriptorType       = TypeConversions::cydToVkDescriptorType( entry.type );
+      descriptorWrite.descriptorType       = entry.type;
       descriptorWrite.descriptorCount      = 1;
       descriptorWrite.pImageInfo           = &imageInfos.back();
 
@@ -873,7 +942,7 @@ void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
 
    _prepareDescriptorSets();
 
-   Barriers::Pipeline(
+    Synchronization::Pipeline(
        m_vkCmdBuffer, CYD::PipelineStage::COMPUTE_STAGE, CYD::PipelineStage::COMPUTE_STAGE );
 
    vkCmdDispatch( m_vkCmdBuffer, workX, workY, workZ );
@@ -894,26 +963,18 @@ void CommandBuffer::endRendering()
 
    vkCmdEndRenderPass( m_vkCmdBuffer );
 
-   // Set the target layout outside of the render pass
-   // This code assumes that we are reading the texture afterwards. If we were to write again into
-   // it in the next render pass, this probably will not work.
-   for( const auto& texture : m_targets )
+   for( uint32_t i = 0; i < m_targets.size(); ++i )
    {
-      CYD::ImageLayout targetLayout;
-      switch( texture->getPixelFormat() )
-      {
-         case CYD::PixelFormat::D32_SFLOAT:
-            targetLayout = CYD::ImageLayout::DEPTH_STENCIL_READ;
-            break;
-         default:
-            targetLayout = CYD::ImageLayout::SHADER_READ;
-      }
-
-      Barriers::ImageMemory( m_vkCmdBuffer, texture, targetLayout );
+      m_targets[i]->setPreviousAccess( m_boundRenderPassInfo->attachments[i].nextAccess );
    }
 
-   Barriers::Pipeline(
+   Synchronization::Pipeline(
        m_vkCmdBuffer, CYD::PipelineStage::ALL_STAGES, CYD::PipelineStage::ALL_STAGES );
+
+   m_boundPip        = nullptr;
+   m_boundPipLayout  = nullptr;
+   m_boundRenderPass = nullptr;
+   m_boundPipInfo.reset();
 
    m_targets.clear();
    m_renderArea = {};
@@ -939,7 +1000,7 @@ void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
        src->getSize() == dst->getSize() &&
        "CommandBuffer: Source and destination sizes are not the same" );
 
-   Barriers::ImageMemory( m_vkCmdBuffer, dst, CYD::ImageLayout::TRANSFER_DST );
+   Synchronization::ImageMemory( this, dst, CYD::Access::TRANSFER_WRITE );
 
    // Copying data from buffer to texture
    VkBufferImageCopy region               = {};
@@ -961,7 +1022,7 @@ void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
        1,
        &region );
 
-   Barriers::ImageMemory( m_vkCmdBuffer, dst, CYD::ImageLayout::SHADER_READ );
+   Synchronization::ImageMemory( this, dst, CYD::Access::FRAGMENT_SHADER_READ );
 
    _addDependency( src );
    _addDependency( dst );

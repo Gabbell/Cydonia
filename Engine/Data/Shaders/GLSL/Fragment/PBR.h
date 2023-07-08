@@ -3,13 +3,6 @@
 
 const float PI = 3.141592653589793;
 
-#define PBR_MATERIAL_DECLARATION                                          \
-   layout( set = MATERIAL_SET, binding = 0 ) uniform sampler2D albedo;    \
-   layout( set = MATERIAL_SET, binding = 1 ) uniform sampler2D normals;   \
-   layout( set = MATERIAL_SET, binding = 2 ) uniform sampler2D metalness; \
-   layout( set = MATERIAL_SET, binding = 3 ) uniform sampler2D roughness; \
-   layout( set = MATERIAL_SET, binding = 4 ) uniform sampler2D ambientOcclusion;
-
 // DIFFUSE
 // ================================================================================================
 

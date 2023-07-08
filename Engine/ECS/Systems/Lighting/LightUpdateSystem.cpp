@@ -30,9 +30,9 @@ void LightUpdateSystem::tick( double deltaS )
 
       // Updating light transform
       transform.position = glm::vec3(
-          25.0f * std::cos( 0.50f * timeElapsed ),
-          transform.position.y,
-          25.0f * std::sin( 0.50f * timeElapsed ) );
+          transform.position.x,
+          25.0f * std::cos( 0.25f * timeElapsed ),
+          25.0f * std::sin( 0.25f * timeElapsed ) );
 
       // Finding view in the scene
       const std::string viewName = "LightView " + std::to_string( lightIdx );
@@ -60,7 +60,7 @@ void LightUpdateSystem::tick( double deltaS )
       view.position = glm::vec4( transform.position, 1.0f );
 
       view.viewMat = glm::lookAt(
-          transform.position, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3( 0.0f, 1.0f, 0.0f ) );
+          transform.position, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, 1.0f, 0.0f ) );
 
       view.projMat = Transform::OrthoReverseZ( -71.0f, 71.0f, -71.0f, 71.0f, -100.0f, 100.0f );
 

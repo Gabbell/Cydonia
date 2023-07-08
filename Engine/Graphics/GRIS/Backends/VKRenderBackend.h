@@ -4,6 +4,8 @@
 
 #include <Common/Include.h>
 
+#include <cstdint>
+
 #include <Graphics/Handles/ResourceHandle.h>
 
 // =================================================================================================
@@ -35,9 +37,10 @@ class VKRenderBackend final : public RenderBackend
 
    void waitUntilIdle() override;
 
+   CmdListHandle getMainCommandList() const override;
+
    // Command Buffers/Lists
    // ==============================================================================================
-   CmdListHandle getMainCommandList() const override;
    CmdListHandle createCommandList(
        QueueUsageFlag usage,
        const std::string_view name,
@@ -67,6 +70,16 @@ class VKRenderBackend final : public RenderBackend
        IndexType type,
        uint32_t offset ) override;
 
+   void bindMainColor(
+       CmdListHandle cmdList,
+       CYD::ShaderResourceType type,
+       uint32_t binding,
+       uint32_t set ) override;
+   void bindMainDepth(
+       CmdListHandle cmdList,
+       CYD::ShaderResourceType type,
+       uint32_t binding,
+       uint32_t set ) override;
    void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -148,12 +161,10 @@ class VKRenderBackend final : public RenderBackend
 
    // Drawing
    // ==============================================================================================
-   void prepareFrame() override;
+   void beginFrame() override;
    void beginRendering( CmdListHandle cmdList ) override;
-   void beginRendering(
-       CmdListHandle cmdList,
-       const FramebufferInfo& targetsInfo,
-       const std::vector<TextureHandle>& targets ) override;
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
+       override;
    void nextPass( CmdListHandle cmdList ) override;
    void endRendering( CmdListHandle cmdList ) override;
    void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) override;
@@ -171,6 +182,7 @@ class VKRenderBackend final : public RenderBackend
        size_t firstIndex,
        size_t firstInstance ) override;
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) override;
+   void endFrame() override;
    void presentFrame() override;
 
    // Debug

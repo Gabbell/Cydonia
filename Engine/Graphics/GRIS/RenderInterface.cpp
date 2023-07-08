@@ -31,11 +31,12 @@ bool InitRenderBackend( API api, const Window& window )
          b = new VKRenderBackend( window );
          return true;
       case API::D3D12:
-         b = new D3D12RenderBackend( window );
+         // b = new D3D12RenderBackend( window );
          return true;
       case API::D3D11:
          return false;
       case API::GL:
+         // b = new GLRenderBackend( window );
          return false;
       case API::MTL:
          return false;
@@ -76,10 +77,11 @@ void RenderBackendCleanup()
 
 void WaitUntilIdle() { b->waitUntilIdle(); }
 
+CmdListHandle GetMainCommandList() { return b->getMainCommandList(); }
+
 // =================================================================================================
 // Command Buffers/Lists
 //
-CmdListHandle GetMainCommandList() { return b->getMainCommandList(); }
 CmdListHandle
 CreateCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
 {
@@ -163,6 +165,24 @@ void BindIndexBuffer<uint32_t>(
     uint32_t offset )
 {
    b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT32, offset );
+}
+
+void BindMainColor(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set )
+{
+   b->bindMainColor( cmdList, type, binding, set );
+}
+
+void BindMainDepth(
+    CmdListHandle cmdList,
+    CYD::ShaderResourceType type,
+    uint32_t binding,
+    uint32_t set )
+{
+   b->bindMainDepth( cmdList, type, binding, set );
 }
 
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
@@ -373,20 +393,17 @@ void DestroyBuffer( BufferHandle bufferHandle ) { b->destroyBuffer( bufferHandle
 // =================================================================================================
 // Drawing
 //
-void PrepareFrame()
+void BeginFrame()
 {
    CYD_TRACE( "Prepare Frame" );
-   b->prepareFrame();
+   b->beginFrame();
 }
 
 void BeginRendering( CmdListHandle cmdList ) { b->beginRendering( cmdList ); }
 
-void BeginRendering(
-    CmdListHandle cmdList,
-    const FramebufferInfo& targetsInfo,
-    const std::vector<TextureHandle>& targets )
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
 {
-   b->beginRendering( cmdList, targetsInfo, targets );
+   b->beginRendering( cmdList, fb, info );
 }
 
 void NextPass( CmdListHandle cmdList ) { b->nextPass( cmdList ); }
@@ -426,6 +443,12 @@ void DrawIndexedInstanced(
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )
 {
    b->dispatch( cmdList, workX, workY, workZ );
+}
+
+void EndFrame()
+{
+   CYD_TRACE( "End Frame" );
+   b->endFrame();
 }
 
 void PresentFrame()

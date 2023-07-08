@@ -3,6 +3,7 @@
 #include <Common/Assert.h>
 
 #include <Graphics/Vulkan.h>
+#include <Graphics/Vulkan/Synchronization.h>
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
@@ -15,7 +16,7 @@ RenderPassCache::RenderPassCache( const Device& device ) : m_device( device )
    _createDefaultRenderPasses();
 }
 
-VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsInfo )
+VkRenderPass RenderPassCache::findOrCreate( const CYD::RenderPassInfo& targetsInfo )
 {
    // Find
    const auto it = m_renderPasses.find( targetsInfo );
@@ -42,7 +43,8 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
       vkAttachment.storeOp                 = TypeConversions::cydToVkOp( attachment.storeOp );
       vkAttachment.stencilLoadOp           = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
       vkAttachment.stencilStoreOp          = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-      vkAttachment.initialLayout = TypeConversions::cydToVkImageLayout( attachment.initialLayout );
+      vkAttachment.initialLayout = Synchronization::GetLayoutFromAccess( attachment.initialAccess );
+      vkAttachment.finalLayout   = Synchronization::GetLayoutFromAccess( attachment.nextAccess );
 
       switch( attachment.type )
       {
@@ -53,9 +55,6 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
             presentationAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             colorRefs.push_back( presentationAttachmentRef );
-
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-
             attachmentIdx++;
             break;
          }
@@ -66,9 +65,6 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
             colorAttachmentRef.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
             colorRefs.push_back( colorAttachmentRef );
-
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
             attachmentIdx++;
             break;
          }
@@ -79,23 +75,17 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::FramebufferInfo& targetsI
             depthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
             depthRefs.push_back( depthAttachmentRef );
-
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
             attachmentIdx++;
             break;
          }
          case CYD::AttachmentType::DEPTH:
          {
-             // Needs VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures 
+            // Needs VkPhysicalDeviceSeparateDepthStencilLayoutsFeatures
             VkAttachmentReference depthAttachmentRef = {};
             depthAttachmentRef.attachment            = attachmentIdx;
             depthAttachmentRef.layout                = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
 
             depthRefs.push_back( depthAttachmentRef );
-
-            vkAttachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL;
-
             attachmentIdx++;
             break;
          }
