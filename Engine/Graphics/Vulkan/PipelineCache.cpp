@@ -28,6 +28,10 @@ static VkShaderStageFlagBits shaderTypeToVKShaderStage( Shader::Type shaderType 
    {
       case Shader::Type::VERTEX:
          return VK_SHADER_STAGE_VERTEX_BIT;
+      case Shader::Type::TESS_CONTROL:
+         return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+      case Shader::Type::TESS_EVAL:
+         return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
       case Shader::Type::FRAGMENT:
          return VK_SHADER_STAGE_FRAGMENT_BIT;
       case Shader::Type::COMPUTE:
@@ -292,6 +296,10 @@ VkPipeline PipelineCache::findOrCreate(
    inputAssembly.topology = TypeConversions::cydToVkDrawPrim( pipInfo.drawPrim );
    inputAssembly.primitiveRestartEnable = VK_FALSE;
 
+   VkPipelineTessellationStateCreateInfo tessellation = {};
+   tessellation.sType              = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
+   tessellation.patchControlPoints = pipInfo.tessState.patchControlPoints;
+
    // Viewport and scissor
    VkViewport viewport = {};
    viewport.x          = 0.0f;
@@ -372,10 +380,11 @@ VkPipeline PipelineCache::findOrCreate(
    // TODO Maybe not create a depth state when we don't have any depth attachment? Probably has
    // little to no effect on performance though
    VkPipelineDepthStencilStateCreateInfo depthStencil = {};
-   depthStencil.sType                 = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-   depthStencil.depthTestEnable       = pipInfo.dsState.useDepthTest;
-   depthStencil.depthWriteEnable      = pipInfo.dsState.depthWrite;
-   depthStencil.depthCompareOp        = TypeConversions::cydToVkCompareOp(pipInfo.dsState.depthCompareOp);
+   depthStencil.sType            = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+   depthStencil.depthTestEnable  = pipInfo.dsState.useDepthTest;
+   depthStencil.depthWriteEnable = pipInfo.dsState.depthWrite;
+   depthStencil.depthCompareOp =
+       TypeConversions::cydToVkCompareOp( pipInfo.dsState.depthCompareOp );
    depthStencil.depthBoundsTestEnable = VK_FALSE;
    depthStencil.stencilTestEnable     = pipInfo.dsState.useStencilTest;
    depthStencil.minDepthBounds        = 0.0f;
@@ -390,7 +399,7 @@ VkPipeline PipelineCache::findOrCreate(
    pipelineInfo.pStages                      = shaderCreateInfos.data();
    pipelineInfo.pVertexInputState            = &vertexInputInfo;
    pipelineInfo.pInputAssemblyState          = &inputAssembly;
-   pipelineInfo.pTessellationState           = nullptr;
+   pipelineInfo.pTessellationState           = pipInfo.tessState.enabled ? &tessellation : nullptr;
    pipelineInfo.pViewportState               = &viewportState;
    pipelineInfo.pRasterizationState          = &rasterizer;
    pipelineInfo.pMultisampleState            = &multisampling;

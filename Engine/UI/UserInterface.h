@@ -12,6 +12,7 @@ class BaseComponent;
 class BaseSharedComponent;
 class TransformComponent;
 class RenderableComponent;
+class TessellatedComponent;
 class ProceduralDisplacementComponent;
 class FogComponent;
 class SceneComponent;
@@ -46,6 +47,7 @@ void DrawSharedComponentsMenu(
     const BaseSharedComponent* component );
 void DrawTransformComponentMenu( CmdListHandle cmdList, const TransformComponent& transform );
 void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable );
+void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedComponent& tessellated );
 void DrawProceduralDisplacementComponentMenu(
     CmdListHandle cmdList,
     const ProceduralDisplacementComponent& displacement );

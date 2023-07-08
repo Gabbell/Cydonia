@@ -29,6 +29,8 @@ class Shader final
    enum class Type
    {
       VERTEX,
+      TESS_CONTROL,
+      TESS_EVAL,
       FRAGMENT,
       COMPUTE,
       UNKNOWN

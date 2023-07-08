@@ -23,11 +23,13 @@ class RenderableComponent final : public BaseComponent
    RenderableComponent() = default;
    RenderableComponent( Type type ) : type( type ) {}
    COPIABLE( RenderableComponent );
-   virtual ~RenderableComponent() = default;
+   virtual ~RenderableComponent();
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
    Type type = Type::FORWARD;
+
+   BufferHandle tessellationBuffer;
 
    BufferHandle instancesBuffer;
    uint32_t instanceCount = 0;
@@ -35,6 +37,7 @@ class RenderableComponent final : public BaseComponent
    bool isVisible       = true;
    bool isShadowCasting = true;
    bool isInstanced     = false;
+   bool isTessellated   = false;
    bool isTransparent   = false;
 };
 }

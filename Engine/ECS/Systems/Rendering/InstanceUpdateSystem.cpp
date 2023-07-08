@@ -1,4 +1,4 @@
-#include <ECS/Systems/Scene/InstanceUpdateSystem.h>
+#include <ECS/Systems/Rendering/InstanceUpdateSystem.h>
 
 #include <Graphics/GRIS/RenderInterface.h>
 
@@ -22,6 +22,8 @@ void InstanceUpdateSystem::tick( double /*deltaS*/ )
    {
       RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
       InstancedComponent& instanced   = *std::get<InstancedComponent*>( entityEntry.arch );
+
+      renderable.isInstanced = true;
 
       if( instanced.needsUpdate )
       {

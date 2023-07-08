@@ -75,12 +75,14 @@ namespace PipelineStage
 enum PipelineStage : Flag32
 {
    VERTEX_STAGE        = 1 << 0,
-   GEOMETRY_STAGE      = 1 << 1,
-   FRAGMENT_STAGE      = 1 << 2,
-   COMPUTE_STAGE       = 1 << 3,
-   TRANSFER_STAGE      = 1 << 4,
-   ALL_GRAPHICS_STAGES = 1 << 5,
-   ALL_STAGES          = 1 << 6
+   TESS_CONTROL_STAGE  = 1 << 1,
+   TESS_EVAL_STAGE     = 1 << 2,
+   GEOMETRY_STAGE      = 1 << 3,
+   FRAGMENT_STAGE      = 1 << 4,
+   COMPUTE_STAGE       = 1 << 5,
+   TRANSFER_STAGE      = 1 << 6,
+   ALL_GRAPHICS_STAGES = 1 << 7,
+   ALL_STAGES          = 1 << 8
 };
 }
 using PipelineStageFlag = Flag16;
@@ -194,6 +196,7 @@ enum class DrawPrimitive
    LINE_STRIPS,
    TRIANGLES,
    TRIANGLE_STRIPS,
+   PATCHES
 };
 
 enum class PolygonMode
@@ -212,6 +215,7 @@ enum class ImageType
 
 enum class ShaderResourceType
 {
+   PUSH_CONSTANT,
    UNIFORM,
    SAMPLER,
    STORAGE,

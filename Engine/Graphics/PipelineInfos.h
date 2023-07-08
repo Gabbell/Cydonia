@@ -15,6 +15,8 @@ namespace CYD
 struct PushConstantRange
 {
    bool operator==( const PushConstantRange& other ) const;
+
+   std::string name;
    PipelineStageFlag stages;
    size_t offset;
    size_t size;
@@ -53,6 +55,12 @@ struct DepthStencilState
    bool useStencilTest            = false;
    bool depthWrite                = false;
    CompareOperator depthCompareOp = CompareOperator::ALWAYS;
+};
+
+struct TessellationState
+{
+   bool enabled                = false;
+   uint32_t patchControlPoints = 0;
 };
 
 struct PipelineLayoutInfo
@@ -110,6 +118,19 @@ struct PipelineInfo
    PipelineLayoutInfo pipLayout;
    ShaderConstants constants;
 
+   const PushConstantRange* findPushConstant( const std::string_view name ) const
+   {
+      for( const PushConstantRange& range : pipLayout.ranges )
+      {
+         if( range.name == name )
+         {
+            return &range;
+         }
+      }
+
+      return nullptr;
+   }
+
    template <class T>
    FlatShaderBinding<T> findBinding( T resource, const std::string_view name ) const
    {
@@ -154,6 +175,7 @@ struct GraphicsPipelineInfo final : public PipelineInfo
    std::vector<std::string> shaders;
    VertexLayout vertLayout;
    DepthStencilState dsState;
+   TessellationState tessState;
    RasterizerState rasterizer;
    DrawPrimitive drawPrim;
    PolygonMode polyMode;

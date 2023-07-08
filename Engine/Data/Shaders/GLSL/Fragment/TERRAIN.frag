@@ -4,6 +4,8 @@
 #include "LIGHTING.h"
 #include "../VIEW.h"
 
+layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
+
 layout( location = 0 ) in vec2 inUV;
 layout( location = 1 ) in vec3 inNormal;
 layout( location = 2 ) in vec3 inWorldPos;

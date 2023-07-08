@@ -20,6 +20,14 @@ Shader::Shader( const Device& device, const std::string& shaderPath )
    {
       m_type = Type::VERTEX;
    }
+   else if( type == "TESC" )
+   {
+      m_type = Type::TESS_CONTROL;
+   }
+   else if( type == "TESE" )
+   {
+      m_type = Type::TESS_EVAL;
+   }
    else if( type == "FRAG" )
    {
       m_type = Type::FRAGMENT;

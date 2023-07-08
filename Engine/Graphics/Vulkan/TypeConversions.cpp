@@ -136,6 +136,8 @@ VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim )
          return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
       case CYD::DrawPrimitive::TRIANGLE_STRIPS:
          return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
+      case CYD::DrawPrimitive::PATCHES:
+         return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
    }
 
    CYD_ASSERT( !"TypeConversions:: Unrecognized draw primitive" );
@@ -164,6 +166,14 @@ VkPipelineStageFlags cydToVkPipelineStages( CYD::PipelineStageFlag stages )
    if( stages & CYD::PipelineStage::VERTEX_STAGE )
    {
       vkStages |= VK_PIPELINE_STAGE_VERTEX_SHADER_BIT;
+   }
+   if( stages & CYD::PipelineStage::TESS_CONTROL_STAGE )
+   {
+      vkStages |= VK_PIPELINE_STAGE_TESSELLATION_CONTROL_SHADER_BIT;
+   }
+   if( stages & CYD::PipelineStage::TESS_EVAL_STAGE )
+   {
+      vkStages |= VK_PIPELINE_STAGE_TESSELLATION_EVALUATION_SHADER_BIT;
    }
    if( stages & CYD::PipelineStage::FRAGMENT_STAGE )
    {
@@ -198,6 +208,14 @@ VkShaderStageFlags cydToVkShaderStages( CYD::PipelineStageFlag stages )
    if( stages & CYD::PipelineStage::VERTEX_STAGE )
    {
       vkStages |= VK_SHADER_STAGE_VERTEX_BIT;
+   }
+   if( stages & CYD::PipelineStage::TESS_CONTROL_STAGE )
+   {
+      vkStages |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
+   }
+   if( stages & CYD::PipelineStage::TESS_EVAL_STAGE )
+   {
+      vkStages |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
    }
    if( stages & CYD::PipelineStage::FRAGMENT_STAGE )
    {

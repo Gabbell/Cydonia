@@ -78,6 +78,8 @@ project "Engine"
 			"Engine/Data/Shaders/GLSL/**.comp",
 			"Engine/Data/Shaders/GLSL/**.vert",
 			"Engine/Data/Shaders/GLSL/**.frag",
+			"Engine/Data/Shaders/GLSL/**.tesc",
+			"Engine/Data/Shaders/GLSL/**.tese",
 			"Engine/Data/*.json" }
 
 	removefiles { "Engine/Window/SDLWindow.h",
@@ -110,6 +112,24 @@ project "Engine"
 		}
 
 		buildoutputs { "%{cfg.targetdir}/Shaders/%{file.basename}_FRAG.spv" }
+
+	filter "files:Engine/Data/Shaders/GLSL/**.tesc"
+		buildmessage "Compiling Tesselation Control Shader %{file.abspath}"
+
+		buildcommands {
+			"glslc -Os %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_TESC.spv"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/Shaders/%{file.basename}_TESC.spv" }
+
+	filter "files:Engine/Data/Shaders/GLSL/**.tese"
+		buildmessage "Compiling Tesselation Evaluation Shader %{file.abspath}"
+
+		buildcommands {
+			"glslc -Os %{file.abspath} -o %{cfg.targetdir}/Shaders/%{file.basename}_TESE.spv"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/Shaders/%{file.basename}_TESE.spv" }
 
 	filter "files:Engine/Data/*.json"
 		buildmessage "Copying JSON Data %{file.abspath}"

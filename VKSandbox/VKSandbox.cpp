@@ -1,6 +1,5 @@
 #include <VKSandbox.h>
 
-#include <Graphics/VertexLayout.h>
 #include <Graphics/StaticPipelines.h>
 
 #include <Graphics/GRIS/RenderGraph.h>
@@ -13,16 +12,18 @@
 #include <Graphics/Utility/Noise.h>
 
 #include <ECS/Systems/Input/InputSystem.h>
+
+#include <ECS/Systems/Debug/DebugDrawSystem.h>
 #include <ECS/Systems/Lighting/LightUpdateSystem.h>
 #include <ECS/Systems/Lighting/ShadowMapSystem.h>
-#include <ECS/Systems/Rendering/ForwardRenderSystem.h>
-#include <ECS/Systems/Debug/DebugDrawSystem.h>
-#include <ECS/Systems/Resources/MaterialLoaderSystem.h>
-#include <ECS/Systems/Resources/MeshLoaderSystem.h>
 #include <ECS/Systems/Physics/PlayerMoveSystem.h>
 #include <ECS/Systems/Physics/MotionSystem.h>
 #include <ECS/Systems/Procedural/ProceduralDisplacementSystem.h>
 #include <ECS/Systems/Procedural/FogSystem.h>
+#include <ECS/Systems/Rendering/TessellationUpdateSystem.h>
+#include <ECS/Systems/Rendering/ForwardRenderSystem.h>
+#include <ECS/Systems/Resources/MaterialLoaderSystem.h>
+#include <ECS/Systems/Resources/MeshLoaderSystem.h>
 #include <ECS/Systems/Scene/CameraSystem.h>
 #include <ECS/Systems/UI/ImGuiSystem.h>
 
@@ -31,7 +32,8 @@
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/MaterialComponent.h>
 #include <ECS/Components/Rendering/FullscreenComponent.h>
-#include <ECS/Components/Transforms/InstancedComponent.h>
+#include <ECS/Components/Rendering/InstancedComponent.h>
+#include <ECS/Components/Rendering/TessellatedComponent.h>
 
 #if CYD_DEBUG
 #include <ECS/Components/Debug/DebugDrawComponent.h>
@@ -39,8 +41,6 @@
 
 #include <ECS/SharedComponents/InputComponent.h>
 #include <ECS/EntityManager.h>
-
-#include <Window/GLFWWindow.h>
 
 #include <Profiling.h>
 
@@ -85,6 +85,7 @@ void VKSandbox::preLoop()
 
    // Rendering
    m_ecs->addSystem<LightUpdateSystem>();
+   m_ecs->addSystem<TessellationUpdateSystem>();
    m_ecs->addSystem<ShadowMapSystem>( *m_materials );
    m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
    m_ecs->addSystem<FogSystem>();
@@ -101,12 +102,9 @@ void VKSandbox::preLoop()
    // =============================================================================================
    CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Initial Transfer" );
 
-   // This is not great. We have limited resolution at close views and too many triangles at far distances.
-   // Should use tessellation. This is the reason why the mountain ranges that go through diagonally
-   // the XZ axes look like they were cut by a crinkle-cut scissor. The grid is axis-aligned XZ
    std::vector<Vertex> terrainGridVerts;
    std::vector<uint32_t> terrainGridIndices;
-   MeshGeneration::Grid( terrainGridVerts, terrainGridIndices, 1024, 1024);
+   MeshGeneration::PatchGrid( terrainGridVerts, terrainGridIndices, 64 );
    m_meshes->loadMesh( transferList, "TERRAIN", terrainGridVerts, terrainGridIndices );
 
    GRIS::SubmitCommandList( transferList );
@@ -131,8 +129,9 @@ void VKSandbox::preLoop()
 
    const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
    m_ecs->assign<RenderableComponent>( terrain );
-   m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 100.0f ) );
+   m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f ) );
    m_ecs->assign<MeshComponent>( terrain, "TERRAIN" );
+   m_ecs->assign<TessellatedComponent>( terrain );
    m_ecs->assign<ProceduralDisplacementComponent>(
        terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, 0.0f );
    m_ecs->assign<MaterialComponent>( terrain, "TERRAIN", "SOLO_TEX_R32F" );

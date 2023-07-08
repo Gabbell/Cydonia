@@ -6,6 +6,7 @@
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Transforms/TransformComponent.h>
 #include <ECS/Components/Rendering/RenderableComponent.h>
+#include <ECS/Components/Rendering/TessellatedComponent.h>
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
 #include <ECS/Components/Procedural/FogComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
@@ -191,6 +192,13 @@ void DrawComponentsMenu( CmdListHandle cmdList, ComponentType type, const BaseCo
          DrawProceduralDisplacementComponentMenu( cmdList, displacement );
          break;
       }
+      case ComponentType::TESSELLATED:
+      {
+         const TessellatedComponent& tessellated =
+             *static_cast<const TessellatedComponent*>( component );
+         DrawTessellatedComponentMenu( cmdList, tessellated );
+         break;
+      }
       case ComponentType::FOG:
       {
          const FogComponent& fog = *static_cast<const FogComponent*>( component );
@@ -290,19 +298,24 @@ void DrawProceduralDisplacementComponentMenu(
 
 void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog )
 {
-   // Hello darkness, my old friend
-   FogComponent& notConst = const_cast<FogComponent&>( fog );
-
-   ImGui::SliderFloat( "A", &notConst.params.a, 0.0f, 5.0f );
-   ImGui::SliderFloat( "B", &notConst.params.b, 0.0f, 5.0f );
-   ImGui::SliderFloat( "Start Fog", &notConst.params.startFog, 0.0f, 1000.0f );
-   ImGui::SliderFloat( "End Fog", &notConst.params.endFog, 0.0f, 1000.0f );
+   ImGui::SliderFloat( "A", (float*)&fog.params.a, 0.0f, 5.0f );
+   ImGui::SliderFloat( "B", (float*)&fog.params.b, 0.0f, 5.0f );
+   ImGui::SliderFloat( "Start Fog", (float*)&fog.params.startFog, 0.0f, 1000.0f );
+   ImGui::SliderFloat( "End Fog", (float*)&fog.params.endFog, 0.0f, 1000.0f );
 }
 
 void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable )
 {
    ImGui::Checkbox( "Is Visible", (bool*)&renderable.isVisible );
    ImGui::Checkbox( "Casts Shadows", (bool*)&renderable.isShadowCasting );
+}
+
+void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedComponent& tessellated )
+{
+   ImGui::SliderFloat(
+       "Tessellated Edge Size", (float*)&tessellated.params.tessellatedEdgeSize, 0.0f, 1.0f );
+   ImGui::SliderFloat(
+       "Tessellation Factor", (float*)&tessellated.params.tessellationFactor, 0.0f, 1.0f );
 }
 
 void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& scene )

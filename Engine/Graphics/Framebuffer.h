@@ -18,32 +18,24 @@ class Framebuffer
    COPIABLE( Framebuffer );
    ~Framebuffer() = default;
 
-   enum class Index
+   enum Index
    {
       COLOR,
       DEPTH,
       COUNT
    };
 
-   using Targets = std::array<TextureHandle, static_cast<uint32_t>( Index::COUNT )>;
+   using Targets = std::array<TextureHandle, Index::COUNT>;
 
-   void attach( Index idx, TextureHandle texture )
-   {
-      const uint32_t attachmentIndex = static_cast<uint32_t>( idx );
-      m_targets[attachmentIndex]     = texture;
-   }
+   void attach( Index idx, TextureHandle texture ) { m_targets[idx] = texture; }
 
-   void detach( Index idx )
-   {
-      const uint32_t attachmentIndex = static_cast<uint32_t>( idx );
-      m_targets[attachmentIndex]     = {};
-   }
+   void detach( Index idx ) { m_targets[idx] = {}; }
 
    uint32_t getWidth() const { return m_width; }
    uint32_t getHeight() const { return m_height; }
 
    const Targets& getTargets() const { return m_targets; }
-   TextureHandle getTarget( Index idx ) const { return m_targets[static_cast<uint32_t>( idx )]; }
+   TextureHandle getTarget( Index idx ) const { return m_targets[idx]; }
 
   private:
    uint32_t m_width  = 0;

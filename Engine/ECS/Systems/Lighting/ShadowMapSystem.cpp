@@ -33,6 +33,18 @@ static void optionalBufferBinding(
    }
 }
 
+static void optionalUpdateConstantBuffer(
+    CmdListHandle cmdList,
+    std::string_view name,
+    const void* pData,
+    const PipelineInfo* pipInfo )
+{
+   if( const PushConstantRange* range = pipInfo->findPushConstant( name ) )
+   {
+      GRIS::UpdateConstantBuffer( cmdList, range->stages, range->offset, range->size, pData );
+   }
+}
+
 static void Initialize()
 {
    s_shadowmapPipeline = StaticPipelines::FindByName( "TERRAIN_SHADOWMAP" );
@@ -121,16 +133,22 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
 
       optionalBufferBinding(
-          cmdList,
-          scene.viewsBuffer,
-          "EnvironmentView",
-          pipInfo,
-          viewIdx * sizeof( SceneComponent::ViewShaderParams ),
-          sizeof( SceneComponent::ViewShaderParams ) );
+          cmdList, scene.viewsBuffer, "Views", pipInfo, 0, sizeof( scene.views ) );
 
-      // Update model transform push constant
-      GRIS::UpdateConstantBuffer(
-          cmdList, PipelineStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
+      if( renderable.isInstanced )
+      {
+         CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
+         optionalBufferBinding( cmdList, renderable.instancesBuffer, "InstancesData", pipInfo );
+      }
+
+      if( renderable.isTessellated )
+      {
+         CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation params buffer" );
+         optionalBufferBinding(
+             cmdList, renderable.tessellationBuffer, "TessellationParams", pipInfo );
+      }
+
+      optionalUpdateConstantBuffer( cmdList, "Model", &modelMatrix, pipInfo );
 
       if( prevMaterial != material.materialIdx )
       {
@@ -153,13 +171,27 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
          prevMesh = mesh.asset;
       }
 
-      if( mesh.indexCount > 0 )
+      if( renderable.instanceCount )
       {
-         GRIS::DrawIndexed( cmdList, mesh.indexCount );
+         if( mesh.indexCount )
+         {
+            GRIS::DrawIndexedInstanced( cmdList, mesh.indexCount, renderable.instanceCount );
+         }
+         else
+         {
+            GRIS::DrawInstanced( cmdList, mesh.vertexCount, renderable.instanceCount );
+         }
       }
       else
       {
-         GRIS::Draw( cmdList, mesh.vertexCount );
+         if( mesh.indexCount )
+         {
+            GRIS::DrawIndexed( cmdList, mesh.indexCount );
+         }
+         else
+         {
+            GRIS::Draw( cmdList, mesh.vertexCount );
+         }
       }
    }
 

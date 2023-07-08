@@ -5,7 +5,7 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Rendering/RenderableComponent.h>
-#include <ECS/Components/Transforms/InstancedComponent.h>
+#include <ECS/Components/Rendering/InstancedComponent.h>
 
 namespace CYD
 {

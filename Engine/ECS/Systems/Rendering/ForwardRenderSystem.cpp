@@ -9,7 +9,6 @@
 
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Scene/CameraComponent.h>
-#include <ECS/Components/Transforms/InstancedComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
 #include <Profiling.h>
@@ -50,6 +49,18 @@ static void optionalTextureBinding(
    if( FlatShaderBinding res = pipInfo->findBinding( texture, name ); res.valid )
    {
       GRIS::BindTexture( cmdList, texture, res.binding, res.set );
+   }
+}
+
+static void optionalUpdateConstantBuffer(
+    CmdListHandle cmdList,
+    std::string_view name,
+    const void* pData,
+    const PipelineInfo* pipInfo )
+{
+   if( const PushConstantRange* range = pipInfo->findPushConstant( name ) )
+   {
+      GRIS::UpdateConstantBuffer( cmdList, range->stages, range->offset, range->size, pData );
    }
 }
 
@@ -133,14 +144,21 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       // Optional Buffers
       // ==========================================================================================
       optionalBufferBinding(
-          cmdList, scene.viewsBuffer, "EnvironmentView", curPipInfo, 0, sizeof( scene.views ) );
+          cmdList, scene.viewsBuffer, "Views", curPipInfo, 0, sizeof( scene.views ) );
 
       optionalBufferBinding( cmdList, scene.lightsBuffer, "Lights", curPipInfo );
 
-      if( renderable.instanceCount )
+      if( renderable.isInstanced )
       {
-         CYD_ASSERT( renderable.instancesBuffer && "Invalid Instances Buffer" );
+         CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
          optionalBufferBinding( cmdList, renderable.instancesBuffer, "InstancesData", curPipInfo );
+      }
+
+      if( renderable.isTessellated )
+      {
+         CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation params buffer" );
+         optionalBufferBinding(
+             cmdList, renderable.tessellationBuffer, "TessellationParams", curPipInfo );
       }
 
       // Push Constants
@@ -148,9 +166,7 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       const glm::mat4 modelMatrix =
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
 
-      // Update model transform push constant
-      GRIS::UpdateConstantBuffer(
-          cmdList, PipelineStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
+      optionalUpdateConstantBuffer( cmdList, "Model", &modelMatrix, curPipInfo );
 
       // TEMPORARY
       /*

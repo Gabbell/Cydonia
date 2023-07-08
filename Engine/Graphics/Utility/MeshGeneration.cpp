@@ -7,7 +7,7 @@
 
 namespace CYD::MeshGeneration
 {
-void Grid(
+void TriangleGrid(
     std::vector<Vertex>& vertices,
     std::vector<uint32_t>& indices,
     uint32_t rows,
@@ -43,6 +43,40 @@ void Grid(
          indices.push_back( c + ( r * columns ) );
          indices.push_back( c + ( ( r + 1 ) * columns ) + 1 );
          indices.push_back( c + ( r * columns + 1 ) );
+      }
+   }
+}
+
+void PatchGrid( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, uint32_t size )
+{
+   vertices.resize( size * size );
+
+   const float wx = 2.0f;
+   const float wy = 2.0f;
+
+   for( uint32_t x = 0; x < size; x++ )
+   {
+      for( uint32_t y = 0; y < size; y++ )
+      {
+         uint32_t index         = ( x + y * size );
+         vertices[index].pos[0] = x * wx + wx / 2.0f - (float)size * wx / 2.0f;
+         vertices[index].pos[1] = 0.0f;
+         vertices[index].pos[2] = y * wy + wy / 2.0f - (float)size * wy / 2.0f;
+         vertices[index].uv = glm::vec3( (float)x / ( size - 1 ), (float)y / ( size - 1 ), 0.0f );
+      }
+   }
+
+   const uint32_t w = ( size - 1 );
+   indices.resize( w * w * 4 );
+   for( uint32_t x = 0; x < w; x++ )
+   {
+      for( uint32_t y = 0; y < w; y++ )
+      {
+         uint32_t index     = ( x + y * w ) * 4;
+         indices[index]     = ( x + y * size );
+         indices[index + 1] = indices[index] + size;
+         indices[index + 2] = indices[index + 1] + 1;
+         indices[index + 3] = indices[index] + 1;
       }
    }
 }
@@ -92,8 +126,8 @@ static void subdivide(
       return;
    }
 
-   // We are using the normals so that we are projecting onto a sphere and so that they all have a distance of 1 from
-   // the origin of the sphere
+   // We are using the normals so that we are projecting onto a sphere and so that they all have a
+   // distance of 1 from the origin of the sphere
 
    // The division factor to get this many points per edge per subdivision
    const glm::vec3 points[6] = {

@@ -3,6 +3,7 @@
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/Utility/Transforms.h>
+#include <Graphics/Scene/Frustum.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Scene/CameraComponent.h>
@@ -74,6 +75,10 @@ void CameraSystem::tick( double /*deltaS*/ )
             view.projMat = glm::mat4( 1.0f );
             break;
       }
+
+      // Update camera frustum
+      Frustum& frustum = scene.frustums[viewIdx];
+      frustum.update( view.projMat, view.viewMat );
    }
 
    // Transferring all the views to one buffer

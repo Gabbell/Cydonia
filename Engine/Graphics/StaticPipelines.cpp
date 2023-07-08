@@ -19,7 +19,11 @@ static uint32_t s_pipelineCount = 0;
 
 static ShaderResourceType StringToResourceType( const std::string& typeString )
 {
-   if( typeString == "UBO" )
+   if( typeString == "PUSH_CONSTANT" )
+   {
+      return ShaderResourceType::PUSH_CONSTANT;
+   }
+   if( typeString == "UNIFORM" )
    {
       return ShaderResourceType::UNIFORM;
    }
@@ -56,6 +60,18 @@ static PipelineStageFlag StringToShaderStageFlags( const std::string& stagesStri
    {
       shaderStages |= PipelineStage::COMPUTE_STAGE;
    }
+   if( stagesString.find( "TESS_CONTROL" ) != std::string::npos )
+   {
+      shaderStages |= PipelineStage::TESS_CONTROL_STAGE;
+   }
+   if( stagesString.find( "TESS_EVAL" ) != std::string::npos )
+   {
+      shaderStages |= PipelineStage::TESS_EVAL_STAGE;
+   }
+   if( stagesString.find( "COMPUTE" ) != std::string::npos )
+   {
+      shaderStages |= PipelineStage::COMPUTE_STAGE;
+   }
    if( stagesString.find( "GRAPHICS" ) != std::string::npos )
    {
       shaderStages |= PipelineStage::ALL_GRAPHICS_STAGES;
@@ -73,6 +89,10 @@ static DrawPrimitive StringToPrimitiveType( const std::string& primString )
    if( primString == "TRIANGLE_STRIPS" )
    {
       return DrawPrimitive::TRIANGLE_STRIPS;
+   }
+   if( primString == "PATCHES" )
+   {
+      return DrawPrimitive::PATCHES;
    }
 
    CYD_ASSERT( !"Pipelines: Could not recognize string as a primitive draw type" );
@@ -205,6 +225,19 @@ bool Initialize()
          GraphicsPipelineInfo pipInfo;
          pipInfo.name = pipName;
          pipInfo.shaders.push_back( pipeline["VERTEX_SHADER"] );
+
+         const auto& tessControl = pipeline.find( "TESS_CONTROL_SHADER" );
+         if( tessControl != pipeline.end() )
+         {
+            pipInfo.shaders.push_back( *tessControl );
+         }
+
+         const auto& tessEval = pipeline.find( "TESS_EVAL_SHADER" );
+         if( tessEval != pipeline.end() )
+         {
+            pipInfo.shaders.push_back( *tessEval );
+         }
+
          pipInfo.shaders.push_back( pipeline["FRAGMENT_SHADER"] );
 
          // Optional parameters
@@ -271,7 +304,16 @@ bool Initialize()
             pipInfo.dsState.useDepthTest   = depthStencil["DEPTH_TEST_ENABLE"];
             pipInfo.dsState.useStencilTest = depthStencil["STENCIL_TEST_ENABLE"];
             pipInfo.dsState.depthWrite     = depthStencil["DEPTH_WRITE_ENABLE"];
-            pipInfo.dsState.depthCompareOp = StringToCompareOp(depthStencil["DEPTH_COMPARE_OP"]);
+            pipInfo.dsState.depthCompareOp = StringToCompareOp( depthStencil["DEPTH_COMPARE_OP"] );
+         }
+
+         // Parsing tessellation state
+         const auto& tessellationIt = pipeline.find( "TESSELLATION" );
+         if( tessellationIt != pipeline.end() )
+         {
+            const auto& tessellation             = *tessellationIt;
+            pipInfo.tessState.enabled            = tessellation["ENABLE"];
+            pipInfo.tessState.patchControlPoints = tessellation["PATCH_VERTICES"];
          }
 
          // Parsing rasterizer state
@@ -306,8 +348,14 @@ bool Initialize()
       {
          for( const auto& resource : *resourcesIt )
          {
-            const std::string resourceType = resource["TYPE"];
-            if( resourceType == "CONSTANT_BUFFER" )
+            CYD::PipelineStageFlag stages = 0;
+            for( const auto& shaderStage : resource["STAGES"] )
+            {
+               stages |= StringToShaderStageFlags( shaderStage );
+            }
+
+            const ShaderResourceType resourceType = StringToResourceType( resource["TYPE"] );
+            if( resourceType == ShaderResourceType::PUSH_CONSTANT )
             {
                uint32_t offset = 0;
                if( resource.find( "OFFSET" ) != resource.end() )
@@ -316,7 +364,7 @@ bool Initialize()
                }
 
                const PushConstantRange constantBuffer = {
-                   StringToShaderStageFlags( resource["STAGE"] ), offset, resource["SIZE"] };
+                   resource["NAME"], stages, offset, resource["SIZE"] };
 
                newPipeline->pipLayout.ranges.push_back( constantBuffer );
             }
@@ -326,11 +374,7 @@ bool Initialize()
                const uint32_t binding = resource["BINDING"];
 
                newPipeline->pipLayout.addBinding(
-                   StringToResourceType( resource["TYPE"] ),
-                   StringToShaderStageFlags( resource["STAGE"] ),
-                   binding,
-                   set,
-                   resource["NAME"] );
+                   resourceType, stages, binding, set, resource["NAME"] );
             }
          }
       }
