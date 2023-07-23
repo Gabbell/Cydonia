@@ -199,4 +199,32 @@ void Icosphere(
           divisionPerEdge );
    }
 }
+
+void Octahedron( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices )
+{
+   static constexpr std::array<glm::vec3, 6> octahedronVerts = {
+       { { 0.0f, 1.0f, 0.0f },  // Top
+         { -1.0f, 0.0f, 1.0f },
+         { 1.0f, 0.0f, 1.0f },
+         { 1.0f, 0.0f, -1.0f },
+         { -1.0f, 0.0f, -1.0f },
+         { 0.0f, -1.0f, 0.0f } } };  // Bottom
+
+   static constexpr std::array<uint32_t, 24> octahedronIdx = {
+       0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 1, 4,    // Top
+       1, 2, 5, 2, 3, 5, 3, 4, 5, 4, 1, 5 };  // Bottom
+
+   vertices.resize( octahedronVerts.size() );
+   indices.resize( octahedronIdx.size() );
+
+   for( uint32_t i = 0; i < octahedronVerts.size(); ++i)
+   {
+      vertices[i].pos = octahedronVerts[i];
+   }
+
+   for(uint32_t i = 0; i < octahedronIdx.size(); ++i)
+   {
+      indices[i] = octahedronIdx[i];
+   }
+}
 }

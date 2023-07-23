@@ -1,7 +1,7 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
-layout( local_size_x = 1, local_size_y = 1 ) in;
+layout( local_size_x = 16, local_size_y = 16 ) in;
 
 layout( push_constant ) uniform OceanParameters
 {
@@ -52,11 +52,12 @@ complex conj( complex c ) { return complex( c.real, -c.im ); }
 
 void main()
 {
-   const vec2 x = vec2( gl_GlobalInvocationID.xy ) - float( resolution ) / 2.0;
+   const vec2 x        = vec2( gl_GlobalInvocationID.xy ) - float( resolution ) / 2.0;
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID );
 
-   // Wave vector or the direction of the wave
-   const vec2 waveVector =
-       vec2( 2.0 * PI * x.x / horizontalDimension, 2.0 * PI * x.y / horizontalDimension );
+   // Wave vector or the direction of the wave (k)
+   const vec3 waveVector =
+       vec3( 2.0 * PI * x.x / horizontalDimension, 0.0, 2.0 * PI * x.y / horizontalDimension );
 
    const float magnitude = max( length( waveVector ), 0.00001 );
 
@@ -70,8 +71,8 @@ void main()
    const complex exp_iwt     = complex( cos_wt, sin_wt );
    const complex exp_iwt_inv = complex( cos_wt, -sin_wt );
 
-   const vec2 spectrum1Values = imageLoad( spectrum1, ivec2( gl_GlobalInvocationID.xy ) ).rg;
-   const vec2 spectrum2Values = imageLoad( spectrum2, ivec2( gl_GlobalInvocationID.xy ) ).rg;
+   const vec2 spectrum1Values = imageLoad( spectrum1, ssCoord ).rg;
+   const vec2 spectrum2Values = imageLoad( spectrum2, ssCoord ).rg;
 
    const complex fourierComp     = complex( spectrum1Values.x, spectrum1Values.y );
    const complex fourierCompConj = conj( complex( spectrum2Values.x, spectrum2Values.y ) );
@@ -84,15 +85,10 @@ void main()
    const complex hkt_dx = mul( dx, hkt_dy );
 
    // dz
-   const complex dy     = complex( 0.0, -waveVector.y / magnitude );
+   const complex dy     = complex( 0.0, -waveVector.z / magnitude );
    const complex hkt_dz = mul( dy, hkt_dy );
 
-   imageStore(
-       tilde_hkt_dy, ivec2( gl_GlobalInvocationID.xy ), vec4( hkt_dy.real, hkt_dy.im, 0.0, 1.0 ) );
-
-   imageStore(
-       tilde_hkt_dx, ivec2( gl_GlobalInvocationID.xy ), vec4( hkt_dx.real, hkt_dx.im, 0.0, 1.0 ) );
-
-   imageStore(
-       tilde_hkt_dz, ivec2( gl_GlobalInvocationID.xy ), vec4( hkt_dz.real, hkt_dz.im, 0.0, 1.0 ) );
+   imageStore( tilde_hkt_dy, ssCoord, vec4( hkt_dy.real, hkt_dy.im, 0.0, 1.0 ) );
+   imageStore( tilde_hkt_dx, ssCoord, vec4( hkt_dx.real, hkt_dx.im, 0.0, 1.0 ) );
+   imageStore( tilde_hkt_dz, ssCoord, vec4( hkt_dz.real, hkt_dz.im, 0.0, 1.0 ) );
 }

@@ -70,6 +70,7 @@ class Device final
    Texture* createTexture( const CYD::TextureDescription& desc );
 
    void cleanup();  // Clean up unused resources
+   void clearPipelines();
 
    void waitUntilIdle();  // CPU wait until device is done working
    void waitOnFrame( uint32_t currentFrame );

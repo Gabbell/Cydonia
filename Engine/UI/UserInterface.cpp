@@ -8,6 +8,7 @@
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/TessellatedComponent.h>
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
+#include <ECS/Components/Procedural/FFTOceanComponent.h>
 #include <ECS/Components/Procedural/FogComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
@@ -17,8 +18,9 @@
 
 namespace CYD::UI
 {
-static ImTextureID s_noiseTexture     = nullptr;
-static ImTextureID s_shadowMapTexture = nullptr;
+static ImTextureID s_oceanDispTexture   = nullptr;
+static ImTextureID s_noiseTexture       = nullptr;
+static ImTextureID s_shadowMapTexture   = nullptr;
 
 void Initialize() { GRIS::InitializeUIBackend(); }
 
@@ -32,7 +34,7 @@ void DrawMainMenuBar(
     bool& drawAboutWindow,
     bool& drawStatsOverlay )
 {
-   ImGui::ShowDemoWindow();
+   //ImGui::ShowDemoWindow();
 
    ImGui::BeginMainMenuBar();
    ImGui::MenuItem( "CYDONIA", nullptr, false, false );
@@ -67,7 +69,7 @@ void DrawMainMenuBar(
 
       if( ImGui::MenuItem( "Reload Shaders", "Ctrl-R" ) )
       {
-         // GRIS::ReloadShaders();
+         GRIS::ReloadShaders();
       }
 
       ImGui::EndMenu();
@@ -205,6 +207,12 @@ void DrawComponentsMenu( CmdListHandle cmdList, ComponentType type, const BaseCo
          DrawFogComponentMenu( cmdList, fog );
          break;
       }
+      case ComponentType::OCEAN:
+      {
+         const FFTOceanComponent& ocean = *static_cast<const FFTOceanComponent*>( component );
+         DrawFFTOceanComponentMenu( cmdList, ocean );
+      }
+      break;
       default:
          ImGui::PushStyleColor( ImGuiCol_Text, IM_COL32( 255, 0, 0, 255 ) );
          ImGui::Text( "Unimplemented" );
@@ -270,14 +278,18 @@ void DrawProceduralDisplacementComponentMenu(
       notConst.params.seed = Noise::GenerateRandomSeed();
       triggerUpdate        = true;
    }
-   triggerUpdate |= ImGui::SliderFloat( "Amplitude", &notConst.params.amplitude, 0.0f, 2.0f );
-   triggerUpdate |= ImGui::SliderFloat( "Gain", &notConst.params.gain, 0.0f, 1.0f );
-   triggerUpdate |= ImGui::SliderFloat( "Frequency", &notConst.params.frequency, 0.0f, 10.0f );
-   triggerUpdate |= ImGui::SliderFloat( "Lacunarity", &notConst.params.lacunarity, 1.0f, 10.0f );
-   triggerUpdate |= ImGui::SliderFloat( "Exponent", &notConst.params.exponent, 0.0f, 5.0f );
-   triggerUpdate |= ImGui::Checkbox( "Ridged", (bool*)&notConst.params.ridged );
-   triggerUpdate |= ImGui::Checkbox( "Invert", (bool*)&notConst.params.invert );
-   triggerUpdate |= ImGui::SliderInt( "Octaves", (int*)&notConst.params.octaves, 1, 10 );
+   triggerUpdate |=
+       ImGui::SliderFloat( "Amplitude", (float*)&displacement.params.amplitude, 0.0f, 2.0f );
+   triggerUpdate |= ImGui::SliderFloat( "Gain", (float*)&displacement.params.gain, 0.0f, 1.0f );
+   triggerUpdate |=
+       ImGui::SliderFloat( "Frequency", (float*)&displacement.params.frequency, 0.0f, 10.0f );
+   triggerUpdate |=
+       ImGui::SliderFloat( "Lacunarity", (float*)&displacement.params.lacunarity, 1.0f, 10.0f );
+   triggerUpdate |=
+       ImGui::SliderFloat( "Exponent", (float*)&displacement.params.exponent, 0.0f, 5.0f );
+   triggerUpdate |= ImGui::Checkbox( "Ridged", (bool*)&displacement.params.ridged );
+   triggerUpdate |= ImGui::Checkbox( "Invert", (bool*)&displacement.params.invert );
+   triggerUpdate |= ImGui::SliderInt( "Octaves", (int*)&displacement.params.octaves, 1, 10 );
 
    notConst.needsUpdate |= triggerUpdate;
 
@@ -294,6 +306,38 @@ void DrawProceduralDisplacementComponentMenu(
                          static_cast<float>( displacement.width );
    const ImVec2 dimensions( displayWidth, displayHeight );
    ImGui::Image( s_noiseTexture, dimensions );
+}
+
+void DrawFFTOceanComponentMenu( CmdListHandle cmdList, const FFTOceanComponent& ocean )
+{
+   bool triggerUpdate = false;
+
+   triggerUpdate |=
+       ImGui::SliderFloat( "Amplitude", (float*)&ocean.params.amplitude, 0.0f, 100.0f );
+   triggerUpdate |=
+       ImGui::SliderFloat( "Wind Speed", (float*)&ocean.params.windSpeed, 0.0f, 100.0f );
+   triggerUpdate |=
+       ImGui::SliderInt( "Horizontal Dimension", (int*)&ocean.params.horizontalDimension, 0, 2000 );
+   triggerUpdate |= ImGui::SliderFloat( "Wind Dir X", (float*)&ocean.params.windDirX, 0.0f, 1.0f );
+   triggerUpdate |= ImGui::SliderFloat( "Wind Dir Z", (float*)&ocean.params.windDirZ, 0.0f, 1.0f );
+
+   float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
+   float displayHeight = displayWidth * static_cast<float>( ocean.params.resolution) /
+                         static_cast<float>( ocean.params.resolution );
+   const ImVec2 dimensions( displayWidth, displayHeight );
+
+   ImGui::SeparatorText( "Displacement Map" );
+   if( s_oceanDispTexture == nullptr )
+   {
+      s_oceanDispTexture = GRIS::AddDebugTexture( ocean.displacementMap );
+   }
+
+   GRIS::UpdateDebugTexture( cmdList, ocean.displacementMap );
+
+   ImGui::Image( s_oceanDispTexture, dimensions );
+
+   FFTOceanComponent& notConst = const_cast<FFTOceanComponent&>( ocean );
+   notConst.needsUpdate        = triggerUpdate;
 }
 
 void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog )

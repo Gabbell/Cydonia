@@ -11,7 +11,7 @@ static constexpr char SPIRV_SHADER_DIR[] = "Shaders/";
 
 namespace vk
 {
-ShaderCache::ShaderCache( const Device& device ) : _device( device ) { _initializeAllShaders(); }
+ShaderCache::ShaderCache( const Device& device ) : m_device( device ) { _initializeAllShaders(); }
 ShaderCache::~ShaderCache() = default;
 
 void ShaderCache::_initializeAllShaders()
@@ -26,18 +26,24 @@ void ShaderCache::_initializeAllShaders()
    {
       std::string shaderPath = entry.path().generic_string();
 
-      _shaders.insert( { shaderPath, std::make_unique<Shader>( _device, shaderPath ) } );
+      m_shaders.insert( { shaderPath, std::make_unique<Shader>( m_device, shaderPath ) } );
    }
 }
 
 const Shader* ShaderCache::getShader( const std::string& shaderName )
 {
-   auto it = _shaders.find( SPIRV_SHADER_DIR + shaderName + ".spv" );
-   if( it != _shaders.end() )
+   auto it = m_shaders.find( SPIRV_SHADER_DIR + shaderName + ".spv" );
+   if( it != m_shaders.end() )
    {
       return it->second.get();
    }
    CYD_ASSERT( !"ShaderCache: Could not find shader in cache" );
    return nullptr;
+}
+
+void ShaderCache::reset()
+{
+   m_shaders.clear();
+   _initializeAllShaders();
 }
 }

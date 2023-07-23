@@ -1,7 +1,7 @@
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
 
-#include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/RenderGraph.h>
 
 #include <Graphics/Scene/MeshCache.h>
 
@@ -30,7 +30,7 @@ void MeshLoaderSystem::tick( double /*deltaS*/ )
 {
    CYD_TRACE( "MeshLoaderSystem" );
    
-   const CmdListHandle cmdList = GRIS::GetMainCommandList();
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::LOAD );
 
    for( const auto& entityEntry : m_entities )
    {

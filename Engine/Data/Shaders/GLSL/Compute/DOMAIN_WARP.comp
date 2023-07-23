@@ -1,8 +1,10 @@
 #version 450
 
-#include "NOISE.h"
+#include "../NOISE.h"
 
 layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform PUSH { NoiseParameters params; };
 
 layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
 
@@ -13,14 +15,14 @@ void main()
    uv        = uv * vec2( dims.x / dims.y, 1.0 );  // Aspect ratio corrected
 
    vec2 q = vec2( 0.0 );
-   q.x    = SimplexFBM( uv + vec2( 0.0 ) );
-   q.y    = SimplexFBM( uv + vec2( 1.0 ) );
+   q.x    = SimplexFBM( uv + vec2( 0.0 ), params );
+   q.y    = SimplexFBM( uv + vec2( 1.0 ), params );
 
    vec2 r = vec2( 0.0 );
-   r.x    = SimplexFBM( uv + 1.0 * q + vec2( 1.7, 9.2 ) + ( 0.15 * params.seed ) );
-   r.y    = SimplexFBM( uv + 4.0 * q + vec2( 8.3, 2.8 ) + ( 0.126 * params.seed ) );
+   r.x    = SimplexFBM( uv + 1.0 * q + vec2( 1.7, 9.2 ) + ( 0.15 * params.seed ), params );
+   r.y    = SimplexFBM( uv + 4.0 * q + vec2( 8.3, 2.8 ) + ( 0.126 * params.seed ), params );
 
-   float noiseVal = SimplexFBM( uv + r );
+   float noiseVal = SimplexFBM( uv + r, params );
 
    imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( vec3( noiseVal ), 1.0 ) );
 }

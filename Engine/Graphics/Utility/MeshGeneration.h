@@ -25,5 +25,7 @@ void Icosphere(
     std::vector<uint32_t>& indices,
     uint32_t subdivisions = 0,
     float divisionPerEdge = 2.0f );
+
+void Octahedron( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices );
 }
 }

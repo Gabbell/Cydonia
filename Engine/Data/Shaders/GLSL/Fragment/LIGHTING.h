@@ -14,8 +14,7 @@ struct Light
    vec4 params;     // X = enabled, Y = type, ZW = unused
 };
 
-layout( set = 1, binding = 1 ) uniform Lights { Light lights[MAX_LIGHTS]; };
-layout( set = 1, binding = 2 ) uniform sampler2DShadow shadowMap;
+const float PI = 3.141592653589793;
 
 // ================================================================================================
 
@@ -53,7 +52,7 @@ float BlinnPhongSpecular( vec3 lightDir, vec3 viewDir, vec3 normal )
    return specularTerm;
 }
 
-float ShadowPCF( vec4 shadowCoords, vec3 normal, vec3 worldPos )
+float ShadowPCF( sampler2DShadow shadowMap, vec4 shadowCoords )
 {
    // ShadowCoords are NDC coordinates of the current fragment from the point of view of the light
    shadowCoords = shadowCoords / shadowCoords.w;
@@ -64,7 +63,8 @@ float ShadowPCF( vec4 shadowCoords, vec3 normal, vec3 worldPos )
    }
 
    // Calculate bias (based on depth map resolution and slope)
-   const vec3 lightDir = normalize( lights[0].position.xyz - worldPos );
+   // const vec3 lightDir = normalize( lightPos - worldPos );
+   // float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
 
    // PCF
    const vec2 texelSize = 1.0 / textureSize( shadowMap, 0 );

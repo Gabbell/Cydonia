@@ -24,10 +24,9 @@ class RenderBackend
    virtual void drawUI( CmdListHandle /*cmdList*/ ) {}
 
    virtual void cleanup() = 0;
+   virtual void reloadShaders() = 0;
 
    virtual void waitUntilIdle() {}
-
-   virtual CmdListHandle getMainCommandList() const = 0;
 
    // Command Buffers/Lists
    // ==============================================================================================
@@ -173,7 +172,6 @@ class RenderBackend
        size_t firstInstance ) = 0;
    virtual void
    dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) = 0;
-   virtual void endFrame()                                                           = 0;
    virtual void presentFrame()                                                       = 0;
 
    // Debug

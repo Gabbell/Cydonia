@@ -8,6 +8,21 @@
 
 namespace CYD::RenderGraph
 {
-void AddPass( CmdListHandle cmdList );
+enum class Pass
+{
+   LOAD,
+   PRE_RENDER,
+   OPAQUE_RENDER,
+   ALPHA_RENDER,
+#if CYD_DEBUG
+   DEBUG_DRAW,
+#endif
+   POST_PROCESS,
+   UI,
+   COUNT
+};
+
+void Prepare();
+CmdListHandle GetCommandList( Pass pass );
 void Execute();
 }

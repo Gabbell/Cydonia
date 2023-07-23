@@ -27,10 +27,7 @@ void ImageMemory(
     uint32_t layers,
     VkFormat format,
     CYD::Access prevAccess,
-    CYD::Access nextAccess);
+    CYD::Access nextAccess );
 
-void Pipeline(
-    VkCommandBuffer cmdBuffer,
-    CYD::PipelineStageFlag sourceStage,
-    CYD::PipelineStageFlag destStage );
+void GlobalMemory( VkCommandBuffer cmdBuffer, CYD::Access prevAccess, CYD::Access nextAccess );
 }

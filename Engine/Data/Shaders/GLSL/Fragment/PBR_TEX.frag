@@ -4,13 +4,15 @@
 #include "LIGHTING.h"
 #include "PBR.h"
 
+layout( set = 1, binding = 0 ) uniform Lights { Light lights[MAX_LIGHTS]; };
+
 // Material properties
 // =================================================================================================
-layout( set = 1, binding = 0 ) uniform sampler2D albedo;
-layout( set = 1, binding = 1 ) uniform sampler2D normals;
-layout( set = 1, binding = 2 ) uniform sampler2D metalness;
-layout( set = 1, binding = 3 ) uniform sampler2D roughness;
-layout( set = 1, binding = 4 ) uniform sampler2D ambientOcclusion;
+layout( set = 1, binding = 1 ) uniform sampler2D albedo;
+layout( set = 1, binding = 2 ) uniform sampler2D normals;
+layout( set = 1, binding = 3 ) uniform sampler2D metalness;
+layout( set = 1, binding = 4 ) uniform sampler2D roughness;
+layout( set = 1, binding = 5 ) uniform sampler2D ambientOcclusion;
 
 // Interpolators
 // =================================================================================================

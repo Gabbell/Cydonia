@@ -27,8 +27,8 @@ void ImGuiSystem::tick( double /*deltaS*/ )
 {
    CYD_TRACE( "ImGuiSystem" );
 
-   const CmdListHandle cmdList = GRIS::GetMainCommandList();
-   CYD_GPUTRACE( cmdList, "ImGuiSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::UI );
+   CYD_SCOPED_GPUTRACE( cmdList, "ImGuiSystem" );
 
    // Setting up interface
    UI::DrawMainWindow( cmdList );

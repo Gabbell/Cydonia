@@ -3,6 +3,7 @@
 #include <Graphics/Framebuffer.h>
 #include <Graphics/StaticPipelines.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/RenderGraph.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/SharedComponents/SceneComponent.h>
@@ -31,8 +32,8 @@ void FogSystem::tick( double deltaS )
       Initialize();
    }
 
-   const CmdListHandle cmdList = GRIS::GetMainCommandList();
-   CYD_GPUTRACE( cmdList, "FogSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::POST_PROCESS );
+   CYD_SCOPED_GPUTRACE( cmdList, "FogSystem" );
 
    const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 

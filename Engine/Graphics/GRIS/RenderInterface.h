@@ -42,11 +42,10 @@ void DrawUI( CmdListHandle cmdList );
 
 // Cleanup rendering resources
 void RenderBackendCleanup();
+void ReloadShaders();
 
 // Wait until all devices are idle
 void WaitUntilIdle();
-
-CmdListHandle GetMainCommandList();
 
 // Command Buffers/Lists
 // ===============================================================================================
@@ -202,7 +201,6 @@ void DrawIndexedInstanced(
     size_t firstIndex    = 0,
     size_t firstInstance = 0 );
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
-void EndFrame();
 void PresentFrame();
 
 // Debug

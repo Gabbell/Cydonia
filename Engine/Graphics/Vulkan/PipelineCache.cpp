@@ -345,7 +345,7 @@ VkPipeline PipelineCache::findOrCreate(
    VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
    colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
                                          VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-   colorBlendAttachment.blendEnable         = VK_TRUE;
+   colorBlendAttachment.blendEnable         = pipInfo.blendState.useBlend;
    colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
    colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
    colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
@@ -420,23 +420,34 @@ VkPipeline PipelineCache::findOrCreate(
    return m_graphicsPipelines.insert( { pipInfo, pipeline } ).first->second;
 }
 
-PipelineCache::~PipelineCache()
+void PipelineCache::clear()
 {
+   m_ShaderCache->reset();
+
    for( const auto& pipeline : m_graphicsPipelines )
    {
       vkDestroyPipeline( m_device.getVKDevice(), pipeline.second, nullptr );
    }
+   m_graphicsPipelines.clear();
+
    for( const auto& pipeline : m_computePipelines )
    {
       vkDestroyPipeline( m_device.getVKDevice(), pipeline.second, nullptr );
    }
+   m_computePipelines.clear();
+
    for( const auto& pipLayout : m_pipLayouts )
    {
       vkDestroyPipelineLayout( m_device.getVKDevice(), pipLayout.second, nullptr );
    }
+   m_pipLayouts.clear();
+
    for( const auto& descSetLayout : m_descSetLayouts )
    {
       vkDestroyDescriptorSetLayout( m_device.getVKDevice(), descSetLayout.second, nullptr );
    }
+   m_descSetLayouts.clear();
 }
+
+PipelineCache::~PipelineCache() { clear(); }
 }

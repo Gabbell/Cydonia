@@ -289,6 +289,8 @@ void Device::cleanup()
    }
 }
 
+void Device::clearPipelines() { m_pipelines->clear(); }
+
 // =================================================================================================
 // Synchronization
 

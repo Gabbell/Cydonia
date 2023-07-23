@@ -2,20 +2,14 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "../VIEW.h"
+#include "TESSELLATION.h"
 
 // Constant Buffers & Uniforms
 // =================================================================================================
 layout( push_constant ) uniform PushConstant { mat4 model; };
 
-layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
-layout( set = 0, binding = 2 ) uniform TesselationParams
-{
-   vec4 frustumPlanes[6];
-   vec2 viewportDims;
-   float tessellatedEdgeSize;
-   float tessellationFactor;
-}
-params;
+layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
+layout( set = 0, binding = 2 ) uniform TESSELLATION { TessellationParams params; };
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 // Inputs & Outputs (Interpolators)
@@ -26,10 +20,8 @@ layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 layout( vertices = VERTICES_PER_PATCH ) out;
 
 layout( location = 0 ) in vec2 inUV[];
-layout( location = 1 ) in vec3 inNormal[];
 
 layout( location = 0 ) out vec2 outUV[VERTICES_PER_PATCH];
-layout( location = 1 ) out vec3 outNormal[VERTICES_PER_PATCH];
 
 // Functions
 // =================================================================================================
@@ -38,7 +30,7 @@ layout( location = 1 ) out vec3 outNormal[VERTICES_PER_PATCH];
 // dimensions of the edge
 float screenSpaceTessFactor( vec4 p0, vec4 p1 )
 {
-   View mainView = views[0];
+   const View mainView = views[0];
 
    // Calculate edge mid point
    vec4 midPoint = 0.5 * ( p0 + p1 );
@@ -50,8 +42,8 @@ float screenSpaceTessFactor( vec4 p0, vec4 p1 )
    vec4 v0 = mainView.view * model * midPoint;
 
    // Project into clip space
-   vec4 clip0 = ( mainView.proj * ( v0 - vec4( radius, vec3( 0.0 ) ) ) );
-   vec4 clip1 = ( mainView.proj * ( v0 + vec4( radius, vec3( 0.0 ) ) ) );
+   vec4 clip0 = mainView.proj * ( v0 - vec4( radius, vec3( 0.0 ) ) );
+   vec4 clip1 = mainView.proj * ( v0 + vec4( radius, vec3( 0.0 ) ) );
 
    // Get normalized device coordinates
    clip0 /= clip0.w;
@@ -74,7 +66,7 @@ float screenSpaceTessFactor( vec4 p0, vec4 p1 )
 // Sphere radius is given by the patch size
 bool frustumCheck()
 {
-   // Fixed radius (increase if patch size is increased in example)
+   // Fixed radius (increase if patch size is increased)
    const float radius = 8.0f;
    vec4 pos           = gl_in[gl_InvocationID].gl_Position;
    pos.y += texture( heightMap, inUV[0] ).r * DISPLACEMENT_SCALE;
@@ -96,7 +88,7 @@ bool frustumCheck()
 
             O-3
 (0, 1)________________ (1, 1)
-     |	 _________   |
+     |	_________   |
      |  |         |  |
      |  |   I-0   |  |
  O-0 |  |I-1   I-1|  | O-2
@@ -112,7 +104,7 @@ void main()
    if( gl_InvocationID == 0 )
    {
       // Can potentially mess up shadows if culling
-      if( false/*!frustumCheck()*/ )
+      if( !frustumCheck() )
       {
          gl_TessLevelInner[0] = 0.0;
          gl_TessLevelInner[1] = 0.0;
@@ -152,5 +144,4 @@ void main()
 
    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
    outUV[gl_InvocationID]              = inUV[gl_InvocationID];
-   outNormal[gl_InvocationID]          = inNormal[gl_InvocationID];
 }

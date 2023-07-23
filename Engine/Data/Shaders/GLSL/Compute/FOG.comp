@@ -25,28 +25,19 @@ layout( set = 0, binding = 1, rgba32f ) uniform image2D colorImage;
 layout( set = 0, binding = 2 ) uniform sampler2D depthSampler;
 
 // This should be dynamically based on the current skybox
-const vec3 fogColor = vec3( 0.37, 0.59, 0.82 );
-
-float GetLuminance( vec3 color )
-{
-   return clamp( dot( color, vec3( 0.299, 0.587, 0.114 ) ), 0.0, 1.0 );
-}
+const vec3 fogColor       = vec3( 0.53, 0.81, 0.92 );
+const vec3 sunFogColor    = vec3( 1.0, 0.9, 0.7 );
+const float sunScattering = 64.0;  // Bigger number is less "scattering"
 
 // Exponential Height Fog
 // Based on https://iquilezles.org/articles/fog/
-vec3 ApplyHeightFog(
-    vec3 inColor,
-    float distance,
-    vec3 worldPos,
-    vec3 viewPos,
-    vec3 viewDir,
-    vec3 lightDir )
+vec3 ApplyHeightFog( vec3 inColor, float distance, vec3 worldPos, vec3 viewPos, vec3 viewDir )
 {
    float fogAmount = ( params.a / params.b ) * exp( -viewPos.y * params.b ) *
                      ( 1.0 - exp( -distance * viewDir.y * params.b ) ) / viewDir.y;
-   // float sunAmount = max( dot( viewDir, lightDir ), 0.0 );
 
    fogAmount = clamp( fogAmount, 0.0, 1.0 );
+
    return mix( inColor, fogColor, fogAmount );
 }
 
@@ -63,7 +54,7 @@ void main()
    vec2 dims = vec2( textureSize( depthSampler, 0 ) );
    vec2 uv   = gl_GlobalInvocationID.xy / dims;
 
-   vec3 color        = imageLoad( colorImage, ssCoord ).rgb;
+   const vec3 color  = imageLoad( colorImage, ssCoord ).rgb;
    const float depth = texture( depthSampler, uv ).r;  // From 0 to 1
 
    // Reconstruct world-space coordinates
@@ -75,11 +66,18 @@ void main()
 
    const vec3 viewDir   = normalize( worldPos.xyz - viewInfo.viewPos.xyz );
    const float distance = distance( worldPos.xyz, viewInfo.viewPos.xyz );
+   const float VdotL    = dot( viewDir, -viewInfo.lightDir.xyz );
 
-   color = ApplyHeightFog(
-       color, distance, worldPos.xyz, viewInfo.viewPos.xyz, viewDir, viewInfo.lightDir.xyz );
+   // Depth buffer blocks sun fog and sun "decal"
+   const float depthFactor  = floor( 1.0 - depth );
+   const float sunFogAmount = max( VdotL, 0.0 ) * ( 1.0 - depth );
+   const float sunAmount    = max( VdotL - 0.999, 0.0 ) * 3000 * depthFactor;
 
-   color = ApplyDistanceFog( color, distance );
+   vec3 finalColor = color;
+   finalColor = ApplyHeightFog( finalColor, distance, worldPos.xyz, viewInfo.viewPos.xyz, viewDir );
+   finalColor = ApplyDistanceFog( finalColor, distance );
+   finalColor = mix( finalColor, sunFogColor, pow( sunFogAmount, sunScattering ) );
+   finalColor = mix( finalColor, vec3( 1.0, 1.0, 1.0 ), sunAmount );
 
-   imageStore( colorImage, ssCoord, vec4( color, 1.0 ) );
+   imageStore( colorImage, ssCoord, vec4( finalColor, 1.0 ) );
 }

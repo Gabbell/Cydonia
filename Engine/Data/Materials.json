@@ -11,7 +11,29 @@
       }]
     },
     {
-      "NAME": "SOLO_TEX_R32F",
+      "NAME": "TERRAIN_DISPLACEMENT",
+      "TEXTURES": [{
+        "NAME": "TEXTURE",
+        "FORMAT": "R32F",
+        "TYPE": "TEXTURE2D"
+      }]
+    },
+    {
+      "NAME": "OCEAN",
+      "TEXTURES": [{
+          "NAME": "DISPLACEMENT_MAP",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D"
+        },
+        {
+          "NAME": "NORMAL_MAP",
+          "FORMAT": "RGBA32F",
+          "TYPE": "TEXTURE2D"
+        }
+      ]
+    },
+    {
+      "NAME": "PLANET",
       "TEXTURES": [{
         "NAME": "TEXTURE",
         "FORMAT": "R32F",

@@ -1,0 +1,46 @@
+#version 450
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform OceanParameters
+{
+   uint resolution;
+   uint horizontalDimension;
+   uint pingpong;
+   uint direction;
+   uint stage;
+   uint componentMask;
+   float amplitude;
+   float gravity;
+   float windSpeed;
+   float windDirX;
+   float windDirZ;
+   float time;
+};
+
+layout( set = 0, binding = 0, rgba32f ) restrict uniform image2D displacement;
+
+void main()
+{
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
+
+   const ivec3 off = ivec3( -1.0, 0.0, 1.0 );
+
+   const vec3 dO = imageLoad( displacement, ssCoord ).xyz;
+   const vec3 dU = imageLoad( displacement, ssCoord + off.yx ).xyz;
+   const vec3 dR = imageLoad( displacement, ssCoord + off.zy ).xyz;
+
+   const float delta = float( resolution ) / horizontalDimension;
+
+   // Calculating the Jacobian determinant based on finite differences between
+   // the displacement at the current point at the displacements at the top and right
+   // of this point. This is flawed as texture extremities will be wrong
+   const float jxx = 1.0 + ( dR.x - dO.x ) / delta;
+   const float jzz = 1.0 + ( dU.z - dO.z ) / -delta;
+   const float jxz = ( dU.x - dO.x ) / -delta;
+   const float jzx = ( dR.z - dO.z ) / delta;
+
+   const float jacobian = jxx * jzz - jxz * jzx;
+
+   imageStore( displacement, ssCoord, vec4( dO, jacobian ) );
+}

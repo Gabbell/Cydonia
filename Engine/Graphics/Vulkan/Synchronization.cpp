@@ -128,21 +128,17 @@ void ImageMemory(
    thsvsCmdPipelineBarrier( cmdBuffer, nullptr, 0, nullptr, 1, &barrier );
 }
 
-void Pipeline(
-    VkCommandBuffer cmdBuffer,
-    CYD::PipelineStageFlag sourceStage,
-    CYD::PipelineStageFlag destStage )
+void GlobalMemory( VkCommandBuffer cmdBuffer, CYD::Access prevAccess, CYD::Access nextAccess )
 {
-   vkCmdPipelineBarrier(
-       cmdBuffer,
-       vk::TypeConversions::cydToVkPipelineStages( sourceStage ),
-       vk::TypeConversions::cydToVkPipelineStages( destStage ),
-       0,
-       0,
-       nullptr,
-       0,
-       nullptr,
-       0,
-       nullptr );
+   ThsvsAccessType prevAccessThsvs = cydToThsvsAccessType( prevAccess );
+   ThsvsAccessType nextAccessThsvs = cydToThsvsAccessType( nextAccess );
+
+   ThsvsGlobalBarrier barrier;
+   barrier.nextAccessCount = 1;
+   barrier.pNextAccesses   = &nextAccessThsvs;
+   barrier.pPrevAccesses   = &prevAccessThsvs;
+   barrier.prevAccessCount = 1;
+
+   thsvsCmdPipelineBarrier( cmdBuffer, &barrier, 0, nullptr, 0, nullptr );
 }
 }

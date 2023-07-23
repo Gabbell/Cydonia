@@ -11,6 +11,8 @@ layout( push_constant ) uniform PushMaterial
    vec4 pbr; // X = metalness, Y = roughness, Z = AO, W = unused
 };
 
+layout( set = 1, binding = 1 ) uniform Lights { Light lights[MAX_LIGHTS]; };
+
 // Interpolators
 // =================================================================================================
 layout( location = 0 ) in vec2 inTexCoord;

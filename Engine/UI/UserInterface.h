@@ -14,6 +14,7 @@ class TransformComponent;
 class RenderableComponent;
 class TessellatedComponent;
 class ProceduralDisplacementComponent;
+class FFTOceanComponent;
 class FogComponent;
 class SceneComponent;
 
@@ -51,6 +52,7 @@ void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedCompo
 void DrawProceduralDisplacementComponentMenu(
     CmdListHandle cmdList,
     const ProceduralDisplacementComponent& displacement );
+void DrawFFTOceanComponentMenu( CmdListHandle cmdList, const FFTOceanComponent& ocean );
 void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog );
 void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& scene );
 

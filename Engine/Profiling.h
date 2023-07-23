@@ -6,6 +6,8 @@
 
 #include <ThirdParty/Tracy/tracy/TracyC.h>
 
+#include <array>
+
 namespace CYD::Trace
 {
 #if CYD_PROFILING
@@ -18,10 +20,27 @@ namespace CYD::Trace
 #endif
 
 #if CYD_GPU_PROFILING
-#define CYD_GPUTRACE( cmdList, name ) const CYD::Trace::GPUScoped gpuTrace( cmdList, name )
+#define CYD_SCOPED_GPUTRACE( cmdList, name ) const CYD::Trace::GPUScoped gpuTrace( cmdList, name )
+#define CYD_GPUTRACE_BEGIN( cmdList, name ) \
+   GRIS::BeginDebugRange( cmdList, name, CYD::Trace::GetFloat4ColorFromName( name ) );
+#define CYD_GPUTRACE_END( cmdList ) GRIS::EndDebugRange( cmdList );
 #else
-#define CYD_GPUTRACE( cmdList, name )
+#define CYD_SCOPED_GPUTRACE( cmdList, name )
+#define CYD_GPUTRACE_BEGIN( cmdList, name )
+#define CYD_GPUTRACE_END( cmdList )
 #endif
+
+static const std::array<float, 4> GetFloat4ColorFromName( const char* name )
+{
+   std::hash<std::string> hasher;
+   const uint32_t hash = static_cast<uint32_t>( hasher( std::string( name ) ) );
+
+   return {
+       ( ( hash & 0x00FF0000 ) >> 16 ) / 255.0f,
+       ( ( hash & 0x0000FF00 ) >> 8 ) / 255.0f,
+       ( ( hash & 0x000000FF ) >> 0 ) / 255.0f,
+       1.0f };
+}
 
 void FrameStart();
 void FrameEnd();

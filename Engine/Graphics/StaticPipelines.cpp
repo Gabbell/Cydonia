@@ -326,6 +326,13 @@ bool Initialize()
             pipInfo.rasterizer.depthBiasSlopeScale = rasterizer["DEPTH_SLOPE_SCALE"];
          }
 
+         const auto& blendIt = pipeline.find( "BLEND" );
+         if( blendIt != pipeline.end() )
+         {
+            const auto& blend           = *blendIt;
+            pipInfo.blendState.useBlend = blend["BLEND_ENABLE"];
+         }
+
          newPipeline = new GraphicsPipelineInfo( pipInfo );
       }
       else if( pipelineType == "COMPUTE" )  // COMPUTE PIPELINE

@@ -14,7 +14,7 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
 {
    CYD_TRACE( "MaterialLoaderSystem" );
 
-   const CmdListHandle cmdList = GRIS::GetMainCommandList();
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::LOAD );
 
    for( const auto& entityEntry : m_entities )
    {

@@ -11,12 +11,10 @@ layout( location = 3 ) in vec4 inColor;  // Not used
 // Interpolators
 // =================================================================================================
 layout( location = 0 ) out vec2 outUV;
-layout( location = 1 ) out vec3 outNormal;
 
 // =================================================================================================
 void main()
 {
    outUV       = inTexCoords.xy;
-   outNormal   = inNormal;
    gl_Position = vec4( inPosition, 1.0 );
 }

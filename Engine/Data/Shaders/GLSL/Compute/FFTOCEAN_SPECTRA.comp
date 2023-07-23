@@ -1,7 +1,7 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
-layout( local_size_x = 1, local_size_y = 1 ) in;
+layout( local_size_x = 16, local_size_y = 16 ) in;
 
 layout( push_constant ) uniform OceanParameters
 {
@@ -55,7 +55,8 @@ vec4 BoxMullerTransform()
 
 void main()
 {
-   const vec2 x = vec2( gl_GlobalInvocationID.xy ) - float( resolution ) / 2.0;
+   const vec2 x        = vec2( gl_GlobalInvocationID.xy ) - float( resolution ) / 2.0;
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
 
    // Wave vector or the direction of the wave
    const vec2 k =
@@ -76,18 +77,17 @@ void main()
        exp( -magnitudeSquared * pow( horizontalDimension / 2000.0, 2.0 ) );
 
    const float h0k = clamp(
-       sqrt( commonMultiplier * pow( dot( kNorm, windDirection ), 2.0 ) ) / sqrt( 2.0 ),
+       sqrt( commonMultiplier * pow( dot( kNorm, windDirection ), 4.0 ) ) / sqrt( 2.0 ),
        -4000.0,
        4000.0 );
 
    const float h0minusk = clamp(
-       sqrt( commonMultiplier * pow( dot( -kNorm, windDirection ), 2.0 ) ) / sqrt( 2.0 ),
+       sqrt( commonMultiplier * pow( dot( -kNorm, windDirection ), 4.0 ) ) / sqrt( 2.0 ),
        -4000.0,
        4000.0 );
 
    const vec4 randomGauss = BoxMullerTransform();
 
-   imageStore( spectrum1, ivec2( gl_GlobalInvocationID.xy ), vec4( randomGauss.xy * h0k, 0, 1 ) );
-   imageStore(
-       spectrum2, ivec2( gl_GlobalInvocationID.xy ), vec4( randomGauss.zw * h0minusk, 0, 1 ) );
+   imageStore( spectrum1, ssCoord, vec4( randomGauss.xy * h0k, 0, 1 ) );
+   imageStore( spectrum2, ssCoord, vec4( randomGauss.zw * h0minusk, 0, 1 ) );
 }

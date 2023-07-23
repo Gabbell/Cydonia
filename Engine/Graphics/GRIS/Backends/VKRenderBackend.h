@@ -34,10 +34,9 @@ class VKRenderBackend final : public RenderBackend
    void drawUI( CmdListHandle cmdList ) override;
 
    void cleanup() override;
+   void reloadShaders() override;
 
    void waitUntilIdle() override;
-
-   CmdListHandle getMainCommandList() const override;
 
    // Command Buffers/Lists
    // ==============================================================================================
@@ -182,7 +181,6 @@ class VKRenderBackend final : public RenderBackend
        size_t firstIndex,
        size_t firstInstance ) override;
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) override;
-   void endFrame() override;
    void presentFrame() override;
 
    // Debug

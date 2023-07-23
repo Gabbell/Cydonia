@@ -772,8 +772,6 @@ void CommandBuffer::_prepareDescriptorSets()
    std::vector<VkDescriptorImageInfo> imageInfos;
    std::vector<VkWriteDescriptorSet> writeDescSets;
 
-   CYD::PipelineLayoutInfo pipLayout;
-
    bufferInfos.reserve( totalSize );
    imageInfos.reserve( totalSize );
    writeDescSets.reserve( totalSize );
@@ -942,8 +940,10 @@ void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
 
    _prepareDescriptorSets();
 
-    Synchronization::Pipeline(
-       m_vkCmdBuffer, CYD::PipelineStage::COMPUTE_STAGE, CYD::PipelineStage::COMPUTE_STAGE );
+   // Not ideal, could just synchronize individual images. This makes sequences of dispatch calls keep
+   // the proper order in terms of memory read/write
+   Synchronization::GlobalMemory(
+       m_vkCmdBuffer, CYD::Access::COMPUTE_SHADER_WRITE, CYD::Access::COMPUTE_SHADER_READ );
 
    vkCmdDispatch( m_vkCmdBuffer, workX, workY, workZ );
 }
@@ -967,9 +967,6 @@ void CommandBuffer::endRendering()
    {
       m_targets[i]->setPreviousAccess( m_boundRenderPassInfo->attachments[i].nextAccess );
    }
-
-   Synchronization::Pipeline(
-       m_vkCmdBuffer, CYD::PipelineStage::ALL_STAGES, CYD::PipelineStage::ALL_STAGES );
 
    m_boundPip        = nullptr;
    m_boundPipLayout  = nullptr;

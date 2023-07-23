@@ -57,12 +57,14 @@ class FFTOceanComponent final : public BaseComponent
 
    TextureHandle pingpongTex;
 
-   float modulationY = 1.0f;  // Modulations applied when rendering the heightmap
+   // RGB = XYZ displacement, A = Folding
+   TextureHandle displacementMap;
+
    float modulationX = 1.0f;
+   float modulationY = 1.0f;  // Modulations applied when rendering the heightmap
    float modulationZ = 1.0f;
 
-   bool needsInit         = true; // Initialize pipeline indices
-   bool needsUpdate       = true; // If we need to update the pre-computed textures
-   bool resolutionChanged = true; // If we need to resize the textures
+   bool needsUpdate       = true;  // If we need to update the pre-computed textures
+   bool resolutionChanged = true;  // If we need to resize the textures
 };
 }

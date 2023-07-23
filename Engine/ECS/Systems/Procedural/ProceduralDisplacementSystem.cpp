@@ -31,8 +31,8 @@ void ProceduralDisplacementSystem::tick( double deltaS )
    CYD_TRACE( "ProceduralDisplacementSystem" );
 
    // Start command list recording
-   const CmdListHandle cmdList = GRIS::CreateCommandList( COMPUTE, "ProceduralDisplacementSystem" );
-   CYD_GPUTRACE( cmdList, "ProceduralDisplacementSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
+   CYD_SCOPED_GPUTRACE( cmdList, "ProceduralDisplacementSystem" );
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
@@ -41,8 +41,7 @@ void ProceduralDisplacementSystem::tick( double deltaS )
       ProceduralDisplacementComponent& noise =
           *std::get<ProceduralDisplacementComponent*>( entityEntry.arch );
 
-      const MaterialComponent& material =
-          *std::get<MaterialComponent*>( entityEntry.arch );
+      const MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
 
       if( noise.resolutionChanged )
       {
@@ -86,7 +85,5 @@ void ProceduralDisplacementSystem::tick( double deltaS )
          noise.needsUpdate = false;
       }
    }
-
-   RenderGraph::AddPass( cmdList );
 }
 }

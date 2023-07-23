@@ -3,6 +3,8 @@
 #include <Graphics/VertexLayout.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/RenderGraph.h>
+#include <Graphics/GRIS/RenderHelpers.h>
 #include <Graphics/Utility/Transforms.h>
 
 #include <Graphics/StaticPipelines.h>
@@ -19,35 +21,9 @@ static bool s_initialized                   = false;
 static PipelineIndex s_shadowmapPipeline    = INVALID_PIPELINE_IDX;
 static RenderPassInfo s_shadowmapRenderpass = {};
 
-static void optionalBufferBinding(
-    CmdListHandle cmdList,
-    BufferHandle buffer,
-    std::string_view name,
-    const PipelineInfo* pipInfo,
-    uint32_t offset = 0,
-    uint32_t range  = 0 )
-{
-   if( FlatShaderBinding res = pipInfo->findBinding( buffer, name ); res.valid )
-   {
-      GRIS::BindUniformBuffer( cmdList, buffer, res.binding, res.set, offset, range );
-   }
-}
-
-static void optionalUpdateConstantBuffer(
-    CmdListHandle cmdList,
-    std::string_view name,
-    const void* pData,
-    const PipelineInfo* pipInfo )
-{
-   if( const PushConstantRange* range = pipInfo->findPushConstant( name ) )
-   {
-      GRIS::UpdateConstantBuffer( cmdList, range->stages, range->offset, range->size, pData );
-   }
-}
-
 static void Initialize()
 {
-   s_shadowmapPipeline = StaticPipelines::FindByName( "TERRAIN_SHADOWMAP" );
+   s_shadowmapPipeline = StaticPipelines::FindByName( "TERRAIN_SHADOWMAP" );  // Hardcoded
 
    Attachment& attachment   = s_shadowmapRenderpass.attachments.emplace_back();
    attachment.type          = AttachmentType::DEPTH_STENCIL;
@@ -87,8 +63,8 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       scene.shadowMap = GRIS::CreateTexture( texDesc );
    }
 
-   const CmdListHandle cmdList = GRIS::GetMainCommandList();
-   CYD_GPUTRACE( cmdList, "ShadowMapSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
+   CYD_SCOPED_GPUTRACE( cmdList, "ShadowMapSystem" );
 
    Framebuffer framebuffer( SHADOWMAP_DIM, SHADOWMAP_DIM );
    framebuffer.attach( Framebuffer::Index::DEPTH, scene.shadowMap );
@@ -99,7 +75,7 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
    GRIS::SetViewport( cmdList, {} );
    GRIS::SetScissor( cmdList, {} );
 
-   const PipelineInfo* pipInfo = StaticPipelines::Get( s_shadowmapPipeline );
+   const PipelineInfo& pipInfo = *StaticPipelines::Get( s_shadowmapPipeline );
 
    GRIS::BindPipeline( cmdList, s_shadowmapPipeline );
 
@@ -118,7 +94,7 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
       const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
-      const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "LightView 0" );
+      const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "SUN" );
       if( it == scene.viewNames.end() )
       {
          // TODO WARNING
@@ -132,23 +108,23 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       const glm::mat4 modelMatrix =
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
 
-      optionalBufferBinding(
+      GRIS::NamedBufferBinding(
           cmdList, scene.viewsBuffer, "Views", pipInfo, 0, sizeof( scene.views ) );
 
       if( renderable.isInstanced )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
-         optionalBufferBinding( cmdList, renderable.instancesBuffer, "InstancesData", pipInfo );
+         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "InstancesData", pipInfo );
       }
 
       if( renderable.isTessellated )
       {
          CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation params buffer" );
-         optionalBufferBinding(
+         GRIS::NamedBufferBinding(
              cmdList, renderable.tessellationBuffer, "TessellationParams", pipInfo );
       }
 
-      optionalUpdateConstantBuffer( cmdList, "Model", &modelMatrix, pipInfo );
+      GRIS::NamedUpdateConstantBuffer( cmdList, "Model", &modelMatrix, pipInfo );
 
       if( prevMaterial != material.materialIdx )
       {

@@ -35,8 +35,6 @@ class D3D12RenderBackendImp
 
    void waitUntilIdle() const {};
 
-   CmdListHandle getMainCommandList() const { return {}; }
-
    CmdListHandle
    createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
    {
@@ -252,8 +250,6 @@ D3D12RenderBackend::~D3D12RenderBackend() { delete _imp; }
 
 void D3D12RenderBackend::cleanup() { _imp->cleanup(); }
 void D3D12RenderBackend::waitUntilIdle() { _imp->waitUntilIdle(); }
-
-CmdListHandle D3D12RenderBackend::getMainCommandList() const { return _imp->getMainCommandList(); }
 
 CmdListHandle D3D12RenderBackend::createCommandList(
     QueueUsageFlag usage,

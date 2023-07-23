@@ -42,6 +42,8 @@ class PipelineCache final
    VkPipeline findOrCreate( const CYD::GraphicsPipelineInfo& pipInfo, VkRenderPass renderPass );
    VkPipeline findOrCreate( const CYD::ComputePipelineInfo& pipInfo );
 
+   void clear();
+
   private:
    const Device& m_device;
 

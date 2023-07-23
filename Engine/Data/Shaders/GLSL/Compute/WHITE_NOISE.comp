@@ -1,8 +1,10 @@
 #version 450
 
-#include "NOISE.h"
+#include "../NOISE.h"
 
 layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform PUSH { NoiseParameters params; };
 
 layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
 
@@ -12,7 +14,7 @@ void main()
    vec2 uv   = gl_GlobalInvocationID.xy / dims;
    uv        = uv * vec2( dims.x / dims.y, 1.0 );  // Aspect ratio corrected
 
-   vec3 noiseVal = vec3( GoldNoise( uv ) );
+   vec3 noiseVal = vec3( GoldNoise( uv + params.seed ) );
 
    imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( noiseVal, 1.0 ) );
 }

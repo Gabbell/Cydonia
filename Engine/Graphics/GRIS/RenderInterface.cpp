@@ -75,9 +75,13 @@ void RenderBackendCleanup()
    b->cleanup();
 }
 
-void WaitUntilIdle() { b->waitUntilIdle(); }
+void ReloadShaders()
+{
+   CYD_TRACE( "Reloading Shaders" );
+   b->reloadShaders();
+}
 
-CmdListHandle GetMainCommandList() { return b->getMainCommandList(); }
+void WaitUntilIdle() { b->waitUntilIdle(); }
 
 // =================================================================================================
 // Command Buffers/Lists
@@ -443,12 +447,6 @@ void DrawIndexedInstanced(
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )
 {
    b->dispatch( cmdList, workX, workY, workZ );
-}
-
-void EndFrame()
-{
-   CYD_TRACE( "End Frame" );
-   b->endFrame();
 }
 
 void PresentFrame()

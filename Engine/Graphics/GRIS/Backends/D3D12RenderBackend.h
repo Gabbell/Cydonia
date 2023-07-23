@@ -31,8 +31,6 @@ class D3D12RenderBackend final : public RenderBackend
 
    void waitUntilIdle() override;
 
-   CmdListHandle getMainCommandList() const override;
-
    // Command Buffers/Lists
    // ==============================================================================================
    CmdListHandle createCommandList(

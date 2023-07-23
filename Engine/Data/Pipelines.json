@@ -22,6 +22,12 @@
           "FORMAT": "RGBA32F"
         }
       ],
+      "DEPTH_STENCIL": {
+        "DEPTH_TEST_ENABLE": true,
+        "STENCIL_TEST_ENABLE": false,
+        "DEPTH_WRITE_ENABLE": true,
+        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+      },
       "SHADER_RESOURCES": [{
           "NAME": "Model",
           "TYPE": "PUSH_CONSTANT",
@@ -29,7 +35,7 @@
           "SIZE": 64
         },
         {
-          "NAME": "EnvironmentView",
+          "NAME": "Views",
           "TYPE": "UNIFORM",
           "STAGES": ["VERTEX"],
           "SET": 0,
@@ -96,7 +102,7 @@
         {
           "NAME": "TessellationParams",
           "TYPE": "UNIFORM",
-          "STAGES": ["TESS_CONTROL", "TESS_EVAL"],
+          "STAGES": ["TESS_CONTROL"],
           "SET": 0,
           "BINDING": 2
         },
@@ -105,19 +111,19 @@
           "TYPE": "UNIFORM",
           "STAGES": ["FRAGMENT"],
           "SET": 1,
-          "BINDING": 1
+          "BINDING": 0
         },
         {
           "NAME": "ShadowMap",
           "TYPE": "SAMPLER",
           "STAGES": ["FRAGMENT"],
           "SET": 1,
-          "BINDING": 2
+          "BINDING": 1
         },
         {
           "NAME": "HeightMap",
           "TYPE": "SAMPLER",
-          "STAGES": ["TESS_CONTROL", "TESS_EVAL"],
+          "STAGES": ["TESS_CONTROL", "TESS_EVAL", "FRAGMENT"],
           "SET": 1,
           "BINDING": 5
         }
@@ -179,7 +185,7 @@
         {
           "NAME": "TessellationParams",
           "TYPE": "UNIFORM",
-          "STAGES": ["TESS_CONTROL", "TESS_EVAL"],
+          "STAGES": ["TESS_CONTROL"],
           "SET": 0,
           "BINDING": 2
         },
@@ -249,18 +255,21 @@
       }]
     },
     {
-      "NAME": "OCEAN_RENDER",
+      "NAME": "OCEAN",
       "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "FFTOCEAN_RENDER_VERT",
-      "FRAGMENT_SHADER": "FFTOCEAN_RENDER_FRAG",
-      "POLYGON_MODE": "LINE",
+      "VERTEX_SHADER": "TERRAIN_VERT",
+      "TESS_CONTROL_SHADER": "FFTOCEAN_TESC",
+      "TESS_EVAL_SHADER": "FFTOCEAN_TESE",
+      "FRAGMENT_SHADER": "FFTOCEAN_FRAG",
+      "POLYGON_MODE": "FILL",
+      "PRIMITIVE": "PATCHES",
       "VERTEX_LAYOUT": [{
           "LOCATION": 0,
           "FORMAT": "RGB32F"
         },
         {
           "LOCATION": 1,
-          "FORMAT": "RGBA32F"
+          "FORMAT": "RGB32F"
         },
         {
           "LOCATION": 2,
@@ -268,35 +277,124 @@
         },
         {
           "LOCATION": 3,
-          "FORMAT": "RGB32F"
+          "FORMAT": "RGBA32F"
         }
       ],
+      "DEPTH_STENCIL": {
+        "DEPTH_TEST_ENABLE": true,
+        "STENCIL_TEST_ENABLE": false,
+        "DEPTH_WRITE_ENABLE": true,
+        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+      },
+      "TESSELLATION": {
+        "ENABLE": true,
+        "PATCH_VERTICES": 4
+      },
       "SHADER_RESOURCES": [{
           "NAME": "Model",
           "TYPE": "PUSH_CONSTANT",
-          "STAGES": ["VERTEX"],
+          "STAGES": ["TESS_CONTROL", "TESS_EVAL"],
           "SIZE": 64
         },
         {
-          "NAME": "EnvironmentView",
+          "NAME": "Views",
           "TYPE": "UNIFORM",
-          "STAGES": ["VERTEX"],
+          "STAGES": ["TESS_CONTROL", "TESS_EVAL", "FRAGMENT"],
           "SET": 0,
           "BINDING": 0
         },
         {
-          "NAME": "displacement",
-          "TYPE": "SAMPLER",
-          "STAGES": ["VERTEX, FRAGMENT"],
+          "NAME": "TessellationParams",
+          "TYPE": "UNIFORM",
+          "STAGES": ["TESS_CONTROL"],
           "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "Lights",
+          "TYPE": "UNIFORM",
+          "STAGES": ["FRAGMENT"],
+          "SET": 1,
+          "BINDING": 0
+        },
+        {
+          "NAME": "ShadowMap",
+          "TYPE": "SAMPLER",
+          "STAGES": ["FRAGMENT"],
+          "SET": 1,
           "BINDING": 1
         },
         {
-          "NAME": "DirectionalLight",
+          "NAME": "HeightMap",
+          "TYPE": "SAMPLER",
+          "STAGES": ["TESS_CONTROL", "TESS_EVAL", "FRAGMENT"],
+          "SET": 1,
+          "BINDING": 5
+        }
+      ]
+    },
+    {
+      "NAME": "PLANET",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "TERRAIN_VERT",
+      "TESS_CONTROL_SHADER": "PLANET_TESC",
+      "TESS_EVAL_SHADER": "PLANET_TESE",
+      "FRAGMENT_SHADER": "PLANET_FRAG",
+      "POLYGON_MODE": "LINE",
+      "PRIMITIVE": "PATCHES",
+      "VERTEX_LAYOUT": [{
+          "LOCATION": 0,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 1,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 2,
+          "FORMAT": "RGB32F"
+        },
+        {
+          "LOCATION": 3,
+          "FORMAT": "RGBA32F"
+        }
+      ],
+      "DEPTH_STENCIL": {
+        "DEPTH_TEST_ENABLE": true,
+        "STENCIL_TEST_ENABLE": false,
+        "DEPTH_WRITE_ENABLE": true,
+        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+      },
+      "TESSELLATION": {
+        "ENABLE": true,
+        "PATCH_VERTICES": 3
+      },
+      "SHADER_RESOURCES": [{
+          "NAME": "Model",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": ["TESS_CONTROL", "TESS_EVAL"],
+          "SIZE": 64
+        },
+        {
+          "NAME": "Views",
           "TYPE": "UNIFORM",
-          "STAGES": ["FRAGMENT"],
+          "STAGES": ["TESS_CONTROL", "TESS_EVAL", "FRAGMENT"],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "TessellationParams",
+          "TYPE": "UNIFORM",
+          "STAGES": ["TESS_CONTROL"],
           "SET": 0,
           "BINDING": 2
+        },
+        {
+          "NAME": "Lights",
+          "TYPE": "UNIFORM",
+          "STAGES": ["FRAGMENT"],
+          "SET": 1,
+          "BINDING": 0
         }
       ]
     },
@@ -434,7 +532,7 @@
           "TYPE": "UNIFORM",
           "STAGES": ["FRAGMENT"],
           "SET": 1,
-          "BINDING": 1
+          "BINDING": 0
         }
       ]
     },
@@ -600,6 +698,25 @@
           "STAGES": ["COMPUTE"],
           "SET": 0,
           "BINDING": 2
+        }
+      ]
+    },
+    {
+      "NAME": "JACOBIAN_FOLDMAP",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "FFTOCEAN_JACOBIAN_COMP",
+      "SHADER_RESOURCES": [{
+          "NAME": "OceanParameters",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": ["COMPUTE"],
+          "SIZE": 48
+        },
+        {
+          "NAME": "displacement",
+          "TYPE": "IMAGE",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 0
         }
       ]
     },

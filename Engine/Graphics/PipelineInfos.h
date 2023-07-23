@@ -57,6 +57,11 @@ struct DepthStencilState
    CompareOperator depthCompareOp = CompareOperator::ALWAYS;
 };
 
+struct BlendState
+{
+   bool useBlend = false;
+};
+
 struct TessellationState
 {
    bool enabled                = false;
@@ -175,6 +180,7 @@ struct GraphicsPipelineInfo final : public PipelineInfo
    std::vector<std::string> shaders;
    VertexLayout vertLayout;
    DepthStencilState dsState;
+   BlendState blendState;
    TessellationState tessState;
    RasterizerState rasterizer;
    DrawPrimitive drawPrim;

@@ -8,16 +8,59 @@
 
 namespace CYD::RenderGraph
 {
-static std::vector<CmdListHandle> s_cmdLists;
+static std::array<CmdListHandle, static_cast<uint32_t>( Pass::COUNT )> s_cmdLists;
 
-void AddPass( CmdListHandle cmdList ) { s_cmdLists.push_back( cmdList ); }
+static const char* GetCommandListName( Pass pass )
+{
+   static constexpr char CMDLIST_NAMES[][32] =
+   { "LOAD",
+     "PRE_RENDER",
+     "OPAQUE_RENDER",
+     "ALPHA_RENDER",
+#if CYD_DEBUG
+     "DEBUG_DRAW",
+#endif
+     "POST_PROCESS",
+     "UI" };
+
+   static_assert( ARRSIZE( CMDLIST_NAMES ) == static_cast<uint32_t>( Pass::COUNT ) );
+
+   return CMDLIST_NAMES[static_cast<uint32_t>( pass )];
+}
+
+static QueueUsageFlag GetCommandListType( Pass pass )
+{
+   static constexpr QueueUsageFlag CMDLIST_USAGE[] =
+   { QueueUsage::TRANSFER,
+     QueueUsage::GRAPHICS | QueueUsage::COMPUTE,
+     QueueUsage::GRAPHICS,
+     QueueUsage::GRAPHICS,
+#if CYD_DEBUG
+     QueueUsage::GRAPHICS,
+#endif
+     QueueUsage::GRAPHICS | QueueUsage::COMPUTE,
+     QueueUsage::GRAPHICS };
+
+   static_assert( ARRSIZE( CMDLIST_USAGE ) == static_cast<uint32_t>( Pass::COUNT ) );
+
+   return CMDLIST_USAGE[static_cast<uint32_t>( pass )];
+}
+
+void Prepare()
+{
+   for( uint32_t i = 0; i < static_cast<uint32_t>( Pass::COUNT ); ++i )
+   {
+      // TODO Specialized command lists
+      s_cmdLists[i] = GRIS::CreateCommandList(
+          GetCommandListType( Pass( i ) ), GetCommandListName( Pass( i ) ) );
+   }
+}
+
+CmdListHandle GetCommandList( Pass pass ) { return s_cmdLists[static_cast<uint32_t>( pass )]; }
 
 void Execute()
 {
    CYD_TRACE( "RenderGraph Execute" );
-
-   // Appending main command list
-   AddPass( GRIS::GetMainCommandList() );
 
    if( s_cmdLists.empty() )
    {
@@ -39,11 +82,10 @@ void Execute()
    GRIS::SyncToSwapchain( s_cmdLists.back() );
    GRIS::SubmitCommandList( s_cmdLists.back() );
 
-   for( auto cmdList : s_cmdLists )
+   for( uint32_t i = 0; i < static_cast<uint32_t>( Pass::COUNT ); ++i )
    {
-      GRIS::DestroyCommandList( cmdList );
+      GRIS::DestroyCommandList( s_cmdLists[i] );
+      s_cmdLists[i] = {};
    }
-
-   s_cmdLists.clear();
 }
 }

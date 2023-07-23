@@ -5,10 +5,11 @@
 #include <Graphics/Scene/MaterialCache.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
+#include <Graphics/GRIS/RenderHelpers.h>
 #include <Graphics/Utility/Transforms.h>
 
 #include <ECS/EntityManager.h>
-#include <ECS/Components/Scene/CameraComponent.h>
+#include <ECS/Components/Scene/ViewComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
 #include <Profiling.h>
@@ -26,52 +27,13 @@ bool ForwardRenderSystem::_compareEntities( const EntityEntry& first, const Enti
 }
 
 // ================================================================================================
-static void optionalBufferBinding(
-    CmdListHandle cmdList,
-    BufferHandle buffer,
-    std::string_view name,
-    const PipelineInfo* pipInfo,
-    uint32_t offset = 0,
-    uint32_t range  = 0 )
-{
-   if( FlatShaderBinding res = pipInfo->findBinding( buffer, name ); res.valid )
-   {
-      GRIS::BindUniformBuffer( cmdList, buffer, res.binding, res.set, offset, range );
-   }
-}
-
-static void optionalTextureBinding(
-    CmdListHandle cmdList,
-    TextureHandle texture,
-    std::string_view name,
-    const PipelineInfo* pipInfo )
-{
-   if( FlatShaderBinding res = pipInfo->findBinding( texture, name ); res.valid )
-   {
-      GRIS::BindTexture( cmdList, texture, res.binding, res.set );
-   }
-}
-
-static void optionalUpdateConstantBuffer(
-    CmdListHandle cmdList,
-    std::string_view name,
-    const void* pData,
-    const PipelineInfo* pipInfo )
-{
-   if( const PushConstantRange* range = pipInfo->findPushConstant( name ) )
-   {
-      GRIS::UpdateConstantBuffer( cmdList, range->stages, range->offset, range->size, pData );
-   }
-}
-
-// ================================================================================================
 void ForwardRenderSystem::tick( double /*deltaS*/ )
 {
    CYD_TRACE( "ForwardRenderSystem" );
 
    // Start command list recording
-   const CmdListHandle cmdList = GRIS::GetMainCommandList();
-   CYD_GPUTRACE( cmdList, "ForwardRenderSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::OPAQUE_RENDER );
+   CYD_SCOPED_GPUTRACE( cmdList, "ForwardRenderSystem" );
 
    // Finding main view
    const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
@@ -84,17 +46,6 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       return;
    }
    const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
-
-   // TODO TEMP
-   if( scene.shadowMap )
-   {
-      SamplerInfo sampler;
-      sampler.useCompare  = true;  // For PCF
-      sampler.compare     = CompareOperator::GREATER_EQUAL;
-      sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
-      sampler.borderColor = BorderColor::OPAQUE_BLACK;
-      GRIS::BindTexture( cmdList, scene.shadowMap, sampler, 2, 1 );
-   }
 
    // Rendering straight to swapchain
    GRIS::BeginRendering( cmdList );
@@ -143,22 +94,37 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
 
       // Optional Buffers
       // ==========================================================================================
-      optionalBufferBinding(
-          cmdList, scene.viewsBuffer, "Views", curPipInfo, 0, sizeof( scene.views ) );
+      GRIS::NamedBufferBinding(
+          cmdList, scene.viewsBuffer, "Views", *curPipInfo, 0, sizeof( scene.views ) );
 
-      optionalBufferBinding( cmdList, scene.lightsBuffer, "Lights", curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.lightsBuffer, "Lights", *curPipInfo );
+
+      if( renderable.isShadowReceiving )
+      {
+         // TODO TEMP
+         if( scene.shadowMap )
+         {
+            SamplerInfo sampler;
+            sampler.useCompare  = true;  // For PCF
+            sampler.compare     = CompareOperator::GREATER_EQUAL;
+            sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
+            sampler.borderColor = BorderColor::OPAQUE_BLACK;
+            GRIS::BindTexture( cmdList, scene.shadowMap, sampler, 1, 1 );
+         }
+      }
 
       if( renderable.isInstanced )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
-         optionalBufferBinding( cmdList, renderable.instancesBuffer, "InstancesData", curPipInfo );
+         GRIS::NamedBufferBinding(
+             cmdList, renderable.instancesBuffer, "InstancesData", *curPipInfo );
       }
 
       if( renderable.isTessellated )
       {
          CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation params buffer" );
-         optionalBufferBinding(
-             cmdList, renderable.tessellationBuffer, "TessellationParams", curPipInfo );
+         GRIS::NamedBufferBinding(
+             cmdList, renderable.tessellationBuffer, "TessellationParams", *curPipInfo );
       }
 
       // Push Constants
@@ -166,24 +132,11 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       const glm::mat4 modelMatrix =
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
 
-      optionalUpdateConstantBuffer( cmdList, "Model", &modelMatrix, curPipInfo );
-
-      // TEMPORARY
-      /*
-      struct PBRConstant
-      {
-         glm::vec4 color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
-         glm::vec4 pbr   = glm::vec4( 0.0f, 0.25f, 1.0f, 0.0f );
-      } pbrconstant;
-
-      GRIS::UpdateConstantBuffer(
-          cmdList, PipelineStage::FRAGMENT_STAGE, 64, sizeof( float ) * 8, &pbrconstant );
-      */
-      // TEMPORARY
+      GRIS::NamedUpdateConstantBuffer( cmdList, "Model", &modelMatrix, *curPipInfo );
 
       // Material
       // ==========================================================================================
-      if( prevMaterial != material.materialIdx )
+      if( material.materialIdx != INVALID_MATERIAL_IDX )
       {
          m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
          prevMaterial = material.materialIdx;

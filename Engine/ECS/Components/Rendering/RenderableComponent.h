@@ -20,7 +20,10 @@ class RenderableComponent final : public BaseComponent
       DEFERRED
    };
 
-   RenderableComponent() = default;
+   RenderableComponent( bool isShadowCasting = false, bool isShadowReceiving = false )
+       : isShadowCasting( isShadowCasting ), isShadowReceiving( isShadowReceiving )
+   {
+   }
    RenderableComponent( Type type ) : type( type ) {}
    COPIABLE( RenderableComponent );
    virtual ~RenderableComponent();
@@ -34,10 +37,11 @@ class RenderableComponent final : public BaseComponent
    BufferHandle instancesBuffer;
    uint32_t instanceCount = 0;
 
-   bool isVisible       = true;
-   bool isShadowCasting = true;
-   bool isInstanced     = false;
-   bool isTessellated   = false;
-   bool isTransparent   = false;
+   bool isVisible         = true;
+   bool isShadowCasting   = false;
+   bool isShadowReceiving = false;
+   bool isInstanced       = false;
+   bool isTessellated     = false;
+   bool isTransparent     = false;
 };
 }

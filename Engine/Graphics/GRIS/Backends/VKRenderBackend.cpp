@@ -57,8 +57,6 @@ class VKRenderBackendImp
 
       m_mainSwapchain = m_mainDevice.createSwapchain( scInfo );
 
-      m_mainCmdBuffers.resize( imageCount );
-
       // Initializing main render targets
       CYD::TextureDescription colorDesc;
       colorDesc.format = vk::TypeConversions::vkToCydFormat( m_mainSwapchain->getFormat().format );
@@ -159,13 +157,9 @@ class VKRenderBackendImp
    }
 
    void cleanup() const { m_mainDevice.cleanup(); }
+   void reloadShaders() { m_reloadShadersQueued = true; }
 
    void waitUntilIdle() const { m_mainDevice.waitUntilIdle(); }
-
-   CmdListHandle getMainCommandList() const
-   {
-      return m_mainCmdBuffers[m_mainSwapchain->getCurrentFrame()];
-   }
 
    CmdListHandle
    createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
@@ -623,11 +617,6 @@ class VKRenderBackendImp
       m_mainSwapchain->acquireImage();
 
       m_mainSwapchain->setClear( true );
-
-      m_mainCmdBuffers[currentFrame] = createCommandList(
-          QueueUsage::GRAPHICS | QueueUsage::TRANSFER | QueueUsage::COMPUTE,
-          "Main Command List",
-          true );
    }
 
    void beginRendering( CmdListHandle cmdList )
@@ -717,8 +706,6 @@ class VKRenderBackendImp
           cmdBuffer, CYD::Access::DEPTH_STENCIL_ATTACHMENT_WRITE );
    }
 
-   void endFrame() {}
-
    void presentFrame()
    {
       if( m_hasUI )
@@ -727,6 +714,13 @@ class VKRenderBackendImp
       }
 
       m_mainSwapchain->present();
+
+      if( m_reloadShadersQueued )
+      {
+         m_mainDevice.waitUntilIdle();
+         m_mainDevice.clearPipelines();
+         m_reloadShadersQueued = false;
+      }
    }
 
    void
@@ -758,14 +752,14 @@ class VKRenderBackendImp
    vk::Device& m_mainDevice;
    vk::Swapchain* m_mainSwapchain;
 
+   bool m_reloadShadersQueued = false;
+
    HandleManager m_coreHandles;
 
    // Used to store intermediate buffers like staging buffers to be able to flag them as unused once
    // the command list is getting destroyed
    using CmdListDependencyMap = std::unordered_map<CmdListHandle, std::vector<vk::Buffer*>>;
    CmdListDependencyMap m_cmdListDeps;
-
-   std::vector<CmdListHandle> m_mainCmdBuffers;  // One per frame in-flight
 
    bool m_hasUI = false;
 };
@@ -782,9 +776,8 @@ bool VKRenderBackend::initializeUIBackend() { return _imp->initializeUIBackend()
 void VKRenderBackend::uninitializeUIBackend() { _imp->uninitializeUIBackend(); }
 void VKRenderBackend::drawUI( CmdListHandle cmdList ) { _imp->drawUI( cmdList ); }
 void VKRenderBackend::cleanup() { _imp->cleanup(); }
+void VKRenderBackend::reloadShaders() { _imp->reloadShaders(); }
 void VKRenderBackend::waitUntilIdle() { _imp->waitUntilIdle(); }
-
-CmdListHandle VKRenderBackend::getMainCommandList() const { return _imp->getMainCommandList(); }
 
 CmdListHandle VKRenderBackend::createCommandList(
     QueueUsageFlag usage,
@@ -1081,8 +1074,6 @@ void VKRenderBackend::dispatch(
 {
    _imp->dispatch( cmdList, workX, workY, workZ );
 }
-
-void VKRenderBackend::endFrame() { _imp->endFrame(); }
 
 void VKRenderBackend::presentFrame() { _imp->presentFrame(); }
 

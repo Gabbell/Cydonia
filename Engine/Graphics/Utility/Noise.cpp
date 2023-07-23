@@ -5,6 +5,8 @@
 
 namespace CYD::Noise
 {
+static bool s_initialized = false;
+
 PipelineIndex s_noisePipelines[] = {
     INVALID_PIPELINE_IDX,
     INVALID_PIPELINE_IDX,
@@ -20,9 +22,14 @@ static_assert( ARRSIZE( s_noiseNames ) == static_cast<size_t>( Type::COUNT ) );
 
 void Initialize()
 {
-   for( uint32_t i = 0; i < static_cast<uint32_t>( Noise::Type::COUNT ); ++i )
+   if( !s_initialized )
    {
-      s_noisePipelines[i] = StaticPipelines::FindByName( s_noiseNames[i] );
+      for( uint32_t i = 0; i < static_cast<uint32_t>( Noise::Type::COUNT ); ++i )
+      {
+         s_noisePipelines[i] = StaticPipelines::FindByName( s_noiseNames[i] );
+      }
+
+      s_initialized = true;
    }
 }
 

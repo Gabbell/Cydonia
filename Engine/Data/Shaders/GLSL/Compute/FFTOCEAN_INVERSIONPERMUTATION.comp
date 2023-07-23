@@ -1,6 +1,7 @@
 #version 450
+#define PI 3.1415926535897932384626433832795
 
-layout( local_size_x = 1, local_size_y = 1 ) in;
+layout( local_size_x = 16, local_size_y = 16 ) in;
 
 layout( push_constant ) uniform OceanParameters
 {
@@ -24,39 +25,43 @@ layout( set = 0, binding = 2, rg32f ) readonly uniform image2D pingpong1;
 
 void main()
 {
-   const ivec2 x = ivec2( gl_GlobalInvocationID.xy );
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
 
-   const float perms[] = {1.0, -1.0};
-   const uint index    = int( mod( ( int( x.x + x.y ) ), 2 ) );
+   const float perms[] = { 1.0, -1.0 };
+   const uint index    = int( mod( ( int( ssCoord.x + ssCoord.y ) ), 2 ) );
    const float perm    = perms[index];
 
+   // Wave vector or the direction of the wave (k)
+   const vec3 waveVector = vec3(
+       2.0 * PI * ssCoord.x / horizontalDimension,
+       0.0,
+       2.0 * PI * ssCoord.y / horizontalDimension );
+
    // The components we want to change
-   const vec4 mask =
-       vec4( componentMask >> 3 & 0x1, componentMask >> 2 & 0x1, componentMask >> 1 & 0x1, 1.0 );
+   const vec3 mask = vec3(
+       componentMask >> 2 & 0x1,
+       -1.0 * ( componentMask >> 1 & 0x1 ),  // We invert Y because...
+       componentMask >> 0 & 0x1 );
 
    // All the components we don't want to change
-   const vec4 negMask = vec4(
-       ~( componentMask >> 3 ) & 0x1,
+   const vec3 negMask = vec3(
        ~( componentMask >> 2 ) & 0x1,
        ~( componentMask >> 1 ) & 0x1,
-       1.0 );
+       ~( componentMask >> 0 ) & 0x1 );
 
+   vec2 h = vec2( 0.0 );
    if( pingpong == 0 )
    {
-      const float h     = imageLoad( pingpong0, x ).r;
-      const float value = perm * ( h / float( resolution * resolution ) );
-
-      const vec4 prev = imageLoad( displacement, x );
-
-      imageStore( displacement, x, ( negMask * prev ) + ( mask * value ) );
+      h = imageLoad( pingpong0, ssCoord ).rg;
    }
    else if( pingpong == 1 )
    {
-      const float h     = imageLoad( pingpong1, x ).r;
-      const float value = perm * ( h / float( resolution * resolution ) );
-
-      const vec4 prev = imageLoad( displacement, x );
-
-      imageStore( displacement, x, ( negMask * prev ) + ( mask * value ) );
+      h = imageLoad( pingpong1, ssCoord ).rg;
    }
+
+   const float disp    = perm * ( h.x / float( resolution * resolution ) );
+   const vec3 prevDisp = imageLoad( displacement, ssCoord ).xyz;
+   const vec3 newDisp  = ( negMask * prevDisp ) + ( mask * disp );
+
+   imageStore( displacement, ssCoord, vec4( newDisp, 1.0 ) );
 }

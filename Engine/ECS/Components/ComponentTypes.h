@@ -16,7 +16,7 @@ enum class ComponentType : int16_t
    // Scene
    // ==============================================================================================
    TRANSFORM,
-   CAMERA,
+   VIEW,
 
    // Lighting
    // ==============================================================================================
@@ -57,7 +57,7 @@ static const char* GetComponentName( ComponentType type )
 {
    static constexpr char COMPONENT_NAMES[][32] = {
        "Transform",
-       "Camera",
+       "View",
        "Light",
        "Material",
        "Mesh",
@@ -73,8 +73,8 @@ static const char* GetComponentName( ComponentType type )
        "Entity Follow",
        "Debug Draw" };
 
-   static_assert( ARRSIZE( COMPONENT_NAMES ) == static_cast<size_t>( ComponentType::COUNT ) );
+   static_assert( ARRSIZE( COMPONENT_NAMES ) == static_cast<uint32_t>( ComponentType::COUNT ) );
 
-   return COMPONENT_NAMES[static_cast<size_t>( type )];
+   return COMPONENT_NAMES[static_cast<uint32_t>( type )];
 }
 }

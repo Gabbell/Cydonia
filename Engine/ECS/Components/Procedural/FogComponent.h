@@ -39,8 +39,8 @@ class FogComponent final : public BaseComponent
       float time     = 0.0f;
       float a        = 0.0f;
       float b        = 0.0f;
-      float startFog = FLT_MAX;
-      float endFog   = FLT_MAX;
+      float startFog = 0.0f;
+      float endFog   = 1000.0f;
    } params;
 };
 }
