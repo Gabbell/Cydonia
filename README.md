@@ -139,8 +139,8 @@ Computer Graphics Forum, 39(4), 13–22. https://doi.org/10.1111/cgf.14050
 https://github.com/sebh/UnrealEngineSkyAtmosphere
 
 
-<img src="atmosphereday.png"  width="1200">
-<img src="atmosphereevening.png"  width="1200">
+<img align="left" src="atmosphereday.png"  width="450">
+<img align="middle" src="atmosphereevening.png"  width="450">
 
 ___
 
