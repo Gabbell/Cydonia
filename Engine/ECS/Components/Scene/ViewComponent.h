@@ -63,7 +63,7 @@ class ViewComponent final : public BaseComponent
 
    // Planes
    float near = 0.1f;
-   float far  = 1000.0f;
+   float far  = 10000.0f;
 
    // Projection
    float fov         = 60.0f;         // in degrees

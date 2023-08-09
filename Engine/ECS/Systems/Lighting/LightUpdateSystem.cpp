@@ -28,6 +28,11 @@ void LightUpdateSystem::tick( double deltaS )
       const LightComponent& light   = *std::get<LightComponent*>( entityEntry.arch );
       TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
 
+      //transform.position = glm::vec3(
+      //    transform.position.x,
+      //    25.0f * std::cos( 0.05f * timeElapsed ),
+      //    25.0f * std::sin( 0.05f * timeElapsed ) );
+
       const glm::vec3 viewDir = glm::normalize( -transform.position );
 
       transform.rotation = glm::quatLookAt( viewDir, glm::vec3( 0.0, 1.0, 0.0 ) );

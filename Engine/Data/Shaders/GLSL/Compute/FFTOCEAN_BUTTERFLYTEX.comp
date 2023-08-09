@@ -1,23 +1,12 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
+#include "FFTOCEAN.h"
+
 layout( local_size_x = 1, local_size_y = 16 ) in;
 
-layout( push_constant ) uniform OceanParameters
-{
-   uint resolution;
-   uint horizontalDimension;
-   uint pingpong;
-   uint direction;
-   uint stage;
-   uint componentMask;
-   float amplitude;
-   float gravity;
-   float windSpeed;
-   float windDirX;
-   float windDirZ;
-   float time;
-};
+layout( push_constant ) uniform PUSH { OceanParams params; };
+
 layout( set = 0, binding = 0, rgba32f ) writeonly uniform image2D butterflyTexture;
 
 layout( std430, set = 0, binding = 1 ) buffer indices { uint j[]; }
@@ -33,10 +22,12 @@ void main()
 {
    const vec2 x = gl_GlobalInvocationID.xy;
 
-   const float k = mod( x.y * ( float( resolution ) / pow( 2, x.x + 1 ) ), resolution );
+   const float k =
+       mod( x.y * ( float( params.resolution ) / pow( 2, x.x + 1 ) ), params.resolution );
 
    complex twiddle = complex(
-       cos( 2.0 * PI * k / float( resolution ) ), sin( 2.0 * PI * k / float( resolution ) ) );
+       cos( 2.0 * PI * k / float( params.resolution ) ),
+       sin( 2.0 * PI * k / float( params.resolution ) ) );
 
    const int butterflySpan = int( pow( 2, x.x ) );
 

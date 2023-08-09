@@ -1,26 +1,20 @@
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 
-#include <Physics/PhysicsConstants.h>
-
 #include <Graphics/GRIS/RenderInterface.h>
 
 namespace CYD
 {
-FFTOceanComponent::FFTOceanComponent(
-    uint32_t resolution,
-    uint32_t horizontalDimension,
-    float amplitude,
-    float windSpeed,
-    float windDirX,
-    float windDirZ )
+FFTOceanComponent::FFTOceanComponent( const Description& desc )
 {
-   params.resolution          = resolution;
-   params.horizontalDimension = horizontalDimension;
-   params.amplitude           = amplitude;
-   params.gravity             = PHYSICS::GRAV_ACCELERATION_CONSTANT;
-   params.windSpeed           = windSpeed;
-   params.windDirX            = windDirX;
-   params.windDirZ            = windDirZ;
+   params.resolution          = desc.resolution;
+   params.horizontalDimension = desc.horizontalDimension;
+   params.amplitude           = desc.amplitude;
+   params.gravity             = desc.gravity;
+   params.windSpeed           = desc.windSpeed;
+   params.windDirX            = desc.windDirX;
+   params.windDirZ            = desc.windDirZ;
+   params.horizontalScale     = desc.horizontalScale;
+   params.verticalScale       = desc.verticalScale;
 }
 
 FFTOceanComponent::~FFTOceanComponent()

@@ -32,6 +32,7 @@ class FogComponent final : public BaseComponent
       glm::vec4 lightDir;
    } viewInfo;
 
+   // This shouldn't be duplicated for every fog component
    BufferHandle viewInfoBuffer;
 
    struct Parameters
@@ -40,7 +41,7 @@ class FogComponent final : public BaseComponent
       float a        = 0.0f;
       float b        = 0.0f;
       float startFog = 0.0f;
-      float endFog   = 1000.0f;
+      float endFog   = 10000.0f;
    } params;
 };
 }

@@ -37,6 +37,7 @@ enum class ComponentType : int16_t
    PROCEDURAL_MATERIAL,
    OCEAN,
    FOG,
+   ATMOSPHERE,
 
    // Physics
    // ==============================================================================================
@@ -69,6 +70,7 @@ static const char* GetComponentName( ComponentType type )
        "Procedural Material",
        "Ocean",
        "Fog",
+       "Atmosphere",
        "Motion",
        "Entity Follow",
        "Debug Draw" };

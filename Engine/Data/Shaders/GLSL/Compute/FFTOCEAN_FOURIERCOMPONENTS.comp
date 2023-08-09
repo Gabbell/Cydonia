@@ -1,23 +1,11 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
+#include "FFTOCEAN.h"
+
 layout( local_size_x = 16, local_size_y = 16 ) in;
 
-layout( push_constant ) uniform OceanParameters
-{
-   uint resolution;
-   uint horizontalDimension;
-   uint pingpong;
-   uint direction;
-   uint stage;
-   uint componentMask;
-   float amplitude;
-   float gravity;
-   float windSpeed;
-   float windDirX;
-   float windDirZ;
-   float time;
-};
+layout( push_constant ) uniform PUSH { OceanParams params; };
 
 layout( set = 0, binding = 0, rgba32f ) writeonly uniform image2D tilde_hkt_dy;
 layout( set = 0, binding = 1, rgba32f ) writeonly uniform image2D tilde_hkt_dx;
@@ -52,20 +40,18 @@ complex conj( complex c ) { return complex( c.real, -c.im ); }
 
 void main()
 {
-   const vec2 x        = vec2( gl_GlobalInvocationID.xy ) - float( resolution ) / 2.0;
+   const vec2 x        = vec2( gl_GlobalInvocationID.xy ) - float( params.resolution ) / 2.0;
    const ivec2 ssCoord = ivec2( gl_GlobalInvocationID );
 
    // Wave vector or the direction of the wave (k)
-   const vec3 waveVector =
-       vec3( 2.0 * PI * x.x / horizontalDimension, 0.0, 2.0 * PI * x.y / horizontalDimension );
-
+   const vec2 waveVector = vec2( 2.0 * PI * x ) / params.horizontalDimension;
    const float magnitude = max( length( waveVector ), 0.00001 );
 
    // Omega
-   const float w = sqrt( gravity * magnitude );
+   const float w = sqrt( params.gravity * magnitude );
 
-   const float cos_wt = cos( w * time );
-   const float sin_wt = sin( w * time );
+   const float cos_wt = cos( w * params.time );
+   const float sin_wt = sin( w * params.time );
 
    // Euler formula
    const complex exp_iwt     = complex( cos_wt, sin_wt );
@@ -85,7 +71,7 @@ void main()
    const complex hkt_dx = mul( dx, hkt_dy );
 
    // dz
-   const complex dy     = complex( 0.0, -waveVector.z / magnitude );
+   const complex dy     = complex( 0.0, -waveVector.y / magnitude );
    const complex hkt_dz = mul( dy, hkt_dy );
 
    imageStore( tilde_hkt_dy, ssCoord, vec4( hkt_dy.real, hkt_dy.im, 0.0, 1.0 ) );

@@ -8,3 +8,10 @@
 #define MAX_DIST 100.0
 #define SURFACE_DIST 0.01
 
+struct RaymarchParams
+{
+	uint width;
+	uint height;
+	uint octaves;
+	float time;
+};	

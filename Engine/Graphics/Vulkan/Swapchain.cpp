@@ -431,10 +431,12 @@ Swapchain::~Swapchain()
    for( uint32_t i = 0; i < m_imageCount; ++i )
    {
       vkDestroyFramebuffer( m_device.getVKDevice(), m_vkFramebuffers[i], nullptr );
+      // The color VkImages are managed by the VkSwapchainKHR object, only need to free the rest
+      vkDestroyImageView( m_device.getVKDevice(), m_colorImageViews[i], nullptr );
+      vkDestroyImage( m_device.getVKDevice(), m_depthImages[i], nullptr );
+      vkDestroyImageView( m_device.getVKDevice(), m_depthImageViews[i], nullptr );
+      vkFreeMemory( m_device.getVKDevice(), m_depthImagesMemory[i], nullptr );
    }
-
-   vkDestroyRenderPass( m_device.getVKDevice(), m_vkRenderPasses[0], nullptr );
-   vkDestroyRenderPass( m_device.getVKDevice(), m_vkRenderPasses[1], nullptr );
 
    vkDestroySwapchainKHR( m_device.getVKDevice(), m_vkSwapchain, nullptr );
 }

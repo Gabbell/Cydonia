@@ -19,7 +19,6 @@ layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 layout( vertices = VERTICES_PER_PATCH ) out;
 
 layout( location = 0 ) in vec2 inUV[];
-layout( location = 1 ) in vec3 inNormal[];
 
 layout( location = 0 ) out vec2 outUV[VERTICES_PER_PATCH];
 

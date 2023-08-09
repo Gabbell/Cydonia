@@ -6,26 +6,35 @@
 #include <Graphics/Handles/ResourceHandle.h>
 #include <Graphics/GraphicsTypes.h>
 
+#include <Physics/PhysicsConstants.h>
+
 namespace CYD
 {
 class FFTOceanComponent final : public BaseComponent
 {
   public:
+   struct Description
+   {
+      uint32_t resolution          = 512;
+      uint32_t horizontalDimension = 2000;
+      float amplitude              = 100.0f;
+      float gravity                = PHYSICS::GRAV_ACCELERATION_CONSTANT;
+      float windSpeed              = 100.0f;
+      float windDirX               = 1.0f;
+      float windDirZ               = 1.0f;
+      float horizontalScale        = 1.0f;
+      float verticalScale          = 1.0f;
+   };
+
    FFTOceanComponent() = default;
-   FFTOceanComponent(
-       uint32_t resolution,
-       uint32_t horizontalDimension,
-       float amplitude,
-       float windSpeed,
-       float windDirX,
-       float windDirZ );
+   FFTOceanComponent( const Description& desc );
    COPIABLE( FFTOceanComponent );
    virtual ~FFTOceanComponent();
 
    static constexpr ComponentType TYPE = ComponentType::OCEAN;
 
    // Properties used as a single push constant in the multiple shader passes
-   struct Parameters
+   struct ShaderParameters
    {
       uint32_t resolution          = 0;  // N - Phillips spectrum resolution
       uint32_t horizontalDimension = 0;  // L - Horizontal dimension of the patch
@@ -38,6 +47,8 @@ class FFTOceanComponent final : public BaseComponent
       float windSpeed              = 0.0f;
       float windDirX               = 0.0f;
       float windDirZ               = 0.0f;
+      float horizontalScale        = 1.0f;
+      float verticalScale          = 1.0f;
       float time                   = 0.0f;
    } params;
 
@@ -57,12 +68,8 @@ class FFTOceanComponent final : public BaseComponent
 
    TextureHandle pingpongTex;
 
-   // RGB = XYZ displacement, A = Folding
+   // RGB = XYZ displacement, A = Folding (Jacobian Determinant)
    TextureHandle displacementMap;
-
-   float modulationX = 1.0f;
-   float modulationY = 1.0f;  // Modulations applied when rendering the heightmap
-   float modulationZ = 1.0f;
 
    bool needsUpdate       = true;  // If we need to update the pre-computed textures
    bool resolutionChanged = true;  // If we need to resize the textures

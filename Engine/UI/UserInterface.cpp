@@ -8,6 +8,7 @@
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/TessellatedComponent.h>
 #include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
+#include <ECS/Components/Procedural/AtmosphereComponent.h>
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 #include <ECS/Components/Procedural/FogComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
@@ -18,9 +19,13 @@
 
 namespace CYD::UI
 {
-static ImTextureID s_oceanDispTexture   = nullptr;
-static ImTextureID s_noiseTexture       = nullptr;
-static ImTextureID s_shadowMapTexture   = nullptr;
+static ImTextureID s_oceanDispTexture = nullptr;
+static ImTextureID s_noiseTexture     = nullptr;
+static ImTextureID s_shadowMapTexture = nullptr;
+
+static ImTextureID s_transmittanceLUTTexture   = nullptr;
+static ImTextureID s_multiScatteringLUTTexture = nullptr;
+static ImTextureID s_skyViewLUTTexture         = nullptr;
 
 void Initialize() { GRIS::InitializeUIBackend(); }
 
@@ -34,7 +39,7 @@ void DrawMainMenuBar(
     bool& drawAboutWindow,
     bool& drawStatsOverlay )
 {
-   //ImGui::ShowDemoWindow();
+   // ImGui::ShowDemoWindow();
 
    ImGui::BeginMainMenuBar();
    ImGui::MenuItem( "CYDONIA", nullptr, false, false );
@@ -194,6 +199,13 @@ void DrawComponentsMenu( CmdListHandle cmdList, ComponentType type, const BaseCo
          DrawProceduralDisplacementComponentMenu( cmdList, displacement );
          break;
       }
+      case ComponentType::ATMOSPHERE:
+      {
+         const AtmosphereComponent& atmosphere =
+             *static_cast<const AtmosphereComponent*>( component );
+         DrawAtmosphereComponentMenu( cmdList, atmosphere );
+         break;
+      }
       case ComponentType::TESSELLATED:
       {
          const TessellatedComponent& tessellated =
@@ -308,21 +320,76 @@ void DrawProceduralDisplacementComponentMenu(
    ImGui::Image( s_noiseTexture, dimensions );
 }
 
+void DrawAtmosphereComponentMenu( CmdListHandle cmdList, const AtmosphereComponent& atmosphere )
+{
+   if( s_transmittanceLUTTexture == nullptr )
+   {
+      s_transmittanceLUTTexture = GRIS::AddDebugTexture( atmosphere.transmittanceLUT );
+   }
+
+   GRIS::UpdateDebugTexture( cmdList, atmosphere.transmittanceLUT );
+
+   ImGui::Text( "Transmittance LUT" );
+   float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
+   float displayHeight = displayWidth *
+                         static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_HEIGHT ) /
+                         static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_WIDTH );
+   ImVec2 dimensions( displayWidth, displayHeight );
+   ImGui::Image( s_transmittanceLUTTexture, dimensions );
+
+   // =============================================================================================
+
+   if( s_multiScatteringLUTTexture == nullptr )
+   {
+      s_multiScatteringLUTTexture = GRIS::AddDebugTexture( atmosphere.multipleScatteringLUT );
+   }
+
+   GRIS::UpdateDebugTexture( cmdList, atmosphere.multipleScatteringLUT );
+
+   ImGui::Text( "Multiple Scattering LUT" );
+   displayWidth  = ImGui::GetWindowWidth() * 0.85f;
+   displayHeight = displayWidth *
+                   static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM ) /
+                   static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM );
+   dimensions = ImVec2( displayWidth, displayHeight );
+   ImGui::Image( s_multiScatteringLUTTexture, dimensions );
+
+   // =============================================================================================
+
+   if( s_skyViewLUTTexture == nullptr )
+   {
+      s_skyViewLUTTexture = GRIS::AddDebugTexture( atmosphere.skyViewLUT );
+   }
+
+   GRIS::UpdateDebugTexture( cmdList, atmosphere.skyViewLUT );
+
+   ImGui::Text( "Sky View LUT" );
+   displayWidth  = ImGui::GetWindowWidth() * 0.85f;
+   displayHeight = displayWidth * static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_HEIGHT ) /
+                   static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_WIDTH );
+   dimensions = ImVec2( displayWidth, displayHeight );
+   ImGui::Image( s_skyViewLUTTexture, dimensions );
+}
+
 void DrawFFTOceanComponentMenu( CmdListHandle cmdList, const FFTOceanComponent& ocean )
 {
    bool triggerUpdate = false;
 
    triggerUpdate |=
-       ImGui::SliderFloat( "Amplitude", (float*)&ocean.params.amplitude, 0.0f, 100.0f );
+       ImGui::SliderFloat( "Amplitude", (float*)&ocean.params.amplitude, 0.0f, 200.0f );
    triggerUpdate |=
        ImGui::SliderFloat( "Wind Speed", (float*)&ocean.params.windSpeed, 0.0f, 100.0f );
    triggerUpdate |=
-       ImGui::SliderInt( "Horizontal Dimension", (int*)&ocean.params.horizontalDimension, 0, 2000 );
+       ImGui::SliderInt( "Horizontal Dimension", (int*)&ocean.params.horizontalDimension, 0, 5000 );
    triggerUpdate |= ImGui::SliderFloat( "Wind Dir X", (float*)&ocean.params.windDirX, 0.0f, 1.0f );
    triggerUpdate |= ImGui::SliderFloat( "Wind Dir Z", (float*)&ocean.params.windDirZ, 0.0f, 1.0f );
+   triggerUpdate |= ImGui::SliderFloat(
+       "Horizontal Scaling", (float*)&ocean.params.horizontalScale, 0.0f, 50.0f );
+   triggerUpdate |=
+       ImGui::SliderFloat( "Vertical Scaling", (float*)&ocean.params.verticalScale, 0.0f, 50.0f );
 
    float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
-   float displayHeight = displayWidth * static_cast<float>( ocean.params.resolution) /
+   float displayHeight = displayWidth * static_cast<float>( ocean.params.resolution ) /
                          static_cast<float>( ocean.params.resolution );
    const ImVec2 dimensions( displayWidth, displayHeight );
 
@@ -345,13 +412,14 @@ void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog )
    ImGui::SliderFloat( "A", (float*)&fog.params.a, 0.0f, 5.0f );
    ImGui::SliderFloat( "B", (float*)&fog.params.b, 0.0f, 5.0f );
    ImGui::SliderFloat( "Start Fog", (float*)&fog.params.startFog, 0.0f, 1000.0f );
-   ImGui::SliderFloat( "End Fog", (float*)&fog.params.endFog, 0.0f, 1000.0f );
+   ImGui::SliderFloat( "End Fog", (float*)&fog.params.endFog, 0.0f, 10000.0f );
 }
 
 void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable )
 {
    ImGui::Checkbox( "Is Visible", (bool*)&renderable.isVisible );
    ImGui::Checkbox( "Casts Shadows", (bool*)&renderable.isShadowCasting );
+   ImGui::Checkbox( "Receives Shadows", (bool*)&renderable.isShadowReceiving );
 }
 
 void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedComponent& tessellated )

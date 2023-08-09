@@ -21,6 +21,7 @@
 #include <ECS/Systems/Procedural/ProceduralDisplacementSystem.h>
 #include <ECS/Systems/Procedural/FFTOceanSystem.h>
 #include <ECS/Systems/Procedural/FogSystem.h>
+#include <ECS/Systems/Procedural/AtmosphereSystem.h>
 #include <ECS/Systems/Rendering/TessellationUpdateSystem.h>
 #include <ECS/Systems/Rendering/ForwardRenderSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
@@ -90,7 +91,8 @@ void VKSandbox::preLoop()
    m_ecs->addSystem<TessellationUpdateSystem>();
    m_ecs->addSystem<ShadowMapSystem>( *m_materials );
    m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
-   m_ecs->addSystem<FogSystem>();
+   // m_ecs->addSystem<FogSystem>();
+   m_ecs->addSystem<AtmosphereSystem>();
 
    // Debug
 #if CYD_DEBUG
@@ -125,7 +127,7 @@ void VKSandbox::preLoop()
    m_ecs->assign<ViewComponent>( player, "MAIN" );
 
    const EntityHandle sun = m_ecs->createEntity( "Sun" );
-   m_ecs->assign<TransformComponent>( sun, glm::vec3( 0.0f, 40.0f, 0.0f ) );
+   m_ecs->assign<TransformComponent>( sun, glm::vec3( 90.0f, 40.0f, 0.0f ) );
    m_ecs->assign<LightComponent>( sun );
    m_ecs->assign<ViewComponent>( sun, "SUN", -71.0f, 71.0f, -71.0f, 71.0f, -200.0f, 200.0f );
 
@@ -133,13 +135,13 @@ void VKSandbox::preLoop()
    m_ecs->assign<DebugDrawComponent>( sun, DebugDrawComponent::Type::SPHERE );
 #endif
 
-    const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
-    m_ecs->assign<RenderableComponent>( terrain, true, true );
-    m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f )
-    ); m_ecs->assign<MeshComponent>( terrain, "GRID" ); m_ecs->assign<TessellatedComponent>(
-    terrain, 0.319f, 0.025f ); m_ecs->assign<MaterialComponent>( terrain, "TERRAIN",
-    "TERRAIN_DISPLACEMENT" ); m_ecs->assign<ProceduralDisplacementComponent>(
-       terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, 0.0f );
+   // const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
+   // m_ecs->assign<RenderableComponent>( terrain, true, true );
+   // m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f )
+   // ); m_ecs->assign<MeshComponent>( terrain, "GRID" ); m_ecs->assign<TessellatedComponent>(
+   // terrain, 0.319f, 0.025f ); m_ecs->assign<MaterialComponent>( terrain, "TERRAIN",
+   // "TERRAIN_DISPLACEMENT" ); m_ecs->assign<ProceduralDisplacementComponent>(
+   //    terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, 0.0f );
 
    const EntityHandle ocean = m_ecs->createEntity( "Ocean" );
    m_ecs->assign<RenderableComponent>( ocean, false, true );
@@ -147,11 +149,24 @@ void VKSandbox::preLoop()
    m_ecs->assign<MeshComponent>( ocean, "GRID" );
    m_ecs->assign<TessellatedComponent>( ocean, 0.319f, 0.025f );
    m_ecs->assign<MaterialComponent>( ocean, "OCEAN", "OCEAN" );
-   m_ecs->assign<FFTOceanComponent>( ocean, 512, 2000, 100.0f, 40.0f, 1.0f, 1.0f );
 
+   FFTOceanComponent::Description oceanDesc;
+   oceanDesc.resolution          = 1024;
+   oceanDesc.amplitude           = 62.0f;
+   oceanDesc.horizontalDimension = 1000;
+   oceanDesc.horizontalScale     = 12.0f;
+   oceanDesc.verticalScale       = 17.0f;
+   m_ecs->assign<FFTOceanComponent>( ocean, oceanDesc );
+
+   /*
    const EntityHandle fog = m_ecs->createEntity( "Fog" );
    m_ecs->assign<RenderableComponent>( fog );
    m_ecs->assign<FogComponent>( fog );
+   */
+
+   const EntityHandle atmosphere = m_ecs->createEntity( "Atmosphere" );
+   m_ecs->assign<RenderableComponent>( atmosphere );
+   m_ecs->assign<AtmosphereComponent>( atmosphere );
 }
 
 void VKSandbox::tick( double deltaS )

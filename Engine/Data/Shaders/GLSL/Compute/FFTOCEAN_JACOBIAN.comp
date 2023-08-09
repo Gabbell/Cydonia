@@ -1,22 +1,10 @@
 #version 450
 
+#include "FFTOCEAN.h"
+
 layout( local_size_x = 16, local_size_y = 16 ) in;
 
-layout( push_constant ) uniform OceanParameters
-{
-   uint resolution;
-   uint horizontalDimension;
-   uint pingpong;
-   uint direction;
-   uint stage;
-   uint componentMask;
-   float amplitude;
-   float gravity;
-   float windSpeed;
-   float windDirX;
-   float windDirZ;
-   float time;
-};
+layout( push_constant ) uniform PUSH { OceanParams params; };
 
 layout( set = 0, binding = 0, rgba32f ) restrict uniform image2D displacement;
 
@@ -30,7 +18,7 @@ void main()
    const vec3 dU = imageLoad( displacement, ssCoord + off.yx ).xyz;
    const vec3 dR = imageLoad( displacement, ssCoord + off.zy ).xyz;
 
-   const float delta = float( resolution ) / horizontalDimension;
+   const float delta = float( params.resolution ) / params.horizontalDimension;
 
    // Calculating the Jacobian determinant based on finite differences between
    // the displacement at the current point at the displacements at the top and right

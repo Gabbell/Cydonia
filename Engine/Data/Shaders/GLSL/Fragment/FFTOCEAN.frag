@@ -48,7 +48,7 @@ void main()
    // Foam
    // ============================================================================================
    // The Jacobian determinant is in the alpha of the displacement map
-   const float jacobianBias = 0.8;
+   const float jacobianBias = 1.0;
    const float foamFactor   = clamp( jacobianBias - D.a, 0.0, 1.0 );
 
    // Color
@@ -65,10 +65,10 @@ void main()
    color += max( dot( L, V ), 0.0 ) * SEA_WATER_COLOR * max( inWorldPos.y - 0.6, 0.0 ) * 0.33;
 
    // Foam
-   color += vec3( 1.0, 1.0, 1.0 ) * foamFactor;
+   color += vec3( 1.0, 1.0, 1.0 ) * foamFactor * 2.0;
 
    // Specular
-   color += vec3( specular( N, L, V, 60.0 ) ) * shadow;
+   color += vec3( specular( N, L, V, 120.0 ) ) * shadow;
 
    outColor = vec4( color, 1.0 );
 }

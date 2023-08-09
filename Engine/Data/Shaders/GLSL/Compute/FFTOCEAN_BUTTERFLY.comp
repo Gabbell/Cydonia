@@ -1,22 +1,11 @@
 #version 450
 
+#include "FFTOCEAN.h"
+
 layout( local_size_x = 16, local_size_y = 16 ) in;
 
-layout( push_constant ) uniform OceanParameters
-{
-   uint resolution;
-   uint horizontalDimension;
-   uint pingpong;
-   uint direction;
-   uint stage;
-   uint componentMask;
-   float amplitude;
-   float gravity;
-   float windSpeed;
-   float windDirX;
-   float windDirZ;
-   float time;
-};
+layout( push_constant ) uniform PUSH { OceanParams params; };
+
 layout( set = 0, binding = 0, rgba32f ) readonly uniform image2D butterflyTexture;
 layout( set = 0, binding = 1, rg32f ) uniform image2D pingpong0;
 layout( set = 0, binding = 2, rg32f ) uniform image2D pingpong1;
@@ -47,9 +36,9 @@ void horizontalButterflies()
 {
    const ivec2 x = ivec2( gl_GlobalInvocationID.xy );
 
-   if( pingpong == 0 )
+   if( params.pingpong == 0 )
    {
-      const vec4 data = imageLoad( butterflyTexture, ivec2( stage, x.x ) ).rgba;
+      const vec4 data = imageLoad( butterflyTexture, ivec2( params.stage, x.x ) ).rgba;
 
       const vec2 p_ = imageLoad( pingpong0, ivec2( data.z, x.y ) ).rg;
       const vec2 q_ = imageLoad( pingpong0, ivec2( data.w, x.y ) ).rg;
@@ -63,9 +52,9 @@ void horizontalButterflies()
 
       imageStore( pingpong1, x, vec4( H.real, H.im, 0, 1 ) );
    }
-   else if( pingpong == 1 )
+   else if( params.pingpong == 1 )
    {
-      const vec4 data = imageLoad( butterflyTexture, ivec2( stage, x.x ) ).rgba;
+      const vec4 data = imageLoad( butterflyTexture, ivec2( params.stage, x.x ) ).rgba;
 
       const vec2 p_ = imageLoad( pingpong1, ivec2( data.z, x.y ) ).rg;
       const vec2 q_ = imageLoad( pingpong1, ivec2( data.w, x.y ) ).rg;
@@ -86,9 +75,9 @@ void verticalButterflies()
    complex H;
    const ivec2 x = ivec2( gl_GlobalInvocationID.xy );
 
-   if( pingpong == 0 )
+   if( params.pingpong == 0 )
    {
-      const vec4 data = imageLoad( butterflyTexture, ivec2( stage, x.y ) ).rgba;
+      const vec4 data = imageLoad( butterflyTexture, ivec2( params.stage, x.y ) ).rgba;
 
       const vec2 p_ = imageLoad( pingpong0, ivec2( x.x, data.z ) ).rg;
       const vec2 q_ = imageLoad( pingpong0, ivec2( x.x, data.w ) ).rg;
@@ -102,9 +91,9 @@ void verticalButterflies()
 
       imageStore( pingpong1, x, vec4( H.real, H.im, 0, 1 ) );
    }
-   else if( pingpong == 1 )
+   else if( params.pingpong == 1 )
    {
-      const vec4 data = imageLoad( butterflyTexture, ivec2( stage, x.y ) ).rgba;
+      const vec4 data = imageLoad( butterflyTexture, ivec2( params.stage, x.y ) ).rgba;
 
       const vec2 p_ = imageLoad( pingpong1, ivec2( x.x, data.z ) ).rg;
       const vec2 q_ = imageLoad( pingpong1, ivec2( x.x, data.w ) ).rg;
@@ -122,11 +111,11 @@ void verticalButterflies()
 
 void main()
 {
-   if( direction == 0 )
+   if( params.direction == 0 )
    {
       horizontalButterflies();
    }
-   else if( direction == 1 )
+   else if( params.direction == 1 )
    {
       verticalButterflies();
    }

@@ -1,48 +1,28 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
+#include "FFTOCEAN.h"
+
 layout( local_size_x = 16, local_size_y = 16 ) in;
 
-layout( push_constant ) uniform OceanParameters
-{
-   uint resolution;
-   uint horizontalDimension;
-   uint pingpong;
-   uint direction;
-   uint stage;
-   uint componentMask;
-   float amplitude;
-   float gravity;
-   float windSpeed;
-   float windDirX;
-   float windDirZ;
-   float time;
-};
+layout( push_constant ) uniform PUSH { OceanParams params; };
 
 layout( set = 0, binding = 0, rg32f ) writeonly uniform image2D spectrum1;  // ~h0(k)
 layout( set = 0, binding = 1, rg32f ) writeonly uniform image2D spectrum2;  // ~h0(-k)
 
 // Returns pseudo-random uniformly distributed number
-float Rand( vec2 seed )
-{
-   float a  = 12.9898;
-   float b  = 78.233;
-   float c  = 43758.5453;
-   float dt = dot( seed.xy, vec2( a, b ) );
-   float sn = mod( dt, 3.14 );
-   return fract( sin( sn ) * c );
-}
+float nrand( vec2 n ) { return fract( sin( dot( n.xy, vec2( 12.9898, 78.233 ) ) ) * 43758.5453 ); }
 
 // Returns 4 random Gaussian-distributed numbers based on the Box-Muller transform algorithm
 vec4 BoxMullerTransform()
 {
-   vec2 texCoord = vec2( gl_GlobalInvocationID.xy ) / float( resolution );
+   vec2 texCoord = vec2( gl_GlobalInvocationID.xy ) / float( params.resolution );
 
    // Values that we would get from a random noise texture
-   const float noise0 = clamp( Rand( texCoord.xy ), 0.001, 1.0 );
-   const float noise1 = clamp( Rand( -texCoord.xy ), 0.001, 1.0 );
-   const float noise2 = clamp( Rand( vec2( -texCoord.x, texCoord.y ) ), 0.001, 1.0 );
-   const float noise3 = clamp( Rand( vec2( texCoord.x, -texCoord.y ) ), 0.001, 1.0 );
+   const float noise0 = clamp( nrand( texCoord + 0.07 * params.time ), 0.001, 1.0 );
+   const float noise1 = clamp( nrand( texCoord + 0.13 * params.time ), 0.001, 1.0 );
+   const float noise2 = clamp( nrand( texCoord + 0.19 * params.time ), 0.001, 1.0 );
+   const float noise3 = clamp( nrand( texCoord + 0.29 * params.time ), 0.001, 1.0 );
 
    const float u0 = 2.0 * PI * noise0;
    const float v0 = sqrt( -2.0 * log( noise1 ) );
@@ -55,39 +35,37 @@ vec4 BoxMullerTransform()
 
 void main()
 {
-   const vec2 x        = vec2( gl_GlobalInvocationID.xy ) - float( resolution ) / 2.0;
+   const vec2 x        = vec2( gl_GlobalInvocationID.xy ) - float( params.resolution ) / 2.0;
    const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
 
    // Wave vector or the direction of the wave
-   const vec2 k =
-       vec2( 2.0 * PI * x.x / horizontalDimension, 2.0 * PI * x.y / horizontalDimension );
+   const vec2 k = vec2( 2.0 * PI * x ) / params.horizontalDimension;
 
-   const float L_ = ( windSpeed * windSpeed ) / gravity;
+   const float L_ = ( params.windSpeed * params.windSpeed ) / params.gravity;
 
    const float magnitude        = max( length( k ), 0.00001 );
    const float magnitudeSquared = magnitude * magnitude;
 
-   const vec2 windDirection = normalize( vec2( windDirX, windDirZ ) );
+   const vec2 windDirection = normalize( vec2( params.windDirX, params.windDirZ ) );
    const vec2 kNorm         = normalize( k );
+
+   const float dotK      = abs( dot( kNorm, windDirection ) );
+   const float dotMinusK = abs( dot( -kNorm, windDirection ) );
 
    // This factor is common in both h0k and h0minusk so only calculate it once
    const float commonMultiplier =
-       ( amplitude / ( magnitudeSquared * magnitudeSquared ) ) *
+       ( params.amplitude / ( magnitudeSquared * magnitudeSquared ) ) *
        exp( -( 1.0 / ( magnitudeSquared * L_ * L_ ) ) ) *
-       exp( -magnitudeSquared * pow( horizontalDimension / 2000.0, 2.0 ) );
+       exp( -magnitudeSquared * pow( params.horizontalDimension / 2000.0, 2.0 ) );
 
-   const float h0k = clamp(
-       sqrt( commonMultiplier * pow( dot( kNorm, windDirection ), 4.0 ) ) / sqrt( 2.0 ),
-       -4000.0,
-       4000.0 );
+   const float h0k =
+       clamp( sqrt( commonMultiplier * pow( dotK, 4.0 ) ) / sqrt( 2.0 ), -4000.0, 4000.0 );
 
-   const float h0minusk = clamp(
-       sqrt( commonMultiplier * pow( dot( -kNorm, windDirection ), 4.0 ) ) / sqrt( 2.0 ),
-       -4000.0,
-       4000.0 );
+   const float h0minusk =
+       clamp( sqrt( commonMultiplier * pow( dotMinusK, 4.0 ) ) / sqrt( 2.0 ), -4000.0, 4000.0 );
 
    const vec4 randomGauss = BoxMullerTransform();
 
-   imageStore( spectrum1, ssCoord, vec4( randomGauss.xy * h0k, 0, 1 ) );
-   imageStore( spectrum2, ssCoord, vec4( randomGauss.zw * h0minusk, 0, 1 ) );
+   imageStore( spectrum1, ssCoord, vec4( randomGauss.xy * h0k, 0.0, 1.0 ) );
+   imageStore( spectrum2, ssCoord, vec4( randomGauss.zw * h0minusk, 0.0, 1.0 ) );
 }

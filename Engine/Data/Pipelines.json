@@ -544,7 +544,7 @@
           "NAME": "OceanParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 48
+          "SIZE": 56
         },
         {
           "NAME": "spectrum1",
@@ -570,7 +570,7 @@
           "NAME": "OceanParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 48
+          "SIZE": 56
         },
         {
           "NAME": "butterflyTexture",
@@ -596,7 +596,7 @@
           "NAME": "OceanParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 48
+          "SIZE": 56
         },
         {
           "NAME": "tilde_hkt_dy",
@@ -643,7 +643,7 @@
           "NAME": "OceanParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 48
+          "SIZE": 56
         },
         {
           "NAME": "butterflyTexture",
@@ -676,7 +676,7 @@
           "NAME": "OceanParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 48
+          "SIZE": 56
         },
         {
           "NAME": "displacement",
@@ -709,7 +709,7 @@
           "NAME": "OceanParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 48
+          "SIZE": 56
         },
         {
           "NAME": "displacement",
@@ -797,21 +797,134 @@
       ]
     },
     {
-      "NAME": "RAYMARCH",
+      "NAME": "ATMOS_TRANSMITTANCE_LUT",
       "TYPE": "COMPUTE",
-      "COMPUTE_SHADER": "RAYMARCH_COMP",
+      "COMPUTE_SHADER": "ATMOS_TRANSMITTANCE_COMP",
       "SHADER_RESOURCES": [{
-          "NAME": "RaymarchParameters",
+          "NAME": "AtmosphereParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 36
+          "SIZE": 104
         },
         {
-          "NAME": "outImage",
+          "NAME": "transmittanceLUT",
           "TYPE": "IMAGE",
           "STAGES": ["COMPUTE"],
           "SET": 0,
           "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "ATMOS_MULTISCATTERING_LUT",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "ATMOS_MULTISCATTERING_COMP",
+      "SHADER_RESOURCES": [{
+          "NAME": "AtmosphereParameters",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": ["COMPUTE"],
+          "SIZE": 104
+        },
+        {
+          "NAME": "transmittanceLUT",
+          "TYPE": "IMAGE",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "multipleScatteringLUT",
+          "TYPE": "IMAGE",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 1
+        }
+      ]
+    },
+    {
+      "NAME": "ATMOS_SKYVIEW_LUT",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "ATMOS_SKYVIEW_COMP",
+      "SHADER_RESOURCES": [{
+          "NAME": "AtmosphereParameters",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": ["COMPUTE"],
+          "SIZE": 104
+        },
+        {
+          "NAME": "viewInfo",
+          "TYPE": "UNIFORM",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "transmittanceLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "multipleScatteringLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "skyViewLUT",
+          "TYPE": "IMAGE",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 3
+        }
+      ]
+    },
+    {
+      "NAME": "ATMOS_OUTPUT",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "ATMOS_OUTPUT_COMP",
+      "SHADER_RESOURCES": [{
+          "NAME": "AtmosphereParameters",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": ["COMPUTE"],
+          "SIZE": 104
+        },
+        {
+          "NAME": "viewInfo",
+          "TYPE": "UNIFORM",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "transmittanceLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "skyViewLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "colorImage",
+          "TYPE": "IMAGE",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 3
+        },
+        {
+          "NAME": "depthImage",
+          "TYPE": "SAMPLER",
+          "STAGES": ["COMPUTE"],
+          "SET": 0,
+          "BINDING": 4
         }
       ]
     }

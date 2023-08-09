@@ -84,7 +84,7 @@ static void computeDisplacement(
           cmdList,
           PipelineStage::COMPUTE_STAGE,
           0,
-          sizeof( FFTOceanComponent::Parameters ),
+          sizeof( FFTOceanComponent::ShaderParameters ),
           &ocean.params );
 
       GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
@@ -102,7 +102,7 @@ static void computeDisplacement(
           cmdList,
           PipelineStage::COMPUTE_STAGE,
           0,
-          sizeof( FFTOceanComponent::Parameters ),
+          sizeof( FFTOceanComponent::ShaderParameters ),
           &ocean.params );
 
       GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
@@ -142,7 +142,7 @@ static void computeDisplacement(
        cmdList,
        PipelineStage::COMPUTE_STAGE,
        0,
-       sizeof( FFTOceanComponent::Parameters ),
+       sizeof( FFTOceanComponent::ShaderParameters ),
        &ocean.params );
 
    GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
@@ -263,7 +263,7 @@ void FFTOceanSystem::tick( double deltaS )
              cmdList,
              PipelineStage::COMPUTE_STAGE,
              0,
-             sizeof( FFTOceanComponent::Parameters ),
+             sizeof( FFTOceanComponent::ShaderParameters ),
              &ocean.params );
 
          GRIS::BindImage( cmdList, ocean.spectrum1, 0, 0 );
@@ -288,7 +288,7 @@ void FFTOceanSystem::tick( double deltaS )
              cmdList,
              PipelineStage::COMPUTE_STAGE,
              0,
-             sizeof( FFTOceanComponent::Parameters ),
+             sizeof( FFTOceanComponent::ShaderParameters ),
              &ocean.params );
 
          GRIS::BindImage( cmdList, ocean.butterflyTexture, 0, 0 );
@@ -312,7 +312,7 @@ void FFTOceanSystem::tick( double deltaS )
           cmdList,
           PipelineStage::COMPUTE_STAGE,
           0,
-          sizeof( FFTOceanComponent::Parameters ),
+          sizeof( FFTOceanComponent::ShaderParameters ),
           &ocean.params );
 
       GRIS::BindImage( cmdList, ocean.fourierComponentsY, 0 );
@@ -337,7 +337,7 @@ void FFTOceanSystem::tick( double deltaS )
           cmdList,
           PipelineStage::COMPUTE_STAGE,
           0,
-          sizeof( FFTOceanComponent::Parameters ),
+          sizeof( FFTOceanComponent::ShaderParameters ),
           &ocean.params );
 
       GRIS::BindImage( cmdList, ocean.displacementMap, 0 );

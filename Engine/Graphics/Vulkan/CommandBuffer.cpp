@@ -461,6 +461,11 @@ void CommandBuffer::bindSwapchainDepth(
 
 void CommandBuffer::bindTexture( Texture* texture, uint8_t binding, uint8_t set )
 {
+   if( !m_boundRenderPass )
+   {
+      Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
+   }
+
    // Will need to update this texture's descriptor set before next draw
    TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
    textureEntry.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -471,11 +476,6 @@ void CommandBuffer::bindTexture( Texture* texture, uint8_t binding, uint8_t set 
 
    m_samplers.push_back( m_defaultSampler );
 
-   if( !m_boundRenderPass )
-   {
-      Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
-   }
-
    _addDependency( texture );
 }
 
@@ -485,6 +485,11 @@ void CommandBuffer::bindTexture(
     uint8_t binding,
     uint8_t set )
 {
+   if( !m_boundRenderPass )
+   {
+      Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
+   }
+
    // Will need to update this texture's descriptor set before next draw
    TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
    textureEntry.type            = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -494,11 +499,6 @@ void CommandBuffer::bindTexture(
    textureEntry.layout = Synchronization::GetLayoutFromAccess( texture->getPreviousAccess() );
 
    m_samplers.push_back( m_pDevice->getSamplerCache().findOrCreate( sampler ) );
-
-   if( !m_boundRenderPass )
-   {
-      Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
-   }
 
    _addDependency( texture );
 }
@@ -940,8 +940,8 @@ void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
 
    _prepareDescriptorSets();
 
-   // Not ideal, could just synchronize individual images. This makes sequences of dispatch calls keep
-   // the proper order in terms of memory read/write
+   // Not ideal, could just synchronize individual images. This makes sequences of dispatch calls
+   // keep the proper order in terms of memory read/write
    Synchronization::GlobalMemory(
        m_vkCmdBuffer, CYD::Access::COMPUTE_SHADER_WRITE, CYD::Access::COMPUTE_SHADER_READ );
 

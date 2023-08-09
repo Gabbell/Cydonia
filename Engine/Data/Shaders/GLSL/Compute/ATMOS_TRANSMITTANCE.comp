@@ -1,0 +1,56 @@
+#version 450
+
+#include "ATMOS.h"
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform PUSH { AtmosphereParameters params; };
+
+layout( set = 0, binding = 0 ) writeonly uniform image2D transmittanceLUT;
+
+// Constants
+// ================================================================================================
+const float sunTransmittanceSteps = 40.0;
+
+// ================================================================================================
+void main()
+{
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
+   const vec2 uv       = vec2( ssCoord + 0.5 ) / vec2( imageSize( transmittanceLUT ) );
+
+   // Getting a sun direction and height position based on the UV
+   const vec4 uvParameterization = inverseLUTParameterization( params, uv );
+
+   const vec3 sunDir = uvParameterization.xyz;
+   const vec3 pos    = vec3( 0.0, uvParameterization.w, 0.0 );
+
+   if( rayIntersectSphere( pos, sunDir, spherePos, params.groundRadiusMM ) > EPSILON )
+   {
+      imageStore( transmittanceLUT, ssCoord, vec4( 0.0, 0.0, 0.0, 1.0 ) );
+      return;
+   }
+
+   const float atmoDist = rayIntersectSphere( pos, sunDir, spherePos, params.atmosphereRadiusMM );
+
+   float t = 0.0;
+
+   // Equation 2 from the paper
+   vec3 transmittance = vec3( 1.0 );
+   for( float i = 0.0; i < sunTransmittanceSteps; i++ )
+   {
+      float newT = i * ( atmoDist / sunTransmittanceSteps );
+      float dt   = newT - t;
+      t          = newT;
+
+      vec3 newPos = pos + t * sunDir;
+
+      vec3 rayleighScattering;
+      float mieScattering;
+      vec3 extinction;
+      getScatteringValues( newPos, params, rayleighScattering, mieScattering, extinction );
+
+      transmittance *= exp( -dt * extinction );
+   }
+
+   imageStore( transmittanceLUT, ssCoord, vec4( transmittance, 1.0 ) );
+}

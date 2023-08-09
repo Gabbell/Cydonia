@@ -49,10 +49,8 @@ vec3 ApplyDistanceFog( vec3 inColor, float distance )
 
 void main()
 {
-   ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
-
-   vec2 dims = vec2( textureSize( depthSampler, 0 ) );
-   vec2 uv   = gl_GlobalInvocationID.xy / dims;
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
+   const vec2 uv       = ssCoord / vec2( textureSize( depthSampler, 0 ) );
 
    const vec3 color  = imageLoad( colorImage, ssCoord ).rgb;
    const float depth = texture( depthSampler, uv ).r;  // From 0 to 1
