@@ -30,13 +30,18 @@ vec3 jodieReinhardTonemap( vec3 c )
 
 const float sunMaxAngle = 2.5;  // 2.5 degrees
 
-vec3 getSunLuminance( AtmosphereParameters params, vec3 rayDir, vec3 sunDir, vec3 viewPos )
+vec3 getSunLuminance(
+    AtmosphereParameters params,
+    vec3 rayDir,
+    vec3 sunDir,
+    vec3 viewPos,
+    float height )
 {
    // If part of the sun is below ground level, some of it is hidden
    const float groundDist = rayIntersectSphere( viewPos, rayDir, spherePos, params.groundRadiusMM );
    const float groundFactor = groundDist >= 0.0 ? 0.0 : 1.0;
 
-   const float sunCosAngle = cos( sunMaxAngle * PI / 180.0 );  // 2.5 degrees
+   const float sunCosAngle = cos( sunMaxAngle * PI / 180.0 );
    const float cosTheta    = dot( rayDir, sunDir );
 
    vec3 sunLuminance = groundFactor * vec3( 10.0 );
@@ -50,11 +55,12 @@ vec3 getSunLuminance( AtmosphereParameters params, vec3 rayDir, vec3 sunDir, vec
 
    // Sun fog
    // The higher we are in the atmosphere, the less sun fog we have
-   const float heightRatio = ( viewPos.y - params.groundRadiusMM ) /
-                             ( params.atmosphereRadiusMM - params.groundRadiusMM );
+   // This probably would not be needed with the aerial perspective LUT
+   const float heightRatio =
+       ( height - params.groundRadiusMM ) / ( params.atmosphereRadiusMM - params.groundRadiusMM );
 
    const float heighFactor = exp( -5.0 * heightRatio );
-   sunLuminance += heighFactor * vec3( exp( -diff * 50.0 ) * 0.1 );
+   sunLuminance += heighFactor * vec3( exp( -diff * 30.0 ) * 0.05 );
 
    return sunLuminance;
 }
@@ -81,7 +87,7 @@ void main()
    // Sampling from sky view LUT
    // =============================================================================================
    const vec3 viewPos = getMMPosition( params, viewInfo.viewPos.xyz );
-   const float height = viewPos.y;
+   const float height = length( viewPos );
 
    const float beta =
        acos( sqrt( height * height - params.groundRadiusMM * params.groundRadiusMM ) / height );
@@ -89,10 +95,10 @@ void main()
 
    const float altitudeAngle = horizonAngle - acos( dot( rayDir, up ) );
 
-   vec3 projectedDir  = normalize( rayDir - up * ( dot( rayDir, up ) ) );
-   float sinTheta     = dot( projectedDir, right );
-   float cosTheta     = dot( projectedDir, forward );
-   float azimuthAngle = atan( sinTheta, cosTheta ) + PI;
+   const vec3 projectedDir  = normalize( rayDir - up * ( dot( rayDir, up ) ) );
+   const float sinTheta     = dot( projectedDir, right );
+   const float cosTheta     = dot( projectedDir, forward );
+   const float azimuthAngle = atan( sinTheta, cosTheta );
 
    // Making UVs, Y uses non-linear mapping formula from the paper
    const vec2 lookupUV = vec2(
@@ -103,10 +109,11 @@ void main()
 
    // Adding sun
    // =============================================================================================
-   const vec2 transmittanceUV = LUTParameterization( params, sunDir, viewPos );
+   const vec2 transmittanceUV = LUTParameterization( params, sunDir, viewPos.xyz );
    const vec3 transmittance   = texture( transmittanceLUT, transmittanceUV ).rgb;
 
-   const vec3 sunLuminance = transmittance * getSunLuminance( params, rayDir, sunDir, viewPos );
+   const vec3 sunLuminance =
+       transmittance * getSunLuminance( params, rayDir, sunDir, viewPos.xyz, height );
 
    luminance += sunLuminance;
 

@@ -34,27 +34,25 @@ void main()
    const float height = viewPos.y;
 
    // Ranges to match LUT from the paper
-   const float longitudeAngle = 2.0 * PI * uv.x;  // Longitude from 0 to 2PI
+   const float longitudeAngle = ( uv.x - 0.5 ) * 2.0 * PI;  // Longitude from 0 to 2PI
 
    const float beta =
        acos( sqrt( height * height - params.groundRadiusMM * params.groundRadiusMM ) / height );
-   const float horizonAngle = PI - beta;
+   const float horizonAngle = beta - ( 0.5 * PI );
 
    // Non-linear mapping from the paper
    float altitudeAngle = 0.0;  // Altitude from -PI/2 to PI/2
-   if( uv.y > 0.5 )
+   if( uv.y < 0.5 )
    {
-      float coord = 2.0 * uv.y;
-      coord       = 1.0 - coord;
-      coord *= coord;
-      coord         = 1.0 - coord;
-      altitudeAngle = cos( horizonAngle * coord );
+      float coord = 1.0 - 2.0 * uv.y;
+      coord *= -coord;
+      altitudeAngle = coord * 0.5 * PI - horizonAngle;
    }
    else
    {
       float coord = 2.0 * uv.y - 1.0;
       coord *= coord;
-      altitudeAngle = cos( horizonAngle + beta * coord );
+      altitudeAngle = coord * 0.5 * PI - horizonAngle;
    }
 
    const vec3 sunDir = -viewInfo.lightDir.xyz;
@@ -65,8 +63,9 @@ void main()
    const vec3 spherePos = vec3( 0.0, 0.0, 0.0 );
 
    const float atmoDist =
-       rayIntersectSphere( viewPos, rayDir, spherePos, params.atmosphereRadiusMM );
-   const float groundDist = rayIntersectSphere( viewPos, rayDir, spherePos, params.groundRadiusMM );
+       rayIntersectSphere( viewPos.xyz, rayDir, spherePos, params.atmosphereRadiusMM );
+   const float groundDist =
+       rayIntersectSphere( viewPos.xyz, rayDir, spherePos, params.groundRadiusMM );
 
    // Start raymarching/integrating
    const float tMax = groundDist < 0.0 ? atmoDist : groundDist;
@@ -81,12 +80,12 @@ void main()
    float t            = 0.0;
    for( uint step = 0; step < numScatteringSteps; step++ )
    {
-      const float newT = step * ( tMax / numScatteringSteps );
+      const float newT = ( step + 0.1 ) * ( tMax / numScatteringSteps );
       const float dt   = newT - t;
 
       t = newT;
 
-      const vec3 newPos = viewPos + t * rayDir;
+      const vec3 newPos = viewPos.xyz + t * rayDir;
 
       vec3 rayleighScattering;
       float mieScattering;
@@ -113,5 +112,5 @@ void main()
       transmittance *= sampleTransmittance;
    }
 
-   imageStore( skyViewLUT, ssCoord, vec4( luminance, 1.0 ) );
+   imageStore( skyViewLUT, ssCoord, vec4( vec3(tMax / atmoDist), 1.0 ) );
 }

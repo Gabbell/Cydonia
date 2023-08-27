@@ -804,7 +804,7 @@
           "NAME": "AtmosphereParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 104
+          "SIZE": 8
         },
         {
           "NAME": "transmittanceLUT",
@@ -823,7 +823,7 @@
           "NAME": "AtmosphereParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 104
+          "SIZE": 8
         },
         {
           "NAME": "transmittanceLUT",
@@ -849,7 +849,7 @@
           "NAME": "AtmosphereParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 104
+          "SIZE": 8
         },
         {
           "NAME": "viewInfo",
@@ -889,7 +889,7 @@
           "NAME": "AtmosphereParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": ["COMPUTE"],
-          "SIZE": 104
+          "SIZE": 8
         },
         {
           "NAME": "viewInfo",

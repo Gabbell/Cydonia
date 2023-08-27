@@ -55,20 +55,30 @@ void main()
    // ============================================================================================
    const vec3 radiance = curLight.color.rgb;
 
-   // Diffuse
-   const vec3 reflected = vec3( 0.53, 0.81, 0.92 ) * 0.9;
-   const vec3 refracted = SEA_BASE + diffuse( N, L, 80.0 ) * SEA_WATER_COLOR * 0.12;
+   const vec3 ambientTerm = SEA_BASE;
+   const float sunFactor =
+       clamp( smoothstep( 0.0, 1.0, dot( L, vec3( 0.0, 1.0, 0.0 ) ) ), 0.0, 1.0 );
 
-   vec3 color = mix( refracted, reflected, fakeFresnel );
-
-   // SSS
-   color += max( dot( L, V ), 0.0 ) * SEA_WATER_COLOR * max( inWorldPos.y - 0.6, 0.0 ) * 0.33;
+   vec3 finalColor = ambientTerm;
 
    // Foam
-   color += vec3( 1.0, 1.0, 1.0 ) * foamFactor * 2.0;
+   finalColor += vec3( 1.0, 1.0, 1.0 ) * foamFactor * 4.0;
 
-   // Specular
-   color += vec3( specular( N, L, V, 120.0 ) ) * shadow;
+   if( sunFactor > 0.0 && curLight.params.x > 0.0 )
+   {
+      // Diffuse
+      const vec3 reflected = vec3( 0.53, 0.81, 0.92 ) * 1.0;
 
-   outColor = vec4( color, 1.0 );
+      finalColor += diffuse( N, L, 80.0 ) * SEA_WATER_COLOR * 0.12;  // Refracted
+      finalColor = mix( finalColor, reflected, fakeFresnel );
+
+      // SSS
+      finalColor +=
+          max( dot( L, V ), 0.0 ) * SEA_WATER_COLOR * max( inWorldPos.y - 0.6, 0.0 ) * 0.33;
+
+      // Specular
+      //finalColor += vec3( specular( N, L, V, 120.0 ) ) * shadow;
+   }
+
+   outColor = vec4( finalColor, 1.0 );
 }

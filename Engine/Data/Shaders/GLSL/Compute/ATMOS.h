@@ -13,7 +13,7 @@ const vec3 rayleighScatteringBase  = vec3( 5.802, 13.558, 33.1 );
 const float mieScatteringBase = 3.996;
 const float mieAbsorptionBase = 4.4;
 
-const vec3 ozoneAbsorptionBase = vec3( 0.650, 1.881, .085 );
+const vec3 ozoneAbsorptionBase = vec3( 0.650, 1.881, 0.085 );
 
 // The albedo bouncing off the planet
 const vec3 groundAlbedo = vec3( 0.3 );
@@ -52,20 +52,19 @@ vec3 getDirFromSpherical( float theta, float phi )
    const float sinTheta = sin( theta );
    const float cosPhi   = cos( phi );
    const float sinPhi   = sin( phi );
-   return vec3( sinTheta * sinPhi, cosPhi, sinTheta * cosPhi );
+   return vec3( sinTheta * sinPhi, cosPhi, sinPhi * cosTheta );
 }
 
 vec3 getMMPosition( AtmosphereParameters params, vec3 viewPos )
 {
-   return vec3( viewPos / 1000000.0 ) + vec3( 0.0, params.groundRadiusMM, 0.0 );
+   return vec3( viewPos / 1e6 ) + vec3(0.0, params.groundRadiusMM, 0.0 );
 }
 
 vec2 LUTParameterization( AtmosphereParameters params, vec3 sunDir, vec3 pos )
 {
-   const vec3 adjustedPos = getMMPosition(params, pos);
-
-   const float height = adjustedPos.y;
-   const vec3 up = vec3( 0.0, 1.0, 0.0 );  // Effectively normalizing, but we need the height later
+   const vec3 mmPosition = getMMPosition( params, pos );
+   const float height    = length( pos );
+   const vec3 up = mmPosition / height;  // Effectively normalizing, but we need the height later
 
    const float sunCosZenithAngle = dot( sunDir, up );
    return vec2(
@@ -97,7 +96,7 @@ void getScatteringValues(
     out float mieScattering,
     out vec3 extinction )
 {
-   const float altitudeKM = ( pos.y - params.groundRadiusMM ) * 1000.0;
+   const float altitudeKM = ( length( pos ) - params.groundRadiusMM ) * 1000.0;
 
    // Note: Paper gets these switched up.
    const float rayleighDensity = exp( -altitudeKM / 8.0 );

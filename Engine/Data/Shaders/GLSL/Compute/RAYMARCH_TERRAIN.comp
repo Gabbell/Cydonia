@@ -1,0 +1,64 @@
+#version 450
+
+#include "RAYMARCH.h"
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform PUSH { RaymarchParams params; };
+
+layout( set = 0, binding = 0, r32f ) readonly uniform image2D heightMap;
+layout( set = 0, binding = 1 ) writeonly uniform image2D outImage;
+
+float GetTerrainHeight( vec3 p )
+{
+   const uint terrainGridSize = 128;
+   const vec2 noiseResolution = vec2( 2048 );
+
+   const vec2 uv             = ( vec2( p.x, p.z ) + ( terrainGridSize / 2.0 ) ) / terrainGridSize;
+   const ivec2 ssCoord       = ivec2( uv * noiseResolution );
+   const float terrainHeight = imageLoad( heightMap, ssCoord ).r;
+
+   return terrainHeight;
+}
+
+/* vec3 GetNormal( vec3 p )
+{
+   float d = GetDist( p );       // Distance
+   vec2 e  = vec2( 0.01, 0.0 );  // Epsilon
+   vec3 n  = d - vec3( GetDist( p - e.xyy ), GetDist( p - e.yxy ), GetDist( p - e.yyx ) );
+
+   return normalize( n );
+} */
+
+float RayMarch( vec3 ro, vec3 rd )
+{
+   float t = 0.0;
+   for( int i = 0; i < MAX_STEPS; i++ )
+   {
+      vec3 p                    = ro + rd * t;
+      const float terrainHeight = GetTerrainHeight( p );  // ds is Distance Scene
+      
+      t += terrainHeight;
+      
+      if( t > MAX_DIST || p.y < terrainHeight ) break;
+   }
+
+   return t;
+}
+
+void main()
+{
+   vec2 coords = gl_GlobalInvocationID.xy;
+   vec2 res    = vec2( params.width, params.height );
+
+   vec2 uv = ( coords - 0.5 * res.xy ) / res.y;
+   vec3 ro = vec3( 0.0, 1.0, 0.0 );  // Ray Origin / Camera
+   vec3 rd = normalize( vec3( uv.x, -uv.y, 1.0 ) );
+
+   float d = RayMarch( ro, rd );  // Distance
+
+   vec3 color = vec3( d );
+
+   // Set the output color
+   imageStore( outImage, ivec2( coords ), vec4( color, 1.0 ) );
+}
