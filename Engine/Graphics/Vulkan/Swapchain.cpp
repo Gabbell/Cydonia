@@ -179,7 +179,7 @@ void Swapchain::_createRenderPasses()
    // Initializing main render passes
    CYD::Attachment colorAttachment;
    colorAttachment.type          = CYD::AttachmentType::COLOR_PRESENTATION;
-   colorAttachment.format        = CYD::PixelFormat::RGBA8_UNORM;
+   colorAttachment.format        = TypeConversions::vkToCydFormat( m_surfaceFormat->format );
    colorAttachment.loadOp        = CYD::LoadOp::CLEAR;
    colorAttachment.storeOp       = CYD::StoreOp::STORE;
    colorAttachment.clear.color   = { 0.0f, 0.0f, 0.0f, 1.0f };

@@ -112,5 +112,5 @@ void main()
       transmittance *= sampleTransmittance;
    }
 
-   imageStore( skyViewLUT, ssCoord, vec4( vec3(tMax / atmoDist), 1.0 ) );
+   imageStore( skyViewLUT, ssCoord, vec4( luminance, 1.0 ) );
 }

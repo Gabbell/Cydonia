@@ -3,11 +3,11 @@
 #include <functional>  // for std::hash
 
 #if( CYD_DEBUG )
-    #define REF( EXPR )   \
-       do                 \
-       {                  \
-          sizeof( EXPR ); \
-       } while( 0 );
+#define REF( EXPR )   \
+   do                 \
+   {                  \
+      sizeof( EXPR ); \
+   } while( 0 );
 #endif
 
 // Forward including handles
@@ -15,6 +15,13 @@
 #define FWDFLAG( obj ) typedef uint32_t obj;
 
 #define ARRSIZE( obj ) sizeof( obj ) / sizeof( obj[0] )
+
+// Available in C++23
+template <typename E>
+constexpr auto UNDERLYING( E e ) -> typename std::underlying_type<E>::type
+{
+   return static_cast<typename std::underlying_type<E>::type>( e );
+}
 
 // Add to a class to make it copiable
 #define COPIABLE( ClassName )                          \

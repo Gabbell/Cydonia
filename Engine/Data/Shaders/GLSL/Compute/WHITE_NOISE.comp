@@ -10,11 +10,12 @@ layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
 
 void main()
 {
-   vec2 dims = imageSize( noiseImage );
-   vec2 uv   = gl_GlobalInvocationID.xy / dims;
-   uv        = uv * vec2( dims.x / dims.y, 1.0 );  // Aspect ratio corrected
+   const vec2 dims     = vec2( imageSize( noiseImage ) );
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID );
+   vec2 uv             = vec2( ssCoord + 0.5 ) / dims;
+   uv                  = uv * vec2( dims.x / dims.y, 1.0 );  // Aspect ratio corrected
 
    vec3 noiseVal = vec3( GoldNoise( uv + params.seed ) );
 
-   imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( noiseVal, 1.0 ) );
+   imageStore( noiseImage, ssCoord, vec4( noiseVal, 1.0 ) );
 }

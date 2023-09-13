@@ -51,7 +51,7 @@ class VKRenderBackendImp
       SwapchainInfo scInfo = {};
       scInfo.imageCount    = imageCount;
       scInfo.extent        = extent;
-      scInfo.format        = PixelFormat::RGBA8_UNORM;
+      scInfo.format        = PixelFormat::BGRA8_UNORM;
       scInfo.space         = ColorSpace::SRGB_NONLINEAR;
       scInfo.mode          = PresentMode::FIFO;  // Immediate makes my GPU scream in 3000fps
 

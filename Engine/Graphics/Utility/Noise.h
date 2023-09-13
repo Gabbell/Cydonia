@@ -18,6 +18,16 @@ enum class Type
    COUNT
 };
 
+static const char* GetNoiseName( Type type )
+{
+   static constexpr char NOISE_NAMES[][32] = {
+       "WHITE_NOISE", "SIMPLEX NOISE", "VORONOI NOISE", "BLUE NOISE", "DOMAIN WARPED NOISE" };
+
+   static_assert( ARRSIZE( NOISE_NAMES ) == UNDERLYING( Noise::Type::COUNT ) );
+
+   return NOISE_NAMES[UNDERLYING( type )];
+}
+
 struct ShaderParams
 {
    ShaderParams( uint32_t seed = 1 ) : seed( static_cast<float>( seed ) ) {}

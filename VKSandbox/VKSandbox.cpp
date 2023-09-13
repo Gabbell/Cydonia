@@ -91,7 +91,6 @@ void VKSandbox::preLoop()
    m_ecs->addSystem<TessellationUpdateSystem>();
    m_ecs->addSystem<ShadowMapSystem>( *m_materials );
    m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
-   // m_ecs->addSystem<FogSystem>();
    m_ecs->addSystem<AtmosphereSystem>();
 
    // Debug
@@ -110,9 +109,6 @@ void VKSandbox::preLoop()
    std::vector<uint32_t> indices;
    MeshGeneration::PatchGrid( vertices, indices, 64 );
    m_meshes->loadMesh( transferList, "GRID", vertices, indices );
-
-   MeshGeneration::Octahedron( vertices, indices );
-   m_meshes->loadMesh( transferList, "OCTAHEDRON", vertices, indices );
 
    GRIS::SubmitCommandList( transferList );
    GRIS::WaitOnCommandList( transferList );
@@ -135,12 +131,13 @@ void VKSandbox::preLoop()
    m_ecs->assign<DebugDrawComponent>( sun, DebugDrawComponent::Type::SPHERE );
 #endif
 
-   // const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
-   // m_ecs->assign<RenderableComponent>( terrain, true, true );
-   // m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f )
-   // ); m_ecs->assign<MeshComponent>( terrain, "GRID" ); m_ecs->assign<TessellatedComponent>(
-   // terrain, 0.319f, 0.025f ); m_ecs->assign<MaterialComponent>( terrain, "TERRAIN",
-   // "TERRAIN_DISPLACEMENT" ); m_ecs->assign<ProceduralDisplacementComponent>(
+   //const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
+   //m_ecs->assign<RenderableComponent>( terrain, true, true );
+   //m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 1.0f ) );
+   //m_ecs->assign<MeshComponent>( terrain, "GRID" );
+   //m_ecs->assign<TessellatedComponent>( terrain, 0.319f, 0.025f );
+   //m_ecs->assign<MaterialComponent>( terrain, "TERRAIN", "TERRAIN_DISPLACEMENT" );
+   //m_ecs->assign<ProceduralDisplacementComponent>(
    //    terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, 0.0f );
 
    const EntityHandle ocean = m_ecs->createEntity( "Ocean" );
@@ -157,12 +154,6 @@ void VKSandbox::preLoop()
    oceanDesc.horizontalScale     = 12.0f;
    oceanDesc.verticalScale       = 17.0f;
    m_ecs->assign<FFTOceanComponent>( ocean, oceanDesc );
-
-   /*
-   const EntityHandle fog = m_ecs->createEntity( "Fog" );
-   m_ecs->assign<RenderableComponent>( fog );
-   m_ecs->assign<FogComponent>( fog );
-   */
 
    const EntityHandle atmosphere = m_ecs->createEntity( "Atmosphere" );
    m_ecs->assign<RenderableComponent>( atmosphere );

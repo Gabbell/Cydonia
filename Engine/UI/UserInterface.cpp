@@ -290,6 +290,21 @@ void DrawProceduralDisplacementComponentMenu(
       notConst.params.seed = Noise::GenerateRandomSeed();
       triggerUpdate        = true;
    }
+
+   if( ImGui::BeginCombo( "Noise Type", Noise::GetNoiseName( displacement.type ) ) )
+   {
+      for( uint32_t i = 0; i < UNDERLYING(Noise::Type::COUNT); ++i )
+      {
+         if( ImGui::Selectable( Noise::GetNoiseName( static_cast<Noise::Type>(i))))
+         {
+            notConst.type = static_cast<Noise::Type>( i );
+            triggerUpdate  = true;
+         }
+      }
+
+      ImGui::EndCombo();
+   }
+
    triggerUpdate |=
        ImGui::SliderFloat( "Amplitude", (float*)&displacement.params.amplitude, 0.0f, 2.0f );
    triggerUpdate |= ImGui::SliderFloat( "Gain", (float*)&displacement.params.gain, 0.0f, 1.0f );
