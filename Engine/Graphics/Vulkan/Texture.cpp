@@ -22,6 +22,7 @@ void Texture::acquire( const Device& device, const CYD::TextureDescription& desc
    m_format  = desc.format;
    m_usage   = desc.usage;
    m_stages  = desc.stages;
+   m_name    = desc.name;
 
    _createImage();
    _allocateMemory();
@@ -40,14 +41,15 @@ void Texture::release()
       vkDestroyImage( m_pDevice->getVKDevice(), m_vkImage, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
-      m_size   = 0;
-      m_width  = 0;
-      m_height = 0;
-      m_layers = 1;
-      m_type   = CYD::ImageType::TEXTURE_2D;
-      m_format = CYD::PixelFormat::RGBA8_SRGB;
-      m_usage  = 0;
-      m_stages = 0;
+      m_size       = 0;
+      m_width      = 0;
+      m_height     = 0;
+      m_layers     = 1;
+      m_type       = CYD::ImageType::TEXTURE_2D;
+      m_format     = CYD::PixelFormat::RGBA8_SRGB;
+      m_prevAccess = CYD::Access::UNDEFINED;
+      m_usage      = 0;
+      m_stages     = 0;
 
       m_pDevice     = nullptr;
       m_vkImageView = nullptr;

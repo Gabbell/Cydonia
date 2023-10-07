@@ -31,7 +31,7 @@ void main()
 
    // Adjusting current view position to be within the same scale (megameters)
    const vec3 viewPos = getMMPosition( params, viewInfo.viewPos.xyz );
-   const float height = viewPos.y;
+   const float height = length( viewPos );
 
    // Ranges to match LUT from the paper
    const float longitudeAngle = ( uv.x - 0.5 ) * 2.0 * PI;  // Longitude from 0 to 2PI
@@ -46,13 +46,13 @@ void main()
    {
       float coord = 1.0 - 2.0 * uv.y;
       coord *= -coord;
-      altitudeAngle = coord * 0.5 * PI - horizonAngle;
+      altitudeAngle = coord * 0.5 * PI + horizonAngle;
    }
    else
    {
       float coord = 2.0 * uv.y - 1.0;
       coord *= coord;
-      altitudeAngle = coord * 0.5 * PI - horizonAngle;
+      altitudeAngle = coord * 0.5 * PI + horizonAngle;
    }
 
    const vec3 sunDir = -viewInfo.lightDir.xyz;

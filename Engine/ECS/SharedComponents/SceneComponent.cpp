@@ -8,8 +8,13 @@ namespace CYD
 {
 SceneComponent::SceneComponent()
 {
+   // Lights
    lightsBuffer = GRIS::CreateUniformBuffer( sizeof( lights ), "SceneComponent Lights Buffer" );
-   viewsBuffer  = GRIS::CreateUniformBuffer( sizeof( views ), "SceneComponent Views Buffer" );
+
+   // Views
+   viewsBuffer = GRIS::CreateUniformBuffer( sizeof( views ), "SceneComponent Views Buffer" );
+   inverseViewsBuffer =
+       GRIS::CreateUniformBuffer( sizeof( inverseViews ), "SceneComponent InverseViews Buffer" );
 
 #if CYD_DEBUG
    debugParamsBuffer = GRIS::CreateUniformBuffer(
@@ -26,5 +31,7 @@ SceneComponent::~SceneComponent()
    GRIS::DestroyBuffer( lightsBuffer );
    GRIS::DestroyBuffer( viewsBuffer );
    GRIS::DestroyTexture( shadowMap );
+   GRIS::DestroyTexture( mainColor );
+   GRIS::DestroyTexture( mainDepth );
 }
 }

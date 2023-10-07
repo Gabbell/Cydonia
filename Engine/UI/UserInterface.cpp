@@ -21,7 +21,11 @@ namespace CYD::UI
 {
 static ImTextureID s_oceanDispTexture = nullptr;
 static ImTextureID s_noiseTexture     = nullptr;
-static ImTextureID s_shadowMapTexture = nullptr;
+
+static ImTextureID s_shadowMapTexture  = nullptr;
+static ImTextureID s_albedoTexture     = nullptr;
+static ImTextureID s_normalsTexture    = nullptr;
+static ImTextureID s_shadowMaskTexture = nullptr;
 
 static ImTextureID s_transmittanceLUTTexture   = nullptr;
 static ImTextureID s_multiScatteringLUTTexture = nullptr;
@@ -293,12 +297,12 @@ void DrawProceduralDisplacementComponentMenu(
 
    if( ImGui::BeginCombo( "Noise Type", Noise::GetNoiseName( displacement.type ) ) )
    {
-      for( uint32_t i = 0; i < UNDERLYING(Noise::Type::COUNT); ++i )
+      for( uint32_t i = 0; i < UNDERLYING( Noise::Type::COUNT ); ++i )
       {
-         if( ImGui::Selectable( Noise::GetNoiseName( static_cast<Noise::Type>(i))))
+         if( ImGui::Selectable( Noise::GetNoiseName( static_cast<Noise::Type>( i ) ) ) )
          {
             notConst.type = static_cast<Noise::Type>( i );
-            triggerUpdate  = true;
+            triggerUpdate = true;
          }
       }
 
@@ -324,8 +328,6 @@ void DrawProceduralDisplacementComponentMenu(
    {
       s_noiseTexture = GRIS::AddDebugTexture( displacement.texture );
    }
-
-   GRIS::UpdateDebugTexture( cmdList, displacement.texture );
 
    ImGui::Text( "Noise Texture" );
    float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
@@ -447,19 +449,61 @@ void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedCompo
 
 void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& scene )
 {
-   if( s_shadowMapTexture == nullptr )
+   const GBuffer::RenderTargets& rts = scene.gbuffer.getRenderTargets();
+
+   float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
+   float displayHeight = 0.0f;
+   ImVec2 dimensions;
+
+   if( ImGui::TreeNodeEx( "Shadow Map Texture", ImGuiTreeNodeFlags_SpanAvailWidth ) )
    {
-      s_shadowMapTexture = GRIS::AddDebugTexture( scene.shadowMap );
+      if( s_shadowMapTexture == nullptr )
+      {
+         s_shadowMapTexture = GRIS::AddDebugTexture( scene.shadowMap );
+      }
+
+      displayHeight = displayWidth * static_cast<float>( 2048.0f ) / static_cast<float>( 2048.0f );
+      dimensions    = ImVec2( displayWidth, displayHeight );
+      ImGui::Image( s_shadowMapTexture, dimensions );
+      ImGui::TreePop();
    }
 
-   GRIS::UpdateDebugTexture( cmdList, scene.shadowMap );
+   displayHeight = displayWidth * static_cast<float>( scene.extent.height ) /
+                   static_cast<float>( scene.extent.width );
+   dimensions = ImVec2( displayWidth, displayHeight );
 
-   ImGui::Text( "Shadow Map Texture" );
-   float displayWidth = ImGui::GetWindowWidth() * 0.85f;
-   float displayHeight =
-       displayWidth * static_cast<float>( 2048.0f ) / static_cast<float>( 2048.0f );
-   const ImVec2 dimensions( displayWidth, displayHeight );
-   ImGui::Image( s_shadowMapTexture, dimensions );
+   if( ImGui::TreeNodeEx( "GBuffer Albedo", ImGuiTreeNodeFlags_SpanAvailWidth ) )
+   {
+      if( s_albedoTexture == nullptr )
+      {
+         s_albedoTexture = GRIS::AddDebugTexture( rts[GBuffer::ALBEDO].texture );
+      }
+
+      ImGui::Image( s_albedoTexture, dimensions );
+      ImGui::TreePop();
+   }
+
+   if( ImGui::TreeNodeEx( "GBuffer Normals", ImGuiTreeNodeFlags_SpanAvailWidth ) )
+   {
+      if( s_normalsTexture == nullptr )
+      {
+         s_normalsTexture = GRIS::AddDebugTexture( rts[GBuffer::NORMAL].texture );
+      }
+
+      ImGui::Image( s_normalsTexture, dimensions );
+      ImGui::TreePop();
+   }
+
+   if( ImGui::TreeNodeEx( "GBuffer Shadow Mask", ImGuiTreeNodeFlags_SpanAvailWidth ) )
+   {
+      if( s_shadowMaskTexture == nullptr )
+      {
+         s_shadowMaskTexture = GRIS::AddDebugTexture( rts[GBuffer::SHADOW].texture );
+      }
+
+      ImGui::Image( s_shadowMaskTexture, dimensions );
+      ImGui::TreePop();
+   }
 }
 
 void DrawMaterialsWindow( CmdListHandle /*cmdList*/ )

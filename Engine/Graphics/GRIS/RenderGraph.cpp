@@ -12,16 +12,18 @@ static std::array<CmdListHandle, static_cast<uint32_t>( Pass::COUNT )> s_cmdList
 
 static const char* GetCommandListName( Pass pass )
 {
-   static constexpr char CMDLIST_NAMES[][32] =
-   { "LOAD",
-     "PRE_RENDER",
-     "OPAQUE_RENDER",
-     "ALPHA_RENDER",
+   static constexpr char CMDLIST_NAMES[][32] = {
+      "LOAD",
+      "PRE_RENDER",
+      "OPAQUE_RENDER",
+      "ALPHA_RENDER",
+      "POST_PROCESS",
 #if CYD_DEBUG
-     "DEBUG_DRAW",
+      "DEBUG_DRAW",
 #endif
-     "POST_PROCESS",
-     "UI" };
+      "POST_RENDER",
+      "UI",
+   };
 
    static_assert( ARRSIZE( CMDLIST_NAMES ) == static_cast<uint32_t>( Pass::COUNT ) );
 
@@ -30,16 +32,18 @@ static const char* GetCommandListName( Pass pass )
 
 static QueueUsageFlag GetCommandListType( Pass pass )
 {
-   static constexpr QueueUsageFlag CMDLIST_USAGE[] =
-   { QueueUsage::TRANSFER,
-     QueueUsage::GRAPHICS | QueueUsage::COMPUTE,
-     QueueUsage::GRAPHICS,
-     QueueUsage::GRAPHICS,
+   static constexpr QueueUsageFlag CMDLIST_USAGE[] = {
+      QueueUsage::TRANSFER,                        // LOAD
+      QueueUsage::GRAPHICS | QueueUsage::COMPUTE,  // PRE_RENDER
+      QueueUsage::GRAPHICS,                        // OPAQUE_RENDER
+      QueueUsage::GRAPHICS,                        // ALPHA_RENDER
+      QueueUsage::GRAPHICS | QueueUsage::COMPUTE,  // POST_PROCESS
 #if CYD_DEBUG
-     QueueUsage::GRAPHICS,
+      QueueUsage::GRAPHICS,  // DEBUG_DRAW
 #endif
-     QueueUsage::GRAPHICS | QueueUsage::COMPUTE,
-     QueueUsage::GRAPHICS };
+      QueueUsage::GRAPHICS | QueueUsage::COMPUTE,  // POST_RENDER
+      QueueUsage::GRAPHICS,                        // UI
+   };
 
    static_assert( ARRSIZE( CMDLIST_USAGE ) == static_cast<uint32_t>( Pass::COUNT ) );
 
@@ -48,6 +52,8 @@ static QueueUsageFlag GetCommandListType( Pass pass )
 
 void Prepare()
 {
+   CYD_TRACE( "RenderGraph Prepare" );
+
    for( uint32_t i = 0; i < static_cast<uint32_t>( Pass::COUNT ); ++i )
    {
       // TODO Specialized command lists
@@ -73,14 +79,18 @@ void Execute()
    for( uint32_t i = 1; i < s_cmdLists.size(); ++i )
    {
       // Chain command lists together
-      GRIS::SubmitCommandList( s_cmdLists[i - 1] );
+      CYD_TRACE( GetCommandListName( static_cast<Pass>( i - 1 ) ) );
       GRIS::SyncOnCommandList( s_cmdLists[i - 1], s_cmdLists[i] );
+      GRIS::SubmitCommandList( s_cmdLists[i - 1] );
    }
 
    // We need to sync the last command list to the swapchain so that the swapchain knows when
    // the rendering is done
-   GRIS::SyncToSwapchain( s_cmdLists.back() );
-   GRIS::SubmitCommandList( s_cmdLists.back() );
+   {
+      CYD_TRACE( GetCommandListName( Pass::LAST ) );
+      GRIS::SyncToSwapchain( s_cmdLists.back() );
+      GRIS::SubmitCommandList( s_cmdLists.back() );
+   }
 
    for( uint32_t i = 0; i < static_cast<uint32_t>( Pass::COUNT ); ++i )
    {

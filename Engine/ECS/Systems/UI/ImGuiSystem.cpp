@@ -7,10 +7,15 @@
 
 #include <UI/UserInterface.h>
 
+#include <ECS/EntityManager.h>
+#include <ECS/SharedComponents/SceneComponent.h>
+
 #include <Profiling.h>
 
 namespace CYD
 {
+static Framebuffer s_uiFB = {};
+
 static bool s_drawECSWindow       = false;
 static bool s_drawMaterialsWindow = false;
 static bool s_drawPipelinesWindow = false;
@@ -19,8 +24,11 @@ static bool s_drawStatsOverlay    = false;
 
 ImGuiSystem::ImGuiSystem( const EntityManager& entityManager ) : m_entityManager( entityManager )
 {
+   // We initialize the UI here
+   // It needs to be after the WindowSystem is initialized because if we initialize it before, we override ImGui's GLFW callbacks
    UI::Initialize();
 }
+
 ImGuiSystem::~ImGuiSystem() { UI::Uninitialize(); }
 
 void ImGuiSystem::tick( double /*deltaS*/ )
@@ -29,6 +37,8 @@ void ImGuiSystem::tick( double /*deltaS*/ )
 
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::UI );
    CYD_SCOPED_GPUTRACE( cmdList, "ImGuiSystem" );
+
+   const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    // Setting up interface
    UI::DrawMainWindow( cmdList );
@@ -65,7 +75,13 @@ void ImGuiSystem::tick( double /*deltaS*/ )
       UI::DrawStatsOverlay( cmdList );
    }
 
-   GRIS::BeginRendering( cmdList );
+   if( scene.resolutionChanged )
+   {
+      s_uiFB.resize( scene.mainFramebuffer.getWidth(), scene.mainFramebuffer.getHeight() );
+      s_uiFB.replace( Framebuffer::COLOR, scene.mainColor, Access::PRESENT );
+   }
+
+   GRIS::BeginRendering( cmdList, s_uiFB );
    GRIS::DrawUI( cmdList );
    GRIS::EndRendering( cmdList );
 }

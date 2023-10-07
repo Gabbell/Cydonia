@@ -42,6 +42,7 @@ static void ComputeTransmittanceLUT( CmdListHandle cmdList, AtmosphereComponent&
       texDesc.format             = PixelFormat::RGBA8_UNORM;
       texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
       texDesc.stages             = PipelineStage::COMPUTE_STAGE;
+      texDesc.name               = "Transmittance LUT";
 
       atmos.transmittanceLUT = GRIS::CreateTexture( texDesc );
    }
@@ -77,6 +78,7 @@ static void ComputeMultipleScatteringLUT( CmdListHandle cmdList, AtmosphereCompo
       texDesc.format             = PixelFormat::RGBA8_UNORM;
       texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
       texDesc.stages             = PipelineStage::COMPUTE_STAGE;
+      texDesc.name               = "Multiple Scattering LUT";
 
       atmos.multipleScatteringLUT = GRIS::CreateTexture( texDesc );
    }
@@ -113,6 +115,7 @@ static void ComputeSkyViewLUT( CmdListHandle cmdList, AtmosphereComponent& atmos
       texDesc.format             = PixelFormat::RGBA16F;
       texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
       texDesc.stages             = PipelineStage::COMPUTE_STAGE;
+      texDesc.name               = "Sky View LUT";
 
       atmos.skyViewLUT = GRIS::CreateTexture( texDesc );
    }
@@ -167,9 +170,6 @@ void AtmosphereSystem::tick( double deltaS )
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      if( !renderable.isVisible ) continue;
-
       AtmosphereComponent& atmos = *std::get<AtmosphereComponent*>( entityEntry.arch );
 
       if( !atmos.viewInfoBuffer )
@@ -186,8 +186,8 @@ void AtmosphereSystem::tick( double deltaS )
       atmos.params.groundRadiusMM     = 6.36f;
       atmos.params.atmosphereRadiusMM = 6.46f;
 
-      GRIS::CopyToBuffer(
-          atmos.viewInfoBuffer, &atmos.viewInfo, 0, sizeof( AtmosphereComponent::ViewInfo ) );
+      const UploadToBufferInfo info = { 0, sizeof( AtmosphereComponent::ViewInfo ) };
+      GRIS::UploadToBuffer( atmos.viewInfoBuffer, &atmos.viewInfo, info );
 
       if( atmos.needsUpdate )
       {
@@ -212,8 +212,8 @@ void AtmosphereSystem::tick( double deltaS )
       GRIS::BindUniformBuffer( cmdList, atmos.viewInfoBuffer, 0 );
       GRIS::BindTexture( cmdList, atmos.transmittanceLUT, 1 );
       GRIS::BindTexture( cmdList, atmos.skyViewLUT, 2 );
-      GRIS::BindMainColor( cmdList, CYD::ShaderResourceType::STORAGE_IMAGE, 3 );
-      GRIS::BindMainDepth( cmdList, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, 4 );
+      GRIS::BindImage( cmdList, scene.mainColor, 3 );
+      GRIS::BindTexture( cmdList, scene.mainDepth, 4 );
 
       GRIS::UpdateConstantBuffer(
           cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( atmos.params ), &atmos.params );

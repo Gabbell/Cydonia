@@ -9,3 +9,9 @@ struct View
    mat4 view;
    mat4 proj;
 };
+
+struct InverseView
+{
+   mat4 invView;
+   mat4 invProj;
+};

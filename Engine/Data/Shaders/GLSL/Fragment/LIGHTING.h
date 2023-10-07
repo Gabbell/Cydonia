@@ -40,6 +40,12 @@ float LambertianDiffuse( vec3 lightDir, vec3 normal )
    return diffuseTerm;
 }
 
+float ColorRampDiffuse( vec3 lightDir, vec3 normal )
+{
+   const float diffuseTerm = step(0.5, max( dot( normal, lightDir ), 0.0 ));
+   return diffuseTerm;
+}
+
 float BlinnPhongSpecular( vec3 lightDir, vec3 viewDir, vec3 normal )
 {
    const float specularStrength = 0.5;
@@ -52,12 +58,10 @@ float BlinnPhongSpecular( vec3 lightDir, vec3 viewDir, vec3 normal )
    return specularTerm;
 }
 
-float ShadowPCF( sampler2DShadow shadowMap, vec4 shadowCoords )
+float ShadowPCF( sampler2DShadow shadowMap, vec3 shadowCoords )
 {
    // ShadowCoords are NDC coordinates of the current fragment from the point of view of the light
-   shadowCoords = shadowCoords / shadowCoords.w;
-
-   if( shadowCoords.z <= -1.0 || shadowCoords.z >= 1.0 || shadowCoords.w <= 0.0 )
+   if( shadowCoords.z <= -1.0 || shadowCoords.z >= 1.0 )
    {
       return 1.0;
    }

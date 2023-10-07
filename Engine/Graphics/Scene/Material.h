@@ -31,7 +31,7 @@ class Material
       COUNT
    };
 
-   struct Description
+   struct ResourcesDescription
    {
       void addTexture( const TextureDescription& texDesc, const std::string& path = "" );
 
@@ -45,7 +45,7 @@ class Material
    };
 
    Material() = default;
-   Material( const std::string& name, const Description& desc ) : m_name( name ), m_desc( desc ) {}
+   Material( const std::string& name, const ResourcesDescription& desc ) : m_name( name ), m_desc( desc ) {}
    MOVABLE( Material );
    ~Material();
 
@@ -62,7 +62,7 @@ class Material
    std::string m_name = "Unknown Material";
 
    // Resource Descriptions
-   Description m_desc;
+   ResourcesDescription m_desc;
 
    // GPU Resources
    std::array<TextureHandle, TextureSlot::COUNT> m_textures = {};

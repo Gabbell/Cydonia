@@ -37,8 +37,7 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
    GRIS::SetViewport( cmdList, scene.viewport );
    GRIS::SetScissor( cmdList, scene.scissor );
 
-   // Rendering straight to swapchain
-   GRIS::BeginRendering( cmdList );
+   GRIS::BeginRendering( cmdList, scene.mainFramebuffer );
 
    PipelineIndex pipIdx = StaticPipelines::FindByName( "DEBUG" );
 
@@ -60,8 +59,8 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
 
       glm::mat4 modelMatrix( 1.0f );
 
-      GRIS::CopyToBuffer(
-          scene.debugParamsBuffer, &debug.shaderParams, 0, sizeof( debug.shaderParams ) );
+      const UploadToBufferInfo info = { 0, sizeof(debug.shaderParams) };
+      GRIS::UploadToBuffer( scene.debugParamsBuffer, &debug.shaderParams, info );
 
       switch( debug.type )
       {

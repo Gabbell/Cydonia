@@ -8,7 +8,7 @@ namespace CYD
 {
 namespace Noise
 {
-enum class Type
+enum class Type : uint8_t
 {
    WHITE_NOISE,
    SIMPLEX_NOISE,

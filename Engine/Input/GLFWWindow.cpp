@@ -1,4 +1,4 @@
-#include <Window/GLFWWindow.h>
+#include <Input/GLFWWindow.h>
 
 #include <Common/Assert.h>
 
@@ -50,6 +50,8 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
 }
 
 bool Window::isRunning() const { return !glfwWindowShouldClose( m_glfwWindow ); }
+
+void Window::poll() const { glfwPollEvents(); }
 
 Window::~Window()
 {

@@ -69,16 +69,6 @@ class VKRenderBackend final : public RenderBackend
        IndexType type,
        uint32_t offset ) override;
 
-   void bindMainColor(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set ) override;
-   void bindMainDepth(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set ) override;
    void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -150,8 +140,16 @@ class VKRenderBackend final : public RenderBackend
    void updateDebugTexture( CmdListHandle cmdList, TextureHandle texture ) override;
    void removeDebugTexture( void* texture ) override;
 
-   void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
-       override;
+   void uploadToBuffer(
+       BufferHandle bufferHandle,
+       const void* pData,
+       const UploadToBufferInfo& info ) override;
+
+   void copyTexture(
+       CmdListHandle transferList,
+       TextureHandle srcTexHandle,
+       TextureHandle dstTexHandle,
+       const TextureCopyInfo& info ) override;
 
    void destroyTexture( TextureHandle texHandle ) override;
    void destroyVertexBuffer( VertexBufferHandle bufferHandle ) override;
@@ -162,8 +160,7 @@ class VKRenderBackend final : public RenderBackend
    // ==============================================================================================
    void beginFrame() override;
    void beginRendering( CmdListHandle cmdList ) override;
-   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
-       override;
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb ) override;
    void nextPass( CmdListHandle cmdList ) override;
    void endRendering( CmdListHandle cmdList ) override;
    void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) override;
@@ -181,6 +178,7 @@ class VKRenderBackend final : public RenderBackend
        size_t firstIndex,
        size_t firstInstance ) override;
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) override;
+   void copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle ) override;
    void presentFrame() override;
 
    // Debug

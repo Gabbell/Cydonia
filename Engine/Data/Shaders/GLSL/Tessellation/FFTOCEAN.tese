@@ -19,7 +19,7 @@ layout( location = 0 ) in vec2 inUV[];
 
 layout( location = 0 ) out vec2 outUV;
 layout( location = 1 ) out vec3 outWorldPos;
-layout( location = 2 ) out vec4 outShadowCoord;
+layout( location = 2 ) out vec3 outShadowCoord;
 
 // Transforms NDC space [-1, 1] in xy to UV space [0, 1]
 // clang-format off
@@ -54,6 +54,7 @@ void main()
    vec4 worldPos = model * pos;
    gl_Position   = mainView.proj * mainView.view * worldPos;
 
-   outWorldPos    = worldPos.xyz;
-   outShadowCoord = biasMat * lightView.proj * lightView.view * worldPos;
+   outWorldPos      = worldPos.xyz;
+   vec4 shadowCoord = biasMat * lightView.proj * lightView.view * worldPos;
+   outShadowCoord   = shadowCoord.xyz / shadowCoord.w;
 }

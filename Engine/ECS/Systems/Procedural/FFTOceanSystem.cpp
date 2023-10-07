@@ -279,8 +279,8 @@ void FFTOceanSystem::tick( double deltaS )
          std::iota( indices.begin(), indices.end(), static_cast<uint32_t>( 0 ) );
          EMP::BitReversalPermutation( indices );
 
-         const size_t indicesDataSize = indices.size() * sizeof( indices[0] );
-         GRIS::CopyToBuffer( ocean.bitReversedIndices, indices.data(), 0, indicesDataSize );
+         const UploadToBufferInfo info = { 0, indices.size() * sizeof( indices[0] ) };
+         GRIS::UploadToBuffer( ocean.bitReversedIndices, indices.data(), info );
 
          GRIS::BindPipeline( cmdList, s_butterflyTexGenPip );
 

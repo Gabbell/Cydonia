@@ -7,6 +7,7 @@
 #include <ThirdParty/Tracy/tracy/TracyC.h>
 
 #include <array>
+#include <string>
 
 namespace CYD::Trace
 {

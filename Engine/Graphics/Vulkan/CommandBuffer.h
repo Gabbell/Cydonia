@@ -80,7 +80,7 @@ class CommandBuffer final
    // Getters
    // =============================================================================================
    VkPipelineStageFlags getWaitStages() const noexcept;
-   VkCommandBuffer getVKBuffer() const noexcept { return m_vkCmdBuffer; }
+   VkCommandBuffer getVKCmdBuffer() const noexcept { return m_vkCmdBuffer; }
    VkFence getVKFence() const noexcept { return m_vkFence; }
 
    // Returns the semaphore that will be signaled when this command buffer is done execution
@@ -97,6 +97,7 @@ class CommandBuffer final
    void waitForCompletion() const;  // CPU Spinlock, avoid calling this
 
    // Synchronization
+   // =============================================================================================
    void syncOnCommandList( CommandBuffer* cmdBufferToWaitOn );
    void syncOnSwapchain( const Swapchain* swapchain );
    void syncToSwapchain( const Swapchain* swapchain );
@@ -116,16 +117,6 @@ class CommandBuffer final
    void bindPipeline( const CYD::GraphicsPipelineInfo& info );
    void bindPipeline( const CYD::ComputePipelineInfo& info );
 
-   void bindSwapchainColor(
-       Swapchain& swapchain,
-       CYD::ShaderResourceType type,
-       uint8_t binding,
-       uint8_t set );
-   void bindSwapchainDepth(
-       Swapchain& swapchain,
-       CYD::ShaderResourceType type,
-       uint8_t binding,
-       uint8_t set );
    void bindTexture( Texture* texture, uint8_t binding, uint8_t set );
    void
    bindTexture( Texture* texture, const CYD::SamplerInfo& sampler, uint8_t binding, uint8_t set );
@@ -143,10 +134,7 @@ class CommandBuffer final
    // Rendering scope
    // =============================================================================================
    void beginRendering( Swapchain& swapchain );
-   void beginRendering(
-       const CYD::Framebuffer& fb,
-       const CYD::RenderPassInfo& info,
-       const std::vector<Texture*>& targets );
+   void beginRendering( const CYD::Framebuffer& fb, const std::vector<Texture*>& targets );
    void nextPass() const;
    void endRendering();
 
@@ -167,8 +155,10 @@ class CommandBuffer final
 
    // Transfers
    // =============================================================================================
-   void copyBuffer( Buffer* src, Buffer* dst );
-   void uploadBufferToTex( Buffer* src, Texture* dst );
+   void copyBuffer( Buffer* src, Buffer* dst, const CYD::BufferCopyInfo& info );
+   void copyBufferToTexture( Buffer* src, Texture* dst, const CYD::BufferToTextureInfo& info );
+   void copyTexture( Texture* src, Texture* dst, const CYD::TextureCopyInfo& info );
+   void copyToSwapchain( Texture* sourceTexture, Swapchain& swapchain ) const;
 
    // Debug
    // ==============================================================================================

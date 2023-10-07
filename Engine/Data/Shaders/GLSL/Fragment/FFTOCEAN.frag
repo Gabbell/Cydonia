@@ -8,12 +8,11 @@
 layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
 layout( set = 1, binding = 0 ) uniform Lights { Light lights[MAX_LIGHTS]; };
 layout( set = 1, binding = 1 ) uniform sampler2DShadow shadowMap;
-layout( set = 1, binding = 2 ) uniform sampler2D normalMap;
 layout( set = 1, binding = 5 ) uniform sampler2D displacementMap;
 
 layout( location = 0 ) in vec2 inUV;
 layout( location = 1 ) in vec3 inWorldPos;
-layout( location = 2 ) in vec4 inShadowCoord;
+layout( location = 2 ) in vec3 inShadowCoord;
 
 layout( location = 0 ) out vec4 outColor;
 
@@ -77,7 +76,7 @@ void main()
           max( dot( L, V ), 0.0 ) * SEA_WATER_COLOR * max( inWorldPos.y - 0.6, 0.0 ) * 0.33;
 
       // Specular
-      //finalColor += vec3( specular( N, L, V, 120.0 ) ) * shadow;
+      finalColor += vec3( specular( N, L, V, 120.0 ) ) * shadow;
    }
 
    outColor = vec4( finalColor, 1.0 );

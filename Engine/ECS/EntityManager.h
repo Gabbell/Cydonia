@@ -110,7 +110,10 @@ class EntityManager final
       }
       else
       {
-         static_assert( !"ECS: Assigning an invalid component" );
+         static_assert(
+             std::is_base_of_v<BaseComponent, Component> ||
+                 std::is_base_of_v<BaseSharedComponent, Component>,
+             "ECS: Assigning an invalid component" );
       }
 
       it->second.addComponent<Component>( pComponent );
@@ -149,7 +152,10 @@ class EntityManager final
       }
       else
       {
-         static_assert( !"ECS: Unassigning an invalid component" );
+         static_assert(
+             std::is_base_of_v<BaseComponent, Component> ||
+                 std::is_base_of_v<BaseSharedComponent, Component>,
+             "ECS: Unassigning an invalid component" );
       }
 
       it->second.removeComponent<Component>();

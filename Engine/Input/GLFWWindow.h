@@ -33,12 +33,16 @@ class Window final
 
    bool isRunning() const;
 
+   void poll() const;
+
    const Extent2D& getExtent() const noexcept { return m_extent; }
    uint32_t getWidth() const noexcept { return m_extent.width; }
    uint32_t getHeight() const noexcept { return m_extent.height; }
 
    GLFWwindow* getGLFWwindow() const noexcept { return m_glfwWindow; }
    std::vector<const char*> getExtensionsFromGLFW() const noexcept { return m_extensions; };
+
+   void setExtent( uint32_t width, uint32_t height ) { m_extent = Extent2D( width, height ); }
 
   private:
    std::vector<const char*> m_extensions;
@@ -47,6 +51,6 @@ class Window final
    GLFWwindow* m_glfwWindow = nullptr;
 
    // Dimensions
-   Extent2D m_extent = {0, 0};
+   Extent2D m_extent = { 0, 0 };
 };
 }

@@ -72,11 +72,12 @@ void FogSystem::tick( double deltaS )
 
       GRIS::BindPipeline( cmdList, s_fogPipeline );
 
-      GRIS::CopyToBuffer( fog.viewInfoBuffer, &fog.viewInfo, 0, sizeof( FogComponent::ViewInfo ) );
+      const UploadToBufferInfo info = { 0, sizeof( FogComponent::ViewInfo ) };
+      GRIS::UploadToBuffer( fog.viewInfoBuffer, &fog.viewInfo, info );
 
       GRIS::BindUniformBuffer( cmdList, fog.viewInfoBuffer, 0 );
-      GRIS::BindMainColor( cmdList, CYD::ShaderResourceType::STORAGE_IMAGE, 1 );
-      GRIS::BindMainDepth( cmdList, CYD::ShaderResourceType::COMBINED_IMAGE_SAMPLER, 2 );
+      GRIS::BindImage( cmdList, scene.mainColor, 1 );
+      GRIS::BindTexture( cmdList, scene.mainDepth, 2 );
 
       GRIS::UpdateConstantBuffer(
           cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( fog.params ), &fog.params );

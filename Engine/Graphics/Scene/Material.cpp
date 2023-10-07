@@ -6,7 +6,7 @@
 
 namespace CYD
 {
-void Material::Description::addTexture( const TextureDescription& texDesc, const std::string& path )
+void Material::ResourcesDescription::addTexture( const TextureDescription& texDesc, const std::string& path )
 {
    textureDescs[textureCount] = texDesc;
    texturePaths[textureCount] = path;

@@ -23,7 +23,7 @@ class RenderBackend
    virtual void uninitializeUIBackend() {}
    virtual void drawUI( CmdListHandle /*cmdList*/ ) {}
 
-   virtual void cleanup() = 0;
+   virtual void cleanup()       = 0;
    virtual void reloadShaders() = 0;
 
    virtual void waitUntilIdle() {}
@@ -58,16 +58,6 @@ class RenderBackend
        IndexType type,
        uint32_t offset ) = 0;
 
-   virtual void bindMainColor(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set ) = 0;
-   virtual void bindMainDepth(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set ) = 0;
    virtual void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -140,8 +130,16 @@ class RenderBackend
    }
    virtual void removeDebugTexture( void* /*texture*/ ){};
 
-   virtual void
-   copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size ) = 0;
+   virtual void uploadToBuffer(
+       BufferHandle bufferHandle,
+       const void* pData,
+       const UploadToBufferInfo& info ) = 0;
+
+   virtual void copyTexture(
+       CmdListHandle transferList,
+       TextureHandle srcTexHandle,
+       TextureHandle dstTexHandle,
+       const TextureCopyInfo& info ) = 0;
 
    virtual void destroyTexture( TextureHandle texHandle )              = 0;
    virtual void destroyVertexBuffer( VertexBufferHandle bufferHandle ) = 0;
@@ -150,14 +148,13 @@ class RenderBackend
 
    // Drawing
    // ==============================================================================================
-   virtual void beginFrame()                            = 0;
-   virtual void beginRendering( CmdListHandle cmdList ) = 0;
-   virtual void
-   beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info ) = 0;
-   virtual void nextPass( CmdListHandle cmdList )                                             = 0;
-   virtual void endRendering( CmdListHandle cmdList )                                         = 0;
-   virtual void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )         = 0;
-   virtual void drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )    = 0;
+   virtual void beginFrame()                                                               = 0;
+   virtual void beginRendering( CmdListHandle cmdList )                                    = 0;
+   virtual void beginRendering( CmdListHandle cmdList, const Framebuffer& fb )             = 0;
+   virtual void nextPass( CmdListHandle cmdList )                                          = 0;
+   virtual void endRendering( CmdListHandle cmdList )                                      = 0;
+   virtual void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )      = 0;
+   virtual void drawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex ) = 0;
    virtual void drawInstanced(
        CmdListHandle cmdList,
        size_t vertexCount,
@@ -172,6 +169,7 @@ class RenderBackend
        size_t firstInstance ) = 0;
    virtual void
    dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) = 0;
+   virtual void copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )    = 0;
    virtual void presentFrame()                                                       = 0;
 
    // Debug

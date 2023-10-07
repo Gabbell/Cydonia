@@ -28,10 +28,10 @@ void LightUpdateSystem::tick( double deltaS )
       const LightComponent& light   = *std::get<LightComponent*>( entityEntry.arch );
       TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
 
-      //transform.position = glm::vec3(
-      //    transform.position.x,
-      //    25.0f * std::cos( 0.05f * timeElapsed ),
-      //    25.0f * std::sin( 0.05f * timeElapsed ) );
+      // transform.position = glm::vec3(
+      //     transform.position.x,
+      //     25.0f * std::cos( 0.05f * timeElapsed ),
+      //     25.0f * std::sin( 0.05f * timeElapsed ) );
 
       const glm::vec3 viewDir = glm::normalize( -transform.position );
 
@@ -49,7 +49,8 @@ void LightUpdateSystem::tick( double deltaS )
    timeElapsed += deltaS;
 
    // Updating UBOs
-   const size_t sizeToUpdate = sizeof( SceneComponent::LightShaderParams ) * m_entities.size();
-   GRIS::CopyToBuffer( scene.lightsBuffer, &scene.lights, 0, sizeToUpdate );
+   const UploadToBufferInfo info = {
+       0, sizeof( SceneComponent::LightShaderParams ) * m_entities.size() };
+   GRIS::UploadToBuffer( scene.lightsBuffer, &scene.lights, info );
 }
 }

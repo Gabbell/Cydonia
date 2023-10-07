@@ -47,7 +47,7 @@ class Buffer final
    void incUse();
    void decUse();
 
-   void copy( const void* pData, size_t offset, size_t size );
+   void copy( const void* pData, const CYD::UploadToBufferInfo& info );
 
   private:
    void _mapMemory();

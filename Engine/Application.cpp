@@ -1,6 +1,6 @@
 #include <Application.h>
 
-#include <Window/GLFWWindow.h>
+#include <Input/GLFWWindow.h>
 
 #include <Multithreading/ThreadPool.h>
 

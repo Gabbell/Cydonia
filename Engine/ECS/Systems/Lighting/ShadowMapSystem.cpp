@@ -16,24 +16,15 @@
 
 namespace CYD
 {
-static constexpr uint32_t SHADOWMAP_DIM     = 2048;
-static bool s_initialized                   = false;
-static PipelineIndex s_shadowmapPipeline    = INVALID_PIPELINE_IDX;
-static RenderPassInfo s_shadowmapRenderpass = {};
+static constexpr uint32_t SHADOWMAP_DIM  = 2048;
+static bool s_initialized                = false;
+static PipelineIndex s_shadowmapPipeline = INVALID_PIPELINE_IDX;
+static Framebuffer s_shadowmapFB         = {};
 
 static void Initialize()
 {
    s_shadowmapPipeline = StaticPipelines::FindByName( "TERRAIN_SHADOWMAP" );  // Hardcoded
-
-   Attachment& attachment   = s_shadowmapRenderpass.attachments.emplace_back();
-   attachment.type          = AttachmentType::DEPTH_STENCIL;
-   attachment.format        = PixelFormat::D32_SFLOAT;
-   attachment.loadOp        = LoadOp::CLEAR;
-   attachment.storeOp       = StoreOp::STORE;
-   attachment.initialAccess = Access::UNDEFINED;
-   attachment.nextAccess    = Access::FRAGMENT_SHADER_READ;
-
-   s_initialized = true;
+   s_initialized       = true;
 }
 
 void ShadowMapSystem::tick( double /*deltaS*/ )
@@ -61,22 +52,26 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       texDesc.name   = "Shadow Map";
 
       scene.shadowMap = GRIS::CreateTexture( texDesc );
+
+      ClearValue clear;
+      clear.depthStencil.depth   = 0.0f;
+      clear.depthStencil.stencil = 0;
+
+      s_shadowmapFB.resize( SHADOWMAP_DIM, SHADOWMAP_DIM );
+      s_shadowmapFB.setToClear( true );
+      s_shadowmapFB.attach( 0, scene.shadowMap, Access::DEPTH_STENCIL_ATTACHMENT_READ, clear );
    }
 
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
    CYD_SCOPED_GPUTRACE( cmdList, "ShadowMapSystem" );
 
-   Framebuffer framebuffer( SHADOWMAP_DIM, SHADOWMAP_DIM );
-   framebuffer.attach( Framebuffer::Index::DEPTH, scene.shadowMap );
-
    // TODO go through this loop once per light view
-   GRIS::BeginRendering( cmdList, framebuffer, s_shadowmapRenderpass );
+   GRIS::BeginRendering( cmdList, s_shadowmapFB );
 
    GRIS::SetViewport( cmdList, {} );
    GRIS::SetScissor( cmdList, {} );
 
    const PipelineInfo& pipInfo = *StaticPipelines::Get( s_shadowmapPipeline );
-
    GRIS::BindPipeline( cmdList, s_shadowmapPipeline );
 
    // Tracking
@@ -94,19 +89,10 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
       const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
-      const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "SUN" );
-      if( it == scene.viewNames.end() )
-      {
-         // TODO WARNING
-         CYD_ASSERT( !"Could not find main view, skipping render tick" );
-         return;
-      }
-
-      const uint32_t viewIdx =
-          static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
-
       const glm::mat4 modelMatrix =
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
+
+      GRIS::NamedUpdateConstantBuffer( cmdList, "Model", &modelMatrix, pipInfo );
 
       GRIS::NamedBufferBinding(
           cmdList, scene.viewsBuffer, "Views", pipInfo, 0, sizeof( scene.views ) );
@@ -123,8 +109,6 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
          GRIS::NamedBufferBinding(
              cmdList, renderable.tessellationBuffer, "TessellationParams", pipInfo );
       }
-
-      GRIS::NamedUpdateConstantBuffer( cmdList, "Model", &modelMatrix, pipInfo );
 
       if( prevMaterial != material.materialIdx )
       {

@@ -96,10 +96,10 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::RenderPassInfo& targetsIn
       attachmentDescs.push_back( vkAttachment );
    }
 
-   VkSubpassDescription subpass = {};
-   subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
-   subpass.colorAttachmentCount = static_cast<uint32_t>( colorRefs.size() );
-   subpass.pColorAttachments    = colorRefs.data();
+   VkSubpassDescription& subpass = subpassDescs.emplace_back();
+   subpass.pipelineBindPoint     = VK_PIPELINE_BIND_POINT_GRAPHICS;
+   subpass.colorAttachmentCount  = static_cast<uint32_t>( colorRefs.size() );
+   subpass.pColorAttachments     = colorRefs.data();
 
    if( !depthRefs.empty() )
    {
@@ -107,20 +107,19 @@ VkRenderPass RenderPassCache::findOrCreate( const CYD::RenderPassInfo& targetsIn
 
       // We have a depth attachment reference
       subpass.pDepthStencilAttachment = &depthRefs[0];
-
-      VkSubpassDependency dependency = {};
-      dependency.srcSubpass          = VK_SUBPASS_EXTERNAL;
-      dependency.dstSubpass          = 0;
-      dependency.srcStageMask        = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-      dependency.srcAccessMask       = 0;
-      dependency.dstStageMask        = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-      dependency.dstAccessMask =
-          VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-
-      dependencies.push_back( dependency );
    }
 
-   subpassDescs.push_back( subpass );
+   // Very generous dependency
+   VkSubpassDependency& dependency = dependencies.emplace_back();
+   dependency.srcSubpass           = VK_SUBPASS_EXTERNAL;
+   dependency.dstSubpass           = 0;
+   dependency.srcStageMask =
+       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+   dependency.dstStageMask =
+       VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+   dependency.srcAccessMask = 0;
+   dependency.dstAccessMask =
+       VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
    VkRenderPassCreateInfo renderPassInfo = {};
    renderPassInfo.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;

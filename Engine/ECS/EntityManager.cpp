@@ -5,6 +5,8 @@
 #include <ECS/SharedComponents/InputComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
+#include <Profiling.h>
+
 namespace CYD
 {
 EntityManager::EntityManager()
@@ -32,11 +34,14 @@ EntityManager::~EntityManager()
 
 void EntityManager::tick( double deltaS )
 {
+   CYD_TRACE( "EntityManager Tick" );
+
    // Ordered updating
    for( auto& system : m_systems )
    {
       if( system->hasToTick() )  // Must have to not needlessly tick the systems
       {
+         system->sort();
          system->tick( deltaS );
       }
    }

@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
 
@@ -181,8 +182,10 @@ class D3D12RenderBackendImp
 
    BufferHandle createBuffer( size_t size, const std::string_view name ) { return {}; }
 
-   void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
-       const
+   void uploadToBuffer(
+       BufferHandle bufferHandle,
+       const void* pData,
+       const UploadToBufferInfo& info ) const
    {
    }
 
@@ -198,10 +201,7 @@ class D3D12RenderBackendImp
 
    void beginRendering( CmdListHandle cmdList ) const {}
 
-   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
-       const
-   {
-   }
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb ) const {}
 
    void nextPass( CmdListHandle cmdList ) const {}
 
@@ -317,24 +317,6 @@ void D3D12RenderBackend::bindIndexBuffer(
 {
    _imp->bindIndexBuffer( cmdList, bufferHandle, type, offset );
 }
-
-void D3D12RenderBackend::bindMainColor(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set )
-{
-   _imp->bindMainColor( cmdList, type, binding, set );
-};
-
-void D3D12RenderBackend::bindMainDepth(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set )
-{
-   _imp->bindMainDepth( cmdList, type, binding, set );
-};
 
 void D3D12RenderBackend::bindTexture(
     CmdListHandle cmdList,
@@ -457,13 +439,12 @@ BufferHandle D3D12RenderBackend::createBuffer( size_t size, const std::string_vi
    return _imp->createBuffer( size, name );
 }
 
-void D3D12RenderBackend::copyToBuffer(
+void D3D12RenderBackend::uploadToBuffer(
     BufferHandle bufferHandle,
     const void* pData,
-    size_t offset,
-    size_t size )
+    const UploadToBufferInfo& info )
 {
-   _imp->copyToBuffer( bufferHandle, pData, offset, size );
+   _imp->uploadToBuffer( bufferHandle, pData, info );
 }
 
 void D3D12RenderBackend::destroyTexture( TextureHandle texHandle )
@@ -486,19 +467,16 @@ void D3D12RenderBackend::destroyBuffer( BufferHandle bufferHandle )
    _imp->destroyBuffer( bufferHandle );
 }
 
-void D3D12RenderBackend::beginFrame() { _imp->beginFrame(); }
+void D3D12RenderBackend::beginFrame() {}
 
 void D3D12RenderBackend::beginRendering( CmdListHandle cmdList )
 {
    _imp->beginRendering( cmdList );
 }
 
-void D3D12RenderBackend::beginRendering(
-    CmdListHandle cmdList,
-    const Framebuffer& fb,
-    const RenderPassInfo& info )
+void D3D12RenderBackend::beginRendering( CmdListHandle cmdList, const Framebuffer& fb )
 {
-   _imp->beginRendering( cmdList, fb, info );
+   _imp->beginRendering( cmdList, fb );
 }
 
 void D3D12RenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmdList ); }

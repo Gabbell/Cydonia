@@ -7,6 +7,7 @@
 #include <ECS/SharedComponents/SharedComponentType.h>
 
 #include <limits>
+#include <string_view>
 #include <unordered_map>
 
 // ================================================================================================
@@ -69,7 +70,10 @@ class Entity final
       }
       else
       {
-         static_assert( !"Entity: Trying to add an invalid component to an entity" );
+         static_assert(
+             std::is_base_of_v<BaseComponent, Component> ||
+                 std::is_base_of_v<BaseSharedComponent, Component>,
+             "Entity: Trying to add an invalid component to an entity" );
       }
    }
 
@@ -88,7 +92,10 @@ class Entity final
       }
       else
       {
-         static_assert( !"Entity: Trying to remove an invalid component" );
+         static_assert(
+             std::is_base_of_v<BaseComponent, Component> ||
+                 std::is_base_of_v<BaseSharedComponent, Component>,
+             "Entity: Trying to remove an invalid component" );
       }
    }
 
@@ -117,7 +124,10 @@ class Entity final
       }
       else
       {
-         static_assert( !"Entity: Trying to get an invalid component" );
+         static_assert(
+             std::is_base_of_v<BaseComponent, Component> ||
+                 std::is_base_of_v<BaseSharedComponent, Component>,
+             "Entity: Trying to get an invalid component" );
       }
    }
 

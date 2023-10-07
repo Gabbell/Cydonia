@@ -22,8 +22,8 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
 
       if( !material.isLoaded )
       {
-         material.pipelineIdx = StaticPipelines::FindByName( material.pipelineName );
-         material.materialIdx = m_materials.getMaterialByName( material.materialName );
+         material.pipelineIdx = StaticPipelines::FindByName( material.description.pipelineName );
+         material.materialIdx = m_materials.getMaterialByName( material.description.materialName );
 
          CYD_ASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
          CYD_ASSERT( material.materialIdx != INVALID_MATERIAL_IDX );

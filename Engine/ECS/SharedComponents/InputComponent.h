@@ -15,14 +15,8 @@ class InputComponent final : public BaseSharedComponent
 
    static constexpr SharedComponentType TYPE = SharedComponentType::INPUT;
 
-   // Last cursor pos registered by cursor callback
-   glm::vec2 lastCursorPos = glm::vec2( 0.0f );
-
-   // Keeps track of mouse displacement since last update
-   glm::vec2 cursorDelta = glm::vec2( 0.0f );
-
-   int windowWidth  = 0;
-   int windowHeight = 0;
+   glm::vec2 curCursorPos = glm::vec2( 0.0f );
+   glm::vec2 cursorDelta  = glm::vec2( 0.0f );
 
    bool goingForwards  = false;
    bool goingBackwards = false;
@@ -30,9 +24,7 @@ class InputComponent final : public BaseSharedComponent
    bool goingLeft      = false;
    bool goingUp        = false;
    bool goingDown      = false;
-   bool rotating       = false;
+   bool rightClick     = false;
    bool sprinting      = false;
-
-   bool resolutionChanged = true;
 };
 }

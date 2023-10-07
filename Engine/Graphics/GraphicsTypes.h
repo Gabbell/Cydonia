@@ -105,6 +105,7 @@ enum class IndexType : uint8_t
 
 enum class PixelFormat : uint8_t
 {
+   UNKNOWN,
    BGRA8_UNORM,
    RGBA8_UNORM,
    RGBA8_SRGB,
@@ -118,8 +119,7 @@ enum class PixelFormat : uint8_t
    D32_SFLOAT
 };
 
-uint32_t GetPixelSizeInBytes( PixelFormat format );
-
+// TODO Remove this
 enum class ImageLayout
 {
    UNKNOWN,
@@ -139,16 +139,15 @@ enum class Access
    UNDEFINED,
    VERTEX_SHADER_READ,
    FRAGMENT_SHADER_READ,
-   COLOR_ATTACHMENT_READ,
-   DEPTH_STENCIL_ATTACHMENT_READ,
    COMPUTE_SHADER_READ,
+   DEPTH_STENCIL_ATTACHMENT_READ,
    TRANSFER_READ,
    HOST_READ,
    VERTEX_SHADER_WRITE,
    FRAGMENT_SHADER_WRITE,
+   COMPUTE_SHADER_WRITE,
    COLOR_ATTACHMENT_WRITE,
    DEPTH_STENCIL_ATTACHMENT_WRITE,
-   COMPUTE_SHADER_WRITE,
    TRANSFER_WRITE,
    HOST_WRITE,
    PRESENT,
@@ -331,6 +330,7 @@ struct ClearValue
    ClearDepthStencilValue depthStencil;
 };
 
+// TODO Remove this and RenderPassInfo from here
 struct Attachment
 {
    bool operator==( const Attachment& other ) const;
@@ -345,6 +345,7 @@ struct Attachment
 
 struct RenderPassInfo
 {
+   // TODO CLEAR VALUE IS NOT COMPARED HERE, SHOULD PROBABLY BE MOVED OUT OF RENDER PASS INFO
    bool operator==( const RenderPassInfo& other ) const;
    std::vector<Attachment> attachments;
 };
@@ -366,6 +367,45 @@ struct SamplerInfo
    Filter minFilter        = Filter::LINEAR;
    AddressMode addressMode = AddressMode::CLAMP_TO_EDGE;
    BorderColor borderColor = BorderColor::OPAQUE_BLACK;
+};
+
+// ================================================================================================
+// Helper functions
+bool IsColorFormat( PixelFormat format );
+uint32_t GetPixelSizeInBytes( PixelFormat format );
+
+// ================================================================================================
+// Transfer structs
+
+// GPU to GPU
+struct BufferCopyInfo
+{
+   size_t srcOffset;
+   size_t dstOffset;
+   size_t size;
+};
+
+// GPU to GPU
+struct TextureCopyInfo
+{
+   Offset2D srcOffset;
+   Offset2D dstOffset;
+   Extent2D extent;
+};
+
+// GPU to GPU
+struct BufferToTextureInfo
+{
+   size_t srcOffset;
+   Offset2D dstOffset;
+   Extent2D dstExtent;
+};
+
+// CPU to GPU
+struct UploadToBufferInfo
+{
+   size_t srcOffset;
+   size_t size;
 };
 }
 

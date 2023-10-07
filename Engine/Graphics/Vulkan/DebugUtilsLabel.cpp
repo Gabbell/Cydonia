@@ -28,10 +28,10 @@ void Begin( const CommandBuffer& cmdBuffer, const char* name, std::array<float, 
    markerInfo.pLabelName = name;
    memcpy( markerInfo.color, color.data(), sizeof( markerInfo.color ) );
 
-   vkCmdBeginDebugUtilsLabel( cmdBuffer.getVKBuffer(), &markerInfo );
+   vkCmdBeginDebugUtilsLabel( cmdBuffer.getVKCmdBuffer(), &markerInfo );
 }
 
-void End( const CommandBuffer& cmdBuffer ) { vkCmdEndDebugUtilsLabel( cmdBuffer.getVKBuffer() ); }
+void End( const CommandBuffer& cmdBuffer ) { vkCmdEndDebugUtilsLabel( cmdBuffer.getVKCmdBuffer() ); }
 
 void Insert( const CommandBuffer& cmdBuffer, const char* name, std::array<float, 4> color )
 {
@@ -41,6 +41,6 @@ void Insert( const CommandBuffer& cmdBuffer, const char* name, std::array<float,
    markerInfo.pLabelName = name;
    memcpy( markerInfo.color, color.data(), sizeof( markerInfo.color ) );
 
-   vkCmdInsertDebugUtilsLabel( cmdBuffer.getVKBuffer(), &markerInfo );
+   vkCmdInsertDebugUtilsLabel( cmdBuffer.getVKCmdBuffer(), &markerInfo );
 }
 }

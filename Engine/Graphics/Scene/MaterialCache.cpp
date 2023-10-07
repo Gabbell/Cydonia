@@ -20,7 +20,7 @@ static constexpr char STATIC_MATERIALS_PATH[]  = "Materials.json";
 
 MaterialCache::MaterialCache() { initializeStaticMaterials(); }
 
-MaterialIndex MaterialCache::addMaterial( const std::string& name, const Material::Description& desc )
+MaterialIndex MaterialCache::addMaterial( const std::string& name, const Material::ResourcesDescription& desc )
 {
    MaterialIndex index   = m_materials.insertObject( name, desc );
    m_materialNames[name] = index;
@@ -140,7 +140,7 @@ void MaterialCache::initializeStaticMaterials()
       }
 #endif
 
-      Material::Description desc;
+      Material::ResourcesDescription desc;
 
       const auto& texturesIt = material.find( "TEXTURES" );
       if( texturesIt != material.end() )

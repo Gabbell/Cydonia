@@ -45,9 +45,11 @@ class Texture final
    CYD::PixelFormat getPixelFormat() const noexcept { return m_format; }
    CYD::PipelineStageFlag getStages() const noexcept { return m_stages; }
    CYD::Access getPreviousAccess() const noexcept { return m_prevAccess; }
+   const std::string& getName() const noexcept { return m_name; }
 
-   const VkImage& getVKImage() const noexcept { return m_vkImage; }
-   const VkImageView& getVKImageView() const noexcept { return m_vkImageView; }
+   VkImage getVKImage() const noexcept { return m_vkImage; }
+   VkImageView getVKImageView() const noexcept { return m_vkImageView; }
+   VkDeviceMemory getVKDeviceMemory() const noexcept { return m_vkMemory; }
 
    bool inUse() const { return ( *m_useCount ) > 0; }
 
@@ -70,11 +72,13 @@ class Texture final
    uint32_t m_layers = 1;  // For 3D images and cube maps
 
    CYD::ImageType m_type     = CYD::ImageType::TEXTURE_2D;
-   CYD::PixelFormat m_format = CYD::PixelFormat::BGRA8_UNORM;
+   CYD::PixelFormat m_format = CYD::PixelFormat::UNKNOWN;
    CYD::Access m_prevAccess  = CYD::Access::UNDEFINED;
 
    CYD::ImageUsageFlag m_usage     = 0;
    CYD::PipelineStageFlag m_stages = 0;
+
+   std::string m_name = "";
 
    VkImage m_vkImage         = nullptr;
    VkImageView m_vkImageView = nullptr;

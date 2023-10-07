@@ -14,12 +14,14 @@ enum class Pass
    PRE_RENDER,
    OPAQUE_RENDER,
    ALPHA_RENDER,
+   POST_PROCESS,
 #if CYD_DEBUG
    DEBUG_DRAW,
 #endif
-   POST_PROCESS,
+   POST_RENDER,
    UI,
-   COUNT
+   COUNT,
+   LAST = COUNT - 1,
 };
 
 void Prepare();

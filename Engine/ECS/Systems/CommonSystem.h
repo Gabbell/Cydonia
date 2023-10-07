@@ -27,6 +27,8 @@ class BaseSystem
    NON_COPIABLE( BaseSystem );
    virtual ~BaseSystem() = default;
 
+   virtual void sort() = 0;
+
    virtual bool hasToTick() const noexcept = 0;
    virtual void tick( double deltaS )      = 0;
 
@@ -64,7 +66,10 @@ class CommonSystem : public BaseSystem
    EntityManager* m_ecs = nullptr;
    std::vector<EntityEntry> m_entities;
 
-   // Override this function in your system to tell it how the entities should be inserted/sorted.
+   bool m_keepSortedAtAllTimes : 1 = false;
+
+   // This function is used when inserting new entities into a system. Only use this if you need
+   // entities to be sorted at all times. Otherwise, override the sort function
    // By default, the entities are in the same order they were assigned to the system. Return true
    // if the first argument is "less" (ordered before) than the second.
    virtual bool _compareEntities( const EntityEntry&, const EntityEntry& ) { return true; }
@@ -77,6 +82,9 @@ class CommonSystem : public BaseSystem
 
    // If the system is not watching any entity, no need to tick
    bool hasToTick() const noexcept override { return !m_entities.empty(); }
+
+   // Override to sort entities in any way desirable
+   void sort() override { return; }
 
    void onEntityAssigned( const Entity& entity ) override final
    {
@@ -97,17 +105,22 @@ class CommonSystem : public BaseSystem
          _processEntityArchetype<0, Components...>( entity, matches, entry.arch );
 
          // Check if we have a match!
-         if( matches == sizeof...( Components ) )
+         if( matches > 0 && matches == sizeof...( Components ) )
          {
             // Insert with the optional upperbound predicate
-            m_entities.insert(
-                std::upper_bound(
-                    m_entities.cbegin(),
-                    m_entities.cend(),
-                    entry,
-                    [this]( const EntityEntry& first, const EntityEntry& second )
-                    { return _compareEntities( first, second ); } ),
-                std::move( entry ) );
+            if( m_keepSortedAtAllTimes )
+            {
+               m_entities.insert(
+                   std::upper_bound(
+                       m_entities.cbegin(),
+                       m_entities.cend(),
+                       entry,
+                       [this]( const EntityEntry& first, const EntityEntry& second )
+                       { return _compareEntities( first, second ); } ),
+                   std::move( entry ) );
+            }
+
+            m_entities.push_back( std::move( entry ) );
          }
       }
    }

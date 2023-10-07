@@ -39,7 +39,10 @@ class PipelineCache final
 
    VkPipelineLayout findOrCreate( const CYD::PipelineLayoutInfo& pipLayoutInfo );
 
-   VkPipeline findOrCreate( const CYD::GraphicsPipelineInfo& pipInfo, VkRenderPass renderPass );
+   VkPipeline findOrCreate(
+       const CYD::GraphicsPipelineInfo& pipInfo,
+       const CYD::RenderPassInfo& renderPassInfo,
+       VkRenderPass renderPass );
    VkPipeline findOrCreate( const CYD::ComputePipelineInfo& pipInfo );
 
    void clear();

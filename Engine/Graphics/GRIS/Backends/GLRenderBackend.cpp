@@ -2,7 +2,7 @@
 
 #include <Graphics/GraphicsTypes.h>
 
-#include <Window/GLFWWindow.h>
+#include <Input/GLFWWindow.h>
 
 namespace CYD
 {

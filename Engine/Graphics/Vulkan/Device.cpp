@@ -260,6 +260,7 @@ Swapchain* Device::createSwapchain( const CYD::SwapchainInfo& scInfo )
    {
       m_swapchain = std::make_unique<Swapchain>( *this, m_surface, scInfo );
    }
+
    return m_swapchain.get();
 }
 

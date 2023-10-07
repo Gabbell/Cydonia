@@ -158,7 +158,7 @@ void Swapchain::_createSwapchain( const CYD::SwapchainInfo& info )
    createInfo.imageColorSpace  = m_surfaceFormat->colorSpace;
    createInfo.imageExtent      = *m_extent;
    createInfo.imageArrayLayers = 1;
-   createInfo.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_STORAGE_BIT;
+   createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
    // TODO Sharing mode concurrent
    createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -174,6 +174,37 @@ void Swapchain::_createSwapchain( const CYD::SwapchainInfo& info )
    CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create swapchain" );
 }
 
+void Swapchain::_cleanupSwapchain()
+{
+   for( uint32_t i = 0; i < m_imageCount; ++i )
+   {
+      vkDestroyFramebuffer( m_device.getVKDevice(), m_vkFramebuffers[i], nullptr );
+      m_vkFramebuffers[i] = nullptr;
+
+      // The color VkImages are managed by the VkSwapchainKHR object, only need to free the rest
+      vkDestroyImageView( m_device.getVKDevice(), m_colorImageViews[i], nullptr );
+      m_colorImageViews[i] = nullptr;
+   }
+
+   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+   {
+      vkDestroySemaphore( m_device.getVKDevice(), m_renderDoneSems[i], nullptr );
+      vkDestroySemaphore( m_device.getVKDevice(), m_availableSems[i], nullptr );
+
+      m_renderDoneSems[i] = nullptr;
+      m_availableSems[i]  = nullptr;
+   }
+
+   vkDestroySwapchainKHR( m_device.getVKDevice(), m_vkSwapchain, nullptr );
+   m_vkSwapchain  = nullptr;
+
+   m_shouldClear  = true;
+   m_currentFrame = 0;
+   m_imageCount   = 0;
+   m_imageIndex   = 0;
+   m_ready        = false;
+}
+
 void Swapchain::_createRenderPasses()
 {
    // Initializing main render passes
@@ -183,43 +214,20 @@ void Swapchain::_createRenderPasses()
    colorAttachment.loadOp        = CYD::LoadOp::CLEAR;
    colorAttachment.storeOp       = CYD::StoreOp::STORE;
    colorAttachment.clear.color   = { 0.0f, 0.0f, 0.0f, 1.0f };
-   colorAttachment.initialAccess = CYD::Access::UNDEFINED;
+   colorAttachment.initialAccess = CYD::Access::PRESENT;
    colorAttachment.nextAccess    = CYD::Access::PRESENT;
-
-   CYD::Attachment depthAttachment;
-   depthAttachment.type                       = CYD::AttachmentType::DEPTH_STENCIL;
-   depthAttachment.format                     = CYD::PixelFormat::D32_SFLOAT;
-   depthAttachment.loadOp                     = CYD::LoadOp::CLEAR;
-   depthAttachment.storeOp                    = CYD::StoreOp::STORE;
-   depthAttachment.clear.depthStencil.depth   = 0.0f;
-   depthAttachment.clear.depthStencil.stencil = 0;
-   depthAttachment.initialAccess              = CYD::Access::UNDEFINED;
-   depthAttachment.nextAccess                 = CYD::Access::DEPTH_STENCIL_ATTACHMENT_WRITE;
 
    CYD::RenderPassInfo& clearPass = m_renderPasses[0];
    clearPass.attachments.push_back( colorAttachment );
-   clearPass.attachments.push_back( depthAttachment );
 
    colorAttachment.loadOp        = CYD::LoadOp::LOAD;
    colorAttachment.initialAccess = CYD::Access::PRESENT;
 
-   depthAttachment.loadOp        = CYD::LoadOp::LOAD;
-   depthAttachment.initialAccess = CYD::Access::DEPTH_STENCIL_ATTACHMENT_WRITE;
-
    CYD::RenderPassInfo& loadPass = m_renderPasses[1];
    loadPass.attachments.push_back( colorAttachment );
-   loadPass.attachments.push_back( depthAttachment );
 
    m_vkRenderPasses[0] = m_device.getRenderPassCache().findOrCreate( clearPass );
    m_vkRenderPasses[1] = m_device.getRenderPassCache().findOrCreate( loadPass );
-
-   m_colorImageAccess.resize( m_imageCount );
-   m_depthImageAccess.resize( m_imageCount );
-   for( uint32_t i = 0; i < m_imageCount; ++i )
-   {
-      m_colorImageAccess[i] = CYD::Access::UNDEFINED;
-      m_depthImageAccess[i] = CYD::Access::UNDEFINED;
-   }
 }
 
 void Swapchain::_createFramebuffers()
@@ -229,9 +237,7 @@ void Swapchain::_createFramebuffers()
    vkGetSwapchainImagesKHR( m_device.getVKDevice(), m_vkSwapchain, &m_imageCount, nullptr );
    m_colorImages.resize( m_imageCount );
    m_colorImageViews.resize( m_imageCount );
-   m_depthImages.resize( m_imageCount );
-   m_depthImageViews.resize( m_imageCount );
-   m_depthImagesMemory.resize( m_imageCount );
+   m_colorImageAccess.resize( m_imageCount );
    m_vkFramebuffers.resize( m_imageCount );
 
    vkGetSwapchainImagesKHR(
@@ -239,38 +245,7 @@ void Swapchain::_createFramebuffers()
 
    for( size_t i = 0; i < m_imageCount; ++i )
    {
-      VkImageCreateInfo imageInfo = {};
-      imageInfo.sType             = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-      imageInfo.imageType         = VK_IMAGE_TYPE_2D;
-      imageInfo.extent.width      = m_extent->width;
-      imageInfo.extent.height     = m_extent->height;
-      imageInfo.extent.depth      = 1;
-      imageInfo.mipLevels         = 1;
-      imageInfo.arrayLayers       = 1;
-      imageInfo.format            = VK_FORMAT_D32_SFLOAT;
-      imageInfo.tiling            = VK_IMAGE_TILING_OPTIMAL;
-      imageInfo.initialLayout     = VK_IMAGE_LAYOUT_UNDEFINED;
-      imageInfo.usage   = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-      imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-      imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-      result = vkCreateImage( m_device.getVKDevice(), &imageInfo, nullptr, &m_depthImages[i] );
-      CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image" );
-
-      VkMemoryRequirements memRequirements;
-      vkGetImageMemoryRequirements( m_device.getVKDevice(), m_depthImages[i], &memRequirements );
-
-      VkMemoryAllocateInfo allocInfo = {};
-      allocInfo.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-      allocInfo.allocationSize       = memRequirements.size;
-      allocInfo.memoryTypeIndex      = m_device.findMemoryType(
-          memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT );
-
-      result =
-          vkAllocateMemory( m_device.getVKDevice(), &allocInfo, nullptr, &m_depthImagesMemory[i] );
-      CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not allocate depth image memory" );
-
-      vkBindImageMemory( m_device.getVKDevice(), m_depthImages[i], m_depthImagesMemory[i], 0 );
+      m_colorImageAccess[i] = CYD::Access::UNDEFINED;
 
       VkImageViewCreateInfo colorViewInfo           = {};
       colorViewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
@@ -291,30 +266,11 @@ void Swapchain::_createFramebuffers()
           m_device.getVKDevice(), &colorViewInfo, nullptr, &m_colorImageViews[i] );
       CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create image views" );
 
-      VkImageViewCreateInfo depthViewInfo           = {};
-      depthViewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-      depthViewInfo.image                           = m_depthImages[i];
-      depthViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-      depthViewInfo.format                          = VK_FORMAT_D32_SFLOAT;
-      depthViewInfo.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_DEPTH_BIT;
-      depthViewInfo.subresourceRange.baseMipLevel   = 0;
-      depthViewInfo.subresourceRange.levelCount     = 1;
-      depthViewInfo.subresourceRange.baseArrayLayer = 0;
-      depthViewInfo.subresourceRange.layerCount     = 1;
-
-      result = vkCreateImageView(
-          m_device.getVKDevice(), &depthViewInfo, nullptr, &m_depthImageViews[i] );
-      CYD_ASSERT( result == VK_SUCCESS && "Swapchain: Could not create depth image view" );
-
-      std::vector<VkImageView> vkImageViews;
-      vkImageViews.push_back( m_colorImageViews[i] );
-      vkImageViews.push_back( m_depthImageViews[i] );
-
       VkFramebufferCreateInfo framebufferInfo = {};
       framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
       framebufferInfo.renderPass              = m_vkRenderPasses[1];  // Load
-      framebufferInfo.attachmentCount         = static_cast<uint32_t>( vkImageViews.size() );
-      framebufferInfo.pAttachments            = vkImageViews.data();
+      framebufferInfo.attachmentCount         = 1;
+      framebufferInfo.pAttachments            = &m_colorImageViews[i];
       framebufferInfo.width                   = m_extent->width;
       framebufferInfo.height                  = m_extent->height;
       framebufferInfo.layers                  = 1;
@@ -347,10 +303,10 @@ void Swapchain::_createSyncObjects()
    }
 }
 
-void Swapchain::transitionColorImage( CommandBuffer* cmdBuffer, CYD::Access nextAccess )
+void Swapchain::transitionColorImage( const CommandBuffer* cmdBuffer, CYD::Access nextAccess )
 {
    Synchronization::ImageMemory(
-       cmdBuffer->getVKBuffer(),
+       cmdBuffer->getVKCmdBuffer(),
        getColorVKImage(),
        1,
        m_surfaceFormat->format,
@@ -359,23 +315,9 @@ void Swapchain::transitionColorImage( CommandBuffer* cmdBuffer, CYD::Access next
 
    m_colorImageAccess[m_currentFrame] = nextAccess;
 }
-
-void Swapchain::transitionDepthImage( CommandBuffer* cmdBuffer, CYD::Access nextAccess )
+bool Swapchain::acquireImage()
 {
-   Synchronization::ImageMemory(
-       cmdBuffer->getVKBuffer(),
-       getDepthVKImage(),
-       1,
-       VK_FORMAT_D32_SFLOAT,
-       getDepthVKImageAccess(),
-       nextAccess );
-
-   m_depthImageAccess[m_currentFrame] = nextAccess;
-}
-
-void Swapchain::acquireImage()
-{
-   vkAcquireNextImageKHR(
+   VkResult result = vkAcquireNextImageKHR(
        m_device.getVKDevice(),
        m_vkSwapchain,
        UINT64_MAX,
@@ -383,7 +325,16 @@ void Swapchain::acquireImage()
        VK_NULL_HANDLE,
        &m_imageIndex );
 
-   m_ready = true;
+   if( result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR )
+   {
+      m_ready = false;
+   }
+   else
+   {
+      m_ready = true;
+   }
+
+   return m_ready;
 }
 
 void Swapchain::present()
@@ -420,24 +371,13 @@ void Swapchain::present()
    }
 }
 
-Swapchain::~Swapchain()
+void Swapchain::recreateSwapchain( const CYD::SwapchainInfo& info )
 {
-   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
-   {
-      vkDestroySemaphore( m_device.getVKDevice(), m_renderDoneSems[i], nullptr );
-      vkDestroySemaphore( m_device.getVKDevice(), m_availableSems[i], nullptr );
-   }
-
-   for( uint32_t i = 0; i < m_imageCount; ++i )
-   {
-      vkDestroyFramebuffer( m_device.getVKDevice(), m_vkFramebuffers[i], nullptr );
-      // The color VkImages are managed by the VkSwapchainKHR object, only need to free the rest
-      vkDestroyImageView( m_device.getVKDevice(), m_colorImageViews[i], nullptr );
-      vkDestroyImage( m_device.getVKDevice(), m_depthImages[i], nullptr );
-      vkDestroyImageView( m_device.getVKDevice(), m_depthImageViews[i], nullptr );
-      vkFreeMemory( m_device.getVKDevice(), m_depthImagesMemory[i], nullptr );
-   }
-
-   vkDestroySwapchainKHR( m_device.getVKDevice(), m_vkSwapchain, nullptr );
+   _cleanupSwapchain();
+   _createSwapchain( info );
+   _createFramebuffers();
+   _createSyncObjects();
 }
+
+Swapchain::~Swapchain() { _cleanupSwapchain(); }
 }

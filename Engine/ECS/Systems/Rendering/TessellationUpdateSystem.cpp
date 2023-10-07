@@ -42,7 +42,8 @@ void TessellationUpdateSystem::tick( double /*deltaS*/ )
       }
 
       // Transferring all the views to one buffer
-      GRIS::CopyToBuffer( renderable.tessellationBuffer, &tessellated.params, 0, bufferSize );
+      const UploadToBufferInfo info = { 0, bufferSize };
+      GRIS::UploadToBuffer( renderable.tessellationBuffer, &tessellated.params, info );
    }
 }
 }

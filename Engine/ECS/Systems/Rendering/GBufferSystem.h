@@ -5,9 +5,9 @@
 #include <Common/Include.h>
 
 #include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/MaterialComponent.h>
 #include <ECS/Components/Rendering/MeshComponent.h>
+#include <ECS/Components/Rendering/RenderableComponent.h>
 
 // ================================================================================================
 // Definition
@@ -16,13 +16,15 @@ namespace CYD
 {
 class MaterialCache;
 
-class ShadowMapSystem final : public RenderSystem
+class GBufferSystem final : public RenderSystem
 {
   public:
-   ShadowMapSystem() = delete;
-   ShadowMapSystem( const MaterialCache& materials ) : RenderSystem( materials ) {}
-   NON_COPIABLE( ShadowMapSystem );
-   virtual ~ShadowMapSystem() = default;
+   GBufferSystem() = delete;
+   GBufferSystem( const MaterialCache& materials ) : RenderSystem( materials ) {}
+   NON_COPIABLE( GBufferSystem );
+   virtual ~GBufferSystem() = default;
+
+   void sort() override;
 
    void tick( double deltaS ) override;
 };

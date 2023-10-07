@@ -62,16 +62,6 @@ class D3D12RenderBackend final : public RenderBackend
        IndexType type,
        uint32_t offset ) override;
 
-   void bindMainColor(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set ) override;
-   void bindMainDepth(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set ) override;
    void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -139,8 +129,10 @@ class D3D12RenderBackend final : public RenderBackend
 
    BufferHandle createBuffer( size_t size, const std::string_view name ) override;
 
-   void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
-       override;
+   void uploadToBuffer(
+       BufferHandle bufferHandle,
+       const void* pData,
+       const UploadToBufferInfo& info ) override;
 
    void destroyTexture( TextureHandle texHandle ) override;
    void destroyVertexBuffer( VertexBufferHandle bufferHandle ) override;
@@ -151,8 +143,7 @@ class D3D12RenderBackend final : public RenderBackend
    // ==============================================================================================
    void beginFrame() override;
    void beginRendering( CmdListHandle cmdList ) override;
-   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
-       override;
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb ) override;
    void nextPass( CmdListHandle cmdList ) override;
    void endRendering( CmdListHandle cmdList ) override;
    void draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex ) override;

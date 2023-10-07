@@ -1,6 +1,6 @@
 #pragma once
 
-#include <ECS/Systems/CommonSystem.h>
+#include <ECS/Systems/Rendering/RenderSystem.h>
 
 #include <Common/Include.h>
 
@@ -16,24 +16,16 @@ namespace CYD
 {
 class MaterialCache;
 
-class ForwardRenderSystem final : public CommonSystem<
-                                      RenderableComponent,
-                                      TransformComponent,
-                                      MeshComponent,
-                                      MaterialComponent>
+class ForwardRenderSystem final : public RenderSystem
 {
   public:
    ForwardRenderSystem() = delete;
-   ForwardRenderSystem( const MaterialCache& materials ) : m_materials( materials ) {}
+   ForwardRenderSystem( const MaterialCache& materials ) : RenderSystem( materials ) {}
    NON_COPIABLE( ForwardRenderSystem );
    virtual ~ForwardRenderSystem() = default;
 
+   void sort() override;
+
    void tick( double deltaS ) override;
-
-  protected:
-   bool _compareEntities( const EntityEntry& first, const EntityEntry& second ) override;
-
-  private:
-   const MaterialCache& m_materials;
 };
 }

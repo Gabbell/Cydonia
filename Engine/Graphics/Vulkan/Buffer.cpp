@@ -95,7 +95,7 @@ void Buffer::release()
    }
 }
 
-void Buffer::copy( const void* pData, size_t offset, size_t size )
+void Buffer::copy( const void* pData, const CYD::UploadToBufferInfo& info )
 {
    if( !( m_memoryType & CYD::MemoryType::HOST_VISIBLE ) )
    {
@@ -103,14 +103,14 @@ void Buffer::copy( const void* pData, size_t offset, size_t size )
       return;
    }
 
-   if( ( offset + size ) > m_size )
+   if( ( info.srcOffset + info.size ) > m_size )
    {
       CYD_ASSERT( !"Buffer: Offset + size surpasses allocated buffer size" );
       return;
    }
 
    _mapMemory();
-   memcpy( static_cast<unsigned char*>( m_data ) + offset, pData, size );
+   memcpy( static_cast<unsigned char*>( m_data ) + info.srcOffset, pData, info.size );
    _unmapMemory();
 }
 

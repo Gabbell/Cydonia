@@ -2,6 +2,8 @@
 
 #include <Graphics/Handles/ResourceHandle.h>
 
+#include <string_view>
+
 namespace CYD
 {
 struct PipelineInfo;

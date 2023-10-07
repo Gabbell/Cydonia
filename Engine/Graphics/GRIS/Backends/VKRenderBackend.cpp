@@ -2,7 +2,7 @@
 
 #include <Common/Assert.h>
 
-#include <Window/GLFWWindow.h>
+#include <Input/GLFWWindow.h>
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/PipelineInfos.h>
@@ -44,39 +44,18 @@ class VKRenderBackendImp
          m_devices( m_window, m_instance, m_surface ),
          m_mainDevice( m_devices.getMainDevice() )
    {
-      const CYD::Extent2D extent = window.getExtent();
-      const uint32_t imageCount  = vk::Swapchain::MAX_FRAMES_IN_FLIGHT;
+      const uint32_t imageCount = vk::Swapchain::MAX_FRAMES_IN_FLIGHT;
 
       // Initializing swapchain on main device
-      SwapchainInfo scInfo = {};
-      scInfo.imageCount    = imageCount;
-      scInfo.extent        = extent;
-      scInfo.format        = PixelFormat::BGRA8_UNORM;
-      scInfo.space         = ColorSpace::SRGB_NONLINEAR;
-      scInfo.mode          = PresentMode::FIFO;  // Immediate makes my GPU scream in 3000fps
+      m_scInfo.imageCount = imageCount;
+      m_scInfo.extent     = window.getExtent();
+      m_scInfo.format     = PixelFormat::BGRA8_UNORM;
+      m_scInfo.space      = ColorSpace::SRGB_NONLINEAR;
+      m_scInfo.mode       = PresentMode::IMMEDIATE;
 
-      m_mainSwapchain = m_mainDevice.createSwapchain( scInfo );
+      m_mainSwapchain = m_mainDevice.createSwapchain( m_scInfo );
 
-      // Initializing main render targets
-      CYD::TextureDescription colorDesc;
-      colorDesc.format = vk::TypeConversions::vkToCydFormat( m_mainSwapchain->getFormat().format );
-      colorDesc.type   = CYD::ImageType::TEXTURE_2D;
-      colorDesc.width  = extent.width;
-      colorDesc.height = extent.height;
-      colorDesc.layers = 1;
-      colorDesc.stages = CYD::PipelineStage::COMPUTE_STAGE | CYD::PipelineStage::FRAGMENT_STAGE;
-      colorDesc.usage  = CYD::ImageUsage::COLOR;
-      colorDesc.name   = "Main Color";
-
-      CYD::TextureDescription depthDesc;
-      depthDesc.format = CYD::PixelFormat::D32_SFLOAT;
-      depthDesc.type   = CYD::ImageType::TEXTURE_2D;
-      depthDesc.width  = extent.width;
-      depthDesc.height = extent.height;
-      depthDesc.layers = 1;
-      depthDesc.stages = CYD::PipelineStage::COMPUTE_STAGE | CYD::PipelineStage::FRAGMENT_STAGE;
-      depthDesc.usage  = CYD::ImageUsage::DEPTH_STENCIL;
-      depthDesc.name   = "Main Depth";
+      CYD_ASSERT( m_mainSwapchain );
 
       vk::DebugUtilsLabel::Initialize( m_mainDevice );
    }
@@ -123,9 +102,7 @@ class VKRenderBackendImp
       const CmdListHandle cmdList = createCommandList( GRAPHICS, "ImGui Font Loading", false );
       auto cmdBuffer              = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
-      // const auto cmdBuffer = m_mainDevice.createCommandBuffer( GRAPHICS, "ImGui Font Loading" );
-
-      ImGui_ImplVulkan_CreateFontsTexture( cmdBuffer->getVKBuffer() );
+      ImGui_ImplVulkan_CreateFontsTexture( cmdBuffer->getVKCmdBuffer() );
 
       submitCommandList( cmdList );
       waitOnCommandList( cmdList );
@@ -140,8 +117,11 @@ class VKRenderBackendImp
 
    void uninitializeUIBackend()
    {
-      ImGui_ImplVulkan_Shutdown();
-      ImGui_ImplGlfw_Shutdown();
+      if( m_hasUI )
+      {
+         ImGui_ImplVulkan_Shutdown();
+         ImGui_ImplGlfw_Shutdown();
+      }
 
       m_hasUI = false;
    }
@@ -153,7 +133,7 @@ class VKRenderBackendImp
       ImDrawData* drawData = ImGui::GetDrawData();
 
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      ImGui_ImplVulkan_RenderDrawData( drawData, cmdBuffer->getVKBuffer() );
+      ImGui_ImplVulkan_RenderDrawData( drawData, cmdBuffer->getVKCmdBuffer() );
    }
 
    void cleanup() const { m_mainDevice.cleanup(); }
@@ -284,26 +264,6 @@ class VKRenderBackendImp
       cmdBuffer->bindIndexBuffer( indexBuffer, type, offset );
    }
 
-   void bindMainColor(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set )
-   {
-      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->bindSwapchainColor( *m_mainSwapchain, type, binding, set );
-   };
-
-   void bindMainDepth(
-       CmdListHandle cmdList,
-       CYD::ShaderResourceType type,
-       uint32_t binding,
-       uint32_t set )
-   {
-      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      cmdBuffer->bindSwapchainDepth( *m_mainSwapchain, type, binding, set );
-   };
-
    void bindTexture(
        CmdListHandle cmdList,
        TextureHandle texHandle,
@@ -419,7 +379,8 @@ class VKRenderBackendImp
       const size_t layerSize = desc.size / desc.layers;
       for( uint32_t i = 0; i < layerCount; ++i )
       {
-         staging->copy( ppTexels[i], i * layerSize, layerSize );
+         const UploadToBufferInfo uploadInfo = { i * layerSize, layerSize };
+         staging->copy( ppTexels[i], uploadInfo );
       }
 
       m_cmdListDeps[transferList].emplace_back( staging );
@@ -429,7 +390,11 @@ class VKRenderBackendImp
 
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
 
-      cmdBuffer->uploadBufferToTex( staging, texture );
+      BufferToTextureInfo copyInfo;
+      copyInfo.srcOffset = 0;
+      copyInfo.dstOffset = Offset2D( 0, 0 );
+      copyInfo.dstExtent = Extent2D( desc.width, desc.height );
+      cmdBuffer->copyBufferToTexture( staging, texture, copyInfo );
 
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
@@ -439,7 +404,10 @@ class VKRenderBackendImp
    {
       // Staging
       vk::Buffer* staging = m_mainDevice.createStagingBuffer( desc.size );
-      staging->copy( pTexels, 0, desc.size );
+
+      const UploadToBufferInfo uploadInfo = { 0, desc.size };
+      staging->copy( pTexels, uploadInfo );
+
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
@@ -447,7 +415,11 @@ class VKRenderBackendImp
 
       const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
 
-      cmdBuffer->uploadBufferToTex( staging, texture );
+      BufferToTextureInfo copyInfo;
+      copyInfo.srcOffset = 0;
+      copyInfo.dstOffset = Offset2D( 0, 0 );
+      copyInfo.dstExtent = Extent2D( desc.width, desc.height );
+      cmdBuffer->copyBufferToTexture( staging, texture, copyInfo );
 
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
@@ -465,12 +437,17 @@ class VKRenderBackendImp
 
       // Staging
       vk::Buffer* staging = m_mainDevice.createStagingBuffer( bufferSize );
-      staging->copy( pVertices, 0, bufferSize );
+
+      const UploadToBufferInfo uploadInfo = { 0, bufferSize };
+      staging->copy( pVertices, uploadInfo );
+
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
       vk::Buffer* vertexBuffer = m_mainDevice.createVertexBuffer( bufferSize, name );
-      cmdBuffer->copyBuffer( staging, vertexBuffer );
+
+      const BufferCopyInfo copyInfo = { 0, 0, bufferSize };
+      cmdBuffer->copyBuffer( staging, vertexBuffer, copyInfo );
 
       return m_coreHandles.add( vertexBuffer, HandleType::VERTEXBUFFER );
    }
@@ -488,12 +465,17 @@ class VKRenderBackendImp
 
       // Staging
       vk::Buffer* staging = m_mainDevice.createStagingBuffer( bufferSize );
-      staging->copy( pIndices, 0, bufferSize );
+
+      const UploadToBufferInfo uploadInfo = { 0, bufferSize };
+      staging->copy( pIndices, uploadInfo );
+
       m_cmdListDeps[transferList].emplace_back( staging );
 
       // Uploading to GPU
       vk::Buffer* indexBuffer = m_mainDevice.createIndexBuffer( bufferSize, name );
-      cmdBuffer->copyBuffer( staging, indexBuffer );
+
+      const BufferCopyInfo copyInfo = { 0, 0, bufferSize };
+      cmdBuffer->copyBuffer( staging, indexBuffer, copyInfo );
 
       return m_coreHandles.add( indexBuffer, HandleType::INDEXBUFFER );
    }
@@ -514,29 +496,28 @@ class VKRenderBackendImp
 
    void* addDebugTexture( TextureHandle texture )
    {
-      if( texture )
-      {
-         vk::SamplerCache& samplerCache = m_mainDevice.getSamplerCache();
-         VkSampler vkSampler            = samplerCache.findOrCreate( {} );
+      auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
 
-         auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
+      CYD_ASSERT( texture );
 
-         return ImGui_ImplVulkan_AddTexture(
-             vkSampler,
-             vkTexture->getVKImageView(),
-             vk::Synchronization::GetLayoutFromAccess( vkTexture->getPreviousAccess() ) );
-      }
+      vk::SamplerCache& samplerCache = m_mainDevice.getSamplerCache();
+      VkSampler vkSampler            = samplerCache.findOrCreate( {} );
 
-      return nullptr;
+      return ImGui_ImplVulkan_AddTexture(
+          vkSampler,
+          vkTexture->getVKImageView(),
+          vk::Synchronization::GetLayoutFromAccess( vkTexture->getPreviousAccess() ) );
    }
 
-   void updateDebugTexture( CmdListHandle /*cmdList*/, TextureHandle /*texture */ )
+   void updateDebugTexture( CmdListHandle cmdList, TextureHandle texture )
    {
-      // if( texture )
-      //{
-      //   auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
-      //   auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
-      //}
+      if( texture )
+      {
+         auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+         auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
+
+         vk::Synchronization::ImageMemory( cmdBuffer, vkTexture, Access::FRAGMENT_SHADER_READ );
+      }
    }
 
    void removeDebugTexture( void* texture )
@@ -544,14 +525,30 @@ class VKRenderBackendImp
       ImGui_ImplVulkan_RemoveTexture( static_cast<VkDescriptorSet>( texture ) );
    }
 
-   void copyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
-       const
+   void uploadToBuffer(
+       BufferHandle bufferHandle,
+       const void* pData,
+       const UploadToBufferInfo& info ) const
    {
-      if( bufferHandle )
-      {
-         auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
-         buffer->copy( pData, offset, size );
-      }
+      CYD_ASSERT( bufferHandle );
+
+      auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+      buffer->copy( pData, info );
+   }
+
+   void copyTexture(
+       CmdListHandle transferList,
+       TextureHandle srcTexHandle,
+       TextureHandle dstTexHandle,
+       const TextureCopyInfo& info ) const
+   {
+      CYD_ASSERT( transferList && srcTexHandle && dstTexHandle );
+
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+      auto src       = static_cast<vk::Texture*>( m_coreHandles.get( srcTexHandle ) );
+      auto dst       = static_cast<vk::Texture*>( m_coreHandles.get( dstTexHandle ) );
+
+      cmdBuffer->copyTexture( src, dst, info );
    }
 
    void destroyTexture( TextureHandle texHandle )
@@ -600,6 +597,10 @@ class VKRenderBackendImp
 
    void beginFrame()
    {
+      const uint32_t currentFrame = m_mainSwapchain->getCurrentFrame();
+
+      m_window.poll();
+
       if( m_hasUI )
       {
          ImGui_ImplVulkan_NewFrame();
@@ -607,14 +608,25 @@ class VKRenderBackendImp
          ImGui::NewFrame();
       }
 
-      const uint32_t currentFrame = m_mainSwapchain->getCurrentFrame();
-
       // CPU wait for all work to be done for this frame before acquiring next image
       // Otherwise, there is a possibility that we feed the GPU too much and cap our CPU-side
       // resource limits
       m_mainDevice.waitOnFrame( currentFrame );
 
-      m_mainSwapchain->acquireImage();
+      // Keeping swapchain the same size as the window extent
+      const Extent2D& windowExtent      = m_window.getExtent();
+      const VkExtent2D& swapchainExtent = m_mainSwapchain->getVKExtent();
+      if( !m_mainSwapchain->acquireImage() || windowExtent.width != swapchainExtent.width ||
+          windowExtent.height != swapchainExtent.height )
+      {
+         waitUntilIdle();
+
+         m_scInfo.extent = windowExtent;
+         m_mainSwapchain->recreateSwapchain( m_scInfo );
+
+         const bool acquiredSuccess = m_mainSwapchain->acquireImage();
+         CYD_ASSERT( acquiredSuccess );
+      }
 
       m_mainSwapchain->setClear( true );
    }
@@ -628,25 +640,25 @@ class VKRenderBackendImp
       m_mainSwapchain->setClear( false );
    }
 
-   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
-       const
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
       // Fetching textures
-      const Framebuffer::Targets& targets = fb.getTargets();
+      const Framebuffer::RenderTargets& renderTargets = fb.getRenderTargets();
       std::vector<vk::Texture*> vkTextures;
-      vkTextures.reserve( targets.size() );
-      for( const auto& texture : targets )
+      vkTextures.reserve( renderTargets.size() );
+      for( const auto& renderTarget : renderTargets )
       {
-         const auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
+         const auto vkTexture =
+             static_cast<vk::Texture*>( m_coreHandles.get( renderTarget.texture ) );
          if( vkTexture )
          {
             vkTextures.push_back( vkTexture );
          }
       }
 
-      cmdBuffer->beginRendering( fb, info, vkTextures );
+      cmdBuffer->beginRendering( fb, vkTextures );
    }
 
    void nextPass( CmdListHandle cmdList ) const
@@ -700,10 +712,14 @@ class VKRenderBackendImp
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
       cmdBuffer->dispatch( workX, workY, workZ );
+   }
 
-      m_mainSwapchain->transitionColorImage( cmdBuffer, CYD::Access::PRESENT );
-      m_mainSwapchain->transitionDepthImage(
-          cmdBuffer, CYD::Access::DEPTH_STENCIL_ATTACHMENT_WRITE );
+   void copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      auto texture   = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
+
+      cmdBuffer->copyToSwapchain( texture, *m_mainSwapchain );
    }
 
    void presentFrame()
@@ -750,6 +766,8 @@ class VKRenderBackendImp
    vk::DeviceManager m_devices;
 
    vk::Device& m_mainDevice;
+
+   CYD::SwapchainInfo m_scInfo;
    vk::Swapchain* m_mainSwapchain;
 
    bool m_reloadShadersQueued = false;
@@ -839,24 +857,6 @@ void VKRenderBackend::bindIndexBuffer(
 {
    _imp->bindIndexBuffer( cmdList, bufferHandle, type, offset );
 }
-
-void VKRenderBackend::bindMainColor(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set )
-{
-   _imp->bindMainColor( cmdList, type, binding, set );
-};
-
-void VKRenderBackend::bindMainDepth(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set )
-{
-   _imp->bindMainDepth( cmdList, type, binding, set );
-};
 
 void VKRenderBackend::bindTexture(
     CmdListHandle cmdList,
@@ -991,13 +991,21 @@ void VKRenderBackend::updateDebugTexture( CmdListHandle cmdList, TextureHandle t
 
 void VKRenderBackend::removeDebugTexture( void* texture ) { _imp->removeDebugTexture( texture ); }
 
-void VKRenderBackend::copyToBuffer(
+void VKRenderBackend::uploadToBuffer(
     BufferHandle bufferHandle,
     const void* pData,
-    size_t offset,
-    size_t size )
+    const UploadToBufferInfo& info )
 {
-   _imp->copyToBuffer( bufferHandle, pData, offset, size );
+   _imp->uploadToBuffer( bufferHandle, pData, info );
+}
+
+void VKRenderBackend::copyTexture(
+    CmdListHandle transferList,
+    TextureHandle srcTexHandle,
+    TextureHandle dstTexHandle,
+    const TextureCopyInfo& info )
+{
+   _imp->copyTexture( transferList, srcTexHandle, dstTexHandle, info );
 }
 
 void VKRenderBackend::destroyTexture( TextureHandle texHandle )
@@ -1024,12 +1032,9 @@ void VKRenderBackend::beginFrame() { _imp->beginFrame(); }
 
 void VKRenderBackend::beginRendering( CmdListHandle cmdList ) { _imp->beginRendering( cmdList ); }
 
-void VKRenderBackend::beginRendering(
-    CmdListHandle cmdList,
-    const Framebuffer& fb,
-    const RenderPassInfo& info )
+void VKRenderBackend::beginRendering( CmdListHandle cmdList, const Framebuffer& fb )
 {
-   _imp->beginRendering( cmdList, fb, info );
+   _imp->beginRendering( cmdList, fb );
 }
 
 void VKRenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmdList ); }
@@ -1073,6 +1078,11 @@ void VKRenderBackend::dispatch(
     uint32_t workZ )
 {
    _imp->dispatch( cmdList, workX, workY, workZ );
+}
+
+void VKRenderBackend::copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
+{
+   _imp->copyToSwapchain( cmdList, texHandle );
 }
 
 void VKRenderBackend::presentFrame() { _imp->presentFrame(); }

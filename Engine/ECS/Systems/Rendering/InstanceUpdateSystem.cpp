@@ -51,7 +51,8 @@ void InstanceUpdateSystem::tick( double /*deltaS*/ )
          }
 
          // Transferring all the views to one buffer
-         GRIS::CopyToBuffer( renderable.instancesBuffer, ubo.data(), 0, bufferSize );
+         const UploadToBufferInfo info = { 0, bufferSize };
+         GRIS::UploadToBuffer( renderable.instancesBuffer, ubo.data(), info );
          renderable.instanceCount = instanced.count;
 
          instanced.needsUpdate = false;

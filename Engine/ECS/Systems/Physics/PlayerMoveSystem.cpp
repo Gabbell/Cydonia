@@ -17,9 +17,9 @@ void PlayerMoveSystem::tick( double deltaS )
       MotionComponent& motion       = *std::get<MotionComponent*>( entityEntry.arch );
 
       // Modifying the transform component directly for rotation
-      if( input.rotating )
+      if( input.rightClick )
       {
-         glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
+         const glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
 
          Transform::RotateLocal( transform.rotation, rotationAngles.y, 0, 0 );
          Transform::Rotate( transform.rotation, 0, rotationAngles.x, 0 );

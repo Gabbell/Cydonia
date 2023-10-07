@@ -20,12 +20,12 @@ class Window;
 // ================================================================================================
 namespace CYD
 {
-class InputSystem final : public CommonSystem<InputComponent>
+class WindowSystem final : public CommonSystem<InputComponent>
 {
   public:
-   explicit InputSystem( const Window& window );
-   NON_COPIABLE( InputSystem );
-   virtual ~InputSystem() = default;
+   explicit WindowSystem( Window& window );
+   NON_COPIABLE( WindowSystem );
+   virtual ~WindowSystem() = default;
 
    // The input system always has to tick, regardless of how many entities have an input component
    bool hasToTick() const noexcept override { return true; }
@@ -33,10 +33,9 @@ class InputSystem final : public CommonSystem<InputComponent>
 
   private:
    void _keyCallback( GLFWwindow* window, int key, int scancode, int action, int mods );
-   void _cursorCallback( GLFWwindow* window, double xpos, double ypos );
    void _mouseCallback( GLFWwindow* window, int button, int action, int mods );
-   void _framebufferSizeCallback( GLFWwindow* window, int width, int height );
+   void _resizeCallback( GLFWwindow* window, int width, int height );
 
-   const Window& m_window;
+   Window& m_window;
 };
 }

@@ -8,6 +8,9 @@
 // ================================================================================================
 // Definition
 // ================================================================================================
+/*
+A framebuffer is only a container, it does not control the lifetime of its internal textures
+*/
 namespace CYD
 {
 class Framebuffer
@@ -18,29 +21,56 @@ class Framebuffer
    COPIABLE( Framebuffer );
    ~Framebuffer() = default;
 
+   // ================================================================================================
    enum Index
    {
       COLOR,
-      DEPTH,
-      COUNT
+      DEPTH
    };
 
-   using Targets = std::array<TextureHandle, Index::COUNT>;
+   static constexpr uint32_t MAX_TARGETS = 8;
 
-   void attach( Index idx, TextureHandle texture ) { m_targets[idx] = texture; }
+   struct RenderTarget
+   {
+      TextureHandle texture = {};
+      Access nextAccess     = Access::UNDEFINED;
+      bool shouldClear      = false;
+      ClearValue clearValue = {};
+   };
 
-   void detach( Index idx ) { m_targets[idx] = {}; }
+   using RenderTargets = std::array<RenderTarget, MAX_TARGETS>;
+
+   // ================================================================================================
+   void resize( uint32_t width, uint32_t height );
+
+   void attach(
+       uint32_t idx,
+       TextureHandle texture,
+       Access nextAccess,
+       const ClearValue& clearValue = {} );
+   void replace(
+       uint32_t idx,
+       TextureHandle texture,
+       Access nextAccess,
+       const ClearValue& clearValue = {} );
+   void detach( uint32_t idx );
+
+   void bind( CmdListHandle cmdList, uint32_t idx, uint32_t binding, uint32_t set = 0 ) const;
+
+   bool isValid() const;
 
    uint32_t getWidth() const { return m_width; }
    uint32_t getHeight() const { return m_height; }
 
-   const Targets& getTargets() const { return m_targets; }
-   TextureHandle getTarget( Index idx ) const { return m_targets[idx]; }
+   const RenderTargets& getRenderTargets() const { return m_targets; }
+
+   void setToClear( bool shouldClear );
+   void setToClear( uint32_t idx, bool shouldClear );
 
   private:
    uint32_t m_width  = 0;
    uint32_t m_height = 0;
 
-   Targets m_targets;
+   RenderTargets m_targets;
 };
 }

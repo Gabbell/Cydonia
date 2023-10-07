@@ -19,7 +19,7 @@ namespace vk::Synchronization
 {
 VkImageLayout GetLayoutFromAccess( CYD::Access prevAccess );
 
-void ImageMemory( CommandBuffer* cmdBuffer, Texture* texture, CYD::Access nextAccess );
+void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::Access nextAccess );
 
 void ImageMemory(
     VkCommandBuffer cmdBuffer,

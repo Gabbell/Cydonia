@@ -1,4 +1,4 @@
-#include <ECS/Systems/Rendering/ForwardRenderSystem.h>
+#include <ECS/Systems/Rendering/GBufferSystem.h>
 
 #include <Graphics/PipelineInfos.h>
 #include <Graphics/StaticPipelines.h>
@@ -12,55 +12,71 @@
 #include <ECS/Components/Scene/ViewComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
+#include <Graphics/Vulkan/Synchronization.h>
+
 #include <Profiling.h>
 
 namespace CYD
 {
 // ================================================================================================
-void ForwardRenderSystem::sort()
+void GBufferSystem::sort()
 {
-   auto forwardRenderSort = []( const EntityEntry& first, const EntityEntry& second )
+   auto deferredRenderSort = []( const EntityEntry& first, const EntityEntry& second )
    {
       const RenderableComponent& firstRenderable  = *std::get<RenderableComponent*>( first.arch );
       const RenderableComponent& secondRenderable = *std::get<RenderableComponent*>( second.arch );
 
-      return firstRenderable.type == RenderableComponent::Type::FORWARD ||
-             secondRenderable.type != RenderableComponent::Type::FORWARD;
+      return firstRenderable.type == RenderableComponent::Type::DEFERRED ||
+             secondRenderable.type != RenderableComponent::Type::DEFERRED;
    };
 
-   std::sort( m_entities.begin(), m_entities.end(), forwardRenderSort );
+   std::sort( m_entities.begin(), m_entities.end(), deferredRenderSort );
 }
 
 // ================================================================================================
-void ForwardRenderSystem::tick( double /*deltaS*/ )
+void GBufferSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "ForwardRenderSystem" );
+   CYD_TRACE( "GBufferSystem" );
 
    // Start command list recording
-   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::OPAQUE_RENDER );
-   CYD_SCOPED_GPUTRACE( cmdList, "ForwardRenderSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
+   CYD_SCOPED_GPUTRACE( cmdList, "GBufferSystem" );
 
-   const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
+   SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
-   GRIS::BeginRendering( cmdList, scene.mainFramebuffer );
+   // Initialize/reset GBuffer
+   if( scene.resolutionChanged )
+   {
+      scene.gbuffer.setToClear( true );
+      scene.gbuffer.resize( scene.extent.width, scene.extent.height );
+      scene.gbuffer.replace(
+          GBuffer::DEPTH, scene.mainDepth, Access::DEPTH_STENCIL_ATTACHMENT_READ );
+   }
 
-   // Dynamic state
-   GRIS::SetViewport( cmdList, {} );
-   GRIS::SetScissor( cmdList, {} );
+   // Finding main view
+   const uint32_t mainViewIdx = getViewIndex( scene, "MAIN" );
+   const uint32_t sunViewIdx  = getViewIndex( scene, "SUN" );
 
    // Tracking
    std::string_view prevMesh;
    PipelineIndex prevPipeline = INVALID_PIPELINE_IDX;
    MaterialIndex prevMaterial = INVALID_MATERIAL_IDX;
 
+   // Rendering to the gbuffer
+   GRIS::BeginRendering( cmdList, scene.gbuffer );
+
+   // Dynamic state
+   GRIS::SetViewport( cmdList, {} );
+   GRIS::SetScissor( cmdList, {} );
+
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
       const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      if( renderable.type != RenderableComponent::Type::FORWARD )
+      if( renderable.type != RenderableComponent::Type::DEFERRED )
       {
-         // Forward renderables only
+         // Deferred renderables only
          break;
       }
 
@@ -79,7 +95,7 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
          if( curPipInfo == nullptr )
          {
             // TODO WARNINGS
-            printf( "ForwardRenderSystem: Passed a null pipeline, skipping entity\n" );
+            printf( "GBufferSystem: Passed a null pipeline, skipping entity\n" );
             continue;
          }
 
@@ -92,8 +108,6 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       // ==========================================================================================
       GRIS::NamedBufferBinding(
           cmdList, scene.viewsBuffer, "Views", *curPipInfo, 0, sizeof( scene.views ) );
-
-      GRIS::NamedBufferBinding( cmdList, scene.lightsBuffer, "Lights", *curPipInfo );
 
       if( renderable.isShadowReceiving && scene.shadowMap )
       {

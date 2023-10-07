@@ -70,8 +70,8 @@ project "Engine"
 			"Engine/Physics/**.cpp",
 			"Engine/UI/**.h",
 			"Engine/UI/**.cpp",
-			"Engine/Window/**.h",
-			"Engine/Window/**.cpp",
+			"Engine/Input/**.h",
+			"Engine/Input/**.cpp",
 			"Engine/ThirdParty/ImGui/**.h",
 			"Engine/ThirdParty/ImGui/**.cpp",
 			"Engine/ThirdParty/Tracy/TracyClient.cpp",
@@ -82,8 +82,8 @@ project "Engine"
 			"Engine/Data/Shaders/GLSL/**.tese",
 			"Engine/Data/*.json" }
 
-	removefiles { "Engine/Window/SDLWindow.h",
-				  "Engine/Window/SDLWindow.cpp" }
+	removefiles { "Engine/Input/SDLWindow.h",
+				  "Engine/Input/SDLWindow.cpp" }
 
 	-- Adding Shaders Build Step
 	filter { "files:Engine/Data/Shaders/GLSL/**.comp" }

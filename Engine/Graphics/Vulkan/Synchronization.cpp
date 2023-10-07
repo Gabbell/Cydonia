@@ -18,16 +18,14 @@ static ThsvsAccessType cydToThsvsAccessType( CYD::Access access )
    {
       case CYD::Access::UNDEFINED:
          return THSVS_ACCESS_NONE;
-      case CYD::Access::VERTEX_SHADER_READ:
+      case CYD::Access::VERTEX_SHADER_READ:  // This access assumes image or uniform texel buffer
          return THSVS_ACCESS_VERTEX_SHADER_READ_SAMPLED_IMAGE_OR_UNIFORM_TEXEL_BUFFER;
       case CYD::Access::FRAGMENT_SHADER_READ:
          return THSVS_ACCESS_FRAGMENT_SHADER_READ_SAMPLED_IMAGE_OR_UNIFORM_TEXEL_BUFFER;
-      case CYD::Access::COLOR_ATTACHMENT_READ:
-         return THSVS_ACCESS_COLOR_ATTACHMENT_READ;
-      case CYD::Access::DEPTH_STENCIL_ATTACHMENT_READ:
-         return THSVS_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ;
       case CYD::Access::COMPUTE_SHADER_READ:
          return THSVS_ACCESS_COMPUTE_SHADER_READ_SAMPLED_IMAGE_OR_UNIFORM_TEXEL_BUFFER;
+      case CYD::Access::DEPTH_STENCIL_ATTACHMENT_READ:
+         return THSVS_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ;
       case CYD::Access::TRANSFER_READ:
          return THSVS_ACCESS_TRANSFER_READ;
       case CYD::Access::HOST_READ:
@@ -36,12 +34,12 @@ static ThsvsAccessType cydToThsvsAccessType( CYD::Access access )
          return THSVS_ACCESS_VERTEX_SHADER_WRITE;
       case CYD::Access::FRAGMENT_SHADER_WRITE:
          return THSVS_ACCESS_FRAGMENT_SHADER_WRITE;
+      case CYD::Access::COMPUTE_SHADER_WRITE:
+         return THSVS_ACCESS_COMPUTE_SHADER_WRITE;
       case CYD::Access::COLOR_ATTACHMENT_WRITE:
          return THSVS_ACCESS_COLOR_ATTACHMENT_WRITE;
       case CYD::Access::DEPTH_STENCIL_ATTACHMENT_WRITE:
          return THSVS_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE;
-      case CYD::Access::COMPUTE_SHADER_WRITE:
-         return THSVS_ACCESS_COMPUTE_SHADER_WRITE;
       case CYD::Access::TRANSFER_WRITE:
          return THSVS_ACCESS_TRANSFER_WRITE;
       case CYD::Access::HOST_WRITE:
@@ -62,7 +60,7 @@ VkImageLayout GetLayoutFromAccess( CYD::Access access )
    return ThsvsAccessMap[cydToThsvsAccessType( access )].imageLayout;
 }
 
-void ImageMemory( CommandBuffer* cmdBuffer, Texture* texture, CYD::Access nextAccess )
+void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::Access nextAccess )
 {
    if( texture->getPreviousAccess() == nextAccess ) return;
 
@@ -88,7 +86,7 @@ void ImageMemory( CommandBuffer* cmdBuffer, Texture* texture, CYD::Access nextAc
    barrier.subresourceRange.baseArrayLayer = 0;
    barrier.subresourceRange.layerCount     = texture->getLayers();
 
-   thsvsCmdPipelineBarrier( cmdBuffer->getVKBuffer(), nullptr, 0, nullptr, 1, &barrier );
+   thsvsCmdPipelineBarrier( cmdBuffer->getVKCmdBuffer(), nullptr, 0, nullptr, 1, &barrier );
 
    texture->setPreviousAccess( nextAccess );
 }

@@ -24,7 +24,7 @@ class MaterialCache final
 
    MaterialIndex getMaterialByName( const std::string& name ) const;
 
-   MaterialIndex addMaterial( const std::string& name, const Material::Description& desc );
+   MaterialIndex addMaterial( const std::string& name, const Material::ResourcesDescription& desc );
    void removeMaterial( MaterialIndex index );
 
    // Loads, unloads and binds GPU resources

@@ -2,6 +2,16 @@
 
 namespace CYD
 {
+bool IsColorFormat( PixelFormat format )
+{
+   if( format == PixelFormat::D32_SFLOAT )
+   {
+      return false;
+   }
+
+   return true;
+}
+
 // Be aware that this size is minimal and should only be used for packed RAM allocations. It might
 // not reflect the actual size that will be used by the graphics API to store this particular format
 // on the device. Look at the API-specific memory related functions to query this information.
@@ -33,7 +43,8 @@ uint32_t GetPixelSizeInBytes( PixelFormat format )
 bool Attachment::operator==( const Attachment& other ) const
 {
    return format == other.format && loadOp == other.loadOp && storeOp == other.storeOp &&
-          type == other.type;
+          type == other.type && initialAccess == other.initialAccess &&
+          nextAccess == other.nextAccess;
 }
 
 bool RenderPassInfo::operator==( const RenderPassInfo& other ) const

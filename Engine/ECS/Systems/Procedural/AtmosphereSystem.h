@@ -4,15 +4,14 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Procedural/AtmosphereComponent.h>
 
 // ================================================================================================
 // Definition
 // ================================================================================================
 /*
-This system is used to generate a physically-based atmosphere that includes customizable Rayleigh and
-Mie scattering factors to generate any kind of planetary atmosphere. 
+This system is used to generate a physically-based atmosphere that includes customizable Rayleigh
+and Mie scattering factors to generate any kind of planetary atmosphere.
 
 Does not currently implement aerial perspective LUT and views from space
 
@@ -25,7 +24,7 @@ https://www.shadertoy.com/view/slSXRW
 */
 namespace CYD
 {
-class AtmosphereSystem final : public CommonSystem<RenderableComponent, AtmosphereComponent>
+class AtmosphereSystem final : public CommonSystem<AtmosphereComponent>
 {
   public:
    AtmosphereSystem() = default;

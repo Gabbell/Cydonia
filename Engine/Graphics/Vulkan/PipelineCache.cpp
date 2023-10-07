@@ -9,6 +9,7 @@
 #include <Graphics/Vulkan/Device.h>
 #include <Graphics/Vulkan/Shader.h>
 #include <Graphics/Vulkan/ShaderCache.h>
+#include <Graphics/Vulkan/RenderPassCache.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
 #include <array>
@@ -190,6 +191,7 @@ VkPipeline PipelineCache::findOrCreate( const CYD::ComputePipelineInfo& pipInfo 
 
 VkPipeline PipelineCache::findOrCreate(
     const CYD::GraphicsPipelineInfo& pipInfo,
+    const CYD::RenderPassInfo& renderPassInfo,
     VkRenderPass renderPass )
 {
    // Attempting to find pipeline
@@ -341,24 +343,32 @@ VkPipeline PipelineCache::findOrCreate(
    multisampling.sampleShadingEnable  = VK_FALSE;
    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
-   // Color blending
-   VkPipelineColorBlendAttachmentState colorBlendAttachment = {};
-   colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                                         VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-   colorBlendAttachment.blendEnable         = pipInfo.blendState.useBlend;
-   colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-   colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-   colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
-   colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-   colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-   colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+   std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
+   for( const CYD::Attachment& attachment : renderPassInfo.attachments )
+   {
+      if( CYD::IsColorFormat( attachment.format ) )
+      {
+         VkPipelineColorBlendAttachmentState& colorBlendAttachment =
+             colorBlendAttachments.emplace_back();
+         colorBlendAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
+                                               VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+         colorBlendAttachment.blendEnable         = pipInfo.blendState.useBlend;
+         colorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+         colorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+         colorBlendAttachment.colorBlendOp        = VK_BLEND_OP_ADD;
+         colorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+         colorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+         colorBlendAttachment.alphaBlendOp        = VK_BLEND_OP_ADD;
+      }
+   }
 
+   // Color blending
    VkPipelineColorBlendStateCreateInfo colorBlending = {};
    colorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
    colorBlending.logicOpEnable     = VK_FALSE;
    colorBlending.logicOp           = VK_LOGIC_OP_COPY;
-   colorBlending.attachmentCount   = 1;
-   colorBlending.pAttachments      = &colorBlendAttachment;
+   colorBlending.attachmentCount   = static_cast<uint32_t>( colorBlendAttachments.size() );
+   colorBlending.pAttachments      = colorBlendAttachments.data();
    colorBlending.blendConstants[0] = 0.0f;
    colorBlending.blendConstants[1] = 0.0f;
    colorBlending.blendConstants[2] = 0.0f;

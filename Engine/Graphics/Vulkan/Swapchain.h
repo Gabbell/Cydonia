@@ -67,28 +67,26 @@ class Swapchain final
    VkImageView getColorVKImageView() const { return m_colorImageViews[m_currentFrame]; }
    CYD::Access getColorVKImageAccess() const { return m_colorImageAccess[m_currentFrame]; }
 
-   VkImage getDepthVKImage() const { return m_depthImages[m_currentFrame]; }
-   VkImageView getDepthVKImageView() const { return m_depthImageViews[m_currentFrame]; }
-   CYD::Access getDepthVKImageAccess() const { return m_depthImageAccess[m_currentFrame]; }
-
    const VkSurfaceFormatKHR& getFormat() const noexcept { return *m_surfaceFormat; }
 
    uint32_t getImageCount() const { return m_imageCount; }
    uint32_t getCurrentFrame() const { return m_currentFrame; }
 
    void setClear( bool shouldClear ) { m_shouldClear = shouldClear; }
-   void transitionColorImage( CommandBuffer* cmdBuffer, CYD::Access nextAccess );
-   void transitionDepthImage( CommandBuffer* cmdBuffer, CYD::Access nextAccess );
+   void transitionColorImage( const CommandBuffer* cmdBuffer, CYD::Access nextAccess );
 
-   void acquireImage();
+   bool acquireImage();
    void present();
+   void recreateSwapchain( const CYD::SwapchainInfo& info );
 
   private:
    void _createSwapchain( const CYD::SwapchainInfo& info );
-   void _createRenderPasses();
-   void _createSyncObjects();
+   void _cleanupSwapchain();
 
    void _createFramebuffers();
+
+   void _createRenderPasses();
+   void _createSyncObjects();
 
    // Used to create the swapchain
    Device& m_device;
@@ -100,11 +98,6 @@ class Swapchain final
    std::vector<VkImage> m_colorImages;
    std::vector<VkImageView> m_colorImageViews;
    std::vector<CYD::Access> m_colorImageAccess;
-
-   std::vector<VkImage> m_depthImages;
-   std::vector<VkImageView> m_depthImageViews;
-   std::vector<CYD::Access> m_depthImageAccess;
-   std::vector<VkDeviceMemory> m_depthImagesMemory;
 
    std::vector<VkFramebuffer> m_vkFramebuffers;
 

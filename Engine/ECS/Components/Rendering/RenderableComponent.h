@@ -20,17 +20,17 @@ class RenderableComponent final : public BaseComponent
       DEFERRED
    };
 
-   RenderableComponent( bool isShadowCasting = false, bool isShadowReceiving = false )
-       : isShadowCasting( isShadowCasting ), isShadowReceiving( isShadowReceiving )
+   RenderableComponent() = default;
+   RenderableComponent( Type type, bool isShadowCasting = false, bool isShadowReceiving = false )
+       : type( type ), isShadowCasting( isShadowCasting ), isShadowReceiving( isShadowReceiving )
    {
    }
-   RenderableComponent( Type type ) : type( type ) {}
    COPIABLE( RenderableComponent );
    virtual ~RenderableComponent();
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
-   Type type = Type::FORWARD;
+   Type type = Type::DEFERRED;
 
    BufferHandle tessellationBuffer;
 

@@ -4,7 +4,7 @@
 
 #include <Graphics/Vulkan.h>
 
-#include <Window/GLFWWindow.h>
+#include <Input/GLFWWindow.h>
 
 #ifdef _WIN32
 #include <Windows.h>
@@ -13,6 +13,9 @@
 #include <set>
 
 #if CYD_DEBUG
+static constexpr bool WANT_API_DUMP   = false;
+static constexpr bool WANT_SYNC_CHECK = false;
+
 static VkBool32 errorCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
@@ -159,6 +162,17 @@ void Instance::_createVKInstance()
    // Use these validation layers if this is a debug build
 #if CYD_DEBUG
    m_layers.push_back( "VK_LAYER_KHRONOS_validation" );
+
+   if( WANT_API_DUMP )
+   {
+      m_layers.push_back( "VK_LAYER_LUNARG_api_dump" );
+   }
+
+   if( WANT_SYNC_CHECK )
+   {
+      m_layers.push_back( "VK_LAYER_KHRONOS_synchronization2" );
+   }
+
    CYD_ASSERT( checkValidationLayerSupport( m_layers ) );
 #endif
 
@@ -189,7 +203,7 @@ Instance::~Instance()
 #if CYD_DEBUG
    destroyDebugUtilsMessengerEXT( m_vkInstance, m_debugMessenger, nullptr );
 #endif
-   
+
    vkDestroyInstance( m_vkInstance, nullptr );
 }
 }

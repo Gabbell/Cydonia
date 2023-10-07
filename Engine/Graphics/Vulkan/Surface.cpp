@@ -2,7 +2,7 @@
 
 #include <Common/Assert.h>
 
-#include <Window/GLFWWindow.h>
+#include <Input/GLFWWindow.h>
 
 #include <Graphics/Vulkan.h>
 #include <Graphics/Vulkan/Instance.h>

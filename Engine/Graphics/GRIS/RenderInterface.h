@@ -90,16 +90,6 @@ template <class Type>
 void BindIndexBuffer( CmdListHandle cmdList, IndexBufferHandle bufferHandle, uint32_t offset = 0 );
 
 // Bind shader resources by binding/set
-void BindMainColor(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set = 0 );
-void BindMainDepth(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set = 0 );
 void BindTexture(
     CmdListHandle cmdList,
     TextureHandle texHandle,
@@ -172,7 +162,12 @@ void* AddDebugTexture( TextureHandle texture );
 void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle texture );
 void RemoveDebugTexture( void* texture );
 
-void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size );
+void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadToBufferInfo& info );
+void CopyTexture(
+    CmdListHandle transferList,
+    TextureHandle srcTexHandle,
+    TextureHandle dstTexHandle,
+    const TextureCopyInfo& info );
 
 void DestroyTexture( TextureHandle texHandle );
 void DestroyVertexBuffer( VertexBufferHandle bufferHandle );
@@ -183,7 +178,7 @@ void DestroyBuffer( BufferHandle bufferHandle );
 // ===============================================================================================
 void BeginFrame();
 void BeginRendering( CmdListHandle cmdList );
-void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info );
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb );
 void NextPass( CmdListHandle cmdList );
 void EndRendering( CmdListHandle cmdList );
 void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex = 0 );
@@ -201,6 +196,7 @@ void DrawIndexedInstanced(
     size_t firstIndex    = 0,
     size_t firstInstance = 0 );
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
+void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle );
 void PresentFrame();
 
 // Debug

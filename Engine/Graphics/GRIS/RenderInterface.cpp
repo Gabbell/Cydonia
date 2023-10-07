@@ -171,24 +171,6 @@ void BindIndexBuffer<uint32_t>(
    b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT32, offset );
 }
 
-void BindMainColor(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set )
-{
-   b->bindMainColor( cmdList, type, binding, set );
-}
-
-void BindMainDepth(
-    CmdListHandle cmdList,
-    CYD::ShaderResourceType type,
-    uint32_t binding,
-    uint32_t set )
-{
-   b->bindMainDepth( cmdList, type, binding, set );
-}
-
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
    b->bindTexture( cmdList, texHandle, binding, set );
@@ -378,9 +360,18 @@ void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle textureHandle )
 };
 void RemoveDebugTexture( void* texture ) { b->removeDebugTexture( texture ); }
 
-void CopyToBuffer( BufferHandle bufferHandle, const void* pData, size_t offset, size_t size )
+void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadToBufferInfo& info )
 {
-   return b->copyToBuffer( bufferHandle, pData, offset, size );
+   return b->uploadToBuffer( bufferHandle, pData, info );
+}
+
+void CopyTexture(
+    CmdListHandle transferList,
+    TextureHandle srcTexHandle,
+    TextureHandle dstTexHandle,
+    const TextureCopyInfo& info )
+{
+   return b->copyTexture( transferList, srcTexHandle, dstTexHandle, info );
 }
 
 void DestroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }
@@ -405,9 +396,9 @@ void BeginFrame()
 
 void BeginRendering( CmdListHandle cmdList ) { b->beginRendering( cmdList ); }
 
-void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, const RenderPassInfo& info )
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb )
 {
-   b->beginRendering( cmdList, fb, info );
+   b->beginRendering( cmdList, fb );
 }
 
 void NextPass( CmdListHandle cmdList ) { b->nextPass( cmdList ); }
@@ -447,6 +438,11 @@ void DrawIndexedInstanced(
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )
 {
    b->dispatch( cmdList, workX, workY, workZ );
+}
+
+void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
+{
+   b->copyToSwapchain( cmdList, texHandle );
 }
 
 void PresentFrame()

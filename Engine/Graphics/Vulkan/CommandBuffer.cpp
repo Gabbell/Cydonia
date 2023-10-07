@@ -46,7 +46,6 @@ bool CommandBuffer::_isValidStateTransition( State desiredState )
    stateValidationTable[State::ACQUIRED][State::RECORDING]              = true;
    stateValidationTable[State::RECORDING][State::STANDBY]               = true;
    stateValidationTable[State::STANDBY][State::SUBMITTED]               = true;
-   stateValidationTable[State::STANDBY][State::SUBMITTED]               = true;
    stateValidationTable[State::SUBMITTED][State::COMPLETED]             = true;
    stateValidationTable[State::COMPLETED][State::FREE]                  = true;
    stateValidationTable[State::FREE][State::RELEASED]                   = true;
@@ -230,7 +229,10 @@ void CommandBuffer::_addDependency( T* dependency )
    }
    else
    {
-      static_assert( !"CommandBuffer: Adding dependency of unknown type" );
+      static_assert(
+          std::is_same_v<T, vk::Buffer> || std::is_same_v<T, vk::Texture> ||
+              std::is_same_v<T, vk::CommandBuffer>,
+          "CommandBuffer: Adding dependency of unknown type" );
    }
 
    if( shouldIncrementUsage ) dependency->incUse();
@@ -363,7 +365,8 @@ void CommandBuffer::bindPipeline( const CYD::GraphicsPipelineInfo& info )
 
    if( samePipeline( &info, m_boundPipInfo.get() ) ) return;
 
-   VkPipeline pipeline = m_pDevice->getPipelineCache().findOrCreate( info, m_boundRenderPass );
+   VkPipeline pipeline = m_pDevice->getPipelineCache().findOrCreate(
+       info, m_boundRenderPassInfo.value(), m_boundRenderPass );
 
    VkPipelineLayout pipLayout = m_pDevice->getPipelineCache().findOrCreate( info.pipLayout );
 
@@ -415,53 +418,9 @@ void CommandBuffer::bindIndexBuffer( Buffer* indexBuffer, CYD::IndexType type, u
    _addDependency( indexBuffer );
 }
 
-void CommandBuffer::bindSwapchainColor(
-    Swapchain& swapchain,
-    CYD::ShaderResourceType type,
-    uint8_t binding,
-    uint8_t set )
-{
-   if( !m_boundRenderPass )
-   {
-      swapchain.transitionColorImage( this, CYD::Access::GENERAL );
-   }
-
-   // Will need to update this texture's descriptor set before next draw
-   TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
-   textureEntry.type            = TypeConversions::cydToVkDescriptorType( type );
-   textureEntry.imageView       = swapchain.getColorVKImageView();
-   textureEntry.binding         = binding;
-   textureEntry.set             = set;
-   textureEntry.layout = Synchronization::GetLayoutFromAccess( swapchain.getColorVKImageAccess() );
-
-   m_samplers.push_back( m_defaultSampler );
-}
-
-void CommandBuffer::bindSwapchainDepth(
-    Swapchain& swapchain,
-    CYD::ShaderResourceType type,
-    uint8_t binding,
-    uint8_t set )
-{
-   if( !m_boundRenderPass )
-   {
-      swapchain.transitionDepthImage( this, CYD::Access::COMPUTE_SHADER_READ );
-   }
-
-   // Will need to update this texture's descriptor set before next draw
-   TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
-   textureEntry.type            = TypeConversions::cydToVkDescriptorType( type );
-   textureEntry.imageView       = swapchain.getDepthVKImageView();
-   textureEntry.binding         = binding;
-   textureEntry.set             = set;
-   textureEntry.layout = Synchronization::GetLayoutFromAccess( swapchain.getDepthVKImageAccess() );
-
-   m_samplers.push_back( m_defaultSampler );
-}
-
 void CommandBuffer::bindTexture( Texture* texture, uint8_t binding, uint8_t set )
 {
-   if( !m_boundRenderPass )
+   if( m_boundPipInfo->type == CYD::PipelineType::COMPUTE )
    {
       Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
    }
@@ -485,7 +444,7 @@ void CommandBuffer::bindTexture(
     uint8_t binding,
     uint8_t set )
 {
-   if( !m_boundRenderPass )
+   if( m_boundPipInfo->type == CYD::PipelineType::COMPUTE )
    {
       Synchronization::ImageMemory( this, texture, CYD::Access::COMPUTE_SHADER_READ );
    }
@@ -505,8 +464,11 @@ void CommandBuffer::bindTexture(
 
 void CommandBuffer::bindImage( Texture* texture, uint8_t binding, uint8_t set )
 {
-   // TODO Maybe not GENERAL?
-   Synchronization::ImageMemory( this, texture, CYD::Access::GENERAL );
+   if( m_boundPipInfo->type == CYD::PipelineType::COMPUTE )
+   {
+      // TODO Maybe not GENERAL?
+      Synchronization::ImageMemory( this, texture, CYD::Access::GENERAL );
+   }
 
    // Will need to update this image descriptor set before next draw
    TextureBinding& textureEntry = m_texturesToUpdate.emplace_back();
@@ -638,32 +600,23 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
 
 void CommandBuffer::beginRendering(
     const CYD::Framebuffer& fb,
-    const CYD::RenderPassInfo& info,
-    const std::vector<Texture*>& targets )
+    const std::vector<Texture*>& texTargets )
 {
-   VkRenderPass renderPass = m_pDevice->getRenderPassCache().findOrCreate( info );
-   CYD_ASSERT( renderPass && "CommandBuffer: Could not find render pass" );
-   CYD_ASSERT( !targets.empty() && "CommandBuffer: No render targets" );
-   CYD_ASSERT(
-       targets.size() == info.attachments.size() &&
-       "CommandBuffer: Mismatch attachments and targets" );
-
-   m_boundRenderPass     = renderPass;
-   m_boundRenderPassInfo = info;
-   m_targets             = targets;
-   m_currentSubpass      = 0;
+   CYD_ASSERT( !texTargets.empty() && "CommandBuffer: No render targets" );
 
    const uint32_t fbWidth  = fb.getWidth();
    const uint32_t fbHeight = fb.getHeight();
 
+   const CYD::Framebuffer::RenderTargets& renderTargets = fb.getRenderTargets();
+
    // Fetching image views for framebuffer
+   CYD::RenderPassInfo renderPassInfo;
    std::vector<VkClearValue> clearValues;
    std::vector<VkImageView> vkImageViews;
    vkImageViews.reserve( m_targets.size() );
-   for( uint32_t i = 0; i < targets.size(); ++i )
+   for( uint32_t i = 0; i < texTargets.size(); ++i )
    {
-      const CYD::Attachment& attachment = info.attachments[i];
-      Texture* texture                  = targets[i];
+      Texture* texture = texTargets[i];
 
       if( texture == nullptr ) continue;
 
@@ -677,9 +630,22 @@ void CommandBuffer::beginRendering(
          CYD_ASSERT( !"CommandBuffer: Mismatched dimensions for framebuffer" );
       }
 
-      // Clear
-      if( texture->getPixelFormat() == CYD::PixelFormat::D32_SFLOAT )
+      const CYD::Framebuffer::RenderTarget& rt = renderTargets[i];
+
+      // Infer attachment
+      CYD::Attachment& attachment = renderPassInfo.attachments.emplace_back();
+      attachment.format           = texture->getPixelFormat();
+      attachment.initialAccess    = texture->getPreviousAccess();
+      attachment.nextAccess       = rt.nextAccess;
+      attachment.loadOp           = rt.shouldClear ? CYD::LoadOp::CLEAR : CYD::LoadOp::LOAD;
+      attachment.storeOp          = CYD::StoreOp::STORE;
+      attachment.clear            = rt.clearValue;
+
+      if( attachment.format == CYD::PixelFormat::D32_SFLOAT )
       {
+         attachment.type = CYD::AttachmentType::DEPTH_STENCIL;
+
+         // Depth
          VkClearValue clearValue;
          clearValue.depthStencil = {
              attachment.clear.depthStencil.depth, attachment.clear.depthStencil.stencil };
@@ -687,11 +653,22 @@ void CommandBuffer::beginRendering(
       }
       else
       {
+         attachment.type = CYD::AttachmentType::COLOR;
+
+         // Assume color
          VkClearValue clearValue;
          memcpy( &clearValue.color, &attachment.clear.color, sizeof( clearValue.color ) );
          clearValues.push_back( std::move( clearValue ) );
       }
    }
+
+   VkRenderPass renderPass = m_pDevice->getRenderPassCache().findOrCreate( renderPassInfo );
+   CYD_ASSERT( renderPass && "CommandBuffer: Could not find render pass" );
+
+   m_boundRenderPass     = renderPass;
+   m_boundRenderPassInfo = renderPassInfo;
+   m_targets             = texTargets;
+   m_currentSubpass      = 0;
 
    VkFramebufferCreateInfo framebufferInfo = {};
    framebufferInfo.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
@@ -928,6 +905,37 @@ void CommandBuffer::drawIndexed(
        static_cast<uint32_t>( firstInstance ) );
 }
 
+void CommandBuffer::copyToSwapchain( Texture* sourceTexture, Swapchain& swapchain ) const
+{
+   // TODO Use vkCmdCopyImage instead
+   Synchronization::ImageMemory( this, sourceTexture, CYD::Access::TRANSFER_READ );
+   swapchain.transitionColorImage( this, CYD::Access::TRANSFER_WRITE );
+
+   const VkExtent2D& swapchainExtent = swapchain.getVKExtent();
+
+   VkImageCopy region;
+   region.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+   region.srcSubresource.layerCount     = 1;
+   region.srcSubresource.baseArrayLayer = 0;
+   region.srcSubresource.mipLevel       = 0;
+   region.srcOffset                     = { 0, 0, 0 };
+
+   region.dstSubresource = region.srcSubresource;
+   region.dstOffset      = { 0, 0, 0 };
+   region.extent         = { sourceTexture->getWidth(), sourceTexture->getHeight(), 1 };
+
+   vkCmdCopyImage(
+       m_vkCmdBuffer,
+       sourceTexture->getVKImage(),
+       Synchronization::GetLayoutFromAccess( sourceTexture->getPreviousAccess() ),
+       swapchain.getColorVKImage(),
+       Synchronization::GetLayoutFromAccess( swapchain.getColorVKImageAccess() ),
+       1,
+       &region );
+
+   swapchain.transitionColorImage( this, CYD::Access::PRESENT );
+}
+
 void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
 {
    CYD_ASSERT(
@@ -965,7 +973,9 @@ void CommandBuffer::endRendering()
 
    for( uint32_t i = 0; i < m_targets.size(); ++i )
    {
-      m_targets[i]->setPreviousAccess( m_boundRenderPassInfo->attachments[i].nextAccess );
+      Texture* texture = m_targets[i];
+
+      texture->setPreviousAccess( m_boundRenderPassInfo->attachments[i].nextAccess );
    }
 
    m_boundPip        = nullptr;
@@ -977,21 +987,27 @@ void CommandBuffer::endRendering()
    m_renderArea = {};
 }
 
-void CommandBuffer::copyBuffer( Buffer* src, Buffer* dst )
+void CommandBuffer::copyBuffer( Buffer* src, Buffer* dst, const CYD::BufferCopyInfo& info )
 {
    CYD_ASSERT(
-       src->getSize() == dst->getSize() &&
+       ( info.srcOffset + info.size ) <= dst->getSize() &&
        "CommandBuffer: Source and destination sizes are not the same" );
 
    VkBufferCopy copyRegion = {};
-   copyRegion.size         = dst->getSize();
+   copyRegion.srcOffset    = info.srcOffset;
+   copyRegion.dstOffset    = info.dstOffset;
+   copyRegion.size         = info.size;
+
    vkCmdCopyBuffer( m_vkCmdBuffer, src->getVKBuffer(), dst->getVKBuffer(), 1, &copyRegion );
 
    _addDependency( src );
    _addDependency( dst );
 }
 
-void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
+void CommandBuffer::copyBufferToTexture(
+    Buffer* src,
+    Texture* dst,
+    const CYD::BufferToTextureInfo& info )
 {
    CYD_ASSERT(
        src->getSize() == dst->getSize() &&
@@ -1001,15 +1017,15 @@ void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
 
    // Copying data from buffer to texture
    VkBufferImageCopy region               = {};
-   region.bufferOffset                    = 0;
+   region.bufferOffset                    = info.srcOffset;
    region.bufferRowLength                 = 0;
    region.bufferImageHeight               = 0;
-   region.imageSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+   region.imageSubresource.aspectMask     = TypeConversions::getAspectMask( dst->getPixelFormat() );
    region.imageSubresource.mipLevel       = 0;
    region.imageSubresource.baseArrayLayer = 0;
    region.imageSubresource.layerCount     = dst->getLayers();
-   region.imageOffset                     = { 0, 0, 0 };
-   region.imageExtent                     = { dst->getWidth(), dst->getHeight(), 1 };
+   region.imageOffset                     = { info.dstOffset.x, info.dstOffset.y, 0 };
+   region.imageExtent                     = { info.dstExtent.width, info.dstExtent.height, 1 };
 
    vkCmdCopyBufferToImage(
        m_vkCmdBuffer,
@@ -1023,6 +1039,31 @@ void CommandBuffer::uploadBufferToTex( Buffer* src, Texture* dst )
 
    _addDependency( src );
    _addDependency( dst );
+}
+
+void CommandBuffer::copyTexture( Texture* src, Texture* dst, const CYD::TextureCopyInfo& info )
+{
+   VkImageCopy imageCopy;
+   imageCopy.srcOffset                 = { info.srcOffset.x, info.srcOffset.y, 0 };
+   imageCopy.srcSubresource.aspectMask = TypeConversions::getAspectMask( src->getPixelFormat() );
+   imageCopy.srcSubresource.baseArrayLayer = 0;
+   imageCopy.srcSubresource.layerCount     = 1;
+   imageCopy.srcSubresource.mipLevel       = 0;
+   imageCopy.dstOffset                     = { info.dstOffset.x, info.dstOffset.y, 0 };
+   imageCopy.dstSubresource.aspectMask = TypeConversions::getAspectMask( dst->getPixelFormat() );
+   imageCopy.srcSubresource.baseArrayLayer = 0;
+   imageCopy.srcSubresource.layerCount     = 1;
+   imageCopy.srcSubresource.mipLevel       = 0;
+   imageCopy.extent                        = { info.extent.width, info.extent.height, 1 };
+
+   vkCmdCopyImage(
+       m_vkCmdBuffer,
+       src->getVKImage(),
+       Synchronization::GetLayoutFromAccess( src->getPreviousAccess() ),
+       dst->getVKImage(),
+       Synchronization::GetLayoutFromAccess( dst->getPreviousAccess() ),
+       1,
+       &imageCopy );
 }
 
 void CommandBuffer::submit()
