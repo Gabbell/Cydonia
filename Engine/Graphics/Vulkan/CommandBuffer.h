@@ -5,6 +5,7 @@
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/Vulkan/VulkanTypes.h>
 
 #include <array>
 #include <atomic>
@@ -160,12 +161,6 @@ class CommandBuffer final
    void copyTexture( Texture* src, Texture* dst, const CYD::TextureCopyInfo& info );
    void copyToSwapchain( Texture* sourceTexture, Swapchain& swapchain ) const;
 
-   // Debug
-   // ==============================================================================================
-   void beginDebugRange( const char* name, const std::array<float, 4>& color );
-   void endDebugRange();
-   void insertDebugMarker( const char* name, const std::array<float, 4>& color );
-
   private:
    // Constants
    // =============================================================================================
@@ -223,7 +218,7 @@ class CommandBuffer final
 
    VkRenderPass m_boundRenderPass = nullptr;
    CYD::Rectangle m_renderArea;
-   std::optional<CYD::RenderPassInfo> m_boundRenderPassInfo;
+   std::optional<RenderPassInfo> m_boundRenderPassInfo;
    std::vector<Texture*> m_targets;
    uint32_t m_currentSubpass = 0;
 

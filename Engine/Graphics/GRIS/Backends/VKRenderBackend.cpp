@@ -94,9 +94,7 @@ class VKRenderBackendImp
       init_info.ImageCount                = m_mainSwapchain->getImageCount();
       init_info.CheckVkResultFn           = nullptr;
 
-      ImGui_ImplVulkan_Init(
-          &init_info,
-          m_mainDevice.getRenderPassCache().findOrCreate( m_mainSwapchain->getRenderPass() ) );
+      ImGui_ImplVulkan_Init( &init_info, m_mainSwapchain->getVKRenderPass() );
 
       // Loading fonts
       const CmdListHandle cmdList = createCommandList( GRAPHICS, "ImGui Font Loading", false );
@@ -374,9 +372,11 @@ class VKRenderBackendImp
        uint32_t layerCount,
        const void* const* ppTexels )
    {
-      vk::Buffer* staging = m_mainDevice.createStagingBuffer( desc.size );
+      const size_t size = desc.width * desc.height * GetPixelSizeInBytes( desc.format );
 
-      const size_t layerSize = desc.size / desc.layers;
+      vk::Buffer* staging = m_mainDevice.createStagingBuffer( size );
+
+      const size_t layerSize = size / desc.layers;
       for( uint32_t i = 0; i < layerCount; ++i )
       {
          const UploadToBufferInfo uploadInfo = { i * layerSize, layerSize };
@@ -402,10 +402,12 @@ class VKRenderBackendImp
    TextureHandle
    createTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
    {
-      // Staging
-      vk::Buffer* staging = m_mainDevice.createStagingBuffer( desc.size );
+      const size_t size = desc.width * desc.height * GetPixelSizeInBytes( desc.format );
 
-      const UploadToBufferInfo uploadInfo = { 0, desc.size };
+      // Staging
+      vk::Buffer* staging = m_mainDevice.createStagingBuffer( size );
+
+      const UploadToBufferInfo uploadInfo = { 0, size };
       staging->copy( pTexels, uploadInfo );
 
       m_cmdListDeps[transferList].emplace_back( staging );
@@ -608,9 +610,9 @@ class VKRenderBackendImp
          ImGui::NewFrame();
       }
 
-      // CPU wait for all work to be done for this frame before acquiring next image
-      // Otherwise, there is a possibility that we feed the GPU too much and cap our CPU-side
-      // resource limits
+      // CPU wait for all work to be done for this frame before acquiring next
+      // image Otherwise, there is a possibility that we feed the GPU too much
+      // and cap our CPU-side resource limits
       m_mainDevice.waitOnFrame( currentFrame );
 
       // Keeping swapchain the same size as the window extent

@@ -20,6 +20,7 @@ namespace vk
 {
 class Device;
 class ShaderCache;
+struct RenderPassInfo;
 }
 
 // ================================================================================================
@@ -41,7 +42,7 @@ class PipelineCache final
 
    VkPipeline findOrCreate(
        const CYD::GraphicsPipelineInfo& pipInfo,
-       const CYD::RenderPassInfo& renderPassInfo,
+       const RenderPassInfo& renderPassInfo,
        VkRenderPass renderPass );
    VkPipeline findOrCreate( const CYD::ComputePipelineInfo& pipInfo );
 

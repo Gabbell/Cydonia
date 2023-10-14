@@ -416,8 +416,6 @@ void DrawFFTOceanComponentMenu( CmdListHandle cmdList, const FFTOceanComponent& 
       s_oceanDispTexture = GRIS::AddDebugTexture( ocean.displacementMap );
    }
 
-   GRIS::UpdateDebugTexture( cmdList, ocean.displacementMap );
-
    ImGui::Image( s_oceanDispTexture, dimensions );
 
    FFTOceanComponent& notConst = const_cast<FFTOceanComponent&>( ocean );
@@ -513,8 +511,5 @@ void DrawMaterialsWindow( CmdListHandle /*cmdList*/ )
    ImGui::End();
 }
 
-void DrawPipelinesWindow( CmdListHandle /*cmdList*/ )
-{
-   //
-}
+void DrawPipelinesWindow() {}
 }

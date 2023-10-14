@@ -37,7 +37,6 @@ static void ComputeTransmittanceLUT( CmdListHandle cmdList, AtmosphereComponent&
       TextureDescription texDesc = {};
       texDesc.width              = AtmosphereComponent::TRANSMITTANCE_LUT_WIDTH;
       texDesc.height             = AtmosphereComponent::TRANSMITTANCE_LUT_HEIGHT;
-      texDesc.size               = texDesc.width * texDesc.height * sizeof( float );
       texDesc.type               = ImageType::TEXTURE_2D;
       texDesc.format             = PixelFormat::RGBA8_UNORM;
       texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
@@ -73,7 +72,6 @@ static void ComputeMultipleScatteringLUT( CmdListHandle cmdList, AtmosphereCompo
       TextureDescription texDesc = {};
       texDesc.width              = AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM;
       texDesc.height             = AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM;
-      texDesc.size               = texDesc.width * texDesc.height * sizeof( float );
       texDesc.type               = ImageType::TEXTURE_2D;
       texDesc.format             = PixelFormat::RGBA8_UNORM;
       texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
@@ -110,7 +108,6 @@ static void ComputeSkyViewLUT( CmdListHandle cmdList, AtmosphereComponent& atmos
       TextureDescription texDesc = {};
       texDesc.width              = AtmosphereComponent::SKYVIEW_LUT_WIDTH;
       texDesc.height             = AtmosphereComponent::SKYVIEW_LUT_HEIGHT;
-      texDesc.size               = texDesc.width * texDesc.height * sizeof( float );
       texDesc.type               = ImageType::TEXTURE_2D;
       texDesc.format             = PixelFormat::RGBA16F;
       texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;

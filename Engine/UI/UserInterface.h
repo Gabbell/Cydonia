@@ -62,6 +62,6 @@ void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& 
 void DrawMaterialsWindow( CmdListHandle cmdList );
 
 // Pipelines
-void DrawPipelinesWindow( CmdListHandle cmdList );
+void DrawPipelinesWindow();
 }
 }

@@ -610,7 +610,7 @@ void CommandBuffer::beginRendering(
    const CYD::Framebuffer::RenderTargets& renderTargets = fb.getRenderTargets();
 
    // Fetching image views for framebuffer
-   CYD::RenderPassInfo renderPassInfo;
+   RenderPassInfo renderPassInfo;
    std::vector<VkClearValue> clearValues;
    std::vector<VkImageView> vkImageViews;
    vkImageViews.reserve( m_targets.size() );
@@ -633,13 +633,13 @@ void CommandBuffer::beginRendering(
       const CYD::Framebuffer::RenderTarget& rt = renderTargets[i];
 
       // Infer attachment
-      CYD::Attachment& attachment = renderPassInfo.attachments.emplace_back();
-      attachment.format           = texture->getPixelFormat();
-      attachment.initialAccess    = texture->getPreviousAccess();
-      attachment.nextAccess       = rt.nextAccess;
-      attachment.loadOp           = rt.shouldClear ? CYD::LoadOp::CLEAR : CYD::LoadOp::LOAD;
-      attachment.storeOp          = CYD::StoreOp::STORE;
-      attachment.clear            = rt.clearValue;
+      Attachment& attachment   = renderPassInfo.attachments.emplace_back();
+      attachment.format        = texture->getPixelFormat();
+      attachment.initialAccess = texture->getPreviousAccess();
+      attachment.nextAccess    = rt.nextAccess;
+      attachment.loadOp        = rt.shouldClear ? CYD::LoadOp::CLEAR : CYD::LoadOp::LOAD;
+      attachment.storeOp       = CYD::StoreOp::STORE;
+      attachment.clear         = rt.clearValue;
 
       if( attachment.format == CYD::PixelFormat::D32_SFLOAT )
       {
@@ -974,7 +974,6 @@ void CommandBuffer::endRendering()
    for( uint32_t i = 0; i < m_targets.size(); ++i )
    {
       Texture* texture = m_targets[i];
-
       texture->setPreviousAccess( m_boundRenderPassInfo->attachments[i].nextAccess );
    }
 

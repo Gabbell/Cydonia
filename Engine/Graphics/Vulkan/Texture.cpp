@@ -14,7 +14,6 @@ Texture::Texture() { m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 ); 
 void Texture::acquire( const Device& device, const CYD::TextureDescription& desc )
 {
    m_pDevice = &device;
-   m_size    = desc.size;
    m_width   = desc.width;
    m_height  = desc.height;
    m_layers  = desc.layers;

@@ -62,7 +62,7 @@ void ImGuiSystem::tick( double /*deltaS*/ )
 
    if( s_drawPipelinesWindow )
    {
-      UI::DrawPipelinesWindow( cmdList );
+      UI::DrawPipelinesWindow();
    }
 
    if( s_drawAboutWindow )

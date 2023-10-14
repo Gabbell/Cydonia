@@ -239,7 +239,7 @@ static TextureHandle LoadImageFromStorage(
        "VKRenderBackend:: Number of textures could not fit in number of layers" );
 
    CYD_ASSERT(
-       inputDesc.width == 0 && inputDesc.height == 0 && inputDesc.size == 0 &&
+       inputDesc.width == 0 && inputDesc.height == 0 &&
        "VKRenderBackend: Created a texture with a path but specified dimensions" );
 
    std::vector<void*> imageData;
@@ -281,7 +281,6 @@ static TextureHandle LoadImageFromStorage(
    TextureDescription newDesc = inputDesc;
    newDesc.width              = width;
    newDesc.height             = height;
-   newDesc.size               = totalSize;
 
    TextureHandle texHandle = b->createTexture(
        transferList, newDesc, static_cast<uint32_t>( imageData.size() ), imageData.data() );

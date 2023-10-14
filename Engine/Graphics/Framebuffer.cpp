@@ -49,7 +49,7 @@ void Framebuffer::bind( CmdListHandle cmdList, uint32_t idx, uint32_t binding, u
 
 bool Framebuffer::isValid() const { return m_width > 0 && m_height > 0 && !m_targets.empty(); }
 
-void Framebuffer::setToClear( bool shouldClear )
+void Framebuffer::setToClearAll( bool shouldClear )
 {
    for( RenderTarget& rt : m_targets )
    {

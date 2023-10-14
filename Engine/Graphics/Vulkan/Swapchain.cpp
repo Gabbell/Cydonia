@@ -208,7 +208,7 @@ void Swapchain::_cleanupSwapchain()
 void Swapchain::_createRenderPasses()
 {
    // Initializing main render passes
-   CYD::Attachment colorAttachment;
+   Attachment colorAttachment;
    colorAttachment.type          = CYD::AttachmentType::COLOR_PRESENTATION;
    colorAttachment.format        = TypeConversions::vkToCydFormat( m_surfaceFormat->format );
    colorAttachment.loadOp        = CYD::LoadOp::CLEAR;
@@ -217,13 +217,13 @@ void Swapchain::_createRenderPasses()
    colorAttachment.initialAccess = CYD::Access::PRESENT;
    colorAttachment.nextAccess    = CYD::Access::PRESENT;
 
-   CYD::RenderPassInfo& clearPass = m_renderPasses[0];
+   RenderPassInfo& clearPass = m_renderPasses[0];
    clearPass.attachments.push_back( colorAttachment );
 
    colorAttachment.loadOp        = CYD::LoadOp::LOAD;
    colorAttachment.initialAccess = CYD::Access::PRESENT;
 
-   CYD::RenderPassInfo& loadPass = m_renderPasses[1];
+   RenderPassInfo& loadPass = m_renderPasses[1];
    loadPass.attachments.push_back( colorAttachment );
 
    m_vkRenderPasses[0] = m_device.getRenderPassCache().findOrCreate( clearPass );

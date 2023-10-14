@@ -64,7 +64,7 @@ class Framebuffer
 
    const RenderTargets& getRenderTargets() const { return m_targets; }
 
-   void setToClear( bool shouldClear );
+   void setToClearAll( bool shouldClear );
    void setToClear( uint32_t idx, bool shouldClear );
 
   private:

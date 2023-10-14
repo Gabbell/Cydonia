@@ -38,13 +38,12 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
-   // Initialize Shadow Map
+   // Initialize shadow map texture and framebuffer
    if( !scene.shadowMap )
    {
       TextureDescription texDesc;
       texDesc.width  = SHADOWMAP_DIM;
       texDesc.height = SHADOWMAP_DIM;
-      texDesc.size   = texDesc.width * texDesc.height * sizeof( float );
       texDesc.type   = ImageType::TEXTURE_2D;
       texDesc.format = PixelFormat::D32_SFLOAT;
       texDesc.usage  = ImageUsage::SAMPLED | ImageUsage::DEPTH_STENCIL;
@@ -58,7 +57,7 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       clear.depthStencil.stencil = 0;
 
       s_shadowmapFB.resize( SHADOWMAP_DIM, SHADOWMAP_DIM );
-      s_shadowmapFB.setToClear( true );
+      s_shadowmapFB.setToClearAll( true );
       s_shadowmapFB.attach( 0, scene.shadowMap, Access::DEPTH_STENCIL_ATTACHMENT_READ, clear );
    }
 

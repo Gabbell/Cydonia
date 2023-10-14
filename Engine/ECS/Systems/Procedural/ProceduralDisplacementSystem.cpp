@@ -50,7 +50,6 @@ void ProceduralDisplacementSystem::tick( double deltaS )
          TextureDescription noiseTexDesc;
          noiseTexDesc.width  = noise.width;
          noiseTexDesc.height = noise.height;
-         noiseTexDesc.size   = noiseTexDesc.width * noiseTexDesc.height * sizeof( float );
          noiseTexDesc.type   = ImageType::TEXTURE_2D;
          noiseTexDesc.format = PixelFormat::R32F;
          noiseTexDesc.usage  = ImageUsage::STORAGE | ImageUsage::SAMPLED;

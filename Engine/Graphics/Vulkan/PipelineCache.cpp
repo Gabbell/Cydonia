@@ -191,7 +191,7 @@ VkPipeline PipelineCache::findOrCreate( const CYD::ComputePipelineInfo& pipInfo 
 
 VkPipeline PipelineCache::findOrCreate(
     const CYD::GraphicsPipelineInfo& pipInfo,
-    const CYD::RenderPassInfo& renderPassInfo,
+    const RenderPassInfo& renderPassInfo,
     VkRenderPass renderPass )
 {
    // Attempting to find pipeline
@@ -344,7 +344,7 @@ VkPipeline PipelineCache::findOrCreate(
    multisampling.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
 
    std::vector<VkPipelineColorBlendAttachmentState> colorBlendAttachments;
-   for( const CYD::Attachment& attachment : renderPassInfo.attachments )
+   for( const Attachment& attachment : renderPassInfo.attachments )
    {
       if( CYD::IsColorFormat( attachment.format ) )
       {

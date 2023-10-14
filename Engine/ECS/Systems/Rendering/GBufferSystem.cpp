@@ -47,7 +47,7 @@ void GBufferSystem::tick( double /*deltaS*/ )
    // Initialize/reset GBuffer
    if( scene.resolutionChanged )
    {
-      scene.gbuffer.setToClear( true );
+      scene.gbuffer.setToClearAll( true );
       scene.gbuffer.resize( scene.extent.width, scene.extent.height );
       scene.gbuffer.replace(
           GBuffer::DEPTH, scene.mainDepth, Access::DEPTH_STENCIL_ATTACHMENT_READ );

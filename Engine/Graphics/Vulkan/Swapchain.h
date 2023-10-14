@@ -3,6 +3,7 @@
 #include <Common/Include.h>
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/Vulkan/VulkanTypes.h>
 
 #include <cstdint>
 #include <memory>
@@ -52,7 +53,7 @@ class Swapchain final
    // For render pass begin info
    const VkExtent2D& getVKExtent() const { return *m_extent; }
 
-   const CYD::RenderPassInfo& getRenderPass() const
+   const RenderPassInfo& getRenderPass() const
    {
       return m_renderPasses[m_shouldClear ? 0 : 1];
    }
@@ -101,7 +102,7 @@ class Swapchain final
 
    std::vector<VkFramebuffer> m_vkFramebuffers;
 
-   CYD::RenderPassInfo m_renderPasses[2];
+   RenderPassInfo m_renderPasses[2];
    VkRenderPass m_vkRenderPasses[2];
    bool m_shouldClear = true;
 

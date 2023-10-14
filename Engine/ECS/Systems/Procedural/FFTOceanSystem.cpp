@@ -198,7 +198,6 @@ void FFTOceanSystem::tick( double deltaS )
 
          // TODO Size based on dimensions and pixel format
          TextureDescription rgTexDesc = {};
-         rgTexDesc.size               = resolution * resolution * 2 * sizeof( float );
          rgTexDesc.width              = resolution;
          rgTexDesc.height             = resolution;
          rgTexDesc.type               = ImageType::TEXTURE_2D;
@@ -216,7 +215,6 @@ void FFTOceanSystem::tick( double deltaS )
          ocean.pingpongTex = GRIS::CreateTexture( rgTexDesc );
 
          TextureDescription butterflyDesc = {};
-         butterflyDesc.size               = resolution * numberOfStages * 4 * sizeof( float );
          butterflyDesc.width              = numberOfStages;
          butterflyDesc.height             = resolution;
          butterflyDesc.type               = ImageType::TEXTURE_2D;
@@ -230,7 +228,6 @@ void FFTOceanSystem::tick( double deltaS )
              sizeof( uint32_t ) * resolution, "FFTOceanSystem Bit-Reversed Indices" );
 
          TextureDescription dispTexDesc = {};
-         dispTexDesc.size               = resolution * resolution * 4 * sizeof( float );
          dispTexDesc.width              = resolution;
          dispTexDesc.height             = resolution;
          dispTexDesc.type               = ImageType::TEXTURE_2D;

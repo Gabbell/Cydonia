@@ -262,7 +262,6 @@ enum class CompareOperator
 // Basic structs
 struct TextureDescription
 {
-   size_t size              = 0;
    uint32_t width           = 0;  // 2D Dimensions are optional when
    uint32_t height          = 0;  // loading from storage
    uint32_t layers          = 1;
@@ -328,26 +327,6 @@ struct ClearValue
 {
    ClearColorValue color;
    ClearDepthStencilValue depthStencil;
-};
-
-// TODO Remove this and RenderPassInfo from here
-struct Attachment
-{
-   bool operator==( const Attachment& other ) const;
-   PixelFormat format   = PixelFormat::BGRA8_UNORM;
-   AttachmentType type  = AttachmentType::COLOR;
-   LoadOp loadOp        = LoadOp::DONT_CARE;
-   StoreOp storeOp      = StoreOp::DONT_CARE;
-   ClearValue clear     = {};
-   Access initialAccess = Access::UNDEFINED;
-   Access nextAccess    = Access::GENERAL;
-};
-
-struct RenderPassInfo
-{
-   // TODO CLEAR VALUE IS NOT COMPARED HERE, SHOULD PROBABLY BE MOVED OUT OF RENDER PASS INFO
-   bool operator==( const RenderPassInfo& other ) const;
-   std::vector<Attachment> attachments;
 };
 
 struct SamplerInfo
@@ -425,23 +404,6 @@ struct std::hash<CYD::Extent2D>
 };
 
 template <>
-struct std::hash<CYD::RenderPassInfo>
-{
-   size_t operator()( const CYD::RenderPassInfo& info ) const noexcept
-   {
-      const std::vector<CYD::Attachment>& attachments = info.attachments;
-
-      size_t seed = 0;
-      for( const auto& attachment : attachments )
-      {
-         hashCombine( seed, attachment );
-      }
-
-      return seed;
-   }
-};
-
-template <>
 struct std::hash<CYD::SamplerInfo>
 {
    size_t operator()( const CYD::SamplerInfo& samplerInfo ) const noexcept
@@ -457,19 +419,3 @@ struct std::hash<CYD::SamplerInfo>
    }
 };
 
-template <>
-struct std::hash<CYD::Attachment>
-{
-   size_t operator()( const CYD::Attachment& attachment ) const noexcept
-   {
-      size_t seed = 0;
-      hashCombine( seed, attachment.format );
-      hashCombine( seed, attachment.type );
-      hashCombine( seed, attachment.loadOp );
-      hashCombine( seed, attachment.storeOp );
-      hashCombine( seed, attachment.initialAccess );
-      hashCombine( seed, attachment.nextAccess );
-
-      return seed;
-   }
-};

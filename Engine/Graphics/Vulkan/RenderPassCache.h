@@ -2,7 +2,7 @@
 
 #include <Common/Include.h>
 
-#include <Graphics/GraphicsTypes.h>
+#include <Graphics/Vulkan/VulkanTypes.h>
 
 #include <unordered_map>
 
@@ -17,7 +17,7 @@ class Device;
 }
 
 // ================================================================================================
-// Definition
+// Definitions
 // ================================================================================================
 namespace vk
 {
@@ -27,13 +27,13 @@ class RenderPassCache final
    explicit RenderPassCache( const Device& device );
    ~RenderPassCache();
 
-   VkRenderPass findOrCreate( const CYD::RenderPassInfo& targetsInfo );
+   VkRenderPass findOrCreate( const RenderPassInfo& targetsInfo );
 
   private:
    void _createDefaultRenderPasses();
 
    const Device& m_device;
 
-   std::unordered_map<CYD::RenderPassInfo, VkRenderPass> m_renderPasses;
+   std::unordered_map<RenderPassInfo, VkRenderPass> m_renderPasses;
 };
 }
