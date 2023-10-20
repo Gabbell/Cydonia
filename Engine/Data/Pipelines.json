@@ -397,84 +397,6 @@
       ]
     },
     {
-      "NAME": "PLANET",
-      "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "TERRAIN_VERT",
-      "TESS_CONTROL_SHADER": "PLANET_TESC",
-      "TESS_EVAL_SHADER": "PLANET_TESE",
-      "FRAGMENT_SHADER": "PLANET_FRAG",
-      "POLYGON_MODE": "LINE",
-      "PRIMITIVE": "PATCHES",
-      "VERTEX_LAYOUT": [
-        {
-          "LOCATION": 0,
-          "FORMAT": "RGB32F"
-        },
-        {
-          "LOCATION": 1,
-          "FORMAT": "RGB32F"
-        },
-        {
-          "LOCATION": 2,
-          "FORMAT": "RGB32F"
-        },
-        {
-          "LOCATION": 3,
-          "FORMAT": "RGBA32F"
-        }
-      ],
-      "DEPTH_STENCIL": {
-        "DEPTH_TEST_ENABLE": true,
-        "STENCIL_TEST_ENABLE": false,
-        "DEPTH_WRITE_ENABLE": true,
-        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
-      },
-      "TESSELLATION": {
-        "ENABLE": true,
-        "PATCH_VERTICES": 3
-      },
-      "SHADER_RESOURCES": [
-        {
-          "NAME": "Model",
-          "TYPE": "PUSH_CONSTANT",
-          "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
-          ],
-          "SIZE": 64
-        },
-        {
-          "NAME": "Views",
-          "TYPE": "UNIFORM",
-          "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL",
-            "FRAGMENT"
-          ],
-          "SET": 0,
-          "BINDING": 0
-        },
-        {
-          "NAME": "TessellationParams",
-          "TYPE": "UNIFORM",
-          "STAGES": [
-            "TESS_CONTROL"
-          ],
-          "SET": 0,
-          "BINDING": 2
-        },
-        {
-          "NAME": "Lights",
-          "TYPE": "UNIFORM",
-          "STAGES": [
-            "FRAGMENT"
-          ],
-          "SET": 1,
-          "BINDING": 0
-        }
-      ]
-    },
-    {
       "NAME": "PBR",
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "PBR_TEX_VERT",
@@ -983,7 +905,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 8
+          "SIZE": 32
         },
         {
           "NAME": "transmittanceLUT",
@@ -1007,7 +929,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 8
+          "SIZE": 32
         },
         {
           "NAME": "transmittanceLUT",
@@ -1040,7 +962,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 8
+          "SIZE": 32
         },
         {
           "NAME": "viewInfo",
@@ -1081,6 +1003,57 @@
       ]
     },
     {
+      "NAME": "ATMOS_AERIAL_PERSPECTIVE_LUT",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "ATMOS_AERIAL_PERSPECTIVE_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "AtmosphereParameters",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SIZE": 32
+        },
+        {
+          "NAME": "viewInfo",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "transmittanceLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "multipleScatteringLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "aerialPerspectiveLUT",
+          "TYPE": "IMAGE",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 3
+        }
+      ]
+    },
+    {
       "NAME": "ATMOS_OUTPUT",
       "TYPE": "COMPUTE",
       "COMPUTE_SHADER": "ATMOS_OUTPUT_COMP",
@@ -1091,7 +1064,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 8
+          "SIZE": 32
         },
         {
           "NAME": "viewInfo",
@@ -1121,13 +1094,22 @@
           "BINDING": 2
         },
         {
+          "NAME": "aerialPerspectiveLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 3
+        },
+        {
           "NAME": "colorImage",
           "TYPE": "IMAGE",
           "STAGES": [
             "COMPUTE"
           ],
           "SET": 0,
-          "BINDING": 3
+          "BINDING": 4
         },
         {
           "NAME": "depthImage",
@@ -1136,7 +1118,7 @@
             "COMPUTE"
           ],
           "SET": 0,
-          "BINDING": 4
+          "BINDING": 5
         }
       ]
     },

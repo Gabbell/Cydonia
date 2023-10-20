@@ -51,7 +51,7 @@ class VKRenderBackendImp
       m_scInfo.extent     = window.getExtent();
       m_scInfo.format     = PixelFormat::BGRA8_UNORM;
       m_scInfo.space      = ColorSpace::SRGB_NONLINEAR;
-      m_scInfo.mode       = PresentMode::IMMEDIATE;
+      m_scInfo.mode       = PresentMode::FIFO;
 
       m_mainSwapchain = m_mainDevice.createSwapchain( m_scInfo );
 
@@ -376,7 +376,7 @@ class VKRenderBackendImp
 
       vk::Buffer* staging = m_mainDevice.createStagingBuffer( size );
 
-      const size_t layerSize = size / desc.layers;
+      const size_t layerSize = size / desc.depth;
       for( uint32_t i = 0; i < layerCount; ++i )
       {
          const UploadToBufferInfo uploadInfo = { i * layerSize, layerSize };

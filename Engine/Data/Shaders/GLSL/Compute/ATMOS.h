@@ -2,6 +2,12 @@ struct AtmosphereParameters
 {
    float groundRadiusMM;
    float atmosphereRadiusMM;
+   float phaseScale;
+   float nearClip;
+   float farClip;
+   float heightFogA;
+   float heightFogB;
+   float time;
 };
 
 const float PI      = 3.14159265358;
@@ -26,7 +32,7 @@ const vec3 right   = vec3( 1.0, 0.0, 0.0 );
 // Hard-coded planet position
 const vec3 spherePos = vec3( 0.0, 0.0, 0.0 );
 
-// From https://gamedev.stackexchange.com/questions/96459/fast-ray-sphere-collision-code.
+// From https://gamedev.stackexchange.com/questions/96459/fast-ray-sphere-collision-code
 float rayIntersectSphere( vec3 ro, vec3 rd, vec3 so, float radius )
 {
    vec3 m  = ro - so;
@@ -134,4 +140,20 @@ float getMiePhase( float cosTheta )
    const float denom = ( 2.0 + g * g ) * pow( ( 1.0 + g * g - 2.0 * g * cosTheta ), 1.5 );
 
    return scale * num / denom;
+}
+
+// ===============================================================================================
+// Aerial Perspective
+// Note that maxDistanceMM must somewhat match with the far clip distance of the camera
+
+float SliceToDistanceMM( float slice, float maxDistanceMM, float maxSlice )
+{
+   // First slice is not at the camera depth (0) but at (maxDistanceMM / maxSlice)
+   return ( slice + 1.0 ) * ( maxDistanceMM / maxSlice );
+}
+
+float DepthToSlice( float depth, float maxSlice )
+{
+   // This returns between -1 and 0 for the part between the camera and the first slice
+   return (depth * maxSlice) - 1.0;
 }

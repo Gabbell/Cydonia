@@ -1022,7 +1022,7 @@ void CommandBuffer::copyBufferToTexture(
    region.imageSubresource.aspectMask     = TypeConversions::getAspectMask( dst->getPixelFormat() );
    region.imageSubresource.mipLevel       = 0;
    region.imageSubresource.baseArrayLayer = 0;
-   region.imageSubresource.layerCount     = dst->getLayers();
+   region.imageSubresource.layerCount     = dst->getDepth();
    region.imageOffset                     = { info.dstOffset.x, info.dstOffset.y, 0 };
    region.imageExtent                     = { info.dstExtent.width, info.dstExtent.height, 1 };
 

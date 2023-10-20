@@ -152,7 +152,7 @@ project "VKSandbox"
 
 	files { "VKSandbox/**.h",
 			"VKSandbox/**.cpp",
-			"VKSandbox/CydoniaIcon.png" }
+			"CydoniaIcon.png" }
 
 	filter {}
 
@@ -161,7 +161,7 @@ project "VKSandbox"
 
 	filter {}
 
-	filter "files:VKSandbox/CydoniaIcon.png"
+	filter "files:CydoniaIcon.png"
 		buildmessage "Copying Icon %{file.abspath}"
 
 		buildcommands {

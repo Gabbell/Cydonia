@@ -41,7 +41,7 @@ class Texture final
    size_t getSize() const noexcept { return m_size; }
    uint32_t getWidth() const noexcept { return m_width; }
    uint32_t getHeight() const noexcept { return m_height; }
-   uint32_t getLayers() const noexcept { return m_layers; }
+   uint32_t getDepth() const noexcept { return m_type == CYD::ImageType::TEXTURE_2D ? m_depth : 1; }
    CYD::PixelFormat getPixelFormat() const noexcept { return m_format; }
    CYD::PipelineStageFlag getStages() const noexcept { return m_stages; }
    CYD::Access getPreviousAccess() const noexcept { return m_prevAccess; }
@@ -69,7 +69,7 @@ class Texture final
    size_t m_size     = 0;
    uint32_t m_width  = 0;
    uint32_t m_height = 0;
-   uint32_t m_layers = 1;  // For 3D images and cube maps
+   uint32_t m_depth  = 1;  // For 3D images and cube maps
 
    CYD::ImageType m_type     = CYD::ImageType::TEXTURE_2D;
    CYD::PixelFormat m_format = CYD::PixelFormat::UNKNOWN;

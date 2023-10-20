@@ -23,7 +23,7 @@ float specular( vec3 n, vec3 l, vec3 e, float s )
    return pow( max( dot( reflect( e, n ), l ), 0.0 ), s );
 }
 
-const vec3 SEA_BASE        = vec3( 0.0, 0.09, 0.18 );
+const vec3 SEA_BASE        = vec3( 0.0, 0.01, 0.10 );
 const vec3 SEA_WATER_COLOR = vec3( 0.8, 0.9, 0.6 ) * 0.6;
 
 // =================================================================================================
@@ -66,7 +66,7 @@ void main()
    if( sunFactor > 0.0 && curLight.params.x > 0.0 )
    {
       // Diffuse
-      const vec3 reflected = vec3( 0.53, 0.81, 0.92 ) * 1.0;
+      const vec3 reflected = vec3( 0.53, 0.81, 0.92 ) * 0.6;
 
       finalColor += diffuse( N, L, 80.0 ) * SEA_WATER_COLOR * 0.12;  // Refracted
       finalColor = mix( finalColor, reflected, fakeFresnel );

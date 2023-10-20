@@ -50,16 +50,16 @@ vec3 getNormals( vec2 uv )
 void main()
 {
    // Determine terrain diffuse color
-   vec3 bottomColor = vec3( 0.0, 1.0, 0.0 );
-   vec3 topColor    = vec3( 0.0, 1.0, 0.0 );
+   const vec3 rockColor = vec3( 0.16, 0.07, 0.0 );
+   const vec3 snowColor = vec3( 1.0, 1.0, 1.0 );
 
-   vec3 unlitColor = mix( bottomColor, topColor, inWorldPos.y / 10.0 );
-   if( inWorldPos.y < 0.1 )
-   {
-      unlitColor = vec3( 0.05, 1.0, 1.0 );
-   }
-
+   vec3 unlitColor   = rockColor;
    const vec3 normal = getNormals( inUV );
+   const vec3 up     = vec3( 0.0, 1.0, 0.0 );
+   if( dot( up, normal ) > 0.73 )
+   {
+      unlitColor = snowColor;
+   }
 
    outAlbedo = vec4( unlitColor, 1.0 );
    outShadow = vec4( ShadowPCF( shadowMap, inShadowCoord ), 0.0, 0.0, 1.0 );

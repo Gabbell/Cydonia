@@ -19,7 +19,6 @@ namespace CYD
 {
 bool ViewUpdateSystem::_compareEntities( const EntityEntry& first, const EntityEntry& second )
 {
-   // We are sorting entities by their material/pipeline
    const ViewComponent& viewFirst  = *std::get<ViewComponent*>( first.arch );
    const ViewComponent& viewSecond = *std::get<ViewComponent*>( second.arch );
 
@@ -75,8 +74,12 @@ void ViewUpdateSystem::tick( double /*deltaS*/ )
       switch( view.projMode )
       {
          case ViewComponent::ProjectionMode::PERSPECTIVE:
-            viewParams.projMat =
-                Transform::PerspectiveReverseZ( view.fov, view.aspectRatio, view.near, view.far );
+            viewParams.projMat = Transform::PerspectiveReverseZ(
+                view.fov,
+                static_cast<float>( scene.extent.width ),
+                static_cast<float>( scene.extent.height ),
+                view.near,
+                view.far );
             break;
          case ViewComponent::ProjectionMode::ORTHOGRAPHIC:
             viewParams.projMat = Transform::OrthoReverseZ(

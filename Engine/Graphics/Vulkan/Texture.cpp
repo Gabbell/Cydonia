@@ -16,7 +16,7 @@ void Texture::acquire( const Device& device, const CYD::TextureDescription& desc
    m_pDevice = &device;
    m_width   = desc.width;
    m_height  = desc.height;
-   m_layers  = desc.layers;
+   m_depth   = desc.depth;
    m_type    = desc.type;
    m_format  = desc.format;
    m_usage   = desc.usage;
@@ -43,7 +43,7 @@ void Texture::release()
       m_size       = 0;
       m_width      = 0;
       m_height     = 0;
-      m_layers     = 1;
+      m_depth      = 1;
       m_type       = CYD::ImageType::TEXTURE_2D;
       m_format     = CYD::PixelFormat::RGBA8_SRGB;
       m_prevAccess = CYD::Access::UNDEFINED;
@@ -88,20 +88,29 @@ void Texture::_createImage()
          break;
    }
 
-   // TODO A 6-layer image is always "promoted" to a cube map
-   if( m_layers == 6 )
+   // TODO A 6-layer 2D image is always "promoted" to a cube map
+   if( m_depth == 6 && m_type == CYD::ImageType::TEXTURE_2D )
    {
       imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
    }
 
    imageInfo.extent.width  = m_width;
    imageInfo.extent.height = m_height;
-   imageInfo.extent.depth  = 1;
    imageInfo.mipLevels     = 1;
-   imageInfo.arrayLayers   = m_layers;
    imageInfo.format        = TypeConversions::cydToVkFormat( m_format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+
+   if( m_type == CYD::ImageType::TEXTURE_2D )
+   {
+      imageInfo.extent.depth = 1;
+      imageInfo.arrayLayers  = m_depth;
+   }
+   else if( m_type == CYD::ImageType::TEXTURE_3D )
+   {
+      imageInfo.extent.depth = m_depth;
+      imageInfo.arrayLayers  = 1;
+   }
 
    if( m_usage & CYD::ImageUsage::TRANSFER_SRC )
    {
@@ -162,11 +171,11 @@ void Texture::_createImageView()
    {
       if( m_height > 0 )
       {
-         if( m_layers == 6 )
+         if( m_depth == 6 )
          {
             viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
          }
-         else if( m_layers > 1 )
+         else if( m_depth > 1 )
          {
             viewInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
          }
@@ -190,7 +199,15 @@ void Texture::_createImageView()
    viewInfo.subresourceRange.baseMipLevel   = 0;
    viewInfo.subresourceRange.levelCount     = 1;
    viewInfo.subresourceRange.baseArrayLayer = 0;
-   viewInfo.subresourceRange.layerCount     = m_layers;
+
+   if( m_type == CYD::ImageType::TEXTURE_2D )
+   {
+      viewInfo.subresourceRange.layerCount = m_depth;
+   }
+   else if( m_type == CYD::ImageType::TEXTURE_3D )
+   {
+      viewInfo.subresourceRange.layerCount = 1;
+   }
 
    VkResult result =
        vkCreateImageView( m_pDevice->getVKDevice(), &viewInfo, nullptr, &m_vkImageView );

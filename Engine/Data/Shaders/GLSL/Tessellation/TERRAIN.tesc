@@ -70,6 +70,7 @@ bool frustumCheck()
    const float radius = 8.0f;
    vec4 pos           = gl_in[gl_InvocationID].gl_Position;
    pos.y += texture( heightMap, inUV[0] ).r * DISPLACEMENT_SCALE;
+   pos = model * pos;
 
    // Check sphere against frustum planes
    for( int i = 0; i < 6; i++ )
@@ -104,7 +105,8 @@ void main()
    if( gl_InvocationID == 0 )
    {
       // Can potentially mess up shadows if culling
-      if( !frustumCheck() )
+      // TODO Fix culling while using model transforms
+      if( false /*!frustumCheck()*/ )
       {
          gl_TessLevelInner[0] = 0.0;
          gl_TessLevelInner[1] = 0.0;

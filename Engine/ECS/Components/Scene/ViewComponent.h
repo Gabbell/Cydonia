@@ -26,12 +26,7 @@ class ViewComponent final : public BaseComponent
    ViewComponent() = default;
    ViewComponent( std::string_view name ) : name( name ) {}
    ViewComponent( std::string_view name, float fov, float aspectRatio, float near, float far )
-       : name( name ),
-         projMode( ProjectionMode::PERSPECTIVE ),
-         near( near ),
-         far( far ),
-         fov( fov ),
-         aspectRatio( aspectRatio )
+       : name( name ), projMode( ProjectionMode::PERSPECTIVE ), near( near ), far( far ), fov( fov )
    {
    }
    ViewComponent(
@@ -66,8 +61,7 @@ class ViewComponent final : public BaseComponent
    float far  = 10000.0f;
 
    // Projection
-   float fov         = 60.0f;         // in degrees
-   float aspectRatio = 16.0f / 9.0f;  // 16:9
+   float fov = 60.0f;  // in degrees
 
    // Orthographic
    float left   = -1.0f;

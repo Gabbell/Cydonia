@@ -27,9 +27,10 @@ static ImTextureID s_albedoTexture     = nullptr;
 static ImTextureID s_normalsTexture    = nullptr;
 static ImTextureID s_shadowMaskTexture = nullptr;
 
-static ImTextureID s_transmittanceLUTTexture   = nullptr;
-static ImTextureID s_multiScatteringLUTTexture = nullptr;
-static ImTextureID s_skyViewLUTTexture         = nullptr;
+static ImTextureID s_transmittanceLUTTexture     = nullptr;
+static ImTextureID s_multiScatteringLUTTexture   = nullptr;
+static ImTextureID s_skyViewLUTTexture           = nullptr;
+static ImTextureID s_aerialPerspectiveLUTTexture = nullptr;
 
 void Initialize() { GRIS::InitializeUIBackend(); }
 
@@ -339,53 +340,60 @@ void DrawProceduralDisplacementComponentMenu(
 
 void DrawAtmosphereComponentMenu( CmdListHandle cmdList, const AtmosphereComponent& atmosphere )
 {
-   if( s_transmittanceLUTTexture == nullptr )
-   {
-      s_transmittanceLUTTexture = GRIS::AddDebugTexture( atmosphere.transmittanceLUT );
-   }
-
-   GRIS::UpdateDebugTexture( cmdList, atmosphere.transmittanceLUT );
-
-   ImGui::Text( "Transmittance LUT" );
    float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
-   float displayHeight = displayWidth *
-                         static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_HEIGHT ) /
-                         static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_WIDTH );
-   ImVec2 dimensions( displayWidth, displayHeight );
-   ImGui::Image( s_transmittanceLUTTexture, dimensions );
+   float displayHeight = 0.0f;
+   ImVec2 dimensions;
 
-   // =============================================================================================
+   ImGui::SliderFloat( "Phase Scale", (float*)&atmosphere.params.phaseScale, 0.0f, 50.0f );
+   ImGui::SliderFloat( "Height Fog A", (float*)&atmosphere.params.heightFogA, 0.0f, 1.0f );
+   ImGui::SliderFloat( "Height Fog B", (float*)&atmosphere.params.heightFogB, 0.0f, 1.0f );
 
-   if( s_multiScatteringLUTTexture == nullptr )
+   if( ImGui::TreeNodeEx( "Transmittance LUT" ) )
    {
-      s_multiScatteringLUTTexture = GRIS::AddDebugTexture( atmosphere.multipleScatteringLUT );
+      if( s_transmittanceLUTTexture == nullptr )
+      {
+         s_transmittanceLUTTexture = GRIS::AddDebugTexture( atmosphere.transmittanceLUT );
+      }
+
+      displayHeight = displayWidth *
+                      static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_HEIGHT ) /
+                      static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_WIDTH );
+      dimensions = ImVec2( displayWidth, displayHeight );
+      ImGui::Image( s_transmittanceLUTTexture, dimensions );
+
+      ImGui::TreePop();
    }
 
-   GRIS::UpdateDebugTexture( cmdList, atmosphere.multipleScatteringLUT );
-
-   ImGui::Text( "Multiple Scattering LUT" );
-   displayWidth  = ImGui::GetWindowWidth() * 0.85f;
-   displayHeight = displayWidth *
-                   static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM ) /
-                   static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM );
-   dimensions = ImVec2( displayWidth, displayHeight );
-   ImGui::Image( s_multiScatteringLUTTexture, dimensions );
-
-   // =============================================================================================
-
-   if( s_skyViewLUTTexture == nullptr )
+   if( ImGui::TreeNodeEx( "Multiple Scattering LUT" ) )
    {
-      s_skyViewLUTTexture = GRIS::AddDebugTexture( atmosphere.skyViewLUT );
+      if( s_multiScatteringLUTTexture == nullptr )
+      {
+         s_multiScatteringLUTTexture = GRIS::AddDebugTexture( atmosphere.multipleScatteringLUT );
+      }
+
+      displayHeight = displayWidth *
+                      static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM ) /
+                      static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM );
+      dimensions = ImVec2( displayWidth, displayHeight );
+      ImGui::Image( s_multiScatteringLUTTexture, dimensions );
+
+      ImGui::TreePop();
    }
 
-   GRIS::UpdateDebugTexture( cmdList, atmosphere.skyViewLUT );
+   if( ImGui::TreeNodeEx( "Sky View LUT" ) )
+   {
+      if( s_skyViewLUTTexture == nullptr )
+      {
+         s_skyViewLUTTexture = GRIS::AddDebugTexture( atmosphere.skyViewLUT );
+      }
 
-   ImGui::Text( "Sky View LUT" );
-   displayWidth  = ImGui::GetWindowWidth() * 0.85f;
-   displayHeight = displayWidth * static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_HEIGHT ) /
-                   static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_WIDTH );
-   dimensions = ImVec2( displayWidth, displayHeight );
-   ImGui::Image( s_skyViewLUTTexture, dimensions );
+      displayHeight = displayWidth * static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_HEIGHT ) /
+                      static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_WIDTH );
+      dimensions = ImVec2( displayWidth, displayHeight );
+      ImGui::Image( s_skyViewLUTTexture, dimensions );
+
+      ImGui::TreePop();
+   }
 }
 
 void DrawFFTOceanComponentMenu( CmdListHandle cmdList, const FFTOceanComponent& ocean )

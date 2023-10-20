@@ -235,7 +235,7 @@ static TextureHandle LoadImageFromStorage(
     const std::string* paths )
 {
    CYD_ASSERT(
-       layerCount <= inputDesc.layers &&
+       layerCount <= inputDesc.depth &&
        "VKRenderBackend:: Number of textures could not fit in number of layers" );
 
    CYD_ASSERT(

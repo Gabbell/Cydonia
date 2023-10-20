@@ -41,14 +41,14 @@ void main()
 
    const vec3 ambientTerm = curLight.color.rgb * ConstantAmbient();
    const float sunFactor =
-       clamp( smoothstep( 0.0, 0.25, dot( lightDir, vec3( 0.0, 1.0, 0.0 ) ) ), 0.0, 1.0 );
+       clamp( smoothstep( 0.0, 0.08, dot( lightDir, vec3( 0.0, 1.0, 0.0 ) ) ), 0.0, 1.0 );
 
    const vec3 nightColor = unlitColor * ambientTerm;
 
    vec3 finalColor = nightColor;
    if( sunFactor > 0.0 && curLight.params.x > 0.0 )
    {
-      const vec3 diffuseTerm = curLight.color.rgb * ColorRampDiffuse( lightDir, normal ) * shadow.r;
+      const vec3 diffuseTerm = curLight.color.rgb * LambertianDiffuse( lightDir, normal ) * shadow.r;
       const vec3 specularTerm =
           curLight.color.rgb * BlinnPhongSpecular( lightDir, viewDir, normal ) * shadow.r;
 

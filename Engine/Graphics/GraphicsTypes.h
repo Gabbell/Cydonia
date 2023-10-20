@@ -264,7 +264,7 @@ struct TextureDescription
 {
    uint32_t width           = 0;  // 2D Dimensions are optional when
    uint32_t height          = 0;  // loading from storage
-   uint32_t layers          = 1;
+   uint32_t depth           = 1;
    ImageType type           = ImageType::TEXTURE_2D;  // 1D, 2D, 3D...
    PixelFormat format       = PixelFormat::RGBA32F;   // The texture's pixel format
    ImageUsageFlag usage     = 0;                      // How this image will be used
@@ -418,4 +418,3 @@ struct std::hash<CYD::SamplerInfo>
       return seed;
    }
 };
-

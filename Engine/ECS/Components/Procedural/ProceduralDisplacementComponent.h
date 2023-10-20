@@ -18,7 +18,7 @@ class ProceduralDisplacementComponent final : public BaseComponent
        Noise::Type type,
        uint32_t width,
        uint32_t height,
-       uint32_t seed );
+       const Noise::ShaderParams& params );
    ProceduralDisplacementComponent(
        Noise::Type type,
        uint32_t width,
@@ -34,9 +34,9 @@ class ProceduralDisplacementComponent final : public BaseComponent
    Noise::Type type           = Noise::Type::WHITE_NOISE;
    Noise::ShaderParams params = {};
 
-   float timeMultiplier = 0.0f;
-   uint32_t width       = 0;
-   uint32_t height      = 0;
+   float speed     = 0.0f;
+   uint32_t width  = 0;
+   uint32_t height = 0;
 
    TextureHandle texture;
 

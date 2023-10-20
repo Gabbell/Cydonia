@@ -1,5 +1,7 @@
 #include <Graphics/Utility/Transforms.h>
 
+#include <glm/gtc/reciprocal.hpp>
+
 namespace CYD::Transform
 {
 void Rotate( glm::quat& rotation, float pitch, float yaw, float roll )
@@ -50,16 +52,16 @@ GetModelMatrix( const glm::vec3& scaling, const glm::quat& rotation, const glm::
    return rotate * translate * scale;
 }
 
-glm::mat4 Perspective( float fov, float aspectRatio, float near, float far )
+glm::mat4 Perspective( float fov, float width, float height, float near, float far )
 {
-   glm::mat4 proj = glm::perspectiveZO( glm::radians( fov ), aspectRatio, near, far );
-   proj[1][1] *= -1.0f; // Invert Y
+   glm::mat4 proj = glm::perspectiveFovRH_ZO( glm::radians( fov ), width, height, near, far );
+   proj[1][1] *= -1.0f;  // Invert Y
    return proj;
 }
 
-glm::mat4 PerspectiveReverseZ( float fov, float aspectRatio, float near, float far )
+glm::mat4 PerspectiveReverseZ( float fov, float width, float height, float near, float far )
 {
-   glm::mat4 proj = glm::perspectiveZO( glm::radians( fov ), aspectRatio, far, near);
+   glm::mat4 proj = glm::perspectiveFovRH_ZO( glm::radians( fov ), width, height, far, near );
    proj[1][1] *= -1.0f;  // Invert Y
    return proj;
 }
@@ -67,7 +69,7 @@ glm::mat4 PerspectiveReverseZ( float fov, float aspectRatio, float near, float f
 glm::mat4 Ortho( float left, float right, float bottom, float top, float near, float far )
 {
    glm::mat4 proj = glm::orthoZO( left, right, bottom, top, near, far );
-   proj[1][1] *= -1.0f; // Invert Y
+   proj[1][1] *= -1.0f;  // Invert Y
    return proj;
 }
 

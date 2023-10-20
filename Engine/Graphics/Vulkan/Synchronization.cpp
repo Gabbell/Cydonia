@@ -84,7 +84,7 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::Access 
    barrier.subresourceRange.baseMipLevel   = 0;
    barrier.subresourceRange.levelCount     = 1;
    barrier.subresourceRange.baseArrayLayer = 0;
-   barrier.subresourceRange.layerCount     = texture->getLayers();
+   barrier.subresourceRange.layerCount     = texture->getDepth();
 
    thsvsCmdPipelineBarrier( cmdBuffer->getVKCmdBuffer(), nullptr, 0, nullptr, 1, &barrier );
 

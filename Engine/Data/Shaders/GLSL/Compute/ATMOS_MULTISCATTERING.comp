@@ -51,8 +51,8 @@ void main()
          const float tMax = groundDist > 0.0 ? groundDist : atmoDist;
 
          const float cosTheta      = dot( rayDir, sunDir );
-         const float rayleighPhase = getRayleighPhase( -cosTheta );
-         const float miePhase      = getMiePhase( -cosTheta );
+         const float rayleighPhase = getRayleighPhase( cosTheta );
+         const float miePhase      = getMiePhase( cosTheta );
 
          // Equation 8 from paper
          vec3 luminance       = vec3( 0.0 );

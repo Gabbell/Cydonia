@@ -62,10 +62,10 @@ void ProceduralDisplacementSystem::tick( double deltaS )
          noise.resolutionChanged = false;
       }
 
-      const bool needUpdate = noise.needsUpdate || noise.timeMultiplier > 0.0f;
+      const bool needUpdate = noise.needsUpdate || noise.speed > 0.0f;
       if( needUpdate )
       {
-         noise.params.seed += noise.timeMultiplier * static_cast<float>( deltaS );
+         noise.params.seed += noise.speed * static_cast<float>( deltaS );
 
          GRIS::BindPipeline( cmdList, Noise::GetPipeline( noise.type ) );
 
