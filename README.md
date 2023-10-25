@@ -106,7 +106,7 @@ Using the `TessellatedComponent`, you can dynamically tessellate the ocean grid.
 * More physically based rendering
 * "Infinite" tiled ocean
 
-<img src="ocean.png"  width="1200">
+https://github.com/Gabbell/Cydonia/assets/10086598/91c5f3ce-6e57-465d-a3cc-a98101b2408f
 
 _References:_
 
