@@ -70,6 +70,30 @@ Basically just a rendering interface that can be implemented using different ren
 
 # Graphics/Rendering
 
+### Physically-Based Sky/Atmosphere
+Using the `AtmosphereSystem`, `AtmosphereRenderSystem` and `AtmosphereComponent`, a physically-based sky is rendered into the back of the scene, where the depth buffer is empty. This is a lighter implementation of Hillaire's "A Scalable and Production Ready Sky and Atmosphere Rendering Technique"[1] paper. It uses raymarching to integrate over volumes at a planetary scale. The physically-based aspect comes from taking into account Rayleigh and Mie scattering along with ozone absorption. Rayleigh scattering is light scattering in air or very small partices while Mie scattering is for larger particles like pollutants. The ozone absorption is particularly important to get a realistic Earth sky. This system computes a few LUTs:
+
+* Sun Transmittance LUT: contains the color of the sun based on its direction relative to the atmosphere. Is only computed once or when scattering or atmosphere parameters change.
+* Multiscattering LUT: Simulates infinite light scattering by integrating rays in a sphere around a position. 
+* Sky-view LUT: A flat view of the sky with a non-linear mapping in the Y direction to have more resolution near the horizon where details are higher frequency.
+* Aerial Perspective LUT: A view-based 3D texture representing the atmospheric scattering present over long distances. 
+
+Then, we use the `Sky-view LUT`, the `Sun Transmittance LUT` and the `Aerial Perspective LUT` to output to the main color framebuffer. I do some color-grading because the `Sky-view LUT` is pretty dark. I apply the `Aerial Perspective LUT` to anything that has a depth presence. We use the `Sun Transmittance LUT` to draw a sun. 
+
+#### To do
+* Views from space. Use full raymarching for when view position is outside atmosphere
+* Take into account terrain visibility for volumetric shadowing effect
+
+_References:_
+[1] Hillaire, S. (2020). A scalable and production ready sky and atmosphere rendering technique.
+Computer Graphics Forum, 39(4), 13–22. https://doi.org/10.1111/cgf.14050
+
+https://github.com/sebh/UnrealEngineSkyAtmosphere
+
+https://github.com/Gabbell/Cydonia/assets/10086598/83e1bf9d-cb3f-4497-9797-b60624ad2317
+
+___
+
 ### FFT Ocean using Compute
 Using the `FFTOceanComponent` and the `FFTOceanSystem` along with the `OceanRenderSystem`, it is possible to render a patch of 3D-displaced ocean water. There are several parameters available to control the amplitude and direction of the waves along different kinds of resolution. This is an implementation of Tessendorf's "Simulating Ocean Water" paper [2] using Compute [1]. Some minor optimizations were achieved, mainly in the shader code and texture usage, and modifications were done to work within Cydonia's coordinate system. The foam factor was calculated based on the Jacobian determinant [2] at every texel. This was done using finite differences. 
 
@@ -116,31 +140,6 @@ https://iquilezles.org/articles/warp/
 
 <img src="terrainwithfog.png"  width="1200">
 
-___
-
-### Physically-Based Sky/Atmosphere
-Using the `AtmosphereSystem` and `AtmosphereComponent`, a physically-based sky is rendered into the back of the scene, where the depth buffer is empty. This is a lighter implementation of Hillaire's "A Scalable and Production Ready Sky and Atmosphere Rendering Technique"[1] paper. It uses raymarching to integrate over volumes at a planetary scale. The physically-based aspect comes from taking into account Rayleigh and Mie scattering along with ozone absorption. Rayleigh scattering is light scattering in air or very small partices while Mie scattering is for larger particles like pollutants. The ozone absorption is particularly important to get a realistic Earth sky. This system computes a few LUTs:
-
-* Sun Transmittance LUT: contains the color of the sun based on its direction relative to the atmosphere. Is only computed once or when scattering or atmosphere parameters change.
-* Multiscattering LUT: Simulates infinite light scattering by integrating rays in a sphere around a position. 
-* Sky-view LUT: A flat view of the sky with a non-linear mapping in the Y direction to have more resolution near the horizon where details are higher frequency.
-
-Then, we use the `Sky-view LUT` and `Sun Transmittance LUT` to output to the main color framebuffer. I do some color-grading because the `Sky-view LUT` is pretty dark. We use the `Sun Transmittance LUT` to draw a sun and for some foggy effect around it. 
-
-#### To do
-* Views from space. Use full raymarching for when view position is outside atmosphere
-* Aerial perspective LUT to replace exponential height fog effect
-* Take into account terrain visibility for volumetric shadowing effect
-
-_References:_
-[1] Hillaire, S. (2020). A scalable and production ready sky and atmosphere rendering technique.
-Computer Graphics Forum, 39(4), 13–22. https://doi.org/10.1111/cgf.14050
-
-https://github.com/sebh/UnrealEngineSkyAtmosphere
-
-
-<img align="left" src="atmosphereday.png"  width="400">
-<img align="middle" src="atmosphereevening.png"  width="400">
 
 ___
 
