@@ -41,16 +41,16 @@ void main()
    const vec3 rayDir   = normalize( mat3( viewInfo.invView ) * rayEye.xyz );
 
    // Adjusting current view position to be within the same scale (megameters)
-   const vec3 viewPos = getMMPosition( params, viewInfo.viewPos.xyz );
-   const vec3 sunDir  = -viewInfo.lightDir.xyz;
+   const vec3 viewPosMM = getMMPosition( params.groundRadiusMM, viewInfo.viewPos.xyz );
+   const vec3 sunDir    = -viewInfo.lightDir.xyz;
 
    // Start raymarching/integrating
    const float tMax = distanceMM;
 
    const float cosTheta = dot( rayDir, sunDir );
 
-   const float rayleighPhase = params.phaseScale * getRayleighPhase( cosTheta );
-   const float miePhase      = params.phaseScale * getMiePhase( cosTheta );
+   const float rayleighPhase = getRayleighPhase( cosTheta );
+   const float miePhase      = getMiePhase( params.miePhase, cosTheta );
 
    vec3 illuminance        = vec3( 0.0 );
    float meanTransmittance = 0.0;
@@ -58,21 +58,22 @@ void main()
    float t                 = 0.0;
    for( uint step = 0; step < numScatteringSteps; step++ )
    {
-      const float newT = ( step + 0.1 ) * ( tMax / numScatteringSteps );
+      const float newT = ( step + 0.5 ) * ( tMax / numScatteringSteps );
       const float dt   = newT - t;
 
       t = newT;
 
-      const vec3 newPos = viewPos.xyz + t * rayDir;
+      const vec3 newPos = viewPosMM.xyz + t * rayDir;
 
       vec3 rayleighScattering;
-      float mieScattering;
+      vec3 mieScattering;
       vec3 extinction;
       getScatteringValues( newPos, params, rayleighScattering, mieScattering, extinction );
 
       const vec3 sampleTransmittance = exp( -dt * extinction );
 
-      const vec2 lookupUV = LUTParameterization( params, sunDir, newPos );
+      const vec2 lookupUV =
+          LUTParameterization( params.groundRadiusMM, params.atmosphereRadiusMM, sunDir, newPos );
 
       const vec3 lookupTransmittance = texture( transmittanceLUT, lookupUV ).rgb;
       const vec3 Psi_ms              = texture( multiScatteringLUT, lookupUV ).rgb;

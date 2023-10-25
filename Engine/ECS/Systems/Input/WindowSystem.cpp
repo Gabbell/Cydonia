@@ -123,7 +123,7 @@ void WindowSystem::_keyCallback(
     int key,
     int /*scancode*/,
     int action,
-    int /*mods*/ )
+    int mods )
 {
    if( key == GLFW_KEY_ESCAPE && action == GLFW_PRESS )
    {
@@ -214,6 +214,11 @@ void WindowSystem::_keyCallback(
       {
          input.sprinting = false;
       }
+   }
+
+   if( mods == GLFW_MOD_CONTROL && key == GLFW_KEY_R )
+   {
+      GRIS::ReloadShaders();
    }
 }
 

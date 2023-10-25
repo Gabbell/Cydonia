@@ -18,8 +18,30 @@ namespace CYD
 class AtmosphereComponent final : public BaseComponent
 {
   public:
+   struct Description
+   {
+      // These coefficients are per KM
+      glm::vec3 mieScatteringCoefficient;
+      glm::vec3 mieAbsorptionCoefficient;
+      glm::vec3 rayleighScatteringCoefficient;
+      glm::vec3 absorptionCoefficient;
+      glm::vec3 groundAlbedo;
+      float heightFogHeight;
+      float heightFogFalloff;
+      float heightFogStrength;
+      float groundRadiusMM;
+      float atmosphereRadiusMM;
+      float miePhase;
+      float mieHeight;
+      float mieScatteringScale;
+      float mieAbsorptionScale;
+      float rayleighHeight;
+      float rayleighScatteringScale;
+      float absorptionScale;
+   };
+
    AtmosphereComponent() = default;
-   AtmosphereComponent( float phaseScale, float heightFogA, float heightFogB );
+   AtmosphereComponent( const Description& description );
    COPIABLE( AtmosphereComponent );
    virtual ~AtmosphereComponent();
 
@@ -27,14 +49,20 @@ class AtmosphereComponent final : public BaseComponent
 
    struct ShaderParams
    {
-      float groundRadiusMM     = 0.0f;
-      float atmosphereRadiusMM = 0.0f;
-      float phaseScale         = 1.0f;
-      float nearClip           = 0.0f;
-      float farClip            = 0.0f;
-      float heightFogA         = 0.0f;
-      float heightFogB         = 0.0f;
-      float time               = 0.0f;
+      glm::vec4 mieScatteringCoefficient;
+      glm::vec4 mieAbsorptionCoefficient;
+      glm::vec4 rayleighScatteringCoefficient;
+      glm::vec4 absorptionCoefficient;
+      glm::vec4 groundAlbedo;
+      glm::vec4 heightFog;
+      float groundRadiusMM;
+      float atmosphereRadiusMM;
+      float miePhase;
+      float rayleighHeight;
+      float mieHeight;
+      float nearClip;
+      float farClip;
+      float time;
    } params;
 
    struct ViewInfo

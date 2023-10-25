@@ -23,14 +23,6 @@ layout( set = 0, binding = 3 ) writeonly uniform image2D skyViewLUT;
 // ================================================================================================
 const uint numScatteringSteps = 32;
 
-vec3 jodieReinhardTonemap( vec3 c )
-{
-   // From: https://www.shadertoy.com/view/tdSXzD
-   float l = dot( c, vec3( 0.2126, 0.7152, 0.0722 ) );
-   vec3 tc = c / ( c + 1.0 );
-   return mix( c / ( l + 1.0 ), tc, tc );
-}
-
 // ================================================================================================
 void main()
 {
@@ -38,11 +30,11 @@ void main()
    const vec2 uv       = vec2( ssCoord + 0.5 ) / vec2( imageSize( skyViewLUT ) );
 
    // Adjusting current view position to be within the same scale (megameters)
-   const vec3 viewPos = getMMPosition( params, viewInfo.viewPos.xyz );
-   const float height = length( viewPos );
+   const vec3 viewPosMM = getMMPosition( params.groundRadiusMM, viewInfo.viewPos.xyz );
+   const float height   = viewPosMM.y;
 
    // Ranges to match LUT from the paper
-   const float longitudeAngle = ( uv.x - 0.5 ) * 2.0 * PI;  // Longitude from 0 to 2PI
+   const float longitudeAngle = uv.x * 2.0 * PI;  // Longitude from 0 to 2PI
 
    const float beta =
        acos( sqrt( height * height - params.groundRadiusMM * params.groundRadiusMM ) / height );
@@ -71,9 +63,9 @@ void main()
    const vec3 spherePos = vec3( 0.0, 0.0, 0.0 );
 
    const float atmoDist =
-       rayIntersectSphere( viewPos.xyz, rayDir, spherePos, params.atmosphereRadiusMM );
+       rayIntersectSphere( viewPosMM.xyz, rayDir, spherePos, params.atmosphereRadiusMM );
    const float groundDist =
-       rayIntersectSphere( viewPos.xyz, rayDir, spherePos, params.groundRadiusMM );
+       rayIntersectSphere( viewPosMM.xyz, rayDir, spherePos, params.groundRadiusMM );
 
    // Start raymarching/integrating
    const float tMax = groundDist < 0.0 ? atmoDist : groundDist;
@@ -81,28 +73,29 @@ void main()
    const float cosTheta = dot( rayDir, sunDir );
 
    const float rayleighPhase = getRayleighPhase( cosTheta );
-   const float miePhase      = getMiePhase( cosTheta );
+   const float miePhase      = getMiePhase( params.miePhase, cosTheta );
 
    vec3 luminance     = vec3( 0.0 );
    vec3 transmittance = vec3( 1.0 );
    float t            = 0.0;
    for( uint step = 0; step < numScatteringSteps; step++ )
    {
-      const float newT = ( step + 0.1 ) * ( tMax / numScatteringSteps );
+      const float newT = ( step + 0.5 ) * ( tMax / numScatteringSteps );
       const float dt   = newT - t;
 
       t = newT;
 
-      const vec3 newPos = viewPos.xyz + t * rayDir;
+      const vec3 newPos = viewPosMM.xyz + t * rayDir;
 
       vec3 rayleighScattering;
-      float mieScattering;
+      vec3 mieScattering;
       vec3 extinction;
       getScatteringValues( newPos, params, rayleighScattering, mieScattering, extinction );
 
       const vec3 sampleTransmittance = exp( -dt * extinction );
 
-      const vec2 lookupUV = LUTParameterization( params, sunDir, newPos );
+      const vec2 lookupUV =
+          LUTParameterization( params.groundRadiusMM, params.atmosphereRadiusMM, sunDir, newPos );
 
       const vec3 lookupTransmittance = texture( transmittanceLUT, lookupUV ).rgb;
       const vec3 Psi_ms              = texture( multiScatteringLUT, lookupUV ).rgb;
@@ -119,12 +112,6 @@ void main()
       luminance += ( scatteringIntegral * transmittance );
       transmittance *= sampleTransmittance;
    }
-
-   // Color-grading luminance value, a shame that this is needed
-   luminance *= 20.0;
-   luminance = pow( luminance, vec3( 1.6 ) );
-   luminance = jodieReinhardTonemap( luminance );
-   luminance = pow( luminance, vec3( 1.0 / 2.2 ) );
 
    imageStore( skyViewLUT, ssCoord, vec4( luminance, 1.0 ) );
 }

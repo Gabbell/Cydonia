@@ -39,8 +39,8 @@ void main()
    {
       for( uint phiStep = 0; phiStep < numSphereSamplesSqrt; phiStep++ )
       {
-         const float curTheta = PI * ( thetaStep ) / numSphereSamplesSqrt;
-         const float curPhi   = PI * ( phiStep ) / numSphereSamplesSqrt;
+         const float curTheta = PI * ( thetaStep + 0.5 ) / numSphereSamplesSqrt;
+         const float curPhi   = PI * ( phiStep + 0.5 ) / numSphereSamplesSqrt;
          const vec3 rayDir    = getDirFromSpherical( curTheta, curPhi );
 
          const float atmoDist =
@@ -52,7 +52,7 @@ void main()
 
          const float cosTheta      = dot( rayDir, sunDir );
          const float rayleighPhase = getRayleighPhase( cosTheta );
-         const float miePhase      = getMiePhase( cosTheta );
+         const float miePhase      = getMiePhase( params.miePhase, cosTheta );
 
          // Equation 8 from paper
          vec3 luminance       = vec3( 0.0 );
@@ -69,7 +69,7 @@ void main()
             const vec3 newPos = pos + t * rayDir;
 
             vec3 rayleighScattering;
-            float mieScattering;
+            vec3 mieScattering;
             vec3 extinction;
             getScatteringValues( newPos, params, rayleighScattering, mieScattering, extinction );
 
@@ -79,12 +79,14 @@ void main()
             const vec3 scatteringF =
                 ( scatteringNoPhase - ( scatteringNoPhase * sampleTransmittance ) ) / extinction;
 
-            const ivec2 lookupCoord =
-                ivec2( round( LUTParameterization( params, sunDir, newPos ) * transmittanceDims ) );
+            const ivec2 lookupCoord        = ivec2( round(
+                LUTParameterization(
+                    params.groundRadiusMM, params.atmosphereRadiusMM, sunDir, newPos ) *
+                transmittanceDims ) );
             const vec3 lookupTransmittance = imageLoad( transmittanceLUT, lookupCoord ).rgb;
 
             const vec3 rayleighInScattering = rayleighScattering * rayleighPhase;
-            const float mieInScattering     = mieScattering * miePhase;
+            const vec3 mieInScattering      = mieScattering * miePhase;
             const vec3 inScattering =
                 ( rayleighInScattering + mieInScattering ) * lookupTransmittance;
 
@@ -101,11 +103,13 @@ void main()
             vec3 hitPos = pos + groundDist * rayDir;
             hitPos      = normalize( hitPos ) * params.groundRadiusMM;
 
-            const ivec2 lookupCoord =
-                ivec2( round( LUTParameterization( params, sunDir, hitPos ) * transmittanceDims ) );
+            const ivec2 lookupCoord        = ivec2( round(
+                LUTParameterization(
+                    params.groundRadiusMM, params.atmosphereRadiusMM, sunDir, hitPos ) *
+                transmittanceDims ) );
             const vec3 lookupTransmittance = imageLoad( transmittanceLUT, lookupCoord ).rgb;
 
-            luminance += transmittance * groundAlbedo * lookupTransmittance;
+            luminance += transmittance * params.groundAlbedo.rgb * lookupTransmittance;
          }
 
          fms += luminanceFactor;

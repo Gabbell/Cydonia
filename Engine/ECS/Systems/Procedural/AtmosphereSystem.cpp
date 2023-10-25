@@ -17,7 +17,6 @@ static PipelineIndex s_transmittanceLUTPip     = INVALID_PIPELINE_IDX;
 static PipelineIndex s_multiScatteringLUTPip   = INVALID_PIPELINE_IDX;
 static PipelineIndex s_skyViewLUTPip           = INVALID_PIPELINE_IDX;
 static PipelineIndex s_aerialPerspectiveLUTPip = INVALID_PIPELINE_IDX;
-static PipelineIndex s_outputPip               = INVALID_PIPELINE_IDX;
 
 static void Initialize()
 {
@@ -25,9 +24,7 @@ static void Initialize()
    s_multiScatteringLUTPip   = StaticPipelines::FindByName( "ATMOS_MULTISCATTERING_LUT" );
    s_skyViewLUTPip           = StaticPipelines::FindByName( "ATMOS_SKYVIEW_LUT" );
    s_aerialPerspectiveLUTPip = StaticPipelines::FindByName( "ATMOS_AERIAL_PERSPECTIVE_LUT" );
-   s_outputPip               = StaticPipelines::FindByName( "ATMOS_OUTPUT" );
-
-   s_initialized = true;
+   s_initialized             = true;
 }
 
 static void ComputeTransmittanceLUT( CmdListHandle cmdList, AtmosphereComponent& atmos )
@@ -75,7 +72,7 @@ static void ComputeMultipleScatteringLUT( CmdListHandle cmdList, AtmosphereCompo
       texDesc.width              = AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM;
       texDesc.height             = AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM;
       texDesc.type               = ImageType::TEXTURE_2D;
-      texDesc.format             = PixelFormat::RGBA8_UNORM;
+      texDesc.format             = PixelFormat::RGBA16F;
       texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
       texDesc.stages             = PipelineStage::COMPUTE_STAGE;
       texDesc.name               = "Multiple Scattering LUT";
@@ -191,7 +188,7 @@ void AtmosphereSystem::tick( double deltaS )
       Initialize();
    }
 
-   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::POST_PROCESS );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
    CYD_SCOPED_GPUTRACE( cmdList, "AtmosphereSystem" );
 
    const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
@@ -225,10 +222,8 @@ void AtmosphereSystem::tick( double deltaS )
       atmos.viewInfo.viewPos  = view.position;
       atmos.viewInfo.lightDir = light.direction;
 
-      atmos.params.groundRadiusMM     = 6.36f;
-      atmos.params.atmosphereRadiusMM = 6.46f;
-      atmos.params.nearClip           = 10000.0f;  // Get from camera, remember it's also reversed-Z
-      atmos.params.farClip            = 0.1f;
+      atmos.params.nearClip = 10000.0f;  // Get from camera, remember it's also reversed-Z
+      atmos.params.farClip  = 0.1f;
 
       atmos.params.time += static_cast<float>( deltaS );
 
@@ -244,31 +239,8 @@ void AtmosphereSystem::tick( double deltaS )
 
       ComputeSkyViewLUT( cmdList, atmos );
       ComputeAerialPerspectiveLUT( cmdList, atmos );
-
-      CYD_GPUTRACE_BEGIN( cmdList, "Atmosphere Output" );
-
-      constexpr float localSizeX = 16.0f;
-      constexpr float localSizeY = 16.0f;
-      uint32_t groupsX = static_cast<uint32_t>( std::ceil( scene.viewport.width / localSizeX ) );
-      uint32_t groupsY = static_cast<uint32_t>( std::ceil( scene.viewport.height / localSizeY ) );
-
-      // Output to color
-      GRIS::BindPipeline( cmdList, s_outputPip );
-
-      // We're using texture+samplers here instead of images to reduce banding
-      GRIS::BindUniformBuffer( cmdList, atmos.viewInfoBuffer, 0 );
-      GRIS::BindTexture( cmdList, atmos.transmittanceLUT, 1 );
-      GRIS::BindTexture( cmdList, atmos.skyViewLUT, 2 );
-      GRIS::BindTexture( cmdList, atmos.aerialPerspectiveLUT, 3 );
-      GRIS::BindImage( cmdList, scene.mainColor, 4 );
-      GRIS::BindTexture( cmdList, scene.mainDepth, 5 );
-
-      GRIS::UpdateConstantBuffer(
-          cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( atmos.params ), &atmos.params );
-
-      GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
-
-      CYD_GPUTRACE_END( cmdList );
    }
+
+   CYD_GPUTRACE_END( cmdList );
 }
 }

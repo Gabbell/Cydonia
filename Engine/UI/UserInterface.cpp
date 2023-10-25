@@ -340,13 +340,102 @@ void DrawProceduralDisplacementComponentMenu(
 
 void DrawAtmosphereComponentMenu( CmdListHandle cmdList, const AtmosphereComponent& atmosphere )
 {
+   AtmosphereComponent& notConst = const_cast<AtmosphereComponent&>( atmosphere );
+
    float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
    float displayHeight = 0.0f;
    ImVec2 dimensions;
 
-   ImGui::SliderFloat( "Phase Scale", (float*)&atmosphere.params.phaseScale, 0.0f, 50.0f );
-   ImGui::SliderFloat( "Height Fog A", (float*)&atmosphere.params.heightFogA, 0.0f, 1.0f );
-   ImGui::SliderFloat( "Height Fog B", (float*)&atmosphere.params.heightFogB, 0.0f, 1.0f );
+   bool triggerUpdate = false;
+
+   ImGui::SeparatorText( "Mie" );
+
+   triggerUpdate |=
+       ImGui::SliderFloat( "Mie Phase", (float*)&atmosphere.params.miePhase, 0.0f, 1.0f );
+
+   triggerUpdate |=
+       ImGui::SliderFloat( "Mie Height", (float*)( &atmosphere.params.mieHeight ), 0.5f, 20.0f );
+
+   triggerUpdate |= ImGui::SliderFloat(
+       "Mie Scattering Scale",
+       (float*)&atmosphere.params.mieScatteringCoefficient.a,
+       0.00001f,
+       0.1f,
+       "%.5f",
+       ImGuiSliderFlags_Logarithmic );
+
+   triggerUpdate |= ImGui::ColorEdit3(
+       "Mie Scattering Coefficient",
+       (float*)glm::value_ptr( atmosphere.params.mieScatteringCoefficient ) );
+
+   triggerUpdate |= ImGui::SliderFloat(
+       "Mie Absorption Scale",
+       (float*)&atmosphere.params.mieAbsorptionCoefficient.a,
+       0.00001f,
+       10.0f,
+       "%.5f",
+       ImGuiSliderFlags_Logarithmic );
+
+   triggerUpdate |= ImGui::ColorEdit3(
+       "Mie Absorption Coefficient",
+       (float*)glm::value_ptr( atmosphere.params.mieAbsorptionCoefficient ) );
+
+   ImGui::SeparatorText( "Rayleigh" );
+
+   triggerUpdate |= ImGui::SliderFloat(
+       "Rayleigh Height", (float*)( &atmosphere.params.rayleighHeight ), 0.5f, 20.0f );
+
+   triggerUpdate |= ImGui::SliderFloat(
+       "Rayleigh Scattering Scale",
+       (float*)&atmosphere.params.rayleighScatteringCoefficient.a,
+       0.00001f,
+       10.0f,
+       "%.5f",
+       ImGuiSliderFlags_Logarithmic );
+
+   triggerUpdate |= ImGui::ColorEdit3(
+       "Rayleigh Scattering Coefficient",
+       (float*)glm::value_ptr( atmosphere.params.rayleighScatteringCoefficient ) );
+
+   ImGui::SeparatorText( "Other Absorption" );
+
+   triggerUpdate |= ImGui::SliderFloat(
+       "Absorption Scale",
+       (float*)&atmosphere.params.absorptionCoefficient.a,
+       0.00001f,
+       10.0f,
+       "%.5f",
+       ImGuiSliderFlags_Logarithmic );
+
+   triggerUpdate |= ImGui::ColorEdit3(
+       "Absorption Coefficient",
+       (float*)glm::value_ptr( atmosphere.params.absorptionCoefficient ) );
+
+   ImGui::SeparatorText( "Planet Reflection" );
+
+   triggerUpdate |= ImGui::ColorEdit3(
+       "Ground Albedo", (float*)glm::value_ptr( atmosphere.params.groundAlbedo ) );
+
+   ImGui::SeparatorText( "Height Fog" );
+
+   ImGui::SliderFloat(
+       "Height Fog Height",
+       (float*)&atmosphere.params.heightFog.x,
+       0.0f,
+       1.0f,
+       "%.5f",
+       ImGuiSliderFlags_Logarithmic );
+   ImGui::SliderFloat(
+       "Height Fog Falloff",
+       (float*)&atmosphere.params.heightFog.y,
+       0.0f,
+       1.0f,
+       "%.5f",
+       ImGuiSliderFlags_Logarithmic );
+
+   ImGui::SliderFloat( "Height Fog Strength", (float*)&atmosphere.params.heightFog.z, 0.0f, 10.0f );
+
+   notConst.needsUpdate = triggerUpdate;
 
    if( ImGui::TreeNodeEx( "Transmittance LUT" ) )
    {

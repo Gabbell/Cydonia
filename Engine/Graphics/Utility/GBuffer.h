@@ -19,17 +19,17 @@ class GBuffer : public Framebuffer
       ALBEDO,
       NORMAL,
       SHADOW,
-      DEPTH
+      DEPTH,
+      COUNT = DEPTH
    };
 
    void resize( uint32_t width, uint32_t height );
    void bind( CmdListHandle cmdList ) const;
+   void bind( CmdListHandle cmdList, Index index, uint32_t binding ) const;
 
   private:
    void _destroy();
 
-   TextureHandle m_albedo;
-   TextureHandle m_normal;  // In worldspace
-   TextureHandle m_shadow;  // Shadow mask
+   TextureHandle m_textures[Index::COUNT];
 };
 }

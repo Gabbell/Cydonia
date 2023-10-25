@@ -30,6 +30,7 @@ SceneComponent::~SceneComponent()
 
    GRIS::DestroyBuffer( lightsBuffer );
    GRIS::DestroyBuffer( viewsBuffer );
+   GRIS::DestroyBuffer( inverseViewsBuffer );
    GRIS::DestroyTexture( shadowMap );
    GRIS::DestroyTexture( mainColor );
    GRIS::DestroyTexture( mainDepth );

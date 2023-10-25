@@ -7,7 +7,7 @@
 #include <filesystem>
 
 // Hard-coded shader directories
-static constexpr char SPIRV_SHADER_DIR[] = "Shaders/";
+static constexpr char SPIRV_SHADER_DIR[] = "../Shaders/";
 
 namespace vk
 {

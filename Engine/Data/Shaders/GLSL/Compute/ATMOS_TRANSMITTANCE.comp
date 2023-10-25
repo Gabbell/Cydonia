@@ -38,14 +38,14 @@ void main()
    vec3 transmittance = vec3( 1.0 );
    for( float i = 0.0; i < sunTransmittanceSteps; i++ )
    {
-      float newT = i * ( atmoDist / sunTransmittanceSteps );
+      float newT = (i + 0.5) * ( atmoDist / sunTransmittanceSteps );
       float dt   = newT - t;
       t          = newT;
 
       vec3 newPos = pos + t * sunDir;
 
       vec3 rayleighScattering;
-      float mieScattering;
+      vec3 mieScattering;
       vec3 extinction;
       getScatteringValues( newPos, params, rayleighScattering, mieScattering, extinction );
 

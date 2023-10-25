@@ -905,7 +905,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 32
+          "SIZE": 128
         },
         {
           "NAME": "transmittanceLUT",
@@ -929,7 +929,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 32
+          "SIZE": 128
         },
         {
           "NAME": "transmittanceLUT",
@@ -962,7 +962,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 32
+          "SIZE": 128
         },
         {
           "NAME": "viewInfo",
@@ -1013,7 +1013,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 32
+          "SIZE": 128
         },
         {
           "NAME": "viewInfo",
@@ -1064,7 +1064,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 32
+          "SIZE": 128
         },
         {
           "NAME": "viewInfo",
@@ -1140,7 +1140,7 @@
           "BINDING": 0
         },
         {
-          "NAME": "Position",
+          "NAME": "Normals",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -1149,7 +1149,7 @@
           "BINDING": 1
         },
         {
-          "NAME": "Normals",
+          "NAME": "ShadowMask",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"

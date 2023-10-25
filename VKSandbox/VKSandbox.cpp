@@ -26,12 +26,12 @@
 #include <ECS/Systems/Physics/MotionSystem.h>
 #include <ECS/Systems/Procedural/ProceduralDisplacementSystem.h>
 #include <ECS/Systems/Procedural/FFTOceanSystem.h>
-#include <ECS/Systems/Procedural/FogSystem.h>
 #include <ECS/Systems/Procedural/AtmosphereSystem.h>
 #include <ECS/Systems/Rendering/TessellationUpdateSystem.h>
 #include <ECS/Systems/Rendering/ForwardRenderSystem.h>
 #include <ECS/Systems/Rendering/GBufferSystem.h>
 #include <ECS/Systems/Rendering/DeferredRenderSystem.h>
+#include <ECS/Systems/Rendering/AtmosphereRenderSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
 #include <ECS/Systems/Scene/ViewUpdateSystem.h>
@@ -87,6 +87,7 @@ void VKSandbox::preLoop()
 
    // Pre-Render
    m_ecs->addSystem<ProceduralDisplacementSystem>( *m_materials );
+   m_ecs->addSystem<AtmosphereSystem>();
    m_ecs->addSystem<FFTOceanSystem>( *m_materials );
    m_ecs->addSystem<ShadowMapSystem>( *m_materials );
    m_ecs->addSystem<GBufferSystem>( *m_materials );
@@ -96,7 +97,7 @@ void VKSandbox::preLoop()
    m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
 
    // Post-Process
-   m_ecs->addSystem<AtmosphereSystem>();
+   m_ecs->addSystem<AtmosphereRenderSystem>();
 
    // Debug
 #if CYD_DEBUG
@@ -119,6 +120,25 @@ void VKSandbox::preLoop()
    GRIS::WaitOnCommandList( transferList );
    GRIS::DestroyCommandList( transferList );
 
+   // Adding entities
+   // =============================================================================================
+   const EntityHandle player = m_ecs->createEntity( "Player" );
+   m_ecs->assign<InputComponent>( player );
+   m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 800.0f, 3000.0f ) );
+   m_ecs->assign<MotionComponent>( player );
+   m_ecs->assign<ViewComponent>( player, "MAIN" );
+
+   const EntityHandle sun = m_ecs->createEntity( "Sun" );
+   m_ecs->assign<TransformComponent>( sun, glm::vec3( 0.0f, 20.0f, 0.0f ) );
+   m_ecs->assign<LightComponent>( sun );
+   m_ecs->assign<ViewComponent>(
+       sun, "SUN", -3600.0f, 3600.0f, -3600.0f, 3600.0f, -5000.0f, 5000.0f );
+
+#if CYD_DEBUG
+   m_ecs->assign<DebugDrawComponent>( sun, DebugDrawComponent::Type::SPHERE );
+#endif
+
+   // Terrain
    MaterialComponent::Description terrainMaterialDesc;
    terrainMaterialDesc.pipelineName = "TERRAIN_GBUFFER";
    terrainMaterialDesc.materialName = "TERRAIN_DISPLACEMENT";
@@ -131,24 +151,6 @@ void VKSandbox::preLoop()
    terrainNoise.invert     = true;
    terrainNoise.octaves    = 5;
 
-   // Adding entities
-   // =============================================================================================
-   const EntityHandle player = m_ecs->createEntity( "Player" );
-   m_ecs->assign<InputComponent>( player );
-   m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 1000.0f, 0.0f ) );
-   m_ecs->assign<MotionComponent>( player );
-   m_ecs->assign<ViewComponent>( player, "MAIN" );
-
-   const EntityHandle sun = m_ecs->createEntity( "Sun" );
-   m_ecs->assign<TransformComponent>( sun, glm::vec3( 90.0f, 40.0f, 0.0f ) );
-   m_ecs->assign<LightComponent>( sun );
-   m_ecs->assign<ViewComponent>(
-       sun, "SUN", -3600.0f, 3600.0f, -3600.0f, 3600.0f, -5000.0f, 5000.0f );
-
-#if CYD_DEBUG
-   m_ecs->assign<DebugDrawComponent>( sun, DebugDrawComponent::Type::SPHERE );
-#endif
-
    const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
    m_ecs->assign<RenderableComponent>( terrain, RenderableComponent::Type::DEFERRED, true, true );
    m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 50.0f ) );
@@ -158,8 +160,28 @@ void VKSandbox::preLoop()
    m_ecs->assign<ProceduralDisplacementComponent>(
        terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, terrainNoise );
 
+   // Atmosphere
+   AtmosphereComponent::Description atmosDesc;
+   atmosDesc.mieScatteringCoefficient      = glm::vec3( 0.576f, 0.576f, 0.576f );
+   atmosDesc.mieAbsorptionCoefficient      = glm::vec3( 0.576f, 0.576f, 0.576f );
+   atmosDesc.rayleighScatteringCoefficient = glm::vec3( 0.161f, 0.373f, 0.914f );
+   atmosDesc.absorptionCoefficient         = glm::vec3( 0.325f, 0.945f, 0.043f );
+   atmosDesc.groundAlbedo                  = glm::vec3( 0.0f );
+   atmosDesc.groundRadiusMM                = 6.36f;
+   atmosDesc.atmosphereRadiusMM            = 6.46f;
+   atmosDesc.miePhase                      = 0.92f;
+   atmosDesc.mieScatteringScale            = 0.00952f;
+   atmosDesc.mieAbsorptionScale            = 0.00077f;
+   atmosDesc.rayleighScatteringScale       = 0.03624f;
+   atmosDesc.absorptionScale               = 0.00199f;
+   atmosDesc.rayleighHeight                = 8.0f;
+   atmosDesc.mieHeight                     = 1.2f;
+   atmosDesc.heightFogHeight               = 0.025f;
+   atmosDesc.heightFogFalloff              = 0.016f;
+   atmosDesc.heightFogStrength             = 5.0f;
+
    const EntityHandle atmosphere = m_ecs->createEntity( "Atmosphere" );
-   m_ecs->assign<AtmosphereComponent>( atmosphere, 10.0f, 0.025f, 0.016f );
+   m_ecs->assign<AtmosphereComponent>( atmosphere, atmosDesc );
 }
 
 void VKSandbox::tick( double deltaS )

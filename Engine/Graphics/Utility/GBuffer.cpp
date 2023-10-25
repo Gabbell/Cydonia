@@ -30,21 +30,21 @@ void GBuffer::resize( uint32_t width, uint32_t height )
    texDesc.name   = "GBuffer Albedo";
    texDesc.usage  = ImageUsage::COLOR | ImageUsage::SAMPLED;
 
-   m_albedo = GRIS::CreateTexture( texDesc );
+   m_textures[ALBEDO] = GRIS::CreateTexture( texDesc );
 
    // Normal
    texDesc.name   = "GBuffer Normal";
    texDesc.format = PixelFormat::RGBA32F;
    texDesc.usage  = ImageUsage::COLOR | ImageUsage::SAMPLED;
 
-   m_normal = GRIS::CreateTexture( texDesc );
+   m_textures[NORMAL] = GRIS::CreateTexture( texDesc );
 
    // Shadow
-   texDesc.name   = "GBuffer Shadow";
-   texDesc.format = PixelFormat::BGRA8_UNORM;
+   texDesc.name   = "GBuffer Shadow Mask";
+   texDesc.format = PixelFormat::R32F;
    texDesc.usage  = ImageUsage::COLOR | ImageUsage::SAMPLED;
 
-   m_shadow = GRIS::CreateTexture( texDesc );
+   m_textures[SHADOW] = GRIS::CreateTexture( texDesc );
 
    ClearValue colorClear;
    colorClear.color.f32[0] = 0.0f;
@@ -53,9 +53,9 @@ void GBuffer::resize( uint32_t width, uint32_t height )
    colorClear.color.f32[3] = 1.0f;
 
    Framebuffer::resize( width, height );
-   attach( ALBEDO, m_albedo, Access::FRAGMENT_SHADER_READ );
-   attach( NORMAL, m_normal, Access::FRAGMENT_SHADER_READ );
-   attach( SHADOW, m_shadow, Access::FRAGMENT_SHADER_READ );
+   attach( ALBEDO, m_textures[ALBEDO], Access::FRAGMENT_SHADER_READ );
+   attach( NORMAL, m_textures[NORMAL], Access::FRAGMENT_SHADER_READ );
+   attach( SHADOW, m_textures[SHADOW], Access::FRAGMENT_SHADER_READ );
 }
 
 void GBuffer::bind( CmdListHandle cmdList ) const
@@ -67,14 +67,18 @@ void GBuffer::bind( CmdListHandle cmdList ) const
    Framebuffer::bind( cmdList, DEPTH, 3 );
 }
 
+void GBuffer::bind( CmdListHandle cmdList, Index index, uint32_t binding ) const
+{
+   Framebuffer::bind( cmdList, index, binding );
+}
 void GBuffer::_destroy()
 {
-   GRIS::DestroyTexture( m_albedo );
-   GRIS::DestroyTexture( m_normal );
-   GRIS::DestroyTexture( m_shadow );
+   GRIS::DestroyTexture( m_textures[ALBEDO] );
+   GRIS::DestroyTexture( m_textures[NORMAL] );
+   GRIS::DestroyTexture( m_textures[SHADOW] );
    detach( ALBEDO );
    detach( NORMAL );
    detach( SHADOW );
-   detach( DEPTH );
+   detach( DEPTH );  // Depth is optional and external
 }
 }
