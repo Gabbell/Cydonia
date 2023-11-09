@@ -1,7 +1,7 @@
 workspace "Cydonia"
 	location "build"
 	configurations { "Debug", "Release", "Profiling" }
-	startproject "VKSandbox"
+	startproject "Sandbox"
 
 	objdir "intermediate"
 	targetdir "bin/%{cfg.buildcfg}"
@@ -89,24 +89,26 @@ project "Engine"
 
 		buildoutputs { "%{cfg.targetdir}/%{file.basename}.json" }
 
-project "VKSandbox"
-	location "Build/VKSandbox"
+-- ===============================================================================================
+-- Applications
+project "Sandbox"
+	location "Build/Sandbox"
 	language "C++"
 	cppdialect "C++20"
 	kind "ConsoleApp"
 	architecture "x86_64"
 
-	includedirs { "VKSandbox", "Engine", "Emporium", "include" }
+	includedirs { "Sandbox", "Engine", "Emporium", "include" }
 	links { "Engine" }
 
-	files { "VKSandbox/**.h",
-			"VKSandbox/**.cpp",
+	files { "Sandbox/**.h",
+			"Sandbox/**.cpp",
 			"CydoniaIcon.png" }
 
 	filter {}
 
 	filter { 'system:windows' }
-		files { 'VKSandbox/VKSandbox.rc', '**.ico' }
+		files { 'Sandbox/Sandbox.rc', '**.ico' }
 
 	filter {}
 
@@ -119,6 +121,68 @@ project "VKSandbox"
 
 		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
 
+project "OceanDemo"
+	location "Build/OceanDemo"
+	language "C++"
+	cppdialect "C++20"
+	kind "ConsoleApp"
+	architecture "x86_64"
+
+	includedirs { "OceanDemo", "Engine", "Emporium", "include" }
+	links { "Engine" }
+
+	files { "OceanDemo/**.h",
+			"OceanDemo/**.cpp",
+			"CydoniaIcon.png" }
+
+	filter {}
+
+	filter { 'system:windows' }
+		files { 'OceanDemo/OceanDemo.rc', '**.ico' }
+
+	filter {}
+
+	filter "files:CydoniaIcon.png"
+		buildmessage "Copying Icon %{file.abspath}"
+
+		buildcommands {
+			"{COPY} %{file.abspath} %{cfg.targetdir}"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
+
+project "PBRDemo"
+	location "Build/PBRDemo"
+	language "C++"
+	cppdialect "C++20"
+	kind "ConsoleApp"
+	architecture "x86_64"
+
+	includedirs { "PBRDemo", "Engine", "Emporium", "include" }
+	links { "Engine" }
+
+	files { "PBRDemo/**.h",
+			"PBRDemo/**.cpp",
+			"CydoniaIcon.png" }
+
+	filter {}
+
+	filter { 'system:windows' }
+		files { 'PBRDemo/PBRDemo.rc', '**.ico' }
+
+	filter {}
+
+	filter "files:CydoniaIcon.png"
+		buildmessage "Copying Icon %{file.abspath}"
+
+		buildcommands {
+			"{COPY} %{file.abspath} %{cfg.targetdir}"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
+
+-- ===============================================================================================
+-- Shaders
 workspace "CydoniaShaders"
 	location "build"
 	configurations { "Release" }

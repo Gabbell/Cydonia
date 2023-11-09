@@ -3,8 +3,9 @@
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
 
-#include "Graphics/StaticPipelines.h"
-#include "Graphics/Scene/MaterialCache.h"
+#include <Graphics/StaticPipelines.h>
+#include <Graphics/Scene/MaterialCache.h>
+#include <Graphics/Utility/GraphicsIO.h>
 
 #include <Profiling.h>
 
@@ -12,29 +13,40 @@ namespace CYD
 {
 void MaterialLoaderSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "MaterialLoaderSystem" );
+   CYD_TRACE();
 
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::LOAD );
 
+   bool allLoaded = true;
    for( const auto& entityEntry : m_entities )
    {
-      MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
+      MaterialComponent& materialComponent = *std::get<MaterialComponent*>( entityEntry.arch );
 
-      if( !material.isLoaded )
+      const MaterialIndex materialIdx =
+          m_materialCache.getMaterialIndexByName( materialComponent.materialName );
+
+      if( materialIdx == INVALID_MATERIAL_IDX )
       {
-         material.pipelineIdx = StaticPipelines::FindByName( material.description.pipelineName );
-         material.materialIdx = m_materials.getMaterialByName( material.description.materialName );
-
-         CYD_ASSERT( material.pipelineIdx != INVALID_PIPELINE_IDX );
-         CYD_ASSERT( material.materialIdx != INVALID_MATERIAL_IDX );
-
-         m_materials.load( cmdList, material.materialIdx );
+         CYD_ASSERT( !"Could not find material" );
+         continue;
       }
 
-      material.isLoaded = true;
+      const MaterialCache::State assetState = m_materialCache.progressLoad( cmdList, materialIdx );
+      if( assetState == MaterialCache::State::LOADED_TO_VRAM )
+      {
+         materialComponent.materialIdx = materialIdx;
+
+         CYD_ASSERT(
+             materialComponent.materialIdx != INVALID_MATERIAL_IDX && "Could not find material" );
+      }
+
+      allLoaded &= ( assetState == MaterialCache::State::LOADED_TO_VRAM );
    }
 
    // We don't want to spend more time on loading these entities' resources
-   m_entities.clear();
+   if( allLoaded )
+   {
+      m_entities.clear();
+   }
 }
 }

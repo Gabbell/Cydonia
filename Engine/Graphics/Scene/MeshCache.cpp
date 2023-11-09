@@ -3,115 +3,186 @@
 #include <Common/Assert.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/VertexLayout.h>
+#include <Graphics/Vertex.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/Utility/MeshGeneration.h>
+
+#include <Multithreading/ThreadPool.h>
+
+#include <Profiling.h>
 
 namespace CYD
 {
 // Asset Paths Constants
 // ================================================================================================
-static constexpr char MESH_PATH[] = "../Engine/Data/Meshes/";
+static constexpr char MESH_PATH[] = "../../Engine/Data/Meshes/";
+static VertexLayout s_defaultLayout;
 
-MeshCache::MeshCache()
+MeshCache::MeshCache( EMP::ThreadPool& threadPool ) : m_threadPool( threadPool )
 {
+   // Create default vertex layout
+   s_defaultLayout.addAttribute( VertexLayout::Attribute::POSITION, PixelFormat::RGB32F );
+   s_defaultLayout.addAttribute( VertexLayout::Attribute::TEXCOORD, PixelFormat::RGB32F );
+   s_defaultLayout.addAttribute( VertexLayout::Attribute::NORMAL, PixelFormat::RGB32F );
+   s_defaultLayout.addAttribute( VertexLayout::Attribute::COLOR, PixelFormat::RGBA32F );
+
    // Initialize default meshes
    _initDefaultMeshes();
 }
 
 void MeshCache::_initDefaultMeshes()
 {
-   CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Init Default Meshes" );
+   CmdListHandle transferList =
+       GRIS::CreateCommandList( QueueUsage::TRANSFER, "Init Default Meshes" );
 
-//#if CYD_DEBUG
-   std::vector<Vertex> verts;
-   std::vector<uint32_t> indices;
-   MeshGeneration::Icosphere( verts, indices, 2 );
-   loadMesh( transferList, "DEBUG_SPHERE", verts, indices );
-//#endif
+   // #if CYD_DEBUG
+   MeshIndex sphereMeshIdx = m_meshes.insertObject();
+
+   Mesh* sphereMesh = m_meshes[sphereMeshIdx];
+   CYD_ASSERT( sphereMesh );
+
+   sphereMesh->vertices.setLayout( s_defaultLayout );
+   MeshGeneration::Icosphere( sphereMesh->vertices, sphereMesh->indices, 2 );
+   sphereMesh->currentState = MeshCache::State::LOADED_TO_RAM;
+
+   _loadToVRAM( transferList, *sphereMesh );
+   // #endif
 
    GRIS::SubmitCommandList( transferList );
    GRIS::WaitOnCommandList( transferList );
    GRIS::DestroyCommandList( transferList );
 }
 
-const Mesh& MeshCache::getMesh( const std::string_view name )
+MeshCache::Mesh::~Mesh()
 {
-   const std::string meshString( name );
-   auto it = m_meshes.find( meshString );
-   if( it != m_meshes.end() )
-   {
-      return it->second;
-   }
-
-   return m_meshes[""];
+   GRIS::DestroyVertexBuffer( vertexBuffer );
+   GRIS::DestroyIndexBuffer( indexBuffer );
 }
 
-bool MeshCache::loadMeshFromPath( CmdListHandle transferList, const std::string_view meshPath )
+MeshIndex MeshCache::findMesh( std::string_view name )
 {
-   const std::string meshString( meshPath );
-   auto it = m_meshes.find( meshString );
-   if( it == m_meshes.end() )
+   const std::string nameString( name );
+
+   const auto& findIt = m_meshNames.find( nameString );
+   if( findIt != m_meshNames.end() )
    {
-      // Mesh was not previously loaded, load it
-      const std::string fullPath = MESH_PATH + meshString + "/";
-
-      std::vector<Vertex> vertices;
-      std::vector<uint32_t> indices;
-      GraphicsIO::LoadMesh( meshString, vertices, indices );
-
-      Mesh& mesh = m_meshes[meshString];
-
-      mesh.vertexBuffer = GRIS::CreateVertexBuffer(
-          transferList,
-          static_cast<uint32_t>( vertices.size() ),
-          static_cast<uint32_t>( sizeof( Vertex ) ),
-          vertices.data(),
-          meshPath );
-
-      mesh.vertexCount = static_cast<uint32_t>( vertices.size() );
-
-      mesh.indexBuffer = GRIS::CreateIndexBuffer(
-          transferList, static_cast<uint32_t>( indices.size() ), indices.data(), meshPath );
-
-      mesh.indexCount = static_cast<uint32_t>( indices.size() );
-
-      return true;
+      return findIt->second;
    }
 
-   return false;
+   return INVALID_MESH_IDX;
 }
 
-bool MeshCache::loadMesh(
-    CmdListHandle transferList,
-    const std::string_view name,
-    const std::vector<Vertex>& vertices,
+MeshIndex MeshCache::addMesh( std::string_view name, const VertexLayout& layout )
+{
+   const std::string nameString( name );
+
+   CYD_ASSERT( m_meshNames.find( nameString ) == m_meshNames.end() );
+
+   const size_t newIdx     = m_meshes.insertObject( MESH_PATH + nameString, layout );
+   m_meshNames[nameString] = newIdx;
+
+   return newIdx;
+}
+
+void MeshCache::loadToVRAM(
+    CmdListHandle cmdList,
+    MeshIndex meshIdx,
+    const Vertex* vertices,
+    uint32_t vertexCount,
     const std::vector<uint32_t>& indices )
 {
-   const std::string meshString( name );
-   auto it = m_meshes.find( meshString );
-   if( it == m_meshes.end() )
+   Mesh* mesh = m_meshes[meshIdx];
+   CYD_ASSERT( mesh );
+
+   mesh->currentState = MeshCache::State::LOADED_TO_RAM;
+   _loadToVRAM( cmdList, *mesh );
+}
+
+MeshCache::DrawInfo MeshCache::getDrawInfo( MeshIndex meshIdx ) const
+{
+   return { m_meshes[meshIdx]->vertexCount, m_meshes[meshIdx]->indexCount };
+}
+
+void MeshCache::_loadToRAM( Mesh& mesh )
+{
+   CYD_TRACE();
+
+   CYD_ASSERT_AND_RETURN( mesh.currentState == State::UNINITIALIZED, return; );
+
+   mesh.currentState = State::LOADING_TO_RAM;
+
+   GraphicsIO::LoadMesh( mesh.path, mesh.vertices, mesh.indices );
+
+   mesh.currentState = State::LOADED_TO_RAM;
+}
+
+void MeshCache::_loadToVRAM( CmdListHandle cmdList, Mesh& mesh )
+{
+   CYD_TRACE();
+
+   CYD_ASSERT_AND_RETURN( mesh.currentState == State::LOADED_TO_RAM, return; );
+
+   mesh.currentState = State::LOADING_TO_VRAM;
+
+   mesh.vertexBuffer = GRIS::CreateVertexBuffer( mesh.vertices.getSize(), mesh.path );
+   mesh.indexBuffer =
+       GRIS::CreateIndexBuffer( mesh.indices.size() * sizeof( uint32_t ), mesh.path );
+
+   GRIS::UploadToVertexBuffer( cmdList, mesh.vertexBuffer, mesh.vertices );
+
+   UploadToBufferInfo info = { 0, sizeof( uint32_t ) * mesh.indices.size() };
+   GRIS::UploadToIndexBuffer( cmdList, mesh.indexBuffer, mesh.indices.data(), info );
+
+   mesh.vertexCount = mesh.vertices.getVertexCount();
+   mesh.indexCount  = static_cast<uint32_t>( mesh.indices.size() );
+
+   mesh.currentState = State::LOADED_TO_VRAM;
+}
+
+void MeshCache::bind( CmdListHandle cmdList, MeshIndex meshIdx ) const
+{
+   const Mesh* pMesh = m_meshes[meshIdx];
+   CYD_ASSERT( pMesh );
+
+   const Mesh& mesh = *pMesh;
+
+   GRIS::BindVertexBuffer( cmdList, mesh.vertexBuffer );
+   GRIS::BindIndexBuffer<uint32_t>( cmdList, mesh.indexBuffer );
+}
+
+MeshCache::State MeshCache::progressLoad( CmdListHandle cmdList, MeshIndex meshIdx )
+{
+   Mesh* pMesh = m_meshes[meshIdx];
+   CYD_ASSERT( pMesh );
+
+   Mesh& mesh = *pMesh;
+
+   if( mesh.currentState == State::UNINITIALIZED )
    {
-      Mesh& mesh = m_meshes[meshString];
-
-      mesh.vertexBuffer = GRIS::CreateVertexBuffer(
-          transferList,
-          static_cast<uint32_t>( vertices.size() ),
-          static_cast<uint32_t>( sizeof( Vertex ) ),
-          vertices.data(),
-          name );
-
-      mesh.vertexCount = static_cast<uint32_t>( vertices.size() );
-
-      mesh.indexBuffer = GRIS::CreateIndexBuffer(
-          transferList, static_cast<uint32_t>( indices.size() ), indices.data(), name );
-
-      mesh.indexCount = static_cast<uint32_t>( indices.size() );
-
-      return true;
+      // This material is not loaded, start a load job
+      m_threadPool.submit( MeshCache::_loadToRAM, mesh );
    }
 
-   return false;
+   if( mesh.currentState == State::LOADED_TO_RAM )
+   {
+      _loadToVRAM( cmdList, mesh );
+   }
+
+   // We are setting the LOADED_TO_VRAM state right after loadToVRAM is called
+   // This only works because we guarantee that the LOAD command list is first in the
+   // render graph so the transfer command list will have  uploaded this mesh data
+   // when the time comes to render. We can also free the data here because it has been uploaded
+   // to a staging buffer already
+   // TODO Make it so that we can right away upload to a staging buffer instead of having to copy
+   if( mesh.currentState == State::LOADED_TO_VRAM )
+   {
+      // Make sure we're freeing RAM
+      mesh.vertices.freeList();
+      mesh.indices.clear();
+      mesh.indices.shrink_to_fit();
+   }
+
+   return mesh.currentState;
 }
 }

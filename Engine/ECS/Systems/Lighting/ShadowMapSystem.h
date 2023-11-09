@@ -20,7 +20,10 @@ class ShadowMapSystem final : public RenderSystem
 {
   public:
    ShadowMapSystem() = delete;
-   ShadowMapSystem( const MaterialCache& materials ) : RenderSystem( materials ) {}
+   ShadowMapSystem( const MeshCache& meshes, const MaterialCache& materials )
+       : RenderSystem( meshes, materials )
+   {
+   }
    NON_COPIABLE( ShadowMapSystem );
    virtual ~ShadowMapSystem() = default;
 

@@ -257,21 +257,21 @@ VkPipeline PipelineCache::findOrCreate(
    }
 
    // Vertex input description
-   const std::vector<CYD::VertexLayout::Attribute>& attributes = pipInfo.vertLayout.getAttributes();
+   const std::vector<CYD::VertexLayout::AttributeInfo>& attributes =
+       pipInfo.vertLayout.getAttributes();
+
    std::vector<VkVertexInputAttributeDescription> vkAttributes( attributes.size() );
    std::vector<VkVertexInputBindingDescription> vkBindings;
 
-   uint32_t vertBindingStride = 0;
+   uint32_t curOffset = 0;
    for( uint32_t i = 0; i < attributes.size(); ++i )
    {
-      CYD::PixelFormat vecFormat = attributes[i].vecFormat;
+      vkAttributes[i].binding  = 0;
+      vkAttributes[i].location = i;
+      vkAttributes[i].format   = TypeConversions::cydToVkFormat( attributes[i].vecFormat );
+      vkAttributes[i].offset   = curOffset;
 
-      vkAttributes[i].binding  = attributes[i].binding;
-      vkAttributes[i].location = attributes[i].location;
-      vkAttributes[i].format   = TypeConversions::cydToVkFormat( vecFormat );
-      vkAttributes[i].offset   = attributes[i].offset;
-
-      vertBindingStride += GetPixelSizeInBytes( vecFormat );
+      curOffset += GetPixelSizeInBytes( attributes[i].vecFormat );
    }
 
    // TODO More than one binding. For now, if we have attributes, we always have one vertex binding
@@ -280,7 +280,7 @@ VkPipeline PipelineCache::findOrCreate(
       // TODO Instancing
       VkVertexInputBindingDescription vertexBindingDesc = {};
       vertexBindingDesc.binding                         = 0;
-      vertexBindingDesc.stride                          = vertBindingStride;
+      vertexBindingDesc.stride                          = pipInfo.vertLayout.getStride();
       vertexBindingDesc.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
       vkBindings.push_back( std::move( vertexBindingDesc ) );
    }

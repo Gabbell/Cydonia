@@ -16,6 +16,7 @@ namespace CYD
 {
 class Window;
 class Framebuffer;
+class VertexList;
 struct GraphicsPipelineInfo;
 struct ComputePipelineInfo;
 
@@ -83,7 +84,6 @@ void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo );
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo );
 
 // Bind vertex and index buffers
-template <class VertexLayout>
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
 
 template <class Type>
@@ -142,18 +142,8 @@ TextureHandle CreateTexture(
 TextureHandle
 CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels );
 
-VertexBufferHandle CreateVertexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    uint32_t stride,
-    const void* pVertices,
-    const std::string_view name );
-
-IndexBufferHandle CreateIndexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    const void* pIndices,
-    const std::string_view name );
+VertexBufferHandle CreateVertexBuffer( size_t size, const std::string_view name );
+IndexBufferHandle CreateIndexBuffer( size_t size, const std::string_view name );
 
 BufferHandle CreateUniformBuffer( size_t size, const std::string_view name );
 BufferHandle CreateBuffer( size_t size, const std::string_view name );
@@ -163,6 +153,16 @@ void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle texture );
 void RemoveDebugTexture( void* texture );
 
 void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadToBufferInfo& info );
+void UploadToVertexBuffer(
+    CmdListHandle transferList,
+    VertexBufferHandle bufferHandle,
+    const VertexList& vertices );
+void UploadToIndexBuffer(
+    CmdListHandle transferList,
+    IndexBufferHandle bufferHandle,
+    const void* pIndices,
+    const UploadToBufferInfo& info );
+
 void CopyTexture(
     CmdListHandle transferList,
     TextureHandle srcTexHandle,
@@ -196,6 +196,7 @@ void DrawIndexedInstanced(
     size_t firstIndex    = 0,
     size_t firstInstance = 0 );
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
+void ClearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal );
 void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle );
 void PresentFrame();
 

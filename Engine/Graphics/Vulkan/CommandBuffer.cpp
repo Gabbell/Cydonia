@@ -632,12 +632,15 @@ void CommandBuffer::beginRendering(
 
       const CYD::Framebuffer::RenderTarget& rt = renderTargets[i];
 
+      const bool shouldClear =
+          fb.shouldClearAll() || texture->getPreviousAccess() == CYD::Access::UNDEFINED;
+
       // Infer attachment
       Attachment& attachment   = renderPassInfo.attachments.emplace_back();
       attachment.format        = texture->getPixelFormat();
       attachment.initialAccess = texture->getPreviousAccess();
       attachment.nextAccess    = rt.nextAccess;
-      attachment.loadOp        = rt.shouldClear ? CYD::LoadOp::CLEAR : CYD::LoadOp::LOAD;
+      attachment.loadOp        = shouldClear ? CYD::LoadOp::CLEAR : CYD::LoadOp::LOAD;
       attachment.storeOp       = CYD::StoreOp::STORE;
       attachment.clear         = rt.clearValue;
 
@@ -905,6 +908,25 @@ void CommandBuffer::drawIndexed(
        static_cast<uint32_t>( firstInstance ) );
 }
 
+void CommandBuffer::clearTexture( Texture* tex, const CYD::ClearValue& clearVal ) const
+{
+   CYD_ASSERT( IsColorFormat( tex->getPixelFormat() ) );
+
+   VkClearColorValue vkClearVal;
+   memcpy( &vkClearVal, &clearVal.color, sizeof( vkClearVal ) );
+
+   VkImageSubresourceRange subRange;
+   subRange.aspectMask = TypeConversions::getAspectMask( tex->getPixelFormat() );
+
+   vkCmdClearColorImage(
+       m_vkCmdBuffer,
+       tex->getVKImage(),
+       Synchronization::GetLayoutFromAccess( tex->getPreviousAccess() ),
+       &vkClearVal,
+       1,
+       &subRange );
+}
+
 void CommandBuffer::copyToSwapchain( Texture* sourceTexture, Swapchain& swapchain ) const
 {
    // TODO Use vkCmdCopyImage instead
@@ -1008,9 +1030,9 @@ void CommandBuffer::copyBufferToTexture(
     Texture* dst,
     const CYD::BufferToTextureInfo& info )
 {
-   CYD_ASSERT(
-       src->getSize() == dst->getSize() &&
-       "CommandBuffer: Source and destination sizes are not the same" );
+   // CYD_ASSERT(
+   //     src->getSize() == dst->getSize() &&
+   //     "CommandBuffer: Source and destination sizes are not the same" );
 
    Synchronization::ImageMemory( this, dst, CYD::Access::TRANSFER_WRITE );
 

@@ -34,7 +34,6 @@ class Framebuffer
    {
       TextureHandle texture = {};
       Access nextAccess     = Access::UNDEFINED;
-      bool shouldClear      = false;
       ClearValue clearValue = {};
    };
 
@@ -57,17 +56,22 @@ class Framebuffer
 
    void bind( CmdListHandle cmdList, uint32_t idx, uint32_t binding, uint32_t set = 0 ) const;
 
+   // Getters
+   // ================================================================================================
    bool isValid() const;
 
    uint32_t getWidth() const { return m_width; }
    uint32_t getHeight() const { return m_height; }
-
    const RenderTargets& getRenderTargets() const { return m_targets; }
+   bool shouldClearAll() const { return m_clearAll; }
 
-   void setToClearAll( bool shouldClear );
-   void setToClear( uint32_t idx, bool shouldClear );
+   // Setters
+   // ================================================================================================
+   void setClearAll( bool shouldClear );
 
   private:
+   bool m_clearAll = false;
+
    uint32_t m_width  = 0;
    uint32_t m_height = 0;
 

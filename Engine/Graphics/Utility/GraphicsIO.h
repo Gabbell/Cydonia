@@ -8,13 +8,13 @@
 
 namespace CYD
 {
-class Vertex;
+class VertexList;
 
 namespace GraphicsIO
 {
 void LoadMesh(
     const std::string& path,
-    std::vector<Vertex>& vertices,
+    VertexList& vertices,
     std::vector<uint32_t>& indices );
 
 void* LoadImage( const std::string& path, PixelFormat format, int& width, int& height, int& size );

@@ -1,18 +1,20 @@
 #include <ECS/Systems/Lighting/ShadowMapSystem.h>
 
 #include <Graphics/VertexLayout.h>
+#include <Graphics/StaticPipelines.h>
 #include <Graphics/Framebuffer.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderHelpers.h>
 #include <Graphics/Utility/Transforms.h>
 
-#include <Graphics/StaticPipelines.h>
+#include <Graphics/Scene/MeshCache.h>
 #include <Graphics/Scene/MaterialCache.h>
 
-#include <Profiling.h>
 #include <ECS/EntityManager.h>
 #include <ECS/SharedComponents/SceneComponent.h>
+
+#include <Profiling.h>
 
 namespace CYD
 {
@@ -29,7 +31,7 @@ static void Initialize()
 
 void ShadowMapSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "ShadowMapSystem" );
+   CYD_TRACE();
 
    if( !s_initialized )
    {
@@ -57,7 +59,7 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       clear.depthStencil.stencil = 0;
 
       s_shadowmapFB.resize( SHADOWMAP_DIM, SHADOWMAP_DIM );
-      s_shadowmapFB.setToClearAll( true );
+      s_shadowmapFB.setClearAll( true );
       s_shadowmapFB.attach( 0, scene.shadowMap, Access::DEPTH_STENCIL_ATTACHMENT_READ, clear );
    }
 
@@ -74,20 +76,53 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
    GRIS::BindPipeline( cmdList, s_shadowmapPipeline );
 
    // Tracking
-   std::string_view prevMesh;
-   PipelineIndex prevPipeline = INVALID_PIPELINE_IDX;
+   MeshIndex prevMesh         = INVALID_MESH_IDX;
    MaterialIndex prevMaterial = INVALID_MATERIAL_IDX;
+   PipelineIndex prevPipeline = INVALID_PIPELINE_IDX;
 
    for( const auto& entityEntry : m_entities )
    {
       const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
 
-      if( !renderable.isShadowCasting ) continue;
+      if( !renderable.desc.isShadowCasting )
+      {
+         continue;
+      }
 
       const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
       const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
       const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
+      // Vertex and index buffers
+      // ==========================================================================================
+      if( prevMesh != mesh.meshIdx )
+      {
+         if( mesh.meshIdx == INVALID_MESH_IDX )
+         {
+            continue;
+         }
+
+         m_meshes.bind( cmdList, mesh.meshIdx );
+
+         prevMesh = mesh.meshIdx;
+      }
+
+      // Material
+      // ==========================================================================================
+      if( prevMaterial != material.materialIdx )
+      {
+         if( material.materialIdx == INVALID_MATERIAL_IDX )
+         {
+            continue;
+         }
+
+         m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
+
+         prevMaterial = material.materialIdx;
+      }
+
+      // Optional Buffers
+      // ==========================================================================================
       const glm::mat4 modelMatrix =
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
 
@@ -107,27 +142,6 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
          CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation params buffer" );
          GRIS::NamedBufferBinding(
              cmdList, renderable.tessellationBuffer, "TessellationParams", pipInfo );
-      }
-
-      if( prevMaterial != material.materialIdx )
-      {
-         m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
-         prevMaterial = material.materialIdx;
-      }
-
-      if( prevMesh != mesh.asset )
-      {
-         if( mesh.vertexBuffer )
-         {
-            GRIS::BindVertexBuffer<Vertex>( cmdList, mesh.vertexBuffer );
-            if( mesh.indexBuffer )
-            {
-               // This renderable has an index buffer, use it to draw
-               GRIS::BindIndexBuffer<uint32_t>( cmdList, mesh.indexBuffer );
-            }
-         }
-
-         prevMesh = mesh.asset;
       }
 
       if( renderable.instanceCount )

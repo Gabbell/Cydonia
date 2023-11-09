@@ -3,41 +3,101 @@
 #include <Common/Include.h>
 
 #include <Graphics/Handles/ResourceHandle.h>
-#include <Graphics/Scene/Mesh.h>
+#include <Graphics/GraphicsTypes.h>
+#include <Graphics/Vertex.h>
+
+#include <Common/ObjectPool.h>
 
 #include <cstdint>
+#include <mutex>
 #include <string_view>
 #include <unordered_map>
 
+namespace EMP
+{
+class ThreadPool;
+}
+
 namespace CYD
 {
-class Vertex;
-
 // For read-only assets loaded from disk
 class MeshCache final
 {
   public:
-   MeshCache();
+   MeshCache( EMP::ThreadPool& threadPool );
    NON_COPIABLE( MeshCache );
-   virtual ~MeshCache() = default;
+   ~MeshCache() = default;
 
-   // TODO
-   // void cleanup();
+   enum class State
+   {
+      UNINITIALIZED,
+      LOADING_TO_RAM,
+      LOADED_TO_RAM,  // RAM Resident
+      LOADING_TO_VRAM,
+      LOADED_TO_VRAM  // VRAM Resident
+   };
 
-   const Mesh& getMesh( const std::string_view name );
+   struct DrawInfo
+   {
+      uint32_t vertexCount;
+      uint32_t indexCount;
+   };
 
-   bool loadMeshFromPath( CmdListHandle transferList, const std::string_view meshPath );
-   bool loadMesh(
-       CmdListHandle transferList,
-       const std::string_view name,
-       const std::vector<Vertex>& vertices,
+   MeshIndex findMesh( std::string_view name );
+   MeshIndex addMesh( std::string_view name, const VertexLayout& layout );
+
+   DrawInfo getDrawInfo( MeshIndex meshIdx ) const;
+
+   State progressLoad( CmdListHandle cmdList, MeshIndex meshIdx );
+
+   void bind( CmdListHandle cmdList, MeshIndex index ) const;
+
+   void loadToVRAM(
+       CmdListHandle cmdList,
+       MeshIndex meshIdx,
+       const Vertex* vertices,
+       uint32_t vertexCount,
        const std::vector<uint32_t>& indices );
 
   private:
+   //  ============================================================================================
+   // Mesh Entry
+   /*
+    * This is a reference to a mesh
+    */
+
+   struct Mesh
+   {
+      Mesh() = default;
+      Mesh( std::string_view path, const VertexLayout& layout ) : path( path )
+      {
+         vertices.setLayout( layout );
+      }
+      MOVABLE( Mesh );
+      ~Mesh();
+
+      VertexList vertices;
+      std::vector<uint32_t> indices;  // TODO Turn into IndexList
+
+      std::string path;
+
+      VertexBufferHandle vertexBuffer;
+      IndexBufferHandle indexBuffer;
+
+      uint32_t vertexCount = 0;
+      uint32_t indexCount  = 0;
+
+      State currentState = State::UNINITIALIZED;
+   };
+
    void _initDefaultMeshes();
+   static void _loadToRAM( Mesh& mesh );
+   static void _loadToVRAM( CmdListHandle transferList, Mesh& mesh );
 
    static constexpr uint32_t INITIAL_AMOUNT_RESOURCES = 128;
 
-   std::unordered_map<std::string, Mesh> m_meshes;
+   EMP::ThreadPool& m_threadPool;
+   EMP::ObjectPool<Mesh> m_meshes;
+   std::unordered_map<std::string, MeshIndex> m_meshNames;
 };
 }

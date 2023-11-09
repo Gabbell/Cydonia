@@ -47,7 +47,7 @@ WindowSystem::WindowSystem( Window& window ) : m_window( window )
 
 void WindowSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "WindowSystem" );
+   CYD_TRACE();
 
    InputComponent& input = m_ecs->getSharedComponent<InputComponent>();
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();

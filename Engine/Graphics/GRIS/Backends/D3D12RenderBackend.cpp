@@ -159,24 +159,9 @@ class D3D12RenderBackendImp
       return {};
    }
 
-   VertexBufferHandle createVertexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       uint32_t stride,
-       const void* pVertices,
-       const std::string_view name )
-   {
-      return {};
-   }
+   VertexBufferHandle createVertexBuffer( size_t size, const std::string_view name ) { return {}; }
 
-   IndexBufferHandle createIndexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       const void* pIndices,
-       const std::string_view name )
-   {
-      return {};
-   }
+   IndexBufferHandle createIndexBuffer( size_t size, const std::string_view name ) { return {}; }
 
    BufferHandle createUniformBuffer( size_t size, const std::string_view name ) { return {}; }
 
@@ -186,6 +171,21 @@ class D3D12RenderBackendImp
        BufferHandle bufferHandle,
        const void* pData,
        const UploadToBufferInfo& info ) const
+   {
+   }
+
+   void uploadToVertexBuffer(
+       CmdListHandle transferList,
+       VertexBufferHandle bufferHandle,
+       const VertexList& vertices )
+   {
+   }
+
+   void uploadToIndexBuffer(
+       CmdListHandle transferList,
+       IndexBufferHandle bufferHandle,
+       const void* pIndices,
+       const UploadToBufferInfo& info )
    {
    }
 
@@ -411,22 +411,15 @@ TextureHandle D3D12RenderBackend::createTexture(
 }
 
 VertexBufferHandle D3D12RenderBackend::createVertexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    uint32_t stride,
-    const void* pVertices,
+    size_t size,
     const std::string_view name )
 {
-   return _imp->createVertexBuffer( transferList, count, stride, pVertices, name );
+   return _imp->createVertexBuffer( size, name );
 }
 
-IndexBufferHandle D3D12RenderBackend::createIndexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    const void* pIndices,
-    const std::string_view name )
+IndexBufferHandle D3D12RenderBackend::createIndexBuffer( size_t size, const std::string_view name )
 {
-   return _imp->createIndexBuffer( transferList, count, pIndices, name );
+   return _imp->createIndexBuffer( size, name );
 }
 
 BufferHandle D3D12RenderBackend::createUniformBuffer( size_t size, const std::string_view name )
@@ -445,6 +438,23 @@ void D3D12RenderBackend::uploadToBuffer(
     const UploadToBufferInfo& info )
 {
    _imp->uploadToBuffer( bufferHandle, pData, info );
+}
+
+void D3D12RenderBackend::uploadToVertexBuffer(
+    CmdListHandle transferList,
+    VertexBufferHandle bufferHandle,
+    const VertexList& vertices )
+{
+   _imp->uploadToVertexBuffer( transferList, bufferHandle, vertices );
+}
+
+void D3D12RenderBackend::uploadToIndexBuffer(
+    CmdListHandle transferList,
+    IndexBufferHandle bufferHandle,
+    const void* pIndices,
+    const UploadToBufferInfo& info )
+{
+   _imp->uploadToIndexBuffer( transferList, bufferHandle, pIndices, info );
 }
 
 void D3D12RenderBackend::destroyTexture( TextureHandle texHandle )

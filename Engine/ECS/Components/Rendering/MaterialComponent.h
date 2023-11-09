@@ -18,22 +18,15 @@ namespace CYD
 class MaterialComponent final : public BaseComponent
 {
   public:
-   struct Description
-   {
-      std::string pipelineName;
-      std::string materialName;
-   } description;
-
    MaterialComponent() = default;
-   MaterialComponent( const Description& desc ) : description( desc ) {}
+   MaterialComponent( std::string_view materialName ) : materialName( materialName ) {}
    COPIABLE( MaterialComponent );
    virtual ~MaterialComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::MATERIAL;
 
-   PipelineIndex pipelineIdx = INVALID_PIPELINE_IDX;
-   MaterialIndex materialIdx = INVALID_MATERIAL_IDX;
+   std::string_view materialName;
 
-   bool isLoaded = false;
+   MaterialIndex materialIdx = INVALID_MATERIAL_IDX;
 };
 }

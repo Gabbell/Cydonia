@@ -33,7 +33,7 @@ ImGuiSystem::~ImGuiSystem() { UI::Uninitialize(); }
 
 void ImGuiSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "ImGuiSystem" );
+   CYD_TRACE();
 
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::UI );
    CYD_SCOPED_GPUTRACE( cmdList, "ImGuiSystem" );

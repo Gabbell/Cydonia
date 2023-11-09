@@ -13,7 +13,7 @@ namespace CYD
 {
 void InstanceUpdateSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "InstanceUpdateSystem" );
+   CYD_TRACE();
 
    std::vector<InstancedComponent::ShaderParams> ubo;
    ubo.reserve( InstancedComponent ::MAX_INSTANCES );

@@ -25,6 +25,7 @@ static ImTextureID s_noiseTexture     = nullptr;
 static ImTextureID s_shadowMapTexture  = nullptr;
 static ImTextureID s_albedoTexture     = nullptr;
 static ImTextureID s_normalsTexture    = nullptr;
+static ImTextureID s_pbrTexture        = nullptr;
 static ImTextureID s_shadowMaskTexture = nullptr;
 
 static ImTextureID s_transmittanceLUTTexture     = nullptr;
@@ -529,9 +530,9 @@ void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog )
 
 void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable )
 {
-   ImGui::Checkbox( "Is Visible", (bool*)&renderable.isVisible );
-   ImGui::Checkbox( "Casts Shadows", (bool*)&renderable.isShadowCasting );
-   ImGui::Checkbox( "Receives Shadows", (bool*)&renderable.isShadowReceiving );
+   ImGui::Checkbox( "Is Visible", (bool*)&renderable.desc.isVisible );
+   ImGui::Checkbox( "Casts Shadows", (bool*)&renderable.desc.isShadowCasting );
+   ImGui::Checkbox( "Receives Shadows", (bool*)&renderable.desc.isShadowReceiving );
 }
 
 void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedComponent& tessellated )
@@ -586,6 +587,17 @@ void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& 
       }
 
       ImGui::Image( s_normalsTexture, dimensions );
+      ImGui::TreePop();
+   }
+
+   if( ImGui::TreeNodeEx( "GBuffer PBR", ImGuiTreeNodeFlags_SpanAvailWidth ) )
+   {
+      if( s_pbrTexture == nullptr )
+      {
+         s_pbrTexture = GRIS::AddDebugTexture( rts[GBuffer::PBR].texture );
+      }
+
+      ImGui::Image( s_pbrTexture, dimensions );
       ImGui::TreePop();
    }
 

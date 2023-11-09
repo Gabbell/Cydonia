@@ -62,7 +62,7 @@ void PlayerMoveSystem::tick( double deltaS )
          accelerationVec = glm::normalize( accelerationVec );
       }
 
-      accelerationVec *= MOVE_ACCELERATION;
+      accelerationVec *= motion.moveAcceleration;
 
       // Sprinting
       if( input.sprinting )
@@ -74,25 +74,27 @@ void PlayerMoveSystem::tick( double deltaS )
       glm::vec3 frictionVec( 0.0f );
       if( motion.velocity != glm::zero<glm::vec3>() )
       {
-         frictionVec = -glm::normalize( motion.velocity ) * MOVE_ACCELERATION * FRICTION_MODIFIER;
+         frictionVec =
+             -glm::normalize( motion.velocity ) * motion.moveAcceleration * FRICTION_MODIFIER;
       }
 
       // Calculating velocity
       motion.velocity += ( accelerationVec * static_cast<float>( deltaS ) ) +
                          ( frictionVec * static_cast<float>( deltaS ) );
 
-      const float magSquared = glm::length2( motion.velocity );
+      const float magSquared         = glm::length2( motion.velocity );
+      const float maxVelocitySquared = motion.maxVelocity * motion.maxVelocity;
 
       // Rounding to 0 if the velocity is small
-      if( magSquared < MAX_VELOCITY / 100.0f )
+      if( magSquared < 0.01f )
       {
          motion.velocity = glm::vec3( 0.0f );
       }
 
       // Clamping to maximum velocity
-      if( magSquared > ( MAX_VELOCITY * MAX_VELOCITY ) )
+      if( magSquared > maxVelocitySquared )
       {
-         motion.velocity *= ( ( MAX_VELOCITY * MAX_VELOCITY ) / magSquared );
+         motion.velocity *= ( maxVelocitySquared / magSquared );
       }
 
       // Calculating delta position

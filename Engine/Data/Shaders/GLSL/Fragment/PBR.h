@@ -1,6 +1,8 @@
 // PBR.h
 // Used for physically based lighting
 
+#include "LIGHTING.h"
+
 // DIFFUSE
 // ================================================================================================
 
@@ -47,6 +49,12 @@ float GeometrySmith( float NdotL, float NdotV, float roughness )
    return GeometrySchlickGGX( NdotL, k ) * GeometrySchlickGGX( NdotV, k );
 }
 
+float FresnelFactor( vec3 V, vec3 N, vec3 L )
+{
+   const float NdotV = clamp( dot( N, V ), 0.0, 1.0 );
+   return pow( clamp( 1.0 - NdotV, 0.0, 1.0 ), 5.0 );
+}
+
 // Fresnel-Shlick approximation of the Fresnel term
 // The Fresnel term describes the proportion of light getting reflected against
 // the light that gets refracted which depends on the incident angle
@@ -59,14 +67,14 @@ vec3 FresnelSchlick( float cosTheta, vec3 F0 )
 vec3 ComputeLightCookTorranceBRDF(
     vec3 lightRadiance,
     vec3 lightDir,
-    vec3 viewDir,
+    vec3 fragToView,
     vec3 albedo,  // Assuming linear values please and thank you
     vec3 normal,  // Assuming normal in world space
     float metalness,
     float roughness,
     float ao )
 {
-   const vec3 V = viewDir;                // View direction
+   const vec3 V = fragToView;             // View direction
    const vec3 L = normalize( lightDir );  // Light direction
    const vec3 N = normalize( normal );    // Normal
    const vec3 H = normalize( V + L );     // Halfway light vector

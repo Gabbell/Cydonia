@@ -12,6 +12,9 @@
 
 namespace CYD
 {
+using MeshIndex                             = size_t;
+static constexpr MeshIndex INVALID_MESH_IDX = std::numeric_limits<MeshIndex>::max();
+
 using MaterialIndex                                 = size_t;
 static constexpr MaterialIndex INVALID_MATERIAL_IDX = std::numeric_limits<MaterialIndex>::max();
 
@@ -352,6 +355,7 @@ struct SamplerInfo
 // Helper functions
 bool IsColorFormat( PixelFormat format );
 uint32_t GetPixelSizeInBytes( PixelFormat format );
+uint32_t GetChannelsCount( PixelFormat format );
 
 // ================================================================================================
 // Transfer structs

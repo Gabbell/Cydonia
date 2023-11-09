@@ -181,7 +181,7 @@ static void ComputeAerialPerspectiveLUT( CmdListHandle cmdList, AtmosphereCompon
 // ================================================================================================
 void AtmosphereSystem::tick( double deltaS )
 {
-   CYD_TRACE( "AtmosphereSystem" );
+   CYD_TRACE();
 
    if( !s_initialized )
    {

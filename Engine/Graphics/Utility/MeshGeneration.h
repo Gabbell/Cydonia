@@ -6,6 +6,7 @@
 namespace CYD
 {
 class Vertex;
+class VertexList;
 
 namespace MeshGeneration
 {
@@ -21,7 +22,7 @@ void TriangleGrid(
 void PatchGrid( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, uint32_t patchSize );
 
 void Icosphere(
-    std::vector<Vertex>& vertices,
+    VertexList& vertexList,
     std::vector<uint32_t>& indices,
     uint32_t subdivisions = 0,
     float divisionPerEdge = 2.0f );

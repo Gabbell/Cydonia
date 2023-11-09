@@ -133,6 +133,42 @@ static PixelFormat StringToPixelFormat( const std::string& formatString )
    return PixelFormat::RGBA32F;
 }
 
+static VertexLayout::Attribute StringToVertexAttribute( const std::string& attributeString )
+{
+   if( attributeString == "POSITION" )
+   {
+      return VertexLayout::Attribute::POSITION;
+   }
+
+   if( attributeString == "NORMAL" )
+   {
+      return VertexLayout::Attribute::NORMAL;
+   }
+
+   if( attributeString == "TEXCOORD" )
+   {
+      return VertexLayout::Attribute::TEXCOORD;
+   }
+
+   if( attributeString == "TANGENT" )
+   {
+      return VertexLayout::Attribute::TANGENT;
+   }
+
+   if( attributeString == "BITANGENT" )
+   {
+      return VertexLayout::Attribute::BITANGENT;
+   }
+
+   if( attributeString == "COLOR" )
+   {
+      return VertexLayout::Attribute::COLOR;
+   }
+
+   CYD_ASSERT( !"Pipelines: Could not recognize string as a vertex attribute" );
+   return VertexLayout::Attribute::POSITION;
+}
+
 static CompareOperator StringToCompareOp( const std::string& operatorString )
 {
    if( operatorString == "NEVER" )
@@ -265,34 +301,14 @@ bool Initialize()
          const auto& vertexLayoutIt = pipeline.find( "VERTEX_LAYOUT" );
          if( vertexLayoutIt != pipeline.end() )
          {
-            uint32_t curOffset = 0;
             for( const auto& attribute : *vertexLayoutIt )
             {
-               const uint32_t location     = attribute["LOCATION"];
                const PixelFormat vecFormat = StringToPixelFormat( attribute["FORMAT"] );
-               uint32_t offset             = 0;
-               uint32_t binding            = 0;
 
-               // Optionals
-               const auto& offsetIt = attribute.find( "OFFSET" );
-               if( offsetIt == attribute.end() )
-               {
-                  offset = curOffset;
-                  curOffset += GetPixelSizeInBytes( vecFormat );
-               }
-               else
-               {
-                  offset = offsetIt->front();
-                  curOffset += offset;
-               }
+               const VertexLayout::Attribute attributeType =
+                   StringToVertexAttribute( attribute["ATTRIBUTE"] );
 
-               const auto& bindingIt = attribute.find( "BINDING" );
-               if( bindingIt != attribute.end() )
-               {
-                  binding = bindingIt->front();
-               }
-
-               pipInfo.vertLayout.addAttribute( vecFormat, location, offset, binding );
+               pipInfo.vertLayout.addAttribute( attributeType, vecFormat );
             }
          }
 

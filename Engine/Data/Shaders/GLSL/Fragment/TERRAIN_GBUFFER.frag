@@ -3,7 +3,7 @@
 
 #include "LIGHTING.h"
 
-layout( set = 1, binding = 1 ) uniform sampler2DShadow shadowMap;
+layout( set = 0, binding = 1 ) uniform sampler2DShadow shadowMap;
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 layout( location = 0 ) in vec2 inUV;

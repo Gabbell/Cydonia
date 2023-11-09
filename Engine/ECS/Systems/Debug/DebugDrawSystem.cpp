@@ -13,12 +13,14 @@
 
 namespace CYD
 {
+static void Initialize() {}
+
 void DebugDrawSystem::tick( double /*deltaS*/ )
 {
 #if CYD_DEBUG
-   CYD_TRACE( "DebugDrawSystem" );
+   CYD_TRACE();
 
-   const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
+   SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "MAIN" );
    if( it == scene.viewNames.end() )
@@ -59,7 +61,7 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
 
       glm::mat4 modelMatrix( 1.0f );
 
-      const UploadToBufferInfo info = { 0, sizeof(debug.shaderParams) };
+      const UploadToBufferInfo info = { 0, sizeof( debug.shaderParams ) };
       GRIS::UploadToBuffer( scene.debugParamsBuffer, &debug.shaderParams, info );
 
       switch( debug.type )
@@ -77,10 +79,11 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
 
             GRIS::BindUniformBuffer( cmdList, scene.debugParamsBuffer, 1, 0 );
 
-            const Mesh& sphereMesh = m_meshes.getMesh( "DEBUG_SPHERE" );
-            GRIS::BindVertexBuffer<Vertex>( cmdList, sphereMesh.vertexBuffer );
-            GRIS::BindIndexBuffer<uint32_t>( cmdList, sphereMesh.indexBuffer );
-            GRIS::DrawIndexed( cmdList, sphereMesh.indexCount );
+            const MeshIndex sphereMesh         = m_meshes.findMesh( "DEBUG_SPHERE" );
+            const MeshCache::DrawInfo drawInfo = m_meshes.getDrawInfo( sphereMesh );
+
+            m_meshes.bind( cmdList, sphereMesh );
+            GRIS::DrawIndexed( cmdList, drawInfo.indexCount );
          }
          break;
          case DebugDrawComponent::Type::NORMALS:

@@ -34,7 +34,7 @@ EntityManager::~EntityManager()
 
 void EntityManager::tick( double deltaS )
 {
-   CYD_TRACE( "EntityManager Tick" );
+   CYD_TRACE();
 
    // Ordered updating
    for( auto& system : m_systems )

@@ -6,8 +6,8 @@
 #include "../NOISE.h"
 
 layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
-layout( set = 1, binding = 0 ) uniform Lights { Light lights[MAX_LIGHTS]; };
-layout( set = 1, binding = 1 ) uniform sampler2DShadow shadowMap;
+layout( set = 0, binding = 1 ) uniform Lights { Light lights[MAX_LIGHTS]; };
+layout( set = 0, binding = 3 ) uniform sampler2DShadow shadowMap;
 layout( set = 1, binding = 5 ) uniform sampler2D displacementMap;
 
 layout( location = 0 ) in vec2 inUV;

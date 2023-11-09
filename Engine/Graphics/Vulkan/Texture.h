@@ -73,6 +73,8 @@ class Texture final
 
    CYD::ImageType m_type     = CYD::ImageType::TEXTURE_2D;
    CYD::PixelFormat m_format = CYD::PixelFormat::UNKNOWN;
+
+   // TODO: This changes as we build command lists. It is not thread safe
    CYD::Access m_prevAccess  = CYD::Access::UNDEFINED;
 
    CYD::ImageUsageFlag m_usage     = 0;

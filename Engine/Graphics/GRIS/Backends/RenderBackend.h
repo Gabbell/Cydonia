@@ -9,6 +9,7 @@
 namespace CYD
 {
 class Framebuffer;
+class VertexList;
 struct GraphicsPipelineInfo;
 struct ComputePipelineInfo;
 
@@ -106,18 +107,8 @@ class RenderBackend
        uint32_t layerCount,
        const void* const* ppTexels ) = 0;
 
-   virtual VertexBufferHandle createVertexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       uint32_t stride,
-       const void* pVertices,
-       const std::string_view name ) = 0;
-
-   virtual IndexBufferHandle createIndexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       const void* pIndices,
-       const std::string_view name ) = 0;
+   virtual VertexBufferHandle createVertexBuffer( size_t size, const std::string_view name ) = 0;
+   virtual IndexBufferHandle createIndexBuffer( size_t size, const std::string_view name )   = 0;
 
    virtual BufferHandle createUniformBuffer( size_t size, const std::string_view name ) = 0;
 
@@ -133,6 +124,15 @@ class RenderBackend
    virtual void uploadToBuffer(
        BufferHandle bufferHandle,
        const void* pData,
+       const UploadToBufferInfo& info ) = 0;
+   virtual void uploadToVertexBuffer(
+       CmdListHandle transferList,
+       VertexBufferHandle bufferHandle,
+       const VertexList& vertices ) = 0;
+   virtual void uploadToIndexBuffer(
+       CmdListHandle transferList,
+       IndexBufferHandle bufferHandle,
+       const void* pIndices,
        const UploadToBufferInfo& info ) = 0;
 
    virtual void copyTexture(
@@ -169,8 +169,10 @@ class RenderBackend
        size_t firstInstance ) = 0;
    virtual void
    dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) = 0;
-   virtual void copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )    = 0;
-   virtual void presentFrame()                                                       = 0;
+   virtual void
+   clearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal ) = 0;
+   virtual void copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )             = 0;
+   virtual void presentFrame()                                                                = 0;
 
    // Debug
    // ==============================================================================================

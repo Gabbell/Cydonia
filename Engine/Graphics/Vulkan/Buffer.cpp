@@ -110,7 +110,7 @@ void Buffer::copy( const void* pData, const CYD::UploadToBufferInfo& info )
    }
 
    _mapMemory();
-   memcpy( static_cast<unsigned char*>( m_data ) + info.srcOffset, pData, info.size );
+   memcpy( m_data, static_cast<const unsigned char*>( pData ) + info.srcOffset, info.size );
    _unmapMemory();
 }
 

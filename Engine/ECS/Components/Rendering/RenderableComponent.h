@@ -2,7 +2,10 @@
 
 #include <ECS/Components/BaseComponent.h>
 
+#include <Graphics/GraphicsTypes.h>
 #include <Graphics/Handles/ResourceHandle.h>
+
+#include <string_view>
 
 // ================================================================================================
 // Definition
@@ -20,28 +23,32 @@ class RenderableComponent final : public BaseComponent
       DEFERRED
    };
 
-   RenderableComponent() = default;
-   RenderableComponent( Type type, bool isShadowCasting = false, bool isShadowReceiving = false )
-       : type( type ), isShadowCasting( isShadowCasting ), isShadowReceiving( isShadowReceiving )
+   struct Description
    {
-   }
+      std::string_view pipelineName = "";
+      Type type                     = Type::FORWARD;
+      bool isVisible                = true;
+      bool isShadowCasting          = false;
+      bool isShadowReceiving        = false;
+   };
+
+   RenderableComponent() = default;
+   RenderableComponent( const Description& desc ) : desc( desc ) {}
    COPIABLE( RenderableComponent );
    virtual ~RenderableComponent();
 
    static constexpr ComponentType TYPE = ComponentType::RENDERABLE;
 
-   Type type = Type::DEFERRED;
+   Description desc;
+
+   PipelineIndex pipelineIdx = INVALID_PIPELINE_IDX;
 
    BufferHandle tessellationBuffer;
-
    BufferHandle instancesBuffer;
    uint32_t instanceCount = 0;
 
-   bool isVisible         = true;
-   bool isShadowCasting   = false;
-   bool isShadowReceiving = false;
-   bool isInstanced       = false;
-   bool isTessellated     = false;
-   bool isTransparent     = false;
+   bool isInstanced   = false;
+   bool isTessellated = false;
+   bool isTransparent = false;
 };
 }

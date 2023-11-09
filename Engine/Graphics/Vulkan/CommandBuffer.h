@@ -149,6 +149,7 @@ class CommandBuffer final
    void draw( size_t vertexCount, size_t instanceCount, size_t firstVertex, size_t firstInstance );
    void
    drawIndexed( size_t indexCount, size_t instanceCount, size_t firstIndex, size_t firstInstance );
+   void clearTexture( Texture* tex, const CYD::ClearValue& clearVal ) const;
 
    // Compute
    // =============================================================================================

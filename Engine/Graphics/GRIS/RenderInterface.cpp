@@ -3,6 +3,7 @@
 #include <Common/Assert.h>
 
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/Framebuffer.h>
 #include <Graphics/StaticPipelines.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/GRIS/Backends/VKRenderBackend.h>
@@ -65,19 +66,19 @@ void UninitializeUIBackend()
 
 void DrawUI( CmdListHandle cmdList )
 {
-   CYD_TRACE( "Draw UI" );
+   CYD_TRACE();
    b->drawUI( cmdList );
 }
 
 void RenderBackendCleanup()
 {
-   CYD_TRACE( "Render Backend Cleanup" );
+   CYD_TRACE();
    b->cleanup();
 }
 
 void ReloadShaders()
 {
-   CYD_TRACE( "Reloading Shaders" );
+   CYD_TRACE();
    b->reloadShaders();
 }
 
@@ -147,8 +148,7 @@ void BindPipeline( CmdListHandle cmdList, PipelineIndex index )
    BindPipeline( cmdList, pPipInfo );
 }
 
-template <>
-void BindVertexBuffer<Vertex>( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
+void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
 {
    b->bindVertexBuffer( cmdList, bufferHandle );
 }
@@ -258,6 +258,7 @@ static TextureHandle LoadImageFromStorage(
 
       if( !imageData.back() )
       {
+         CYD_ASSERT( !"No image data loaded" );
          return Handle();
       }
 
@@ -323,23 +324,14 @@ TextureHandle CreateTexture(
    return b->createTexture( transferList, desc, layerCount, ppTexels );
 }
 
-VertexBufferHandle CreateVertexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    uint32_t stride,
-    const void* pVertices,
-    const std::string_view name )
+VertexBufferHandle CreateVertexBuffer( size_t size, const std::string_view name )
 {
-   return b->createVertexBuffer( transferList, count, stride, pVertices, name );
+   return b->createVertexBuffer( size, name );
 }
 
-IndexBufferHandle CreateIndexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    const void* pIndices,
-    const std::string_view name )
+IndexBufferHandle CreateIndexBuffer( size_t size, const std::string_view name )
 {
-   return b->createIndexBuffer( transferList, count, pIndices, name );
+   return b->createIndexBuffer( size, name );
 }
 
 BufferHandle CreateUniformBuffer( size_t size, const std::string_view name )
@@ -362,6 +354,23 @@ void RemoveDebugTexture( void* texture ) { b->removeDebugTexture( texture ); }
 void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadToBufferInfo& info )
 {
    return b->uploadToBuffer( bufferHandle, pData, info );
+}
+
+void UploadToVertexBuffer(
+    CmdListHandle transferList,
+    VertexBufferHandle bufferHandle,
+    const VertexList& vertices )
+{
+   b->uploadToVertexBuffer( transferList, bufferHandle, vertices );
+}
+
+void UploadToIndexBuffer(
+    CmdListHandle transferList,
+    IndexBufferHandle bufferHandle,
+    const void* pIndices,
+    const UploadToBufferInfo& info )
+{
+   b->uploadToIndexBuffer( transferList, bufferHandle, pIndices, info );
 }
 
 void CopyTexture(
@@ -389,7 +398,7 @@ void DestroyBuffer( BufferHandle bufferHandle ) { b->destroyBuffer( bufferHandle
 //
 void BeginFrame()
 {
-   CYD_TRACE( "Prepare Frame" );
+   CYD_TRACE();
    b->beginFrame();
 }
 
@@ -439,6 +448,11 @@ void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t w
    b->dispatch( cmdList, workX, workY, workZ );
 }
 
+void ClearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal )
+{
+   b->clearTexture( cmdList, texHandle, clearVal );
+}
+
 void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
 {
    b->copyToSwapchain( cmdList, texHandle );
@@ -446,7 +460,7 @@ void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
 
 void PresentFrame()
 {
-   CYD_TRACE( "Present Frame" );
+   CYD_TRACE();
    b->presentFrame();
 }
 

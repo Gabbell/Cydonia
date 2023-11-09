@@ -14,6 +14,7 @@
 // ================================================================================================
 namespace CYD
 {
+class MeshCache;
 class MaterialCache;
 class SceneComponent;
 struct PipelineInfo;
@@ -23,7 +24,10 @@ class RenderSystem
 {
   public:
    RenderSystem() = delete;
-   RenderSystem( const MaterialCache& materials ) : m_materials( materials ) {}
+   RenderSystem( const MeshCache& meshes, const MaterialCache& materials )
+       : m_meshes( meshes ), m_materials( materials )
+   {
+   }
    NON_COPIABLE( RenderSystem );
    virtual ~RenderSystem() = default;
 
@@ -42,6 +46,7 @@ class RenderSystem
        const PipelineInfo* pipInfo,
        uint32_t viewIndex ) const;
 
+   const MeshCache& m_meshes;
    const MaterialCache& m_materials;
 };
 }

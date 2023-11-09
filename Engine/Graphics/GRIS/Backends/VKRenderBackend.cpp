@@ -7,6 +7,7 @@
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/PipelineInfos.h>
 #include <Graphics/Framebuffer.h>
+#include <Graphics/Vertex.h>
 #include <Graphics/Handles/ResourceHandleManager.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/Vulkan/Buffer.h>
@@ -426,59 +427,15 @@ class VKRenderBackendImp
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
 
-   VertexBufferHandle createVertexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       uint32_t stride,
-       const void* pVertices,
-       const std::string_view name )
+   VertexBufferHandle createVertexBuffer( size_t size, const std::string_view name )
    {
-      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
-
-      const size_t bufferSize = static_cast<size_t>( count ) * stride;
-
-      // Staging
-      vk::Buffer* staging = m_mainDevice.createStagingBuffer( bufferSize );
-
-      const UploadToBufferInfo uploadInfo = { 0, bufferSize };
-      staging->copy( pVertices, uploadInfo );
-
-      m_cmdListDeps[transferList].emplace_back( staging );
-
-      // Uploading to GPU
-      vk::Buffer* vertexBuffer = m_mainDevice.createVertexBuffer( bufferSize, name );
-
-      const BufferCopyInfo copyInfo = { 0, 0, bufferSize };
-      cmdBuffer->copyBuffer( staging, vertexBuffer, copyInfo );
-
+      vk::Buffer* vertexBuffer = m_mainDevice.createVertexBuffer( size, name );
       return m_coreHandles.add( vertexBuffer, HandleType::VERTEXBUFFER );
    }
 
-   IndexBufferHandle createIndexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       const void* pIndices,
-       const std::string_view name )
+   IndexBufferHandle createIndexBuffer( size_t size, const std::string_view name )
    {
-      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
-
-      // TODO Dynamic uint32_t/uint16_t
-      const size_t bufferSize = count * sizeof( uint32_t );
-
-      // Staging
-      vk::Buffer* staging = m_mainDevice.createStagingBuffer( bufferSize );
-
-      const UploadToBufferInfo uploadInfo = { 0, bufferSize };
-      staging->copy( pIndices, uploadInfo );
-
-      m_cmdListDeps[transferList].emplace_back( staging );
-
-      // Uploading to GPU
-      vk::Buffer* indexBuffer = m_mainDevice.createIndexBuffer( bufferSize, name );
-
-      const BufferCopyInfo copyInfo = { 0, 0, bufferSize };
-      cmdBuffer->copyBuffer( staging, indexBuffer, copyInfo );
-
+      vk::Buffer* indexBuffer = m_mainDevice.createIndexBuffer( size, name );
       return m_coreHandles.add( indexBuffer, HandleType::INDEXBUFFER );
    }
 
@@ -536,6 +493,54 @@ class VKRenderBackendImp
 
       auto buffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
       buffer->copy( pData, info );
+   }
+
+   void uploadToVertexBuffer(
+       CmdListHandle transferList,
+       VertexBufferHandle bufferHandle,
+       const VertexList& vertices )
+   {
+      CYD_ASSERT( bufferHandle );
+
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+      const auto vertexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+
+      const size_t copySize = vertices.getSize();
+
+      CYD_ASSERT( copySize <= vertexBuffer->getSize() );
+
+      // Staging
+      vk::Buffer* staging = m_mainDevice.createStagingBuffer( copySize );
+
+      const UploadToBufferInfo uploadInfo = { 0, copySize };
+      staging->copy( vertices.getData(), uploadInfo );
+
+      m_cmdListDeps[transferList].emplace_back( staging );
+
+      // Uploading to GPU
+      const BufferCopyInfo copyInfo = { 0, 0, copySize };
+      cmdBuffer->copyBuffer( staging, vertexBuffer, copyInfo );
+   }
+
+   void uploadToIndexBuffer(
+       CmdListHandle transferList,
+       IndexBufferHandle bufferHandle,
+       const void* pIndices,
+       const UploadToBufferInfo& info )
+   {
+      const auto cmdBuffer   = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+      const auto indexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
+
+      // TODO IndexList
+      // Staging
+      vk::Buffer* staging = m_mainDevice.createStagingBuffer( info.size );
+
+      staging->copy( pIndices, info );
+
+      m_cmdListDeps[transferList].emplace_back( staging );
+
+      const BufferCopyInfo copyInfo = { 0, 0, info.size };
+      cmdBuffer->copyBuffer( staging, indexBuffer, copyInfo );
    }
 
    void copyTexture(
@@ -714,6 +719,15 @@ class VKRenderBackendImp
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
       cmdBuffer->dispatch( workX, workY, workZ );
+   }
+
+   void clearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal )
+       const
+   {
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      auto texture   = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
+
+      cmdBuffer->clearTexture( texture, clearVal );
    }
 
    void copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
@@ -952,23 +966,14 @@ TextureHandle VKRenderBackend::createTexture(
    return _imp->createTexture( transferList, desc, layerCount, ppTexels );
 }
 
-VertexBufferHandle VKRenderBackend::createVertexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    uint32_t stride,
-    const void* pVertices,
-    const std::string_view name )
+VertexBufferHandle VKRenderBackend::createVertexBuffer( size_t size, const std::string_view name )
 {
-   return _imp->createVertexBuffer( transferList, count, stride, pVertices, name );
+   return _imp->createVertexBuffer( size, name );
 }
 
-IndexBufferHandle VKRenderBackend::createIndexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    const void* pIndices,
-    const std::string_view name )
+IndexBufferHandle VKRenderBackend::createIndexBuffer( size_t size, const std::string_view name )
 {
-   return _imp->createIndexBuffer( transferList, count, pIndices, name );
+   return _imp->createIndexBuffer( size, name );
 }
 
 BufferHandle VKRenderBackend::createUniformBuffer( size_t size, const std::string_view name )
@@ -999,6 +1004,23 @@ void VKRenderBackend::uploadToBuffer(
     const UploadToBufferInfo& info )
 {
    _imp->uploadToBuffer( bufferHandle, pData, info );
+}
+
+void VKRenderBackend::uploadToVertexBuffer(
+    CmdListHandle transferList,
+    VertexBufferHandle bufferHandle,
+    const VertexList& vertices )
+{
+   _imp->uploadToVertexBuffer( transferList, bufferHandle, vertices );
+}
+
+void VKRenderBackend::uploadToIndexBuffer(
+    CmdListHandle transferList,
+    IndexBufferHandle bufferHandle,
+    const void* pIndices,
+    const UploadToBufferInfo& info )
+{
+   _imp->uploadToIndexBuffer( transferList, bufferHandle, pIndices, info );
 }
 
 void VKRenderBackend::copyTexture(
@@ -1080,6 +1102,14 @@ void VKRenderBackend::dispatch(
     uint32_t workZ )
 {
    _imp->dispatch( cmdList, workX, workY, workZ );
+}
+
+void VKRenderBackend::clearTexture(
+    CmdListHandle cmdList,
+    TextureHandle texHandle,
+    const ClearValue& clearVal )
+{
+   _imp->clearTexture( cmdList, texHandle, clearVal );
 }
 
 void VKRenderBackend::copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )

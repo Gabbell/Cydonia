@@ -25,7 +25,7 @@ static void Initialize()
 // ================================================================================================
 void FogSystem::tick( double deltaS )
 {
-   CYD_TRACE( "FogSystem" );
+   CYD_TRACE();
 
    if( !s_initialized )
    {
@@ -53,7 +53,7 @@ void FogSystem::tick( double deltaS )
    {
       // Read-only components
       const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      if( !renderable.isVisible ) continue;
+      if( !renderable.desc.isVisible ) continue;
 
       FogComponent& fog = *std::get<FogComponent*>( entityEntry.arch );
 

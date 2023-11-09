@@ -29,7 +29,7 @@ bool ViewUpdateSystem::_compareEntities( const EntityEntry& first, const EntityE
 
 void ViewUpdateSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "ViewUpdateSystem" );
+   CYD_TRACE();
 
    // Write component
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();

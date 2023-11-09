@@ -112,18 +112,8 @@ class D3D12RenderBackend final : public RenderBackend
        uint32_t layerCount,
        const void* const* ppTexels ) override;
 
-   VertexBufferHandle createVertexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       uint32_t stride,
-       const void* pVertices,
-       const std::string_view name ) override;
-
-   IndexBufferHandle createIndexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       const void* pIndices,
-       const std::string_view name ) override;
+   VertexBufferHandle createVertexBuffer( size_t size, const std::string_view name ) override;
+   IndexBufferHandle createIndexBuffer( size_t size, const std::string_view name ) override;
 
    BufferHandle createUniformBuffer( size_t size, const std::string_view name ) override;
 
@@ -132,6 +122,15 @@ class D3D12RenderBackend final : public RenderBackend
    void uploadToBuffer(
        BufferHandle bufferHandle,
        const void* pData,
+       const UploadToBufferInfo& info ) override;
+   void uploadToVertexBuffer(
+       CmdListHandle transferList,
+       VertexBufferHandle bufferHandle,
+       const VertexList& vertices ) override;
+   void uploadToIndexBuffer(
+       CmdListHandle transferList,
+       IndexBufferHandle bufferHandle,
+       const void* pIndices,
        const UploadToBufferInfo& info ) override;
 
    void destroyTexture( TextureHandle texHandle ) override;

@@ -119,18 +119,8 @@ class VKRenderBackend final : public RenderBackend
        uint32_t layerCount,
        const void* const* ppTexels ) override;
 
-   VertexBufferHandle createVertexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       uint32_t stride,
-       const void* pVertices,
-       const std::string_view name ) override;
-
-   IndexBufferHandle createIndexBuffer(
-       CmdListHandle transferList,
-       uint32_t count,
-       const void* pIndices,
-       const std::string_view name ) override;
+   VertexBufferHandle createVertexBuffer( size_t size, const std::string_view name ) override;
+   IndexBufferHandle createIndexBuffer( size_t size, const std::string_view name ) override;
 
    BufferHandle createUniformBuffer( size_t size, const std::string_view name ) override;
 
@@ -143,6 +133,15 @@ class VKRenderBackend final : public RenderBackend
    void uploadToBuffer(
        BufferHandle bufferHandle,
        const void* pData,
+       const UploadToBufferInfo& info ) override;
+   void uploadToVertexBuffer(
+       CmdListHandle transferList,
+       VertexBufferHandle bufferHandle,
+       const VertexList& vertices ) override;
+   void uploadToIndexBuffer(
+       CmdListHandle transferList,
+       IndexBufferHandle bufferHandle,
+       const void* pIndices,
        const UploadToBufferInfo& info ) override;
 
    void copyTexture(
@@ -178,6 +177,8 @@ class VKRenderBackend final : public RenderBackend
        size_t firstIndex,
        size_t firstInstance ) override;
    void dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ ) override;
+   void clearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal )
+       override;
    void copyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle ) override;
    void presentFrame() override;
 

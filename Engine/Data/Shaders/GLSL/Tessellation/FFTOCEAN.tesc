@@ -104,7 +104,7 @@ void main()
    if( gl_InvocationID == 0 )
    {
       // Culling is wrong at steep angles
-      if( !frustumCheck() )
+      if( false /*!frustumCheck()*/ )
       {
          gl_TessLevelInner[0] = 0.0;
          gl_TessLevelInner[1] = 0.0;

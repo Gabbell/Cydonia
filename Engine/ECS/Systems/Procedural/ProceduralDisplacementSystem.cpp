@@ -28,7 +28,7 @@ ProceduralDisplacementSystem::~ProceduralDisplacementSystem() { Noise::Uninitial
 // ================================================================================================
 void ProceduralDisplacementSystem::tick( double deltaS )
 {
-   CYD_TRACE( "ProceduralDisplacementSystem" );
+   CYD_TRACE();
 
    // Start command list recording
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
@@ -57,7 +57,8 @@ void ProceduralDisplacementSystem::tick( double deltaS )
 
          noise.texture = GRIS::CreateTexture( noiseTexDesc );
 
-         m_materials.updateMaterial( material.materialIdx, noise.texture, Material::DISPLACEMENT );
+         m_materials.updateMaterial(
+             material.materialIdx, MaterialCache::TextureSlot::DISPLACEMENT, noise.texture );
 
          noise.resolutionChanged = false;
       }

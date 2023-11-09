@@ -29,7 +29,7 @@ static void Initialize()
 // ================================================================================================
 void AtmosphereRenderSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "AtmosphereRenderSystem" );
+   CYD_TRACE();
 
    if( !s_initialized )
    {

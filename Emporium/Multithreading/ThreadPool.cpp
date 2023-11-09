@@ -6,6 +6,8 @@ ThreadPool::ThreadPool() : m_shutdown( false ) {}
 
 void ThreadPool::init( int numberOfThreads )
 {
+   m_mainThread = std::this_thread::get_id();
+
    m_threads.resize( numberOfThreads );
    for( int i = 0; i < m_threads.size(); i++ )
    {

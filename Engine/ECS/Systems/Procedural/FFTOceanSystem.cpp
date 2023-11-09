@@ -152,7 +152,7 @@ static void computeDisplacement(
 
 void FFTOceanSystem::tick( double deltaS )
 {
-   CYD_TRACE( "FFTOceanSystem" );
+   CYD_TRACE();
 
    // First time run
    if( !s_initialized )
@@ -239,7 +239,9 @@ void FFTOceanSystem::tick( double deltaS )
          ocean.displacementMap = GRIS::CreateTexture( dispTexDesc );
 
          m_materials.updateMaterial(
-             material.materialIdx, ocean.displacementMap, static_cast<Material::TextureSlot>( 5 ) );
+             material.materialIdx,
+             MaterialCache::TextureSlot::DISPLACEMENT,
+             ocean.displacementMap );
 
          ocean.resolutionChanged = false;
 

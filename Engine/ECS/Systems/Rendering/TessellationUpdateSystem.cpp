@@ -16,7 +16,7 @@ namespace CYD
 {
 void TessellationUpdateSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "TessellationUpdateSystem" );
+   CYD_TRACE();
 
    const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 

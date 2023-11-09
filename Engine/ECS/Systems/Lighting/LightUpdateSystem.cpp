@@ -13,7 +13,7 @@ namespace CYD
 {
 void LightUpdateSystem::tick( double deltaS )
 {
-   CYD_TRACE( "LightUpdateSystem" );
+   CYD_TRACE();
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
@@ -28,10 +28,10 @@ void LightUpdateSystem::tick( double deltaS )
       const LightComponent& light   = *std::get<LightComponent*>( entityEntry.arch );
       TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
 
-      transform.position = glm::vec3(
-          transform.position.x,
-          20.0f * std::sin( 0.025f * timeElapsed ) - 5.0f,
-          -20.0f * std::cos( 0.025f * timeElapsed ) );
+      //transform.position = glm::vec3(
+      //    transform.position.x,
+      //    20.0f * std::sin( 0.025f * timeElapsed ) - 5.0f,
+      //    -20.0f * std::cos( 0.025f * timeElapsed ) );
 
       const glm::vec3 viewDir = glm::normalize( -transform.position );
 
