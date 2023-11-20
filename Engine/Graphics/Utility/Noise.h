@@ -4,6 +4,8 @@
 
 #include <Graphics/StaticPipelines.h>
 
+#include <string_view>
+
 namespace CYD
 {
 namespace Noise
@@ -18,15 +20,7 @@ enum class Type : uint8_t
    COUNT
 };
 
-static const char* GetNoiseName( Type type )
-{
-   static constexpr char NOISE_NAMES[][32] = {
-       "WHITE_NOISE", "SIMPLEX NOISE", "VORONOI NOISE", "BLUE NOISE", "DOMAIN WARPED NOISE" };
-
-   static_assert( ARRSIZE( NOISE_NAMES ) == UNDERLYING( Noise::Type::COUNT ) );
-
-   return NOISE_NAMES[UNDERLYING( type )];
-}
+std::string_view GetNoiseName( Type type );
 
 struct ShaderParams
 {

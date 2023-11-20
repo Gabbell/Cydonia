@@ -23,6 +23,18 @@ void Texture::acquire( const Device& device, const CYD::TextureDescription& desc
    m_stages  = desc.stages;
    m_name    = desc.name;
 
+   if( desc.generateMipmaps )
+   {
+      m_mipLevels =
+          static_cast<uint32_t>( std::floor( std::log2( std::max( m_width, m_height ) ) ) ) + 1;
+   }
+   else
+   {
+      m_mipLevels = 1;
+   }
+
+   m_prevAccesses.fill( CYD::Access::UNDEFINED );
+
    _createImage();
    _allocateMemory();
    _createImageView();
@@ -40,20 +52,40 @@ void Texture::release()
       vkDestroyImage( m_pDevice->getVKDevice(), m_vkImage, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
-      m_size       = 0;
-      m_width      = 0;
-      m_height     = 0;
-      m_depth      = 1;
-      m_type       = CYD::ImageType::TEXTURE_2D;
-      m_format     = CYD::PixelFormat::RGBA8_SRGB;
-      m_prevAccess = CYD::Access::UNDEFINED;
-      m_usage      = 0;
-      m_stages     = 0;
-
+      m_size      = 0;
+      m_width     = 0;
+      m_height    = 0;
+      m_depth     = 1;
+      m_mipLevels = 1;
+      m_prevAccesses.fill( CYD::Access::UNDEFINED );
+      m_type        = CYD::ImageType::TEXTURE_2D;
+      m_format      = CYD::PixelFormat::RGBA8_SRGB;
+      m_usage       = 0;
+      m_stages      = 0;
       m_pDevice     = nullptr;
       m_vkImageView = nullptr;
       m_vkImage     = nullptr;
       m_vkMemory    = nullptr;
+   }
+}
+
+CYD::Access Texture::getPreviousAccess( uint32_t mipLevel ) const
+{
+   CYD_ASSERT( mipLevel < m_mipLevels );
+   if( mipLevel < m_mipLevels )
+   {
+      return m_prevAccesses[mipLevel];
+   }
+
+   return CYD::Access::UNDEFINED;
+}
+
+void Texture::setPreviousAccess( CYD::Access access, uint32_t mipLevel )
+{
+   CYD_ASSERT( mipLevel < m_mipLevels );
+   if( mipLevel < m_mipLevels )
+   {
+      m_prevAccesses[mipLevel] = access;
    }
 }
 
@@ -96,7 +128,7 @@ void Texture::_createImage()
 
    imageInfo.extent.width  = m_width;
    imageInfo.extent.height = m_height;
-   imageInfo.mipLevels     = 1;
+   imageInfo.mipLevels     = m_mipLevels;
    imageInfo.format        = TypeConversions::cydToVkFormat( m_format );
    imageInfo.tiling        = VK_IMAGE_TILING_OPTIMAL;
    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
@@ -197,7 +229,7 @@ void Texture::_createImageView()
    viewInfo.format                          = TypeConversions::cydToVkFormat( m_format );
    viewInfo.subresourceRange.aspectMask     = TypeConversions::getAspectMask( m_format );
    viewInfo.subresourceRange.baseMipLevel   = 0;
-   viewInfo.subresourceRange.levelCount     = 1;
+   viewInfo.subresourceRange.levelCount     = m_mipLevels;
    viewInfo.subresourceRange.baseArrayLayer = 0;
 
    if( m_type == CYD::ImageType::TEXTURE_2D )

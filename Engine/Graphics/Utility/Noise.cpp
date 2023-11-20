@@ -20,6 +20,16 @@ const char* s_noiseNames[] =
 static_assert( ARRSIZE( s_noisePipelines ) == static_cast<size_t>( Type::COUNT ) );
 static_assert( ARRSIZE( s_noiseNames ) == static_cast<size_t>( Type::COUNT ) );
 
+std::string_view GetNoiseName( Type type )
+{
+   constexpr char NOISE_NAMES[][32] = {
+       "WHITE_NOISE", "SIMPLEX NOISE", "VORONOI NOISE", "BLUE NOISE", "DOMAIN WARPED NOISE" };
+
+   static_assert( ARRSIZE( NOISE_NAMES ) == UNDERLYING( Noise::Type::COUNT ) );
+
+   return NOISE_NAMES[UNDERLYING( type )];
+}
+
 void Initialize()
 {
    if( !s_initialized )

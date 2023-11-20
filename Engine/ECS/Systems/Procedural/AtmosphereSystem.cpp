@@ -98,7 +98,8 @@ static void ComputeMultipleScatteringLUT( CmdListHandle cmdList, AtmosphereCompo
    GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
 }
 
-static void ComputeSkyViewLUT( CmdListHandle cmdList, AtmosphereComponent& atmos )
+static void
+ComputeSkyViewLUT( CmdListHandle cmdList, SceneComponent& scene, AtmosphereComponent& atmos )
 {
    CYD_SCOPED_GPUTRACE( cmdList, "Compute Sky-View LUT" );
 
@@ -109,18 +110,25 @@ static void ComputeSkyViewLUT( CmdListHandle cmdList, AtmosphereComponent& atmos
       texDesc.height             = AtmosphereComponent::SKYVIEW_LUT_HEIGHT;
       texDesc.type               = ImageType::TEXTURE_2D;
       texDesc.format             = PixelFormat::RGBA16F;
-      texDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
-      texDesc.stages             = PipelineStage::COMPUTE_STAGE;
-      texDesc.name               = "Sky View LUT";
+      texDesc.usage  = ImageUsage::STORAGE | ImageUsage::SAMPLED | ImageUsage::TRANSFER_SRC;
+      texDesc.stages = PipelineStage::COMPUTE_STAGE;
+      texDesc.name   = "Sky View LUT";
 
       atmos.skyViewLUT = GRIS::CreateTexture( texDesc );
+
+      // TODO Put this environment map in its own shared component or inside the scene and make
+      // it a cube map that is rendered into using reflection probes
+      texDesc.usage  = ImageUsage::SAMPLED | ImageUsage::TRANSFER_DST;
+      texDesc.stages = PipelineStage::FRAGMENT_STAGE;
+      texDesc.name   = "Environment Map";
+      scene.envMap   = GRIS::CreateTexture( texDesc );
    }
 
    constexpr float localSizeX = 16.0f;
    constexpr float localSizeY = 16.0f;
-   uint32_t groupsX =
+   const uint32_t groupsX =
        static_cast<uint32_t>( std::ceil( AtmosphereComponent::SKYVIEW_LUT_WIDTH / localSizeX ) );
-   uint32_t groupsY =
+   const uint32_t groupsY =
        static_cast<uint32_t>( std::ceil( AtmosphereComponent::SKYVIEW_LUT_HEIGHT / localSizeY ) );
 
    GRIS::BindPipeline( cmdList, s_skyViewLUTPip );
@@ -191,7 +199,7 @@ void AtmosphereSystem::tick( double deltaS )
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
    CYD_SCOPED_GPUTRACE( cmdList, "AtmosphereSystem" );
 
-   const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
+   SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "MAIN" );
    if( it == scene.viewNames.end() )
@@ -201,15 +209,14 @@ void AtmosphereSystem::tick( double deltaS )
       return;
    }
    const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
-   const SceneComponent::ViewShaderParams& view               = scene.views[viewIdx];
-   const SceneComponent::InverseViewShaderParams& inverseView = scene.inverseViews[viewIdx];
-   const SceneComponent::LightShaderParams& light             = scene.lights[0];
+   const SceneComponent::ViewShaderParams& view   = scene.views[viewIdx];
+   const SceneComponent::LightShaderParams& light = scene.lights[0];
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      AtmosphereComponent& atmos = *std::get<AtmosphereComponent*>( entityEntry.arch );
+      AtmosphereComponent& atmos = GetComponent<AtmosphereComponent>( entityEntry );
 
       if( !atmos.viewInfoBuffer )
       {
@@ -227,8 +234,8 @@ void AtmosphereSystem::tick( double deltaS )
 
       atmos.params.time += static_cast<float>( deltaS );
 
-      const UploadToBufferInfo info = { 0, sizeof( AtmosphereComponent::ViewInfo ) };
-      GRIS::UploadToBuffer( atmos.viewInfoBuffer, &atmos.viewInfo, info );
+      const UploadToBufferInfo bufInfo = { 0, sizeof( AtmosphereComponent::ViewInfo ) };
+      GRIS::UploadToBuffer( atmos.viewInfoBuffer, &atmos.viewInfo, bufInfo );
 
       if( atmos.needsUpdate )
       {
@@ -237,8 +244,11 @@ void AtmosphereSystem::tick( double deltaS )
          atmos.needsUpdate = false;
       }
 
-      ComputeSkyViewLUT( cmdList, atmos );
+      ComputeSkyViewLUT( cmdList, scene, atmos );
       ComputeAerialPerspectiveLUT( cmdList, atmos );
+
+      const TextureCopyInfo texInfo = {};
+      GRIS::CopyTexture( cmdList, atmos.skyViewLUT, scene.envMap, texInfo );
    }
 
    CYD_GPUTRACE_END( cmdList );

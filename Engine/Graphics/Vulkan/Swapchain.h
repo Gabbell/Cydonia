@@ -4,6 +4,7 @@
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/Vulkan/VulkanTypes.h>
+#include <Graphics/Vulkan.h>
 
 #include <cstdint>
 #include <memory>
@@ -22,8 +23,6 @@ FWDHANDLE( VkDeviceMemory );
 FWDHANDLE( VkFence );
 struct VkSurfaceFormatKHR;
 struct VkExtent2D;
-enum VkPresentModeKHR;
-enum VkImageLayout;
 
 namespace vk
 {
@@ -53,10 +52,7 @@ class Swapchain final
    // For render pass begin info
    const VkExtent2D& getVKExtent() const { return *m_extent; }
 
-   const RenderPassInfo& getRenderPass() const
-   {
-      return m_renderPasses[m_shouldClear ? 0 : 1];
-   }
+   const RenderPassInfo& getRenderPass() const { return m_renderPasses[m_shouldClear ? 0 : 1]; }
 
    VkFramebuffer getCurrentVKFramebuffer() const { return m_vkFramebuffers[m_currentFrame]; }
    VkRenderPass getVKRenderPass() const { return m_vkRenderPasses[m_shouldClear ? 0 : 1]; }

@@ -20,26 +20,38 @@ void InstanceUpdateSystem::tick( double /*deltaS*/ )
 
    for( const auto& entityEntry : m_entities )
    {
-      RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      InstancedComponent& instanced   = *std::get<InstancedComponent*>( entityEntry.arch );
+      const TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      RenderableComponent& renderable     = GetComponent<RenderableComponent>( entityEntry );
+      InstancedComponent& instanced       = GetComponent<InstancedComponent>( entityEntry );
 
       renderable.isInstanced = true;
 
       if( instanced.needsUpdate )
       {
-         // Creating GPU data
-         for( uint32_t instanceIdx = 0; instanceIdx < instanced.count; ++instanceIdx )
+         if( instanced.type == InstancedComponent::Type::TILED )
          {
-            glm::vec3 position =
-                glm::vec3( std::rand() % 100 - 50, std::rand() % 100 - 50, std::rand() % 100 - 50 );
+            const uint32_t sqrtCount =
+                std::round( static_cast<float>( std::sqrt( instanced.count ) ) );
+            const float distance = ( sqrtCount - 1.0f ) * instanced.radius;
+            const float diameter = 2.0f * instanced.radius;
+
+            glm::vec3 position = glm::vec3( 0.0f );
             glm::vec3 scaling  = glm::vec3( 1.0f );
             glm::quat rotation = glm::quat( 1.0f, 0.0f, 0.0f, 0.0f );
 
-            InstancedComponent::ShaderParams& shaderParams = ubo.emplace_back();
+            // Creating GPU data
+            for( uint32_t instanceIdx = 0; instanceIdx < instanced.count; ++instanceIdx )
+            {
+               position.x = -distance + diameter * (instanceIdx % sqrtCount);
+               position.z = -distance + diameter * (instanceIdx / sqrtCount);
 
-            shaderParams.modelMat = glm::toMat4( glm::conjugate( rotation ) ) *
-                                    glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / scaling ) *
-                                    glm::translate( glm::mat4( 1.0f ), position );
+               InstancedComponent::ShaderParams& shaderParams = ubo.emplace_back();
+
+               shaderParams.modelMat =
+                   glm::toMat4( glm::conjugate( rotation ) ) *
+                   glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / scaling ) *
+                   glm::translate( glm::mat4( 1.0f ), position );
+            }
          }
 
          const size_t bufferSize = sizeof( InstancedComponent::ShaderParams ) * instanced.count;

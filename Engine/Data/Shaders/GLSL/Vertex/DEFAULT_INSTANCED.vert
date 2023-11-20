@@ -1,16 +1,13 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "INSTANCING.h"
+#include "../VIEW.h"
+#include "../INSTANCING.h"
 
 layout( push_constant ) uniform PushModel { layout( offset = 0 ) mat4 modelMat; };
 
-layout( set = 0, binding = 0 ) uniform EnvironmentView
-{
-   vec4 pos;
-   mat4 viewMat;
-   mat4 projMat;
-};
+layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
+layout( set = 0, binding = 1 ) uniform INSTANCES { InstancingData instances[MAX_INSTANCES]; };
 
 // Vertex Inputs
 // =================================================================================================
@@ -23,19 +20,19 @@ layout( location = 3 ) in vec4 inColor;  // Not used
 // =================================================================================================
 layout( location = 0 ) out vec2 outTexCoord;
 layout( location = 1 ) out vec3 outNormal;
-layout( location = 2 ) out vec3 worldPos;
-layout( location = 3 ) out vec3 camPos;
+layout( location = 2 ) out vec3 outWorldPos;
 
 // =================================================================================================
 void main()
 {
-   mat4x4 finalModelMat = modelMat * mat4( instances[gl_InstanceIndex].modelMat );
+   const View mainView  = views[0];
 
-   worldPos = vec3( finalModelMat * vec4( inPosition, 1.0 ) );  // World coordinates
-   camPos   = vec3( pos );
+   const mat4x4 instanceModelMat = modelMat * mat4( instances[gl_InstanceIndex].modelMat );
+   vec3 worldPos = vec3( instanceModelMat * vec4( inPosition, 1.0 ) );  // World coordinates
 
    outTexCoord = inTexCoord.xy;
-   outNormal   = normalize( vec3( finalModelMat * vec4( inNormal, 0.0 ) ) );
+   outNormal   = normalize( vec3( instanceModelMat * vec4( inNormal, 0.0 ) ) );
+   outWorldPos = worldPos;
 
-   gl_Position = projMat * viewMat * vec4( worldPos, 1.0 );
+   gl_Position = mainView.proj * mainView.view * vec4( worldPos, 1.0 );
 }

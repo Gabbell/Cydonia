@@ -72,7 +72,7 @@ void CommandBufferPool::waitUntilDone()
 
    if( !vkFences.empty() )
    {
-      const VkResult result = vkWaitForFences(
+      vkWaitForFences(
           m_pDevice->getVKDevice(),
           static_cast<uint32_t>( vkFences.size() ),
           vkFences.data(),

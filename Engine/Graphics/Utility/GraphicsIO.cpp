@@ -137,42 +137,46 @@ void GraphicsIO::LoadMesh(
 void* GraphicsIO::LoadImage(
     const std::string& path,
     PixelFormat format,
-    int& width,
-    int& height,
-    int& size )
+    uint32_t& width,
+    uint32_t& height,
+    uint32_t& size )
 {
    CYD_TRACE_S( path );
 
    void* imageData = nullptr;
+   int intWidth    = 0;
+   int intHeight   = 0;
    int channels    = 0;
 
    switch( format )
    {
       case PixelFormat::RGBA32F:
-         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         imageData = stbi_loadf( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb_alpha );
          break;
       case PixelFormat::RGBA16F:
-         imageData = stbi_load_16( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         imageData = stbi_load_16( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb_alpha );
          break;
       case PixelFormat::RGBA8_UNORM:
       case PixelFormat::RGBA8_SRGB:
-         imageData = stbi_load( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         imageData = stbi_load( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb_alpha );
          break;
       case PixelFormat::RGB32F:
-         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb );
+         imageData = stbi_loadf( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb );
          break;
       case PixelFormat::R32F:
-         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_grey );
+         imageData = stbi_loadf( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
          break;
       case PixelFormat::R16_UNORM:
-         imageData = stbi_load_16( path.c_str(), &width, &height, &channels, STBI_grey );
+         imageData = stbi_load_16( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
          break;
       default:
          // TODO Format to pixel size function
          CYD_ASSERT( !"Not implemented" );
    }
 
-   size = width * height * GetPixelSizeInBytes( format );
+   width  = intWidth;
+   height = intHeight;
+   size   = width * height * GetPixelSizeInBytes( format );
 
    if( !imageData )
    {

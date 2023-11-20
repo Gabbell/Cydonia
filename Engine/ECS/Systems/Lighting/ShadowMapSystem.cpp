@@ -78,20 +78,19 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
    // Tracking
    MeshIndex prevMesh         = INVALID_MESH_IDX;
    MaterialIndex prevMaterial = INVALID_MATERIAL_IDX;
-   PipelineIndex prevPipeline = INVALID_PIPELINE_IDX;
 
    for( const auto& entityEntry : m_entities )
    {
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
 
       if( !renderable.desc.isShadowCasting )
       {
          continue;
       }
 
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
-      const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
+      const TransformComponent& transform = GetComponent<TransformComponent>( entityEntry);
+      const MaterialComponent& material   = GetComponent<MaterialComponent>( entityEntry);
+      const MeshComponent& mesh           = GetComponent<MeshComponent>( entityEntry);
 
       // Vertex and index buffers
       // ==========================================================================================

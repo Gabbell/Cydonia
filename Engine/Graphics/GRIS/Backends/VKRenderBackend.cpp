@@ -52,7 +52,7 @@ class VKRenderBackendImp
       m_scInfo.extent     = window.getExtent();
       m_scInfo.format     = PixelFormat::BGRA8_UNORM;
       m_scInfo.space      = ColorSpace::SRGB_NONLINEAR;
-      m_scInfo.mode       = PresentMode::FIFO;
+      m_scInfo.mode       = PresentMode::IMMEDIATE;
 
       m_mainSwapchain = m_mainDevice.createSwapchain( m_scInfo );
 
@@ -367,8 +367,35 @@ class VKRenderBackendImp
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
 
+   TextureHandle
+   createTexture( CmdListHandle cmdList, const TextureDescription& desc, const void* pTexels )
+   {
+      const size_t size = desc.width * desc.height * GetPixelSizeInBytes( desc.format );
+
+      // Staging
+      vk::Buffer* staging = m_mainDevice.createStagingBuffer( size );
+
+      const UploadToBufferInfo uploadInfo = { 0, size };
+      staging->copy( pTexels, uploadInfo );
+
+      m_cmdListDeps[cmdList].emplace_back( staging );
+
+      // Uploading to GPU
+      vk::Texture* texture = m_mainDevice.createTexture( desc );
+
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+
+      BufferToTextureInfo copyInfo;
+      copyInfo.srcOffset = 0;
+      copyInfo.dstOffset = Offset2D( 0, 0 );
+      copyInfo.dstExtent = Extent2D( desc.width, desc.height );
+      cmdBuffer->copyBufferToTexture( staging, texture, copyInfo );
+
+      return m_coreHandles.add( texture, HandleType::TEXTURE );
+   }
+
    TextureHandle createTexture(
-       CmdListHandle transferList,
+       CmdListHandle cmdList,
        const TextureDescription& desc,
        uint32_t layerCount,
        const void* const* ppTexels )
@@ -384,12 +411,12 @@ class VKRenderBackendImp
          staging->copy( ppTexels[i], uploadInfo );
       }
 
-      m_cmdListDeps[transferList].emplace_back( staging );
+      m_cmdListDeps[cmdList].emplace_back( staging );
 
       // Uploading to GPU
       vk::Texture* texture = m_mainDevice.createTexture( desc );
 
-      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
       BufferToTextureInfo copyInfo;
       copyInfo.srcOffset = 0;
@@ -400,31 +427,12 @@ class VKRenderBackendImp
       return m_coreHandles.add( texture, HandleType::TEXTURE );
    }
 
-   TextureHandle
-   createTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
+   void generateMipmaps( CmdListHandle cmdList, TextureHandle texHandle )
    {
-      const size_t size = desc.width * desc.height * GetPixelSizeInBytes( desc.format );
+      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      const auto texture   = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
 
-      // Staging
-      vk::Buffer* staging = m_mainDevice.createStagingBuffer( size );
-
-      const UploadToBufferInfo uploadInfo = { 0, size };
-      staging->copy( pTexels, uploadInfo );
-
-      m_cmdListDeps[transferList].emplace_back( staging );
-
-      // Uploading to GPU
-      vk::Texture* texture = m_mainDevice.createTexture( desc );
-
-      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
-
-      BufferToTextureInfo copyInfo;
-      copyInfo.srcOffset = 0;
-      copyInfo.dstOffset = Offset2D( 0, 0 );
-      copyInfo.dstExtent = Extent2D( desc.width, desc.height );
-      cmdBuffer->copyBufferToTexture( staging, texture, copyInfo );
-
-      return m_coreHandles.add( texture, HandleType::TEXTURE );
+      cmdBuffer->generateMipmaps( texture );
    }
 
    VertexBufferHandle createVertexBuffer( size_t size, const std::string_view name )
@@ -456,8 +464,7 @@ class VKRenderBackendImp
    void* addDebugTexture( TextureHandle texture )
    {
       auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
-
-      CYD_ASSERT( texture );
+      if( vkTexture == nullptr ) return nullptr;
 
       vk::SamplerCache& samplerCache = m_mainDevice.getSamplerCache();
       VkSampler vkSampler            = samplerCache.findOrCreate( {} );
@@ -496,13 +503,13 @@ class VKRenderBackendImp
    }
 
    void uploadToVertexBuffer(
-       CmdListHandle transferList,
+       CmdListHandle cmdList,
        VertexBufferHandle bufferHandle,
        const VertexList& vertices )
    {
       CYD_ASSERT( bufferHandle );
 
-      const auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+      const auto cmdBuffer    = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto vertexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
       const size_t copySize = vertices.getSize();
@@ -515,7 +522,7 @@ class VKRenderBackendImp
       const UploadToBufferInfo uploadInfo = { 0, copySize };
       staging->copy( vertices.getData(), uploadInfo );
 
-      m_cmdListDeps[transferList].emplace_back( staging );
+      m_cmdListDeps[cmdList].emplace_back( staging );
 
       // Uploading to GPU
       const BufferCopyInfo copyInfo = { 0, 0, copySize };
@@ -523,12 +530,12 @@ class VKRenderBackendImp
    }
 
    void uploadToIndexBuffer(
-       CmdListHandle transferList,
+       CmdListHandle cmdList,
        IndexBufferHandle bufferHandle,
        const void* pIndices,
        const UploadToBufferInfo& info )
    {
-      const auto cmdBuffer   = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+      const auto cmdBuffer   = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       const auto indexBuffer = static_cast<vk::Buffer*>( m_coreHandles.get( bufferHandle ) );
 
       // TODO IndexList
@@ -537,21 +544,21 @@ class VKRenderBackendImp
 
       staging->copy( pIndices, info );
 
-      m_cmdListDeps[transferList].emplace_back( staging );
+      m_cmdListDeps[cmdList].emplace_back( staging );
 
       const BufferCopyInfo copyInfo = { 0, 0, info.size };
       cmdBuffer->copyBuffer( staging, indexBuffer, copyInfo );
    }
 
    void copyTexture(
-       CmdListHandle transferList,
+       CmdListHandle cmdList,
        TextureHandle srcTexHandle,
        TextureHandle dstTexHandle,
        const TextureCopyInfo& info ) const
    {
-      CYD_ASSERT( transferList && srcTexHandle && dstTexHandle );
+      CYD_ASSERT( cmdList && srcTexHandle && dstTexHandle );
 
-      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( transferList ) );
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       auto src       = static_cast<vk::Texture*>( m_coreHandles.get( srcTexHandle ) );
       auto dst       = static_cast<vk::Texture*>( m_coreHandles.get( dstTexHandle ) );
 
@@ -950,20 +957,25 @@ TextureHandle VKRenderBackend::createTexture( const CYD::TextureDescription& des
 }
 
 TextureHandle VKRenderBackend::createTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     const CYD::TextureDescription& desc,
     const void* pTexels )
 {
-   return _imp->createTexture( transferList, desc, pTexels );
+   return _imp->createTexture( cmdList, desc, pTexels );
 }
 
 TextureHandle VKRenderBackend::createTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     const CYD::TextureDescription& desc,
     uint32_t layerCount,
     const void* const* ppTexels )
 {
-   return _imp->createTexture( transferList, desc, layerCount, ppTexels );
+   return _imp->createTexture( cmdList, desc, layerCount, ppTexels );
+}
+
+void VKRenderBackend::generateMipmaps( CmdListHandle cmdList, TextureHandle texHandle )
+{
+   return _imp->generateMipmaps( cmdList, texHandle );
 }
 
 VertexBufferHandle VKRenderBackend::createVertexBuffer( size_t size, const std::string_view name )
@@ -1007,29 +1019,29 @@ void VKRenderBackend::uploadToBuffer(
 }
 
 void VKRenderBackend::uploadToVertexBuffer(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     VertexBufferHandle bufferHandle,
     const VertexList& vertices )
 {
-   _imp->uploadToVertexBuffer( transferList, bufferHandle, vertices );
+   _imp->uploadToVertexBuffer( cmdList, bufferHandle, vertices );
 }
 
 void VKRenderBackend::uploadToIndexBuffer(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     IndexBufferHandle bufferHandle,
     const void* pIndices,
     const UploadToBufferInfo& info )
 {
-   _imp->uploadToIndexBuffer( transferList, bufferHandle, pIndices, info );
+   _imp->uploadToIndexBuffer( cmdList, bufferHandle, pIndices, info );
 }
 
 void VKRenderBackend::copyTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     TextureHandle srcTexHandle,
     TextureHandle dstTexHandle,
     const TextureCopyInfo& info )
 {
-   _imp->copyTexture( transferList, srcTexHandle, dstTexHandle, info );
+   _imp->copyTexture( cmdList, srcTexHandle, dstTexHandle, info );
 }
 
 void VKRenderBackend::destroyTexture( TextureHandle texHandle )

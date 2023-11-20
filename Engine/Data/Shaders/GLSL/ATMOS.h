@@ -1,3 +1,5 @@
+#include  "CONSTANTS.h"
+
 struct AtmosphereParameters
 {
    vec4 mieScatteringCoefficient;       // XYZ = Coeff, W = Scale
@@ -15,9 +17,6 @@ struct AtmosphereParameters
    float farClip;
    float time;
 };
-
-const float PI      = 3.14159265358;
-const float EPSILON = 0.00001;
 
 const vec3 ozoneAbsorptionBase = vec3( 0.650, 1.881, 0.085 );
 
@@ -71,7 +70,7 @@ vec2 LUTParameterization( float groundRadiusMM, float atmosphereRadiusMM, vec3 s
    const float sunCosZenithAngle = dot( sunDir, up );
    return vec2(
        0.5 + 0.5 * sunCosZenithAngle,
-       clamp( ( height - groundRadiusMM ) / ( atmosphereRadiusMM - groundRadiusMM ), 0.0, 1.0 ) );
+       clamp( ( height - groundRadiusMM ) / ( atmosphereRadiusMM - groundRadiusMM ), 0.001, 1.0 ) );
 }
 
 // XYZ = Sun Direction
@@ -117,6 +116,13 @@ void getScatteringValues(
 
    extinction =
        rayleighScattering + rayleighAbsorption + mieScattering + mieAbsorption + ozoneAbsorption;
+}
+
+vec3 colorCorrect(vec3 luminance)
+{
+   vec3 white_point = vec3( 1.08241, 0.96756, 0.95003 );
+   float exposure   = 20.0;
+   return vec3( 1.0 ) - exp( -luminance.rgb / white_point * exposure );
 }
 
 // ===============================================================================================

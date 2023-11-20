@@ -20,10 +20,10 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
    bool allLoaded = true;
    for( const auto& entityEntry : m_entities )
    {
-      MaterialComponent& materialComponent = *std::get<MaterialComponent*>( entityEntry.arch );
+      MaterialComponent& materialComponent = GetComponent<MaterialComponent>( entityEntry );
 
       const MaterialIndex materialIdx =
-          m_materialCache.getMaterialIndexByName( materialComponent.materialName );
+          m_materialCache.findMaterial( materialComponent.materialName );
 
       if( materialIdx == INVALID_MATERIAL_IDX )
       {

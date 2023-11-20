@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "../VIEW.h"
-#include "TESSELLATION.h"
+#include "../TESSELLATION.h"
 
 // Constant Buffers & Uniforms
 // =================================================================================================

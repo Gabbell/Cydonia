@@ -2,14 +2,14 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "../VIEW.h"
-#include "TESSELLATION.h"
+#include "../TESSELLATION.h"
 
 // Constant Buffers & Uniforms
 // =================================================================================================
 layout( push_constant ) uniform PushConstant { mat4 model; };
 
 layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
-layout( set = 0, binding = 2 ) uniform TESSELLATION { TessellationParams params; };
+layout( set = 0, binding = 1 ) uniform TESSELLATION { TessellationParams params; };
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 // Inputs & Outputs (Interpolators)

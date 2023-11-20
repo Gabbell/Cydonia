@@ -41,6 +41,8 @@ bool InitRenderBackend( API api, const Window& window )
          return false;
       case API::MTL:
          return false;
+      default:
+         return false;
    }
 
    return false;
@@ -79,6 +81,7 @@ void RenderBackendCleanup()
 void ReloadShaders()
 {
    CYD_TRACE();
+   printf( "Reloading Shaders\n" );
    b->reloadShaders();
 }
 
@@ -228,100 +231,24 @@ void UpdateConstantBuffer(
 //
 TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
 
-static TextureHandle LoadImageFromStorage(
-    CmdListHandle transferList,
-    const TextureDescription& inputDesc,
-    uint32_t layerCount,
-    const std::string* paths )
-{
-   CYD_ASSERT(
-       layerCount <= inputDesc.depth &&
-       "VKRenderBackend:: Number of textures could not fit in number of layers" );
-
-   CYD_ASSERT(
-       inputDesc.width == 0 && inputDesc.height == 0 &&
-       "VKRenderBackend: Created a texture with a path but specified dimensions" );
-
-   std::vector<void*> imageData;
-   int prevWidth     = 0;
-   int prevHeight    = 0;
-   int prevLayerSize = 0;
-   int width         = 0;
-   int height        = 0;
-   int layerSize     = 0;
-   int totalSize     = 0;
-
-   for( uint32_t i = 0; i < layerCount; ++i )
-   {
-      imageData.push_back(
-          GraphicsIO::LoadImage( paths[i], inputDesc.format, width, height, layerSize ) );
-
-      if( !imageData.back() )
-      {
-         CYD_ASSERT( !"No image data loaded" );
-         return Handle();
-      }
-
-      // Sanity check
-      if( prevWidth == 0 ) prevWidth = width;
-      if( prevHeight == 0 ) prevHeight = height;
-      if( prevLayerSize == 0 ) prevLayerSize = layerSize;
-
-      CYD_ASSERT(
-          prevWidth == width && prevHeight == height && prevLayerSize == layerSize &&
-          "VKRenderBackend: Dimension mismatch" );
-
-      prevWidth     = width;
-      prevHeight    = height;
-      prevLayerSize = layerSize;
-
-      totalSize += layerSize;
-   }
-
-   // Description used to create the texture with the actual dimensions
-   TextureDescription newDesc = inputDesc;
-   newDesc.width              = width;
-   newDesc.height             = height;
-
-   TextureHandle texHandle = b->createTexture(
-       transferList, newDesc, static_cast<uint32_t>( imageData.size() ), imageData.data() );
-
-   for( uint32_t i = 0; i < imageData.size(); ++i )
-   {
-      GraphicsIO::FreeImage( imageData[i] );
-   }
-
-   return texHandle;
-}
-
 TextureHandle
-CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const std::string& path )
+CreateTexture( CmdListHandle cmdList, const TextureDescription& desc, const void* pTexels )
 {
-   return LoadImageFromStorage( transferList, desc, 1, &path );
+   return b->createTexture( cmdList, desc, pTexels );
 }
 
 TextureHandle CreateTexture(
-    CmdListHandle transferList,
-    const TextureDescription& desc,
-    const std::vector<std::string>& paths )
-{
-   return LoadImageFromStorage(
-       transferList, desc, static_cast<uint32_t>( paths.size() ), paths.data() );
-}
-
-TextureHandle
-CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
-{
-   return b->createTexture( transferList, desc, pTexels );
-}
-
-TextureHandle CreateTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     const TextureDescription& desc,
     uint32_t layerCount,
     const void** ppTexels )
 {
-   return b->createTexture( transferList, desc, layerCount, ppTexels );
+   return b->createTexture( cmdList, desc, layerCount, ppTexels );
+}
+
+void GenerateMipmaps( CmdListHandle cmdList, TextureHandle texHandle )
+{
+   b->generateMipmaps( cmdList, texHandle );
 }
 
 VertexBufferHandle CreateVertexBuffer( size_t size, const std::string_view name )
@@ -357,29 +284,29 @@ void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadT
 }
 
 void UploadToVertexBuffer(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     VertexBufferHandle bufferHandle,
     const VertexList& vertices )
 {
-   b->uploadToVertexBuffer( transferList, bufferHandle, vertices );
+   b->uploadToVertexBuffer( cmdList, bufferHandle, vertices );
 }
 
 void UploadToIndexBuffer(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     IndexBufferHandle bufferHandle,
     const void* pIndices,
     const UploadToBufferInfo& info )
 {
-   b->uploadToIndexBuffer( transferList, bufferHandle, pIndices, info );
+   b->uploadToIndexBuffer( cmdList, bufferHandle, pIndices, info );
 }
 
 void CopyTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     TextureHandle srcTexHandle,
     TextureHandle dstTexHandle,
     const TextureCopyInfo& info )
 {
-   return b->copyTexture( transferList, srcTexHandle, dstTexHandle, info );
+   return b->copyTexture( cmdList, srcTexHandle, dstTexHandle, info );
 }
 
 void DestroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }

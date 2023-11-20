@@ -13,13 +13,13 @@
  */
 namespace CYD
 {
-class FullscreenComponent final : public BaseComponent
+class PostProcessVolumeComponent final : public BaseComponent
 {
   public:
-   FullscreenComponent() = default;
-   COPIABLE( FullscreenComponent );
-   virtual ~FullscreenComponent() = default;
+   PostProcessVolumeComponent() = default;
+   COPIABLE( PostProcessVolumeComponent );
+   virtual ~PostProcessVolumeComponent() = default;
 
-   static constexpr ComponentType TYPE = ComponentType::FULLSCREEN;
+   static constexpr ComponentType TYPE = ComponentType::POST_PROCESS_VOLUME;
 };
 }

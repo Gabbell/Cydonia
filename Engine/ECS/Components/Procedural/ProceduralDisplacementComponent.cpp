@@ -9,7 +9,7 @@ ProceduralDisplacementComponent::ProceduralDisplacementComponent(
     uint32_t width,
     uint32_t height,
     const Noise::ShaderParams& params )
-    : type( noiseType ), width( width ), height( height ), params( params )
+    : type( noiseType ), params( params ), width( width ), height( height )
 {
 }
 
@@ -18,7 +18,7 @@ ProceduralDisplacementComponent::ProceduralDisplacementComponent(
     uint32_t width,
     uint32_t height,
     float speed )
-    : type( noiseType ), width( width ), height( height ), speed( speed )
+    : type( noiseType ), speed( speed ), width( width ), height( height )
 {
 }
 

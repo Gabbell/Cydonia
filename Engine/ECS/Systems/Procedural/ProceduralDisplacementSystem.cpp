@@ -39,9 +39,9 @@ void ProceduralDisplacementSystem::tick( double deltaS )
    {
       // Read-Write Components
       ProceduralDisplacementComponent& noise =
-          *std::get<ProceduralDisplacementComponent*>( entityEntry.arch );
+          GetComponent<ProceduralDisplacementComponent>( entityEntry );
 
-      const MaterialComponent& material = *std::get<MaterialComponent*>( entityEntry.arch );
+      const MaterialComponent& material = GetComponent<MaterialComponent>( entityEntry );
 
       if( noise.resolutionChanged )
       {

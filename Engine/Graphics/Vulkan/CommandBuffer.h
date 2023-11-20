@@ -6,6 +6,7 @@
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/PipelineInfos.h>
 #include <Graphics/Vulkan/VulkanTypes.h>
+#include <Graphics/Vulkan.h>
 
 #include <array>
 #include <atomic>
@@ -29,9 +30,6 @@ FWDHANDLE( VkBuffer );
 FWDHANDLE( VkImage );
 FWDHANDLE( VkImageView );
 FWDFLAG( VkPipelineStageFlags );
-
-enum VkDescriptorType : int;
-enum VkImageLayout : int;
 
 namespace vk
 {
@@ -161,6 +159,7 @@ class CommandBuffer final
    void copyBufferToTexture( Buffer* src, Texture* dst, const CYD::BufferToTextureInfo& info );
    void copyTexture( Texture* src, Texture* dst, const CYD::TextureCopyInfo& info );
    void copyToSwapchain( Texture* sourceTexture, Swapchain& swapchain ) const;
+   void generateMipmaps( Texture* tex ) const;
 
   private:
    // Constants

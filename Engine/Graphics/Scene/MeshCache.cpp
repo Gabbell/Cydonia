@@ -24,8 +24,6 @@ MeshCache::MeshCache( EMP::ThreadPool& threadPool ) : m_threadPool( threadPool )
    // Create default vertex layout
    s_defaultLayout.addAttribute( VertexLayout::Attribute::POSITION, PixelFormat::RGB32F );
    s_defaultLayout.addAttribute( VertexLayout::Attribute::TEXCOORD, PixelFormat::RGB32F );
-   s_defaultLayout.addAttribute( VertexLayout::Attribute::NORMAL, PixelFormat::RGB32F );
-   s_defaultLayout.addAttribute( VertexLayout::Attribute::COLOR, PixelFormat::RGBA32F );
 
    // Initialize default meshes
    _initDefaultMeshes();
@@ -33,25 +31,36 @@ MeshCache::MeshCache( EMP::ThreadPool& threadPool ) : m_threadPool( threadPool )
 
 void MeshCache::_initDefaultMeshes()
 {
-   CmdListHandle transferList =
-       GRIS::CreateCommandList( QueueUsage::TRANSFER, "Init Default Meshes" );
+   CmdListHandle cmdList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Init Default Meshes" );
 
    // #if CYD_DEBUG
    MeshIndex sphereMeshIdx = m_meshes.insertObject();
+   MeshIndex gridMeshIdx   = m_meshes.insertObject();
 
    Mesh* sphereMesh = m_meshes[sphereMeshIdx];
+   Mesh* gridMesh   = m_meshes[gridMeshIdx];
    CYD_ASSERT( sphereMesh );
+   CYD_ASSERT( gridMesh );
 
    sphereMesh->vertices.setLayout( s_defaultLayout );
-   MeshGeneration::Icosphere( sphereMesh->vertices, sphereMesh->indices, 2 );
-   sphereMesh->currentState = MeshCache::State::LOADED_TO_RAM;
+   gridMesh->vertices.setLayout( s_defaultLayout );
 
-   _loadToVRAM( transferList, *sphereMesh );
+   MeshGeneration::Icosphere( sphereMesh->vertices, sphereMesh->indices, 2 );
+   MeshGeneration::PatchGrid( gridMesh->vertices, gridMesh->indices, 128, 16 );
+
+   sphereMesh->currentState = MeshCache::State::LOADED_TO_RAM;
+   gridMesh->currentState   = MeshCache::State::LOADED_TO_RAM;
+
+   _loadToVRAM( cmdList, *sphereMesh );
+   _loadToVRAM( cmdList, *gridMesh );
+
+   m_meshNames["DEBUG_SPHERE"] = sphereMeshIdx;
+   m_meshNames["GRID"]         = gridMeshIdx;
    // #endif
 
-   GRIS::SubmitCommandList( transferList );
-   GRIS::WaitOnCommandList( transferList );
-   GRIS::DestroyCommandList( transferList );
+   GRIS::SubmitCommandList( cmdList );
+   GRIS::WaitOnCommandList( cmdList );
+   GRIS::DestroyCommandList( cmdList );
 }
 
 MeshCache::Mesh::~Mesh()
@@ -60,7 +69,7 @@ MeshCache::Mesh::~Mesh()
    GRIS::DestroyIndexBuffer( indexBuffer );
 }
 
-MeshIndex MeshCache::findMesh( std::string_view name )
+MeshIndex MeshCache::findMesh( std::string_view name ) const
 {
    const std::string nameString( name );
 
@@ -83,20 +92,6 @@ MeshIndex MeshCache::addMesh( std::string_view name, const VertexLayout& layout 
    m_meshNames[nameString] = newIdx;
 
    return newIdx;
-}
-
-void MeshCache::loadToVRAM(
-    CmdListHandle cmdList,
-    MeshIndex meshIdx,
-    const Vertex* vertices,
-    uint32_t vertexCount,
-    const std::vector<uint32_t>& indices )
-{
-   Mesh* mesh = m_meshes[meshIdx];
-   CYD_ASSERT( mesh );
-
-   mesh->currentState = MeshCache::State::LOADED_TO_RAM;
-   _loadToVRAM( cmdList, *mesh );
 }
 
 MeshCache::DrawInfo MeshCache::getDrawInfo( MeshIndex meshIdx ) const

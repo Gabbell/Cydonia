@@ -19,8 +19,8 @@ namespace CYD
 {
 bool ViewUpdateSystem::_compareEntities( const EntityEntry& first, const EntityEntry& second )
 {
-   const ViewComponent& viewFirst  = *std::get<ViewComponent*>( first.arch );
-   const ViewComponent& viewSecond = *std::get<ViewComponent*>( second.arch );
+   const ViewComponent& viewFirst  = GetComponent<ViewComponent>( first );
+   const ViewComponent& viewSecond = GetComponent<ViewComponent>( second );
 
    // The views are alphabetically sorted, which is how we can know their indices in the shader.
    // This is finicky
@@ -38,8 +38,8 @@ void ViewUpdateSystem::tick( double /*deltaS*/ )
 
    for( const auto& entityEntry : m_entities )
    {
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const ViewComponent& view           = *std::get<ViewComponent*>( entityEntry.arch );
+      const TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      const ViewComponent& view           = GetComponent<ViewComponent>( entityEntry );
 
       // Finding view in the scene
       auto it = std::find( scene.viewNames.begin(), scene.viewNames.end(), view.name );

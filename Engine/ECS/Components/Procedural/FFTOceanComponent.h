@@ -68,8 +68,11 @@ class FFTOceanComponent final : public BaseComponent
 
    TextureHandle pingpongTex;
 
-   // RGB = XYZ displacement, A = Folding (Jacobian Determinant)
+   // RGB = XYZ displacement,
    TextureHandle displacementMap;
+
+   // RGB = XYZ normal, A = Folding (Jacobian Determinant)
+   TextureHandle normalMap;
 
    bool needsUpdate       = true;  // If we need to update the pre-computed textures
    bool resolutionChanged = true;  // If we need to resize the textures

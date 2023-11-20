@@ -53,7 +53,8 @@ class MaterialCache final
       LOADED_TO_VRAM  // VRAM Resident
    };
 
-   MaterialIndex getMaterialIndexByName( std::string_view name ) const;
+   MaterialIndex findMaterial( std::string_view name ) const;
+   MaterialIndex addMaterial( std::string_view name );
 
    // Loads, unloads and binds GPU resources
    State progressLoad( CmdListHandle cmdList, MaterialIndex materialIdx );
@@ -71,6 +72,7 @@ class MaterialCache final
    struct TextureEntry
    {
       TextureDescription desc;
+
       std::string path;
 
       void* imageData = nullptr;
@@ -85,6 +87,8 @@ class MaterialCache final
 
       std::array<TextureEntry, TextureSlot::COUNT> textures = {};
       std::array<BufferHandle, TextureSlot::COUNT> buffers  = {};
+
+      bool needsLoadFromStorage = false;  // If the material must be loaded from disk to VRAM
 
       State currentState = State::UNINITIALIZED;
    };

@@ -6,10 +6,12 @@
 
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/InstancedComponent.h>
+#include <ECS/Components/Transforms/TransformComponent.h>
 
 namespace CYD
 {
-class InstanceUpdateSystem final : public CommonSystem<RenderableComponent, InstancedComponent>
+class InstanceUpdateSystem final
+    : public CommonSystem<RenderableComponent, TransformComponent, InstancedComponent>
 {
   public:
    InstanceUpdateSystem() = default;

@@ -19,7 +19,11 @@ void TriangleGrid(
     uint32_t row,
     uint32_t columns );
 
-void PatchGrid( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, uint32_t patchSize );
+void PatchGrid(
+    VertexList& vertexList,
+    std::vector<uint32_t>& indices,
+    uint32_t scale,
+    uint32_t vertexResolution);
 
 void Icosphere(
     VertexList& vertexList,

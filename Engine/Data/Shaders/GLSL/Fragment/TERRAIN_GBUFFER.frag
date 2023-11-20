@@ -1,9 +1,9 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "LIGHTING.h"
+#include "../LIGHTING.h"
 
-layout( set = 0, binding = 1 ) uniform sampler2DShadow shadowMap;
+layout( set = 0, binding = 2 ) uniform sampler2DShadow shadowMap;
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 layout( location = 0 ) in vec2 inUV;
@@ -12,10 +12,11 @@ layout( location = 2 ) in vec3 inShadowCoord;
 
 layout( location = 0 ) out vec4 outAlbedo;
 layout( location = 1 ) out vec4 outNormal;
-layout( location = 2 ) out vec4 outShadow;
-layout( location = 3 ) out float outDepth;
+layout( location = 3 ) out vec4 outShadow;
+layout( location = 4 ) out float outDepth;
 
 // Bump mapping based on heightmap
+// This should be done only once and baked
 vec3 getNormals( vec2 uv )
 {
    const vec2 texelSize = 1.0 / textureSize( heightMap, 0 );

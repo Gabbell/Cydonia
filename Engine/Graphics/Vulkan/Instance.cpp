@@ -14,7 +14,7 @@
 
 #if CYD_DEBUG
 static constexpr bool WANT_API_DUMP   = false;
-static constexpr bool WANT_SYNC_CHECK = false;
+static constexpr bool WANT_SYNC_CHECK = true;
 
 static VkBool32 errorCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

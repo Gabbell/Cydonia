@@ -2,6 +2,7 @@
 
 #include <Common/Include.h>
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/Vulkan.h>
 
 FWDHANDLE( VkCommandBuffer );
 FWDHANDLE( VkImage );
@@ -12,14 +13,16 @@ class Texture;
 class CommandBuffer;
 }
 
-enum VkFormat : int;
-enum VkImageLayout : int;
-
 namespace vk::Synchronization
 {
 VkImageLayout GetLayoutFromAccess( CYD::Access prevAccess );
 
-void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::Access nextAccess );
+//  Can only transition one mip level at a time for now
+void ImageMemory(
+    const CommandBuffer* cmdBuffer,
+    Texture* texture,
+    CYD::Access nextAccess,
+    uint32_t mipLevel = 0 );
 
 void ImageMemory(
     VkCommandBuffer cmdBuffer,

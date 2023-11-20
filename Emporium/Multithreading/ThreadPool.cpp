@@ -1,5 +1,7 @@
 #include <Multithreading/ThreadPool.h>
 
+#include <Common/Include.h>
+
 namespace EMP
 {
 ThreadPool::ThreadPool() : m_shutdown( false ) {}
@@ -32,8 +34,9 @@ void ThreadPool::shutdown()
 ThreadPool::~ThreadPool() { shutdown(); }
 
 ThreadPool::ThreadWorker::ThreadWorker( ThreadPool* threadPool, const int threadIdx )
-    : m_threadPool( threadPool ), m_threadIdx( threadIdx )
+    : m_threadIdx( threadIdx ),m_threadPool( threadPool )
 {
+   REF( m_threadIdx );
 }
 
 void ThreadPool::ThreadWorker::operator()()

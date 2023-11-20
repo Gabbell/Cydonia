@@ -17,16 +17,14 @@ void LightUpdateSystem::tick( double deltaS )
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
-   static double timeElapsed = 0;
-
    CYD_ASSERT_AND_RETURN(
        m_entities.size() <= SceneComponent::MAX_LIGHTS && "Too many lights in the scene", return; );
 
    uint32_t lightIdx = 0;
    for( const auto& entityEntry : m_entities )
    {
-      const LightComponent& light   = *std::get<LightComponent*>( entityEntry.arch );
-      TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
+      const LightComponent& light   = GetComponent<LightComponent>( entityEntry);
+      TransformComponent& transform = GetComponent<TransformComponent>( entityEntry);
 
       //transform.position = glm::vec3(
       //    transform.position.x,
@@ -45,8 +43,6 @@ void LightUpdateSystem::tick( double deltaS )
 
       lightIdx++;
    }
-
-   timeElapsed += deltaS;
 
    // Updating UBOs
    const UploadToBufferInfo info = {

@@ -2,32 +2,11 @@
 
 #include <Graphics/GRIS/Backends/RenderBackend.h>
 
-#include <Common/Include.h>
+#define GRIS_RENDERBACKEND_IMP GRIS_RENDERBACKEND_IMP_CONCRETE
 
-// ================================================================================================
-// Forwards
-// ================================================================================================
-namespace CYD
-{
-class Window;
-class GLRenderBackendImp;
-}
+#include <Graphics/GRIS/Backends/RenderBackendMacrosBegin.h>
+#include <Graphics/GRIS/Backends/RenderBackendMacros.h>
 
-// ================================================================================================
-// Definition
-// ================================================================================================
-namespace CYD
-{
-class GLRenderBackend final : public RenderBackend
-{
-  public:
-   GLRenderBackend( const Window& window );
-   NON_COPIABLE( GLRenderBackend );
-   virtual ~GLRenderBackend();
+GRIS_RENDERBACKEND_DECLARATION( GLRenderBackend )
 
-   void cleanup() override;
-
-  private:
-   GLRenderBackendImp* _imp;
-};
-}
+#include  <Graphics/GRIS/Backends/RenderBackendMacrosEnd.h>

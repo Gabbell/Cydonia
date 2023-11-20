@@ -22,8 +22,8 @@ void TessellationUpdateSystem::tick( double /*deltaS*/ )
 
    for( const auto& entityEntry : m_entities )
    {
-      RenderableComponent& renderable   = *std::get<RenderableComponent*>( entityEntry.arch );
-      TessellatedComponent& tessellated = *std::get<TessellatedComponent*>( entityEntry.arch );
+      RenderableComponent& renderable   = GetComponent<RenderableComponent>( entityEntry );
+      TessellatedComponent& tessellated = GetComponent<TessellatedComponent>( entityEntry );
 
       renderable.isTessellated = true;
 

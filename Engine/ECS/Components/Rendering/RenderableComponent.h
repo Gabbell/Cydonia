@@ -19,6 +19,7 @@ class RenderableComponent final : public BaseComponent
   public:
    enum class Type
    {
+      UNDEFINED,
       FORWARD,
       DEFERRED
    };
@@ -26,10 +27,11 @@ class RenderableComponent final : public BaseComponent
    struct Description
    {
       std::string_view pipelineName = "";
-      Type type                     = Type::FORWARD;
+      Type type                     = Type::UNDEFINED;
       bool isVisible                = true;
-      bool isShadowCasting          = false;
       bool isShadowReceiving        = false;
+      bool isShadowCasting          = false;
+      bool useEnvironmentMap        = false;
    };
 
    RenderableComponent() = default;

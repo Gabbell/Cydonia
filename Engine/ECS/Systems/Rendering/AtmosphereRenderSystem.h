@@ -4,6 +4,7 @@
 
 #include <Common/Include.h>
 
+#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Procedural/AtmosphereComponent.h>
 
 // ================================================================================================
@@ -11,7 +12,7 @@
 // ================================================================================================
 namespace CYD
 {
-class AtmosphereRenderSystem final : public CommonSystem<AtmosphereComponent>
+class AtmosphereRenderSystem final : public CommonSystem<RenderableComponent, AtmosphereComponent>
 {
   public:
    AtmosphereRenderSystem() = default;

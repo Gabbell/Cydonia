@@ -23,11 +23,12 @@ void ForwardRenderSystem::sort()
 {
    auto forwardRenderSort = []( const EntityEntry& first, const EntityEntry& second )
    {
-      const RenderableComponent& firstRenderable  = *std::get<RenderableComponent*>( first.arch );
-      const RenderableComponent& secondRenderable = *std::get<RenderableComponent*>( second.arch );
+      const RenderableComponent& firstRenderable  = GetComponent<RenderableComponent>( first );
+      const RenderableComponent& secondRenderable = GetComponent<RenderableComponent>( second );
 
-      return firstRenderable.desc.type == RenderableComponent::Type::FORWARD ||
-             secondRenderable.desc.type != RenderableComponent::Type::FORWARD;
+      return ( firstRenderable.desc.type == RenderableComponent::Type::FORWARD ||
+               secondRenderable.desc.type != RenderableComponent::Type::FORWARD ) &&
+             first.handle < second.handle;
    };
 
    std::sort( m_entities.begin(), m_entities.end(), forwardRenderSort );
@@ -59,7 +60,11 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      const TransformComponent& transform   = GetComponent<TransformComponent>( entityEntry );
+      const MaterialComponent& material     = GetComponent<MaterialComponent>( entityEntry );
+      const MeshComponent& mesh             = GetComponent<MeshComponent>( entityEntry );
+
       if( renderable.desc.type != RenderableComponent::Type::FORWARD )
       {
          // Forward renderables only
@@ -70,10 +75,6 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       {
          continue;
       }
-
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
-      const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
       if( renderable.pipelineIdx == INVALID_PIPELINE_IDX || mesh.meshIdx == INVALID_MESH_IDX ||
           material.materialIdx == INVALID_MATERIAL_IDX )
@@ -117,7 +118,7 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
          prevMaterial = material.materialIdx;
       }
 
-      // Optional Buffers
+      // Optional Textures & Buffers
       // ==========================================================================================
       const glm::mat4 modelMatrix =
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
@@ -129,21 +130,28 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
 
       GRIS::NamedBufferBinding( cmdList, scene.lightsBuffer, "Lights", *curPipInfo );
 
-      if( renderable.desc.isShadowReceiving && scene.shadowMap )
+      if( renderable.desc.isShadowReceiving )
       {
+         CYD_ASSERT( scene.shadowMap );
+
          SamplerInfo sampler;
          sampler.useCompare  = true;  // For PCF
          sampler.compare     = CompareOperator::GREATER_EQUAL;
          sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
          sampler.borderColor = BorderColor::OPAQUE_BLACK;
-         GRIS::BindTexture( cmdList, scene.shadowMap, sampler, 3, 0 );
+         GRIS::NamedTextureBinding( cmdList, scene.shadowMap, sampler, "ShadowMap", *curPipInfo );
+      }
+
+      if( renderable.desc.useEnvironmentMap )
+      {
+         CYD_ASSERT( scene.envMap );
+         GRIS::NamedTextureBinding( cmdList, scene.envMap, "EnvironmentMap", *curPipInfo );
       }
 
       if( renderable.isInstanced )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
-         GRIS::NamedBufferBinding(
-             cmdList, renderable.instancesBuffer, "InstancesData", *curPipInfo );
+         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "Instances", *curPipInfo );
       }
 
       if( renderable.isTessellated )

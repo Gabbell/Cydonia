@@ -5,10 +5,9 @@
 // Keep these defines and structs in sync with "InstanceShaderParams"
 #define MAX_INSTANCES 1024
 
-struct InstanceData
+struct InstancingData
 {
    mat4x4 modelMat;
 };
 
-layout( set = 0, binding = 1 ) uniform InstancesData { InstanceData instances[MAX_INSTANCES]; };
 // ================================================================================================

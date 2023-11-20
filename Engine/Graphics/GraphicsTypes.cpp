@@ -38,9 +38,9 @@ uint32_t GetPixelSizeInBytes( PixelFormat format )
          return 12;
       case PixelFormat::RGBA32F:
          return 16;
+      default:
+         CYD_ASSERT( !"Unknown pixel format" );
    }
-
-   CYD_ASSERT( !"Unknown pixel format" );
 
    return 0;
 }
@@ -57,16 +57,16 @@ uint32_t GetChannelsCount( PixelFormat format )
       case PixelFormat::RG32F:
          return 2;
       case PixelFormat::RGB32F:
-          return 3;
+         return 3;
       case PixelFormat::BGRA8_UNORM:
       case PixelFormat::RGBA8_UNORM:
       case PixelFormat::RGBA8_SRGB:
       case PixelFormat::RGBA16F:
       case PixelFormat::RGBA32F:
          return 4;
+      default:
+         CYD_ASSERT( !"Unknown pixel format" );
    }
-
-   CYD_ASSERT( !"Unknown pixel format" );
 
    return 0;
 }

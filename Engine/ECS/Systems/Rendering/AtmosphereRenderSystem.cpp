@@ -53,7 +53,13 @@ void AtmosphereRenderSystem::tick( double /*deltaS*/ )
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      const AtmosphereComponent& atmos = *std::get<AtmosphereComponent*>( entityEntry.arch );
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      const AtmosphereComponent& atmos      = GetComponent<AtmosphereComponent>( entityEntry );
+
+      if( !renderable.desc.isVisible )
+      {
+         continue;
+      }
 
       // Output to color
       GRIS::BindPipeline( cmdList, s_atmosOutputPip );

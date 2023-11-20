@@ -265,14 +265,21 @@ enum class CompareOperator
 // Basic structs
 struct TextureDescription
 {
-   uint32_t width           = 0;  // 2D Dimensions are optional when
-   uint32_t height          = 0;  // loading from storage
-   uint32_t depth           = 1;
+   // Dimensions
+   uint32_t width  = 0;  // 2D Dimensions are optional when
+   uint32_t height = 0;  // loading from storage
+   uint32_t depth  = 1;
+
+   //  Usage
    ImageType type           = ImageType::TEXTURE_2D;  // 1D, 2D, 3D...
    PixelFormat format       = PixelFormat::RGBA32F;   // The texture's pixel format
    ImageUsageFlag usage     = 0;                      // How this image will be used
    PipelineStageFlag stages = 0;                      // Stages where this texture is accessed
-   std::string_view name    = "Unknown Texture Name";
+
+   // Flags
+   bool generateMipmaps : 1 = false;
+
+   std::string_view name = "Unknown Texture Name";
 };
 
 struct Extent2D
@@ -341,9 +348,10 @@ struct SamplerInfo
    }
    bool operator==( const SamplerInfo& other ) const;
 
-   bool useAnisotropy      = true;
    bool useCompare         = false;
-   float maxAnisotropy     = 16.0f;
+   float maxAnisotropy     = 0.0f;
+   float minLod            = 0.0f;
+   float maxLod            = 0.0f;
    CompareOperator compare = CompareOperator::ALWAYS;
    Filter magFilter        = Filter::LINEAR;
    Filter minFilter        = Filter::LINEAR;
@@ -413,7 +421,6 @@ struct std::hash<CYD::SamplerInfo>
    size_t operator()( const CYD::SamplerInfo& samplerInfo ) const noexcept
    {
       size_t seed = 0;
-      hashCombine( seed, samplerInfo.useAnisotropy );
       hashCombine( seed, samplerInfo.maxAnisotropy );
       hashCombine( seed, samplerInfo.magFilter );
       hashCombine( seed, samplerInfo.minFilter );

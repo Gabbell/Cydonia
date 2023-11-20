@@ -50,7 +50,7 @@ class Device final
        const Surface& surface,
        const VkPhysicalDevice& physDevice,
        const std::vector<const char*>& extensions );
-   MOVABLE( Device );
+   NON_COPIABLE( Device );
    ~Device();
 
    // Interface

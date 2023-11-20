@@ -1,7 +1,7 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
-#include "FFTOCEAN.h"
+#include "../FFTOCEAN.h"
 
 layout( local_size_x = 16, local_size_y = 16 ) in;
 
@@ -59,10 +59,10 @@ void main()
        exp( -magnitudeSquared * pow( params.horizontalDimension / 2000.0, 2.0 ) );
 
    const float h0k =
-       clamp( sqrt( commonMultiplier * pow( dotK, 4.0 ) ) / sqrt( 2.0 ), -4000.0, 4000.0 );
+       clamp( sqrt( commonMultiplier * pow( dotK, 8.0 ) ) / sqrt( 2.0 ), -4000.0, 4000.0 );
 
    const float h0minusk =
-       clamp( sqrt( commonMultiplier * pow( dotMinusK, 4.0 ) ) / sqrt( 2.0 ), -4000.0, 4000.0 );
+       clamp( sqrt( commonMultiplier * pow( dotMinusK, 8.0 ) ) / sqrt( 2.0 ), -4000.0, 4000.0 );
 
    const vec4 randomGauss = BoxMullerTransform();
 

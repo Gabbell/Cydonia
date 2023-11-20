@@ -213,7 +213,7 @@ void Swapchain::_createRenderPasses()
    colorAttachment.format        = TypeConversions::vkToCydFormat( m_surfaceFormat->format );
    colorAttachment.loadOp        = CYD::LoadOp::CLEAR;
    colorAttachment.storeOp       = CYD::StoreOp::STORE;
-   colorAttachment.clear.color   = { 0.0f, 0.0f, 0.0f, 1.0f };
+   colorAttachment.clear.color   = { { 0.0f, 0.0f, 0.0f, 1.0f } };
    colorAttachment.initialAccess = CYD::Access::PRESENT;
    colorAttachment.nextAccess    = CYD::Access::PRESENT;
 

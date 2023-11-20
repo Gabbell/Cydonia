@@ -555,15 +555,13 @@ void CommandBuffer::setScissor( const CYD::Rectangle& scissor ) const
 
       // Default scissor
       vkScissor = {
-          m_renderArea.offset.x,
-          m_renderArea.offset.y,
-          m_renderArea.extent.width,
-          m_renderArea.extent.height };
+          { m_renderArea.offset.x, m_renderArea.offset.y },
+          { m_renderArea.extent.width, m_renderArea.extent.height } };
    }
    else
    {
       vkScissor = {
-          scissor.offset.x, scissor.offset.y, scissor.extent.width, scissor.extent.height };
+          { scissor.offset.x, scissor.offset.y }, { scissor.extent.width, scissor.extent.height } };
    }
 
    vkCmdSetScissor( m_vkCmdBuffer, 0, 1, &vkScissor );
@@ -587,8 +585,9 @@ void CommandBuffer::beginRendering( Swapchain& swapchain )
    passBeginInfo.renderArea.extent     = extent;
 
    std::array<VkClearValue, 2> clearValues = {};
-   clearValues[0]                          = { 0.0f, 0.0f, 0.0f };  // Color
-   clearValues[1]                          = { 0.0f, 0 };           // Depth/Stencil
+   clearValues[0].color                    = { { 0.0f, 0.0f, 0.0f } };  // Color
+   clearValues[1].depthStencil.depth       = 0.0f;
+   clearValues[1].depthStencil.stencil     = 0;
 
    passBeginInfo.clearValueCount = static_cast<uint32_t>( clearValues.size() );
    passBeginInfo.pClearValues    = clearValues.data();
@@ -912,11 +911,17 @@ void CommandBuffer::clearTexture( Texture* tex, const CYD::ClearValue& clearVal 
 {
    CYD_ASSERT( IsColorFormat( tex->getPixelFormat() ) );
 
+   Synchronization::ImageMemory( this, tex, CYD::Access::TRANSFER_WRITE );
+
    VkClearColorValue vkClearVal;
    memcpy( &vkClearVal, &clearVal.color, sizeof( vkClearVal ) );
 
    VkImageSubresourceRange subRange;
-   subRange.aspectMask = TypeConversions::getAspectMask( tex->getPixelFormat() );
+   subRange.baseArrayLayer = 0;
+   subRange.baseMipLevel   = 0;
+   subRange.levelCount     = 1;
+   subRange.layerCount     = 1;
+   subRange.aspectMask     = TypeConversions::getAspectMask( tex->getPixelFormat() );
 
    vkCmdClearColorImage(
        m_vkCmdBuffer,
@@ -925,15 +930,14 @@ void CommandBuffer::clearTexture( Texture* tex, const CYD::ClearValue& clearVal 
        &vkClearVal,
        1,
        &subRange );
+
+   Synchronization::ImageMemory( this, tex, CYD::Access::FRAGMENT_SHADER_READ );
 }
 
 void CommandBuffer::copyToSwapchain( Texture* sourceTexture, Swapchain& swapchain ) const
 {
-   // TODO Use vkCmdCopyImage instead
    Synchronization::ImageMemory( this, sourceTexture, CYD::Access::TRANSFER_READ );
    swapchain.transitionColorImage( this, CYD::Access::TRANSFER_WRITE );
-
-   const VkExtent2D& swapchainExtent = swapchain.getVKExtent();
 
    VkImageCopy region;
    region.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -956,6 +960,57 @@ void CommandBuffer::copyToSwapchain( Texture* sourceTexture, Swapchain& swapchai
        &region );
 
    swapchain.transitionColorImage( this, CYD::Access::PRESENT );
+}
+
+void CommandBuffer::generateMipmaps( Texture* tex ) const
+{
+   int32_t mipWidth  = tex->getWidth();
+   int32_t mipHeight = tex->getHeight();
+
+   for( uint32_t i = 1; i < tex->getMipLevels(); ++i )
+   {
+      Synchronization::ImageMemory( this, tex, CYD::Access::TRANSFER_READ, i - 1 );
+      Synchronization::ImageMemory( this, tex, CYD::Access::TRANSFER_WRITE, i );
+
+      VkImageBlit blit{};
+      blit.srcOffsets[0]                 = { 0, 0, 0 };
+      blit.srcOffsets[1]                 = { mipWidth, mipHeight, 1 };
+      blit.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+      blit.srcSubresource.mipLevel       = i - 1;
+      blit.srcSubresource.baseArrayLayer = 0;
+      blit.srcSubresource.layerCount     = 1;
+      blit.dstOffsets[0]                 = { 0, 0, 0 };
+      blit.dstOffsets[1]                 = {
+          mipWidth > 1 ? mipWidth / 2 : 1, mipHeight > 1 ? mipHeight / 2 : 1, 1 };
+      blit.dstSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+      blit.dstSubresource.mipLevel       = i;
+      blit.dstSubresource.baseArrayLayer = 0;
+      blit.dstSubresource.layerCount     = 1;
+
+      vkCmdBlitImage(
+          m_vkCmdBuffer,
+          tex->getVKImage(),
+          VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+          tex->getVKImage(),
+          VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+          1,
+          &blit,
+          VK_FILTER_LINEAR );
+
+      if( mipWidth > 1 )
+      {
+         mipWidth /= 2;
+      }
+      if( mipHeight > 1 )
+      {
+         mipHeight /= 2;
+      }
+   }
+
+   for( uint32_t i = 0; i < tex->getMipLevels(); ++i )
+   {
+      Synchronization::ImageMemory( this, tex, CYD::Access::FRAGMENT_SHADER_READ, i );
+   }
 }
 
 void CommandBuffer::dispatch( uint32_t workX, uint32_t workY, uint32_t workZ )
@@ -1064,6 +1119,23 @@ void CommandBuffer::copyBufferToTexture(
 
 void CommandBuffer::copyTexture( Texture* src, Texture* dst, const CYD::TextureCopyInfo& info )
 {
+   Synchronization::ImageMemory( this, src, CYD::Access::TRANSFER_READ );
+   Synchronization::ImageMemory( this, dst, CYD::Access::TRANSFER_WRITE );
+
+   VkExtent3D copyExtent;
+   copyExtent.depth = 1;
+
+   if( info.extent.width == 0 && info.extent.height == 0 )
+   {
+      copyExtent.width  = dst->getWidth();
+      copyExtent.height = dst->getHeight();
+   }
+   else
+   {
+      copyExtent.width  = info.extent.width;
+      copyExtent.height = info.extent.height;
+   }
+
    VkImageCopy imageCopy;
    imageCopy.srcOffset                 = { info.srcOffset.x, info.srcOffset.y, 0 };
    imageCopy.srcSubresource.aspectMask = TypeConversions::getAspectMask( src->getPixelFormat() );
@@ -1072,10 +1144,10 @@ void CommandBuffer::copyTexture( Texture* src, Texture* dst, const CYD::TextureC
    imageCopy.srcSubresource.mipLevel       = 0;
    imageCopy.dstOffset                     = { info.dstOffset.x, info.dstOffset.y, 0 };
    imageCopy.dstSubresource.aspectMask = TypeConversions::getAspectMask( dst->getPixelFormat() );
-   imageCopy.srcSubresource.baseArrayLayer = 0;
-   imageCopy.srcSubresource.layerCount     = 1;
-   imageCopy.srcSubresource.mipLevel       = 0;
-   imageCopy.extent                        = { info.extent.width, info.extent.height, 1 };
+   imageCopy.dstSubresource.baseArrayLayer = 0;
+   imageCopy.dstSubresource.layerCount     = 1;
+   imageCopy.dstSubresource.mipLevel       = 0;
+   imageCopy.extent                        = copyExtent;
 
    vkCmdCopyImage(
        m_vkCmdBuffer,
@@ -1085,6 +1157,8 @@ void CommandBuffer::copyTexture( Texture* src, Texture* dst, const CYD::TextureC
        Synchronization::GetLayoutFromAccess( dst->getPreviousAccess() ),
        1,
        &imageCopy );
+
+   Synchronization::ImageMemory( this, dst, CYD::Access::FRAGMENT_SHADER_READ );
 }
 
 void CommandBuffer::submit()

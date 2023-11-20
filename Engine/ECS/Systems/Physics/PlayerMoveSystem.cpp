@@ -13,8 +13,8 @@ void PlayerMoveSystem::tick( double deltaS )
    for( const auto& entityEntry : m_entities )
    {
       const InputComponent& input   = m_ecs->getSharedComponent<InputComponent>();
-      TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      MotionComponent& motion       = *std::get<MotionComponent*>( entityEntry.arch );
+      TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      MotionComponent& motion       = GetComponent<MotionComponent>( entityEntry );
 
       // Modifying the transform component directly for rotation
       if( input.rightClick )

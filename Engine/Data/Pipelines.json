@@ -12,16 +12,8 @@
           "FORMAT": "RGB32F"
         },
         {
-          "ATTRIBUTE": "NORMAL",
-          "FORMAT": "RGB32F"
-        },
-        {
           "ATTRIBUTE": "TEXCOORD",
           "FORMAT": "RGB32F"
-        },
-        {
-          "ATTRIBUTE": "COLOR",
-          "FORMAT": "RGBA32F"
         }
       ],
       "DEPTH_STENCIL": {
@@ -74,16 +66,8 @@
           "FORMAT": "RGB32F"
         },
         {
-          "ATTRIBUTE": "NORMAL",
-          "FORMAT": "RGB32F"
-        },
-        {
           "ATTRIBUTE": "TEXCOORD",
           "FORMAT": "RGB32F"
-        },
-        {
-          "ATTRIBUTE": "COLOR",
-          "FORMAT": "RGBA32F"
         }
       ],
       "DEPTH_STENCIL": {
@@ -123,7 +107,7 @@
             "TESS_CONTROL"
           ],
           "SET": 0,
-          "BINDING": 2
+          "BINDING": 1
         },
         {
           "NAME": "HeightMap",
@@ -142,8 +126,8 @@
           "STAGES": [
             "FRAGMENT"
           ],
-          "SET": 1,
-          "BINDING": 1
+          "SET": 0,
+          "BINDING": 2
         }
       ]
     },
@@ -161,16 +145,8 @@
           "FORMAT": "RGB32F"
         },
         {
-          "ATTRIBUTE": "NORMAL",
-          "FORMAT": "RGB32F"
-        },
-        {
           "ATTRIBUTE": "TEXCOORD",
           "FORMAT": "RGB32F"
-        },
-        {
-          "ATTRIBUTE": "COLOR",
-          "FORMAT": "RGBA32F"
         }
       ],
       "DEPTH_STENCIL": {
@@ -215,7 +191,7 @@
             "TESS_CONTROL"
           ],
           "SET": 0,
-          "BINDING": 2
+          "BINDING": 1
         },
         {
           "NAME": "HeightMap",
@@ -313,16 +289,8 @@
           "FORMAT": "RGB32F"
         },
         {
-          "ATTRIBUTE": "NORMAL",
-          "FORMAT": "RGB32F"
-        },
-        {
           "ATTRIBUTE": "TEXCOORD",
           "FORMAT": "RGB32F"
-        },
-        {
-          "ATTRIBUTE": "COLOR",
-          "FORMAT": "RGBA32F"
         }
       ],
       "DEPTH_STENCIL": {
@@ -357,15 +325,6 @@
           "BINDING": 0
         },
         {
-          "NAME": "TessellationParams",
-          "TYPE": "UNIFORM",
-          "STAGES": [
-            "TESS_CONTROL"
-          ],
-          "SET": 0,
-          "BINDING": 2
-        },
-        {
           "NAME": "Lights",
           "TYPE": "UNIFORM",
           "STAGES": [
@@ -375,13 +334,41 @@
           "BINDING": 1
         },
         {
+          "NAME": "Instances",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "TESS_CONTROL",
+            "TESS_EVAL"
+          ],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "TessellationParams",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "TESS_CONTROL"
+          ],
+          "SET": 0,
+          "BINDING": 3
+        },
+        {
           "NAME": "ShadowMap",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
           ],
           "SET": 0,
-          "BINDING": 3
+          "BINDING": 4
+        },
+        {
+          "NAME": "EnvironmentMap",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 5
         },
         {
           "NAME": "HeightMap",
@@ -393,6 +380,15 @@
           ],
           "SET": 1,
           "BINDING": 5
+        },
+        {
+          "NAME": "NormalMap",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 1,
+          "BINDING": 1
         }
       ]
     },
@@ -400,7 +396,7 @@
       "NAME": "PBR_FORWARD",
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "PBR_VERT",
-      "FRAGMENT_SHADER": "PBR_FRAG",
+      "FRAGMENT_SHADER": "PBR_FORWARD_FRAG",
       "VERTEX_LAYOUT": [
         {
           "ATTRIBUTE": "POSITION",
@@ -605,9 +601,9 @@
       ]
     },
     {
-      "NAME": "PHILLIPS_SPECTRA_GENERATION",
+      "NAME": "PHILLIPS_SPECTRUM_GENERATION",
       "TYPE": "COMPUTE",
-      "COMPUTE_SHADER": "FFTOCEAN_SPECTRA_COMP",
+      "COMPUTE_SHADER": "FFTOCEAN_PHILLIPS_SPECTRUM_COMP",
       "SHADER_RESOURCES": [
         {
           "NAME": "OceanParameters",
@@ -815,9 +811,9 @@
       ]
     },
     {
-      "NAME": "JACOBIAN_FOLDMAP",
+      "NAME": "NORMALS_JACOBIAN",
       "TYPE": "COMPUTE",
-      "COMPUTE_SHADER": "FFTOCEAN_JACOBIAN_COMP",
+      "COMPUTE_SHADER": "FFTOCEAN_NORMALS_JACOBIAN_COMP",
       "SHADER_RESOURCES": [
         {
           "NAME": "OceanParameters",
@@ -829,12 +825,21 @@
         },
         {
           "NAME": "displacement",
-          "TYPE": "IMAGE",
+          "TYPE": "SAMPLER",
           "STAGES": [
             "COMPUTE"
           ],
           "SET": 0,
           "BINDING": 0
+        },
+        {
+          "NAME": "normals",
+          "TYPE": "IMAGE",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 1
         }
       ]
     },
@@ -1166,7 +1171,7 @@
       "NAME": "BLINN_PHONG_DEFERRED",
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "FULLSCREEN_VERT",
-      "FRAGMENT_SHADER": "DEFERRED_BLINN_PHONG_FRAG",
+      "FRAGMENT_SHADER": "BLINN_PHONG_DEFERRED_FRAG",
       "POLYGON_MODE": "FILL",
       "PRIMITIVE": "TRIANGLE_STRIPS",
       "SHADER_RESOURCES": [
@@ -1239,7 +1244,7 @@
       "NAME": "PBR_DEFERRED",
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "FULLSCREEN_VERT",
-      "FRAGMENT_SHADER": "DEFERRED_PBR_FRAG",
+      "FRAGMENT_SHADER": "PBR_DEFERRED_FRAG",
       "POLYGON_MODE": "FILL",
       "PRIMITIVE": "TRIANGLE_STRIPS",
       "SHADER_RESOURCES": [

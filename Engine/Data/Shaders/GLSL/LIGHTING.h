@@ -1,10 +1,11 @@
 // LIGHTING.h
 // Used for generic lighting in fragment shaders
 
+#include "CONSTANTS.h"
+
 // ================================================================================================
 // Keep these defines and structs in sync with "LightShaderParams"
 #define MAX_LIGHTS 3
-#define EPSILON 0.0001
 
 struct Light
 {
@@ -13,8 +14,6 @@ struct Light
    vec4 color;      // RGB = color, A = unused
    vec4 params;     // X = enabled, Y = type, ZW = unused
 };
-
-const float PI = 3.141592653589793;
 
 // ================================================================================================
 

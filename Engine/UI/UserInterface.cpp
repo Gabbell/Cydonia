@@ -31,7 +31,6 @@ static ImTextureID s_shadowMaskTexture = nullptr;
 static ImTextureID s_transmittanceLUTTexture     = nullptr;
 static ImTextureID s_multiScatteringLUTTexture   = nullptr;
 static ImTextureID s_skyViewLUTTexture           = nullptr;
-static ImTextureID s_aerialPerspectiveLUTTexture = nullptr;
 
 void Initialize() { GRIS::InitializeUIBackend(); }
 
@@ -145,7 +144,7 @@ void DrawECSWindow( CmdListHandle cmdList, const EntityManager& entityManager )
    for( uint32_t i = 0; i < sharedComponents.size(); ++i )
    {
       const SharedComponentType type = static_cast<SharedComponentType>( i );
-      if( ImGui::TreeNodeEx( GetSharedComponentName( type ) ) )
+      if( ImGui::TreeNodeEx( GetSharedComponentName( type ).data() ) )
       {
          DrawSharedComponentsMenu( cmdList, type, sharedComponents[i] );
          ImGui::TreePop();
@@ -167,7 +166,7 @@ void DrawECSWindow( CmdListHandle cmdList, const EntityManager& entityManager )
          for( const auto& componentsPair : componentsMap )
          {
             if( ImGui::TreeNodeEx(
-                    GetComponentName( componentsPair.first ), ImGuiTreeNodeFlags_SpanAvailWidth ) )
+                    GetComponentName( componentsPair.first ).data(), ImGuiTreeNodeFlags_SpanAvailWidth ) )
             {
                DrawComponentsMenu( cmdList, componentsPair.first, componentsPair.second );
                ImGui::TreePop();
@@ -297,11 +296,11 @@ void DrawProceduralDisplacementComponentMenu(
       triggerUpdate        = true;
    }
 
-   if( ImGui::BeginCombo( "Noise Type", Noise::GetNoiseName( displacement.type ) ) )
+   if( ImGui::BeginCombo( "Noise Type", Noise::GetNoiseName( displacement.type ).data() ) )
    {
       for( uint32_t i = 0; i < UNDERLYING( Noise::Type::COUNT ); ++i )
       {
-         if( ImGui::Selectable( Noise::GetNoiseName( static_cast<Noise::Type>( i ) ) ) )
+         if( ImGui::Selectable( Noise::GetNoiseName( static_cast<Noise::Type>( i ) ).data() ) )
          {
             notConst.type = static_cast<Noise::Type>( i );
             triggerUpdate = true;

@@ -68,6 +68,13 @@ class CommonSystem : public BaseSystem
 
    bool m_keepSortedAtAllTimes : 1 = false;
 
+   template <class Component>
+   static Component& GetComponent( const EntityEntry& entity )
+   {
+      static_assert( std::is_base_of_v<BaseComponent, Component> );
+      return *std::get<Component*>( entity.arch );
+   }
+
    // This function is used when inserting new entities into a system. Only use this if you need
    // entities to be sorted at all times. Otherwise, override the sort function
    // By default, the entities are in the same order they were assigned to the system. Return true

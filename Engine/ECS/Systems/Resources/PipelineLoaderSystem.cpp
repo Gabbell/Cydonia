@@ -13,10 +13,14 @@ void PipelineLoaderSystem::tick( double /*deltaS*/ )
    bool allLoaded = true;
    for( const auto& entityEntry : m_entities )
    {
-      RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
+      RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+
+      if( renderable.desc.pipelineName.empty() )
+      {
+         continue;
+      }
 
       const PipelineIndex pipelineIdx = StaticPipelines::FindByName( renderable.desc.pipelineName );
-
       if( pipelineIdx == INVALID_PIPELINE_IDX )
       {
          CYD_ASSERT( !"Could not find pipeline" );

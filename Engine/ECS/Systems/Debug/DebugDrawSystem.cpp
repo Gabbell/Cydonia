@@ -13,8 +13,6 @@
 
 namespace CYD
 {
-static void Initialize() {}
-
 void DebugDrawSystem::tick( double /*deltaS*/ )
 {
 #if CYD_DEBUG
@@ -56,8 +54,8 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const DebugDrawComponent& debug     = *std::get<DebugDrawComponent*>( entityEntry.arch );
+      const TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      const DebugDrawComponent& debug     = GetComponent<DebugDrawComponent>( entityEntry );
 
       glm::mat4 modelMatrix( 1.0f );
 
@@ -70,8 +68,8 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
          {
             const DebugDrawComponent::SphereParams& sphere = debug.params.sphere;
 
-            modelMatrix =
-                Transform::GetModelMatrix( transform.scaling, glm::quat(), transform.position );
+            modelMatrix = Transform::GetModelMatrix(
+                glm::vec3( sphere.radius ), glm::quat(), transform.position );
 
             // Update model transform push constant
             GRIS::UpdateConstantBuffer(

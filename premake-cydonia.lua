@@ -2,6 +2,10 @@ workspace "Cydonia"
 	location "build"
 	configurations { "Debug", "Release", "Profiling" }
 	startproject "Sandbox"
+	toolset "clang"
+
+	filter "system:Windows"
+		systemversion "10.0.19041.0"
 
 	objdir "intermediate"
 	targetdir "bin/%{cfg.buildcfg}"

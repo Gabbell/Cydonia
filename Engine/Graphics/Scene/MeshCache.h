@@ -43,7 +43,7 @@ class MeshCache final
       uint32_t indexCount;
    };
 
-   MeshIndex findMesh( std::string_view name );
+   MeshIndex findMesh( std::string_view name ) const;
    MeshIndex addMesh( std::string_view name, const VertexLayout& layout );
 
    DrawInfo getDrawInfo( MeshIndex meshIdx ) const;
@@ -51,13 +51,6 @@ class MeshCache final
    State progressLoad( CmdListHandle cmdList, MeshIndex meshIdx );
 
    void bind( CmdListHandle cmdList, MeshIndex index ) const;
-
-   void loadToVRAM(
-       CmdListHandle cmdList,
-       MeshIndex meshIdx,
-       const Vertex* vertices,
-       uint32_t vertexCount,
-       const std::vector<uint32_t>& indices );
 
   private:
    //  ============================================================================================

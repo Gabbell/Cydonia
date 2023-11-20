@@ -34,7 +34,7 @@ class SceneComponent final : public BaseSharedComponent
    // =============================================================================================
    Extent2D extent;
    Viewport viewport = { 0.0f, 0.0f, 0.0f, 0.0f };
-   Rectangle scissor = { 0, 0, 0, 0 };
+   Rectangle scissor = { { 0, 0 }, { 0, 0 } };
 
    // Views
    // =============================================================================================
@@ -78,7 +78,10 @@ class SceneComponent final : public BaseSharedComponent
    BufferHandle viewsBuffer;
    BufferHandle inverseViewsBuffer;
    BufferHandle lightsBuffer;
+
    TextureHandle shadowMap;  // TODO This shouldn't be here, not a very elegant solution
+   TextureHandle envMap;
+
    GBuffer gbuffer;
 
 #if CYD_DEBUG

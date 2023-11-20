@@ -4,17 +4,18 @@
 // Vertex Inputs
 // =================================================================================================
 layout( location = 0 ) in vec3 inPosition;
-layout( location = 1 ) in vec3 inNormal;
-layout( location = 2 ) in vec3 inTexCoords;
-layout( location = 3 ) in vec4 inColor;  // Not used
+layout( location = 1 ) in vec3 inTexCoords;
 
 // Interpolators
 // =================================================================================================
 layout( location = 0 ) out vec2 outUV;
+layout( location = 1 ) flat out uint outInstanceIndex;
 
 // =================================================================================================
 void main()
 {
-   outUV       = inTexCoords.xy;
+   outUV            = inTexCoords.xy;
+   outInstanceIndex = gl_InstanceIndex;
+
    gl_Position = vec4( inPosition, 1.0 );
 }

@@ -22,8 +22,8 @@ void MeshLoaderSystem::tick( double /*deltaS*/ )
    bool allLoaded = true;
    for( const auto& entityEntry : m_entities )
    {
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      MeshComponent& meshComponent          = *std::get<MeshComponent*>( entityEntry.arch );
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      MeshComponent& meshComponent          = GetComponent<MeshComponent>( entityEntry );
 
       MeshIndex meshIdx = m_meshCache.findMesh( meshComponent.name );
       if( meshIdx == INVALID_MESH_IDX )

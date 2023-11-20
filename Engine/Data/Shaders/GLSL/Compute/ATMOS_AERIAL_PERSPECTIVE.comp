@@ -1,6 +1,6 @@
 #version 450
 
-#include "ATMOS.h"
+#include "../ATMOS.h"
 
 layout( local_size_x = 16, local_size_y = 16, local_size_z = 1 ) in;
 
@@ -52,7 +52,7 @@ void main()
    const float rayleighPhase = getRayleighPhase( cosTheta );
    const float miePhase      = getMiePhase( params.miePhase, cosTheta );
 
-   vec3 illuminance        = vec3( 0.0 );
+   vec3 luminance        = vec3( 0.0 );
    float meanTransmittance = 0.0;
    vec3 transmittance      = vec3( 1.0 );
    float t                 = 0.0;
@@ -87,12 +87,13 @@ void main()
       const vec3 scatteringIntegral =
           ( inScattering - inScattering * sampleTransmittance ) / extinction;
 
-      illuminance += ( scatteringIntegral * transmittance );
+      luminance += ( scatteringIntegral * transmittance );
       meanTransmittance +=
           ( ( transmittance.x + transmittance.y + transmittance.z ) / 3.0 ) * stepContribution;
 
       transmittance *= sampleTransmittance;
    }
 
-   imageStore( aerialPerspectiveLUT, ssCoord, vec4( illuminance, meanTransmittance ) );
+   luminance = colorCorrect( luminance );
+   imageStore( aerialPerspectiveLUT, ssCoord, vec4( luminance, meanTransmittance ) );
 }

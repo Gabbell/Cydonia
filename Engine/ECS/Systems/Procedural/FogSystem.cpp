@@ -52,10 +52,13 @@ void FogSystem::tick( double deltaS )
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      if( !renderable.desc.isVisible ) continue;
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      FogComponent& fog                     = GetComponent<FogComponent>( entityEntry );
 
-      FogComponent& fog = *std::get<FogComponent*>( entityEntry.arch );
+      if( !renderable.desc.isVisible )
+      {
+         continue;
+      }
 
       if( !fog.viewInfoBuffer )
       {

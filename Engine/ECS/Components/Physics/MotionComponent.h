@@ -21,9 +21,13 @@ class MotionComponent final : public BaseComponent
 
    static constexpr ComponentType TYPE = ComponentType::MOTION;
 
+   // These are pretty good defaults for a 1 unit == 1 meter scenario
+   static constexpr float DEFAULT_MOVE_ACCELERATION = 100.0f;
+   static constexpr float DEFAULT_MAX_VELOCITY      = 10.0f;
+
    // Constants
-   float moveAcceleration = 0.0f;
-   float maxVelocity      = 0.0f;
+   float moveAcceleration = DEFAULT_MOVE_ACCELERATION;
+   float maxVelocity      = DEFAULT_MAX_VELOCITY;
 
    // Current
    glm::vec3 velocity     = glm::vec3( 0.0f );

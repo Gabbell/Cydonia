@@ -41,6 +41,18 @@ void FrameEnd() {}
 #if CYD_GPU_PROFILING
 namespace CYD::Trace
 {
+std::array<float, 4> GetFloat4ColorFromName( const char* name )
+{
+   std::hash<std::string> hasher;
+   const uint32_t hash = static_cast<uint32_t>( hasher( std::string( name ) ) );
+
+   return {
+       ( ( hash & 0x00FF0000 ) >> 16 ) / 255.0f,
+       ( ( hash & 0x0000FF00 ) >> 8 ) / 255.0f,
+       ( ( hash & 0x000000FF ) >> 0 ) / 255.0f,
+       1.0f };
+}
+
 GPUScoped::GPUScoped( CmdListHandle cmdList, const char* name ) : m_cmdList( cmdList )
 {
    if( m_cmdList )

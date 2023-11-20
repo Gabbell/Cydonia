@@ -26,7 +26,7 @@ bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const
 
 bool SamplerInfo::operator==( const SamplerInfo& other ) const
 {
-   return useAnisotropy == other.useAnisotropy && maxAnisotropy == other.maxAnisotropy &&
+   return maxAnisotropy == other.maxAnisotropy &&
           magFilter == other.magFilter && minFilter == other.minFilter &&
           addressMode == other.addressMode;
 }

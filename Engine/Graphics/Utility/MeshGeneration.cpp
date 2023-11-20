@@ -54,40 +54,41 @@ void TriangleGrid(
    }
 }
 
-void PatchGrid( VertexList& vertices, std::vector<uint32_t>& indices, uint32_t size )
+void PatchGrid(
+    VertexList& vertices,
+    std::vector<uint32_t>& indices,
+    uint32_t scale,
+    uint32_t vertexResolution )
 {
-   vertices.allocate( size * size );
+   const uint32_t numVerticesPerSide = vertexResolution + 1;
+   vertices.allocate( numVerticesPerSide * numVerticesPerSide );
 
-   const float wx = 2.0f;
-   const float wy = 2.0f;
+   const float wx = static_cast<float>( scale ) / vertexResolution;
+   const float wy = static_cast<float>( scale ) / vertexResolution;
 
-   for( uint32_t x = 0; x < size; x++ )
+   for( uint32_t x = 0; x < numVerticesPerSide; x++ )
    {
-      for( uint32_t y = 0; y < size; y++ )
+      for( uint32_t y = 0; y < numVerticesPerSide; y++ )
       {
-         const uint32_t index = ( x + y * size );
+         const uint32_t index = ( x + y * numVerticesPerSide );
 
          vertices.setValue<Vertex::Position>(
-             index,
-             glm::vec3(
-                 x * wx + wx / 2.0f - (float)size * wx / 2.0f,
-                 0.0f,
-                 y * wy + wy / 2.0f - (float)size * wy / 2.0f ) );
+             index, glm::vec3( x * wx - scale / 2.0f, 0.0f, y * wy - scale / 2.0f ) );
 
          vertices.setValue<Vertex::Texcoord>(
-             index, glm::vec3( (float)x / ( size - 1 ), (float)y / ( size - 1 ), 0.0f ) );
+             index,
+             glm::vec3( (float)x / ( vertexResolution ), (float)y / ( vertexResolution ), 0.0f ) );
       }
    }
 
-   const uint32_t w = ( size - 1 );
-   indices.resize( w * w * 4 );
-   for( uint32_t x = 0; x < w; x++ )
+   indices.resize( vertexResolution * vertexResolution * 4 );
+   for( uint32_t x = 0; x < vertexResolution; x++ )
    {
-      for( uint32_t y = 0; y < w; y++ )
+      for( uint32_t y = 0; y < vertexResolution; y++ )
       {
-         uint32_t index     = ( x + y * w ) * 4;
-         indices[index]     = ( x + y * size );
-         indices[index + 1] = indices[index] + size;
+         uint32_t index     = ( x + y * vertexResolution ) * 4;
+         indices[index]     = ( x + y * numVerticesPerSide );
+         indices[index + 1] = indices[index] + numVerticesPerSide;
          indices[index + 2] = indices[index + 1] + 1;
          indices[index + 3] = indices[index] + 1;
       }

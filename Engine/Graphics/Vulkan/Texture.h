@@ -42,9 +42,10 @@ class Texture final
    uint32_t getWidth() const noexcept { return m_width; }
    uint32_t getHeight() const noexcept { return m_height; }
    uint32_t getDepth() const noexcept { return m_type == CYD::ImageType::TEXTURE_2D ? m_depth : 1; }
+   uint32_t getMipLevels() const noexcept { return m_mipLevels; }
    CYD::PixelFormat getPixelFormat() const noexcept { return m_format; }
    CYD::PipelineStageFlag getStages() const noexcept { return m_stages; }
-   CYD::Access getPreviousAccess() const noexcept { return m_prevAccess; }
+   CYD::Access getPreviousAccess( uint32_t mipLevel = 0 ) const;
    const std::string& getName() const noexcept { return m_name; }
 
    VkImage getVKImage() const noexcept { return m_vkImage; }
@@ -53,7 +54,7 @@ class Texture final
 
    bool inUse() const { return ( *m_useCount ) > 0; }
 
-   void setPreviousAccess( CYD::Access access ) { m_prevAccess = access; }
+   void setPreviousAccess( CYD::Access access, uint32_t mipLevel = 0 );
 
    void incUse();
    void decUse();
@@ -66,16 +67,18 @@ class Texture final
    const Device* m_pDevice = nullptr;
 
    // Texture description
-   size_t m_size     = 0;
-   uint32_t m_width  = 0;
-   uint32_t m_height = 0;
-   uint32_t m_depth  = 1;  // For 3D images and cube maps
+   size_t m_size        = 0;
+   uint32_t m_width     = 0;
+   uint32_t m_height    = 0;
+   uint32_t m_depth     = 1;  // For 3D images and cube maps
+   uint32_t m_mipLevels = 1;
 
    CYD::ImageType m_type     = CYD::ImageType::TEXTURE_2D;
    CYD::PixelFormat m_format = CYD::PixelFormat::UNKNOWN;
 
    // TODO: This changes as we build command lists. It is not thread safe
-   CYD::Access m_prevAccess  = CYD::Access::UNDEFINED;
+   static constexpr uint32_t MAX_MIP_LEVEL = 16;
+   std::array<CYD::Access, MAX_MIP_LEVEL> m_prevAccesses;
 
    CYD::ImageUsageFlag m_usage     = 0;
    CYD::PipelineStageFlag m_stages = 0;

@@ -1,23 +1,7 @@
 #pragma once
 
 #include <Graphics/GraphicsTypes.h>
-
-// ================================================================================================
-// Forwards
-// ================================================================================================
-enum VkIndexType : int;
-enum VkFormat : int;
-enum VkColorSpaceKHR : int;
-enum VkCompareOp : int;
-enum VkAttachmentLoadOp : int;
-enum VkAttachmentStoreOp : int;
-enum VkPrimitiveTopology : int;
-enum VkPolygonMode : int;
-enum VkImageLayout : int;
-enum VkDescriptorType : int;
-enum VkFilter : int;
-enum VkBorderColor : int;
-enum VkSamplerAddressMode : int;
+#include <Graphics/Vulkan.h>
 
 // ================================================================================================
 // Definition

@@ -2,13 +2,15 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "../VIEW.h"
-#include "../NOISE.h"
+#include "../INSTANCING.h"
 
 // Constant Buffers & Uniforms
 // =================================================================================================
 layout( push_constant ) uniform PushConstant { mat4 model; };
 
 layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
+layout( set = 0, binding = 2 ) uniform INSTANCES { InstancingData instances[MAX_INSTANCES]; };
+
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 // Inputs & Outputs (Interpolators)
@@ -16,6 +18,7 @@ layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 layout( quads, equal_spacing, cw ) in;
 
 layout( location = 0 ) in vec2 inUV[];
+layout( location = 1 ) flat in uint inInstanceIndex[];
 
 layout( location = 0 ) out vec2 outUV;
 layout( location = 1 ) out vec3 outWorldPos;
@@ -50,9 +53,11 @@ void main()
    // Displace
    pos.xyz += displacement;
 
-   // Perspective projection
-   vec4 worldPos = model * pos;
-   gl_Position   = mainView.proj * mainView.view * worldPos;
+   // World position and perspective projection
+   const uint instanceIndex    = inInstanceIndex[0];
+   const mat4 instanceModelMat = model * instances[instanceIndex].modelMat;
+   vec4 worldPos               = instanceModelMat * pos;
+   gl_Position                 = mainView.proj * mainView.view * worldPos;
 
    outWorldPos      = worldPos.xyz;
    vec4 shadowCoord = biasMat * lightView.proj * lightView.view * worldPos;

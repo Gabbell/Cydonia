@@ -216,7 +216,7 @@ void WindowSystem::_keyCallback(
       }
    }
 
-   if( mods == GLFW_MOD_CONTROL && key == GLFW_KEY_R )
+   if( action == GLFW_PRESS && mods == GLFW_MOD_CONTROL && key == GLFW_KEY_R )
    {
       GRIS::ReloadShaders();
    }

@@ -1,7 +1,7 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "LIGHTING.h"
+#include "../LIGHTING.h"
 
 layout( set = 0, binding = 1 ) uniform sampler2DShadow shadowMap;
 

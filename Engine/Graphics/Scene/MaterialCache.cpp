@@ -1,10 +1,10 @@
 #include <Graphics/Scene/MaterialCache.h>
-#include <Graphics/Scene/MaterialCache.h>
 
 #include <Common/Assert.h>
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/TextureCache.h>
 #include <Graphics/Utility/GraphicsIO.h>
 
 #include <Multithreading/ThreadPool.h>
@@ -19,9 +19,8 @@ namespace CYD
 {
 // Asset Paths Constants
 // ================================================================================================
-static constexpr uint32_t MAX_STATIC_MATERIALS = 128;
-static constexpr char STATIC_MATERIALS_PATH[]  = "Materials.json";
-static const char MATERIAL_PATH[]              = "../../Engine/Data/Materials/";
+static constexpr char STATIC_MATERIALS_PATH[] = "Materials.json";
+static const char MATERIAL_PATH[]             = "../../Engine/Data/Materials/";
 
 MaterialCache::MaterialCache( EMP::ThreadPool& threadPool ) : m_threadPool( threadPool )
 {
@@ -32,8 +31,9 @@ MaterialCache::Material::~Material()
 {
    for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
    {
+      // If we have a handle and we loaded from storage, we own the texture
       TextureEntry& textureEntry = textures[i];
-      if( textureEntry.texHandle )
+      if( textureEntry.texHandle && needsLoadFromStorage )
       {
          GRIS::DestroyTexture( textureEntry.texHandle );
       }
@@ -55,15 +55,14 @@ void MaterialCache::loadToRAM( Material& material )
       // If we have a path, load from storage. If not, this texture is probably managed elsewhere
       if( !textureEntry.path.empty() )
       {
-         int width;
-         int height;
-         int size;
+         uint32_t size = 0;
 
          textureEntry.imageData = GraphicsIO::LoadImage(
-             textureEntry.path, textureEntry.desc.format, width, height, size );
-
-         textureEntry.desc.width  = width;
-         textureEntry.desc.height = height;
+             textureEntry.path,
+             textureEntry.desc.format,
+             textureEntry.desc.width,
+             textureEntry.desc.height,
+             size );
       }
    }
 
@@ -85,6 +84,12 @@ void MaterialCache::loadToVRAM( CmdListHandle cmdList, Material& material )
       {
          textureEntry.texHandle =
              GRIS::CreateTexture( cmdList, textureEntry.desc, textureEntry.imageData );
+
+         if( textureEntry.desc.generateMipmaps )
+         {
+            // Create the mip maps
+            GRIS::GenerateMipmaps( cmdList, textureEntry.texHandle );
+         }
       }
    }
 
@@ -103,8 +108,15 @@ MaterialCache::State MaterialCache::progressLoad( CmdListHandle cmdList, Materia
 
    if( material.currentState == State::UNINITIALIZED )
    {
-      // This material is not loaded, start a load job
-      m_threadPool.submit( MaterialCache::loadToRAM, material );
+      if( material.needsLoadFromStorage )
+      {
+         // This material is not loaded, start a load job
+         m_threadPool.submit( MaterialCache::loadToRAM, material );
+      }
+      else
+      {
+         material.currentState = State::LOADED_TO_VRAM;
+      }
    }
 
    if( material.currentState == State::LOADED_TO_RAM )
@@ -147,7 +159,9 @@ void MaterialCache::bind( CmdListHandle cmdList, MaterialIndex index, uint8_t se
       {
          // TODO Allow non-contiguous bindings?
          // TODO Allow different sampling?
-         GRIS::BindTexture( cmdList, textureEntry.texHandle, i, set );
+         SamplerInfo sampler;
+         sampler.addressMode = AddressMode::REPEAT;
+         GRIS::BindTexture( cmdList, textureEntry.texHandle, sampler, i, set );
       }
    }
 }
@@ -164,7 +178,7 @@ void MaterialCache::updateMaterial( MaterialIndex index, TextureSlot slot, Textu
    }
 }
 
-MaterialIndex MaterialCache::getMaterialIndexByName( std::string_view name ) const
+MaterialIndex MaterialCache::findMaterial( std::string_view name ) const
 {
    const auto& findIt = m_materialNames.find( std::string( name ) );
    if( findIt != m_materialNames.end() )
@@ -173,6 +187,18 @@ MaterialIndex MaterialCache::getMaterialIndexByName( std::string_view name ) con
    }
 
    return INVALID_MATERIAL_IDX;
+}
+
+MaterialIndex MaterialCache::addMaterial( std::string_view name )
+{
+   const std::string nameString( name );
+
+   CYD_ASSERT( m_materialNames.find( nameString ) == m_materialNames.end() );
+
+   const size_t newIdx         = m_materials.insertObject();
+   m_materialNames[nameString] = newIdx;
+
+   return newIdx;
 }
 
 static PixelFormat StringToPixelFormat( const std::string& formatString )
@@ -278,14 +304,23 @@ void MaterialCache::_initializeStaticMaterials()
             {
                path = std::string( MATERIAL_PATH );
                path += texture["PATH"];
+
+               // This material has a path therefore it must be loaded from storage to VRAM
+               material->needsLoadFromStorage = true;
             }
 
-            TextureEntry& textureEntry = material->textures[index];
-            textureEntry.path          = path;
-            textureEntry.desc.format   = StringToPixelFormat( texture["FORMAT"] );
-            textureEntry.desc.type     = StringToTextureType( texture["TYPE"] );
-            textureEntry.desc.stages   = PipelineStage::FRAGMENT_STAGE;
-            textureEntry.desc.usage    = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;
+            TextureEntry& textureEntry        = material->textures[index];
+            textureEntry.path                 = path;
+            textureEntry.desc.format          = StringToPixelFormat( texture["FORMAT"] );
+            textureEntry.desc.type            = StringToTextureType( texture["TYPE"] );
+            textureEntry.desc.stages          = PipelineStage::FRAGMENT_STAGE;
+            textureEntry.desc.usage           = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;
+            textureEntry.desc.generateMipmaps = true;
+
+            if( textureEntry.desc.generateMipmaps )
+            {
+               textureEntry.desc.usage |= ImageUsage::TRANSFER_SRC;
+            }
 
             index++;
          }

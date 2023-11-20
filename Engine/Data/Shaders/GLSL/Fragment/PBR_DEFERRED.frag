@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "../VIEW.h"
-#include "PBR.h"
+#include "../PBR.h"
 
 layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
 layout( set = 0, binding = 1 ) uniform InverseViews { InverseView inverseViews[MAX_VIEWS]; };
@@ -78,7 +78,7 @@ void main()
    }
 
    // Add made-up ambient contribution
-   totalRadiance += vec3( 0.03 ) * albedo * ao;
+   totalRadiance += vec3( 0.03 ) * albedo;
 
    outColor = vec4( totalRadiance, 1.0 );
 }

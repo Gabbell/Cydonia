@@ -131,16 +131,14 @@ void UpdateConstantBuffer(
 // Resources
 // ===============================================================================================
 TextureHandle CreateTexture( const TextureDescription& desc );
-TextureHandle CreateTexture(
-    CmdListHandle transferList,
-    const TextureDescription& desc,
-    const std::string& path );
-TextureHandle CreateTexture(
-    CmdListHandle transferList,
-    const TextureDescription& desc,
-    const std::vector<std::string>& paths );
 TextureHandle
-CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels );
+CreateTexture( CmdListHandle cmdList, const TextureDescription& desc, const void* pTexels );
+TextureHandle CreateTexture(
+    CmdListHandle transferList,
+    const TextureDescription& desc,
+    uint32_t layerCount,
+    const void** ppTexels );
+void GenerateMipmaps( CmdListHandle cmdList, TextureHandle texHandle );
 
 VertexBufferHandle CreateVertexBuffer( size_t size, const std::string_view name );
 IndexBufferHandle CreateIndexBuffer( size_t size, const std::string_view name );
@@ -154,17 +152,17 @@ void RemoveDebugTexture( void* texture );
 
 void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadToBufferInfo& info );
 void UploadToVertexBuffer(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     VertexBufferHandle bufferHandle,
     const VertexList& vertices );
 void UploadToIndexBuffer(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     IndexBufferHandle bufferHandle,
     const void* pIndices,
     const UploadToBufferInfo& info );
 
 void CopyTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     TextureHandle srcTexHandle,
     TextureHandle dstTexHandle,
     const TextureCopyInfo& info );

@@ -2,7 +2,7 @@
 #extension GL_ARB_separate_shader_objects : enable
 
 #include "../VIEW.h"
-#include "PBR.h"
+#include "../PBR.h"
 
 layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
 layout( set = 0, binding = 1 ) uniform Lights { Light lights[MAX_LIGHTS]; };
@@ -19,7 +19,8 @@ layout( set = 1, binding = 4 ) uniform sampler2D ambientOcclusion;
 // =================================================================================================
 layout( location = 0 ) in vec2 inUV;
 layout( location = 1 ) in vec3 inWorldPos;
-layout( location = 2 ) in mat3 inTBN;
+layout( location = 2 ) in vec3 inShadowCoord;
+layout( location = 3 ) in mat3 inTBN;
 
 layout( location = 0 ) out vec4 outColor;
 
@@ -69,7 +70,7 @@ void main()
       }
    }
 
-   totalRadiance += vec3(0.03) * albedo * ao;
+   totalRadiance += vec3( 0.03 ) * albedo * ao;
 
    outColor = vec4( totalRadiance, 1.0 );
 }

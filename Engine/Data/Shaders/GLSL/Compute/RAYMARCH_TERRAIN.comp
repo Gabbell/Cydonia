@@ -1,6 +1,6 @@
 #version 450
 
-#include "RAYMARCH.h"
+#include "../RAYMARCH.h"
 
 layout( local_size_x = 16, local_size_y = 16 ) in;
 

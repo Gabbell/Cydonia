@@ -4,6 +4,7 @@
 
 #include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/TextureCache.h>
 
 #include <Graphics/Scene/MeshCache.h>
 #include <Graphics/Scene/MaterialCache.h>
@@ -25,13 +26,13 @@
 #include <ECS/Systems/Physics/PlayerMoveSystem.h>
 #include <ECS/Systems/Physics/MotionSystem.h>
 #include <ECS/Systems/Procedural/ProceduralDisplacementSystem.h>
-#include <ECS/Systems/Procedural/FFTOceanSystem.h>
 #include <ECS/Systems/Procedural/AtmosphereSystem.h>
 #include <ECS/Systems/Rendering/TessellationUpdateSystem.h>
 #include <ECS/Systems/Rendering/ForwardRenderSystem.h>
 #include <ECS/Systems/Rendering/GBufferSystem.h>
 #include <ECS/Systems/Rendering/DeferredRenderSystem.h>
 #include <ECS/Systems/Rendering/AtmosphereRenderSystem.h>
+#include <ECS/Systems/Resources/PipelineLoaderSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
 #include <ECS/Systems/Scene/ViewUpdateSystem.h>
@@ -58,11 +59,12 @@ Sandbox::Sandbox( uint32_t width, uint32_t height, const char* title )
 {
    // Core initializers
    GRIS::InitRenderBackend( GRIS::API::VK, *m_window );
+   GRIS::TextureCache::Initialize();
    StaticPipelines::Initialize();
    Noise::Initialize();
 
-   m_meshes    = std::make_unique<MeshCache>();
-   m_materials = std::make_unique<MaterialCache>();
+   m_meshes    = std::make_unique<MeshCache>( *m_threadPool );
+   m_materials = std::make_unique<MaterialCache>( *m_threadPool );
    m_ecs       = std::make_unique<EntityManager>();
 }
 
@@ -78,7 +80,8 @@ void Sandbox::preLoop()
    m_ecs->addSystem<TessellationUpdateSystem>();
 
    // Resources
-   m_ecs->addSystem<MeshLoaderSystem>( *m_meshes, *m_threadPool );
+   m_ecs->addSystem<PipelineLoaderSystem>();
+   m_ecs->addSystem<MeshLoaderSystem>( *m_meshes );
    m_ecs->addSystem<MaterialLoaderSystem>( *m_materials );
 
    // Physics/Motion
@@ -88,13 +91,12 @@ void Sandbox::preLoop()
    // Pre-Render
    m_ecs->addSystem<ProceduralDisplacementSystem>( *m_materials );
    m_ecs->addSystem<AtmosphereSystem>();
-   m_ecs->addSystem<FFTOceanSystem>( *m_materials );
-   m_ecs->addSystem<ShadowMapSystem>( *m_materials );
-   m_ecs->addSystem<GBufferSystem>( *m_materials );
+   m_ecs->addSystem<ShadowMapSystem>( *m_meshes, *m_materials );
+   m_ecs->addSystem<GBufferSystem>( *m_meshes, *m_materials );
 
    // Rendering
    m_ecs->addSystem<DeferredRenderSystem>();
-   m_ecs->addSystem<ForwardRenderSystem>( *m_materials );
+   m_ecs->addSystem<ForwardRenderSystem>( *m_meshes, *m_materials );
 
    // Post-Process
    m_ecs->addSystem<AtmosphereRenderSystem>();
@@ -107,25 +109,12 @@ void Sandbox::preLoop()
    // UI
    m_ecs->addSystem<ImGuiSystem>( *m_ecs );
 
-   // Creating terrain mesh
-   // =============================================================================================
-   CmdListHandle transferList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Initial Transfer" );
-
-   std::vector<Vertex> vertices;
-   std::vector<uint32_t> indices;
-   MeshGeneration::PatchGrid( vertices, indices, 64 );
-   m_meshes->loadMesh( transferList, "GRID", vertices, indices );
-
-   GRIS::SubmitCommandList( transferList );
-   GRIS::WaitOnCommandList( transferList );
-   GRIS::DestroyCommandList( transferList );
-
    // Adding entities
    // =============================================================================================
    const EntityHandle player = m_ecs->createEntity( "Player" );
    m_ecs->assign<InputComponent>( player );
    m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 800.0f, 3000.0f ) );
-   m_ecs->assign<MotionComponent>( player );
+   m_ecs->assign<MotionComponent>( player, 1000.0f, 100.0f );
    m_ecs->assign<ViewComponent>( player, "MAIN" );
 
    const EntityHandle sun = m_ecs->createEntity( "Sun" );
@@ -139,9 +128,11 @@ void Sandbox::preLoop()
 #endif
 
    // Terrain
-   MaterialComponent::Description terrainMaterialDesc;
-   terrainMaterialDesc.pipelineName = "TERRAIN_GBUFFER";
-   terrainMaterialDesc.materialName = "TERRAIN_DISPLACEMENT";
+   RenderableComponent::Description terrainDesc;
+   terrainDesc.pipelineName      = "TERRAIN_GBUFFER";
+   terrainDesc.type              = RenderableComponent::Type::DEFERRED;
+   terrainDesc.isShadowCasting   = true;
+   terrainDesc.isShadowReceiving = true;
 
    Noise::ShaderParams terrainNoise;
    terrainNoise.gain       = 0.318f;
@@ -152,11 +143,11 @@ void Sandbox::preLoop()
    terrainNoise.octaves    = 5;
 
    const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
-   m_ecs->assign<RenderableComponent>( terrain, RenderableComponent::Type::DEFERRED, true, true );
+   m_ecs->assign<RenderableComponent>( terrain, terrainDesc );
    m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 50.0f ) );
    m_ecs->assign<MeshComponent>( terrain, "GRID" );
    m_ecs->assign<TessellatedComponent>( terrain, 0.04f, 0.85f );
-   m_ecs->assign<MaterialComponent>( terrain, terrainMaterialDesc );
+   m_ecs->assign<MaterialComponent>( terrain, "TERRAIN_DISPLACEMENT" );
    m_ecs->assign<ProceduralDisplacementComponent>(
        terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, terrainNoise );
 
@@ -169,18 +160,19 @@ void Sandbox::preLoop()
    atmosDesc.groundAlbedo                  = glm::vec3( 0.0f );
    atmosDesc.groundRadiusMM                = 6.36f;
    atmosDesc.atmosphereRadiusMM            = 6.46f;
-   atmosDesc.miePhase                      = 0.8f;
+   atmosDesc.miePhase                      = 0.92f;
    atmosDesc.mieScatteringScale            = 0.00952f;
    atmosDesc.mieAbsorptionScale            = 0.00077f;
    atmosDesc.rayleighScatteringScale       = 0.03624f;
    atmosDesc.absorptionScale               = 0.00199f;
    atmosDesc.rayleighHeight                = 8.0f;
    atmosDesc.mieHeight                     = 1.2f;
-   atmosDesc.heightFogHeight               = 0.23068f;
-   atmosDesc.heightFogFalloff              = 0.03168f;
-   atmosDesc.heightFogStrength             = 1.0f;
+   atmosDesc.heightFogHeight               = 0.01268f;
+   atmosDesc.heightFogFalloff              = 0.01857f;
+   atmosDesc.heightFogStrength             = 0.5f;
 
    const EntityHandle atmosphere = m_ecs->createEntity( "Atmosphere" );
+   m_ecs->assign<RenderableComponent>( atmosphere );
    m_ecs->assign<AtmosphereComponent>( atmosphere, atmosDesc );
 }
 
@@ -216,6 +208,7 @@ Sandbox::~Sandbox()
    m_meshes.reset();
 
    // Core uninitializers
+   GRIS::TextureCache::Uninitialize();
    GRIS::UninitRenderBackend();
    Noise::Uninitialize();
    StaticPipelines::Uninitialize();

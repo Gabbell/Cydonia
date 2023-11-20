@@ -1,6 +1,6 @@
 #version 450
 
-#include "ATMOS.h"
+#include "../ATMOS.h"
 #include "../NOISE.h"
 
 layout( local_size_x = 16, local_size_y = 16 ) in;
@@ -47,7 +47,7 @@ vec3 GetSunCircle( AtmosphereParameters params, vec3 rayDir, vec3 sunDir, vec3 v
    return groundFactor * sunCircle * sunFeathering * sunColor;
 }
 
-vec3 GetHeightFog( AtmosphereParameters params, vec3 fogColor, vec3 worldPos, vec3 viewPos )
+float GetHeightFogAmount( AtmosphereParameters params, vec3 worldPos, vec3 viewPos )
 {
    const vec3 camToFrag = worldPos - viewPos;
    const float distance = length( camToFrag );
@@ -62,7 +62,7 @@ vec3 GetHeightFog( AtmosphereParameters params, vec3 fogColor, vec3 worldPos, ve
    fogAmount *= SimplexFBM( worldPos.xz + ( params.time * 35.0 ), noiseParams );
    fogAmount = clamp( fogAmount, 0.0, 1.0 );
 
-   return fogColor * fogAmount * params.heightFog.z;
+   return fogAmount * params.heightFog.z;
 }
 
 // ================================================================================================
@@ -82,8 +82,9 @@ void main()
    worldPos          = worldPos / worldPos.w;
    const vec3 rayDir = normalize( mat3( viewInfo.invView ) * rayEye.xyz );
 
-   vec3 skyView           = vec3( 0.0 );
-   vec3 aerialPerspective = vec3( 0.0 );
+   vec3 skyView       = vec3( 0.0 );
+   vec3 fog           = vec3( 0.0 );
+   const vec3 inColor = imageLoad( colorImage, ssCoord ).rgb;
 
    // Sky View
    // =============================================================================================
@@ -131,25 +132,23 @@ void main()
                         ( params.farClip - depth * ( params.farClip - params.nearClip ) );
       normDepth /= clipDistance;
 
-      const float w        = normDepth;  // Squared distribution
+      const float w        = sqrt( normDepth );  // Squared distribution
       const float slice    = DepthToSlice( normDepth, textureSize( aerialPerspectiveLUT, 0 ).z );
       const float nearFade = min( slice + 1.0, 1.0 );
       const vec4 APLookup  = texture( aerialPerspectiveLUT, vec3( uv, w ) );
 
-      aerialPerspective += nearFade * APLookup.rgb * APLookup.a;
+      const vec3 aerialPerspective = nearFade * APLookup.rgb;  // * APLookup.a;
 
-      aerialPerspective +=
-          GetHeightFog( params, aerialPerspective, worldPos.xyz, viewInfo.viewPos.xyz );
+      fog = mix( inColor, aerialPerspective, normDepth );
+      if( params.heightFog.z > 0.001 )
+      {
+         const float heightFogAmount =
+             GetHeightFogAmount( params, worldPos.xyz, viewInfo.viewPos.xyz );
+         fog = mix( fog, aerialPerspective, heightFogAmount );
+      }
    }
-
    // Compiling and adjusting luminance
    // =============================================================================================
-   vec3 white_point = vec3( 1.08241, 0.96756, 0.95003 );
-   float exposure   = 20.0;
-
-   vec3 luminance = skyView + aerialPerspective;
-   luminance      = vec3( 1.0 ) - exp( -luminance.rgb / white_point * exposure );
-
-   const vec3 inColor = imageLoad( colorImage, ssCoord ).rgb;
-   imageStore( colorImage, ssCoord, vec4( inColor.rgb + luminance, 1.0 ) );
+   vec3 luminance = skyView + fog;
+   imageStore( colorImage, ssCoord, vec4( luminance, 1.0 ) );
 }

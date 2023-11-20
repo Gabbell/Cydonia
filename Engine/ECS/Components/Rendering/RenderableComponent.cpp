@@ -6,14 +6,7 @@ namespace CYD
 {
 RenderableComponent::~RenderableComponent()
 {
-   if( instancesBuffer )
-   {
-      GRIS::DestroyBuffer( instancesBuffer );
-   }
-
-   if( tessellationBuffer )
-   {
-      GRIS::DestroyBuffer( tessellationBuffer );
-   }
+    GRIS::DestroyBuffer( instancesBuffer );
+    GRIS::DestroyBuffer( tessellationBuffer );
 }
 }

@@ -60,11 +60,15 @@ VkImageLayout GetLayoutFromAccess( CYD::Access access )
    return ThsvsAccessMap[cydToThsvsAccessType( access )].imageLayout;
 }
 
-void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::Access nextAccess )
+void ImageMemory(
+    const CommandBuffer* cmdBuffer,
+    Texture* texture,
+    CYD::Access nextAccess,
+    uint32_t mipLevel )
 {
-   if( texture->getPreviousAccess() == nextAccess ) return;
+   if( texture->getPreviousAccess( mipLevel ) == nextAccess ) return;
 
-   ThsvsAccessType prevAccessThsvs = cydToThsvsAccessType( texture->getPreviousAccess() );
+   ThsvsAccessType prevAccessThsvs = cydToThsvsAccessType( texture->getPreviousAccess( mipLevel ) );
    ThsvsAccessType nextAccessThsvs = cydToThsvsAccessType( nextAccess );
 
    ThsvsImageBarrier barrier;
@@ -81,14 +85,14 @@ void ImageMemory( const CommandBuffer* cmdBuffer, Texture* texture, CYD::Access 
 
    barrier.subresourceRange.aspectMask =
        TypeConversions::getAspectMask( texture->getPixelFormat() );
-   barrier.subresourceRange.baseMipLevel   = 0;
+   barrier.subresourceRange.baseMipLevel   = mipLevel;
    barrier.subresourceRange.levelCount     = 1;
    barrier.subresourceRange.baseArrayLayer = 0;
    barrier.subresourceRange.layerCount     = texture->getDepth();
 
    thsvsCmdPipelineBarrier( cmdBuffer->getVKCmdBuffer(), nullptr, 0, nullptr, 1, &barrier );
 
-   texture->setPreviousAccess( nextAccess );
+   texture->setPreviousAccess( nextAccess, mipLevel );
 }
 
 void ImageMemory(

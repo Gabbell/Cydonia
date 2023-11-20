@@ -1,6 +1,3 @@
-#pragma once
-#pragma once
-
 #include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
 
 #include <Common/Assert.h>
@@ -12,6 +9,8 @@
 #include <Graphics/Direct3D12/Factory.h>
 #include <Graphics/Direct3D12/Device.h>
 #include <Graphics/Direct3D12/DeviceManager.h>
+
+#include <Input/GLFWWindow.h>
 
 #include <d3d12.h>
 
@@ -28,6 +27,7 @@ class D3D12RenderBackendImp
          m_devices( m_factory ),
          m_mainDevice( m_devices.getMainDevice() )
    {
+      REF( m_window );
    }
 
    ~D3D12RenderBackendImp() = default;

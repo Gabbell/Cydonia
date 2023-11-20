@@ -1,0 +1,55 @@
+#version 450
+
+#include "../FFTOCEAN.h"
+
+layout( local_size_x = 16, local_size_y = 16 ) in;
+
+layout( push_constant ) uniform PUSH { OceanParams params; };
+
+layout( set = 0, binding = 0 ) uniform sampler2D displacement;
+layout( set = 0, binding = 1, rgba32f ) restrict uniform image2D normals;
+
+void main()
+{
+   const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
+   const vec2 uv       = vec2( ssCoord + 0.5 ) / vec2( textureSize( displacement, 0 ) );
+
+   const ivec3 off = ivec3( -1.0, 0.0, 1.0 );
+
+   // Calculating normals based on finite difference (derivative)
+   const vec3 dO = texture( displacement, uv ).xyz;
+   const vec3 dL = textureOffset( displacement, uv, off.xy ).xyz;
+   const vec3 dR = textureOffset( displacement, uv, off.zy ).xyz;
+   const vec3 dT = textureOffset( displacement, uv, off.yx ).xyz;
+   const vec3 dB = textureOffset( displacement, uv, off.yz ).xyz;
+
+   const vec3 left   = vec3( -1.0, dL.y, 0.0 ) - dO;
+   const vec3 right  = vec3( 1.0, dR.y, 0.0 ) - dO;
+   const vec3 top    = vec3( 0.0, dT.y, -1.0 ) - dO;
+   const vec3 bottom = vec3( 0.0, dB.y, 1.0 ) - dO;
+
+   const vec3 topRight    = cross( right, top );
+   const vec3 topLeft     = cross( top, left );
+   const vec3 bottomLeft  = cross( left, bottom );
+   const vec3 bottomRight = cross( bottom, right );
+
+   const vec3 normal = normalize( topRight + topLeft + bottomLeft + bottomRight );
+
+   // Calculating the Jacobian determinant
+   const float jxx = ( dR.x - dL.x - dO.x );
+   const float jzz = ( dT.z - dB.z - dO.z );
+   const float jxz = ( dR.z - dL.z - dO.z );
+   const float jzx = ( dT.x - dB.x - dO.x );
+
+   // We are accumulating and decaying foam
+   const float jacobianDet    = jxx * jzz - jxz * jzx;
+   const float jacobianFactor = 1.0;
+   const float jacobianBias   = 0.0;
+   const float newFoam        = clamp( jacobianFactor * ( -jacobianDet + jacobianBias ), 0.0, 1.0 );
+
+   const float prevFoam  = imageLoad( normals, ssCoord ).a;
+   const float decay     = pow( prevFoam, 4 );
+   const float totalFoam = clamp( prevFoam + newFoam - decay, 0.0, 1.0 );
+
+   imageStore( normals, ssCoord, vec4( normal, totalFoam ) );
+}

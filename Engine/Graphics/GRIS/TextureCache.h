@@ -1,0 +1,15 @@
+#pragma once
+
+#include <Graphics/Handles/ResourceHandle.h>
+
+namespace CYD
+{
+namespace GRIS::TextureCache
+{
+void Initialize();
+void Uninitialize();
+
+void BindBlackTexture( CmdListHandle cmdList, uint32_t binding, uint32_t set );
+void BindWhiteTexture(CmdListHandle cmdList, uint32_t binding, uint32_t set);
+}
+}

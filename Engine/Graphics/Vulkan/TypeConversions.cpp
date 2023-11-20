@@ -14,9 +14,10 @@ VkIndexType cydToVkIndexType( CYD::IndexType type )
          return VK_INDEX_TYPE_UINT16;
       case CYD::IndexType::UNSIGNED_INT32:
          return VK_INDEX_TYPE_UINT32;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized index type" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized index type" );
    return VK_INDEX_TYPE_UINT16;
 }
 
@@ -44,9 +45,10 @@ VkFormat cydToVkFormat( CYD::PixelFormat format )
          return VK_FORMAT_D32_SFLOAT;
       case CYD::PixelFormat::R16_UNORM:
          return VK_FORMAT_R16_UNORM;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized pixel format" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized pixel format" );
    return VK_FORMAT_B8G8R8A8_UNORM;
 }
 
@@ -74,9 +76,10 @@ CYD::PixelFormat vkToCydFormat( VkFormat format )
          return CYD::PixelFormat::D32_SFLOAT;
       case VK_FORMAT_R16_UNORM:
          return CYD::PixelFormat::R16_UNORM;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized pixel format" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized pixel format" );
    return CYD::PixelFormat::BGRA8_UNORM;
 }
 
@@ -86,9 +89,10 @@ VkColorSpaceKHR cydToVkSpace( CYD::ColorSpace space )
    {
       case CYD::ColorSpace::SRGB_NONLINEAR:
          return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized color space" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized color space" );
    return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
 }
 
@@ -102,9 +106,10 @@ VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op )
          return VK_ATTACHMENT_LOAD_OP_LOAD;
       case CYD::LoadOp::DONT_CARE:
          return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized load operator" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized load operator" );
    return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 }
 
@@ -116,9 +121,10 @@ VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op )
          return VK_ATTACHMENT_STORE_OP_STORE;
       case CYD::StoreOp::DONT_CARE:
          return VK_ATTACHMENT_STORE_OP_DONT_CARE;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized store operator" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized store operator" );
    return VK_ATTACHMENT_STORE_OP_DONT_CARE;
 }
 
@@ -138,9 +144,10 @@ VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim )
          return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
       case CYD::DrawPrimitive::PATCHES:
          return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized draw primitive" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized draw primitive" );
    return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 }
 
@@ -154,9 +161,10 @@ VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode )
          return VK_POLYGON_MODE_LINE;
       case CYD::PolygonMode::POINT:
          return VK_POLYGON_MODE_POINT;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized polygon mode" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized polygon mode" );
    return VK_POLYGON_MODE_FILL;
 }
 
@@ -251,9 +259,10 @@ VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type )
          return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
       case CYD::ShaderResourceType::SAMPLED_IMAGE:
          return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized shader resource type" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized shader resource type" );
    return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
 }
 
@@ -267,9 +276,10 @@ VkFilter cydToVkFilter( CYD::Filter filter )
          return VK_FILTER_LINEAR;
       case CYD::Filter::CUBIC:
          return VK_FILTER_CUBIC_IMG;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized filter" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized filter" );
    return VK_FILTER_LINEAR;
 }
 
@@ -283,9 +293,10 @@ VkBorderColor cydToVkBorderColor( CYD::BorderColor borderColor )
          return VK_BORDER_COLOR_FLOAT_OPAQUE_WHITE;
       case CYD::BorderColor::TRANSPARENT_BLACK:
          return VK_BORDER_COLOR_FLOAT_TRANSPARENT_BLACK;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized border color" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized border color" );
    return VK_BORDER_COLOR_FLOAT_OPAQUE_BLACK;
 }
 
@@ -303,9 +314,10 @@ VkSamplerAddressMode cydToVkAddressMode( CYD::AddressMode mode )
          return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
       case CYD::AddressMode::MIRROR_CLAMP_TO_EDGE:
          return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized addressing mode" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized addressing mode" );
    return VK_SAMPLER_ADDRESS_MODE_REPEAT;
 }
 
@@ -333,9 +345,10 @@ VkImageLayout cydToVkImageLayout( CYD::ImageLayout layout )
          return VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
       case CYD::ImageLayout::SHADER_READ:
          return VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized image layout" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized image layout" );
    return VK_IMAGE_LAYOUT_UNDEFINED;
 }
 
@@ -360,9 +373,10 @@ VkCompareOp cydToVkCompareOp( CYD::CompareOperator op )
          return VK_COMPARE_OP_NOT_EQUAL;
       case CYD::CompareOperator::ALWAYS:
          return VK_COMPARE_OP_ALWAYS;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized compare operator" );
    }
 
-   CYD_ASSERT( !"TypeConversions:: Unrecognized compare operator" );
    return VK_COMPARE_OP_ALWAYS;
 }
 

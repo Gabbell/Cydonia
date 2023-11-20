@@ -25,8 +25,8 @@ void GBufferSystem::sort()
 {
    auto deferredRenderSort = []( const EntityEntry& first, const EntityEntry& second )
    {
-      const RenderableComponent& firstRenderable  = *std::get<RenderableComponent*>( first.arch );
-      const RenderableComponent& secondRenderable = *std::get<RenderableComponent*>( second.arch );
+      const RenderableComponent& firstRenderable  = GetComponent<RenderableComponent>( first );
+      const RenderableComponent& secondRenderable = GetComponent<RenderableComponent>( second );
 
       return firstRenderable.desc.type == RenderableComponent::Type::DEFERRED ||
              secondRenderable.desc.type != RenderableComponent::Type::DEFERRED;
@@ -55,10 +55,6 @@ void GBufferSystem::tick( double /*deltaS*/ )
       scene.gbuffer.setClearAll( true );
    }
 
-   // Finding main view
-   const uint32_t mainViewIdx = getViewIndex( scene, "MAIN" );
-   const uint32_t sunViewIdx  = getViewIndex( scene, "SUN" );
-
    // Tracking
    MeshIndex prevMesh         = INVALID_MESH_IDX;
    PipelineIndex prevPipeline = INVALID_PIPELINE_IDX;
@@ -75,7 +71,11 @@ void GBufferSystem::tick( double /*deltaS*/ )
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      const TransformComponent& transform   = GetComponent<TransformComponent>( entityEntry );
+      const MaterialComponent& material     = GetComponent<MaterialComponent>( entityEntry );
+      const MeshComponent& mesh             = GetComponent<MeshComponent>( entityEntry );
+
       if( renderable.desc.type != RenderableComponent::Type::DEFERRED )
       {
          // Deferred renderables only
@@ -86,10 +86,6 @@ void GBufferSystem::tick( double /*deltaS*/ )
       {
          continue;
       }
-
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
-      const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
 
       if( renderable.pipelineIdx == INVALID_PIPELINE_IDX || mesh.meshIdx == INVALID_MESH_IDX ||
           material.materialIdx == INVALID_MATERIAL_IDX )
@@ -150,7 +146,7 @@ void GBufferSystem::tick( double /*deltaS*/ )
          sampler.compare     = CompareOperator::GREATER_EQUAL;
          sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
          sampler.borderColor = BorderColor::OPAQUE_BLACK;
-         GRIS::BindTexture( cmdList, scene.shadowMap, sampler, 1, 0 );
+         GRIS::NamedTextureBinding( cmdList, scene.shadowMap, sampler, "ShadowMap", *curPipInfo );
       }
 
       if( renderable.isInstanced )
