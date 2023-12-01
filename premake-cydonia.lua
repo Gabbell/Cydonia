@@ -1,7 +1,7 @@
 workspace "Cydonia"
 	location "build"
 	configurations { "Debug", "Release", "Profiling" }
-	startproject "Sandbox"
+	startproject "OceanDemo"
 	toolset "clang"
 
 	filter "system:Windows"
@@ -95,24 +95,34 @@ project "Engine"
 
 -- ===============================================================================================
 -- Applications
-project "Sandbox"
-	location "Build/Sandbox"
+project "TerrainDemo"
+	location "Build/%{prj.name}"
 	language "C++"
 	cppdialect "C++20"
 	kind "ConsoleApp"
 	architecture "x86_64"
 
-	includedirs { "Sandbox", "Engine", "Emporium", "include" }
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
 	links { "Engine" }
 
-	files { "Sandbox/**.h",
-			"Sandbox/**.cpp",
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
 			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
 
 	filter {}
 
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
 	filter { 'system:windows' }
-		files { 'Sandbox/Sandbox.rc', '**.ico' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
 
 	filter {}
 
@@ -126,23 +136,33 @@ project "Sandbox"
 		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
 
 project "OceanDemo"
-	location "Build/OceanDemo"
+	location "Build/%{prj.name}"
 	language "C++"
 	cppdialect "C++20"
 	kind "ConsoleApp"
 	architecture "x86_64"
 
-	includedirs { "OceanDemo", "Engine", "Emporium", "include" }
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
 	links { "Engine" }
 
-	files { "OceanDemo/**.h",
-			"OceanDemo/**.cpp",
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
 			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
 
 	filter {}
 
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
 	filter { 'system:windows' }
-		files { 'OceanDemo/OceanDemo.rc', '**.ico' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
 
 	filter {}
 
@@ -156,23 +176,73 @@ project "OceanDemo"
 		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
 
 project "PBRDemo"
-	location "Build/PBRDemo"
+	location "Build/%{prj.name}"
 	language "C++"
 	cppdialect "C++20"
 	kind "ConsoleApp"
 	architecture "x86_64"
 
-	includedirs { "PBRDemo", "Engine", "Emporium", "include" }
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
 	links { "Engine" }
 
-	files { "PBRDemo/**.h",
-			"PBRDemo/**.cpp",
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
 			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
 
 	filter {}
 
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
 	filter { 'system:windows' }
-		files { 'PBRDemo/PBRDemo.rc', '**.ico' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
+
+	filter {}
+
+	filter "files:CydoniaIcon.png"
+		buildmessage "Copying Icon %{file.abspath}"
+
+		buildcommands {
+			"{COPY} %{file.abspath} %{cfg.targetdir}"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
+
+project "ParallaxMappingDemo"
+	location "Build/%{prj.name}"
+	language "C++"
+	cppdialect "C++20"
+	kind "ConsoleApp"
+	architecture "x86_64"
+
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
+	links { "Engine" }
+
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
+			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
+
+	filter {}
+
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
+	filter { 'system:windows' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
 
 	filter {}
 

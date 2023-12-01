@@ -3,7 +3,8 @@
 #include <Common/Assert.h>
 
 #include <Graphics/VertexLayout.h>
-#include <Graphics/Vertex.h>
+#include <Graphics/VertexList.h>
+#include <Graphics/VertexData.h>
 
 #include <Profiling.h>
 
@@ -36,8 +37,8 @@ void GraphicsIO::LoadMesh(
 
    indices.reserve( shapes[0].mesh.indices.size() );
 
-   std::vector<Vertex_PUNT> tempVertices;
-   std::unordered_map<Vertex_PUNT, uint32_t> uniqueVertices = {};
+   std::vector<VertexData> tempVertices;
+   std::unordered_map<VertexData, uint32_t> uniqueVertices = {};
 
    for( uint32_t s = 0; s < shapes.size(); ++s )
    {
@@ -47,37 +48,37 @@ void GraphicsIO::LoadMesh(
          const uint32_t fv = shapes[s].mesh.num_face_vertices[f];
          CYD_ASSERT( fv == 3 && "Face did not have 3 vertices" );
 
-         Vertex_PUNT face[3];
+         VertexData face[3];
 
          bool hasNormals = false;
          for( uint32_t v = 0; v < fv; ++v )
          {
-            Vertex_PUNT& vertex = face[v];
+            VertexData& vertex = face[v];
 
             const tinyobj::index_t& index = shapes[s].mesh.indices[indexOffset + v];
 
             // Position
-            vertex.setAttribute<Vertex::Position>( glm::vec3(
+            vertex.pos = glm::vec3(
                 attrib.vertices[3 * index.vertex_index + 0],
                 attrib.vertices[3 * index.vertex_index + 1],
-                attrib.vertices[3 * index.vertex_index + 2] ) );
+                attrib.vertices[3 * index.vertex_index + 2] );
 
             // UV (Texcoords)
             if( index.texcoord_index >= 0 )
             {
-               vertex.setAttribute<Vertex::Texcoord>( glm::vec3(
+               vertex.uv = glm::vec3(
                    attrib.texcoords[2 * index.texcoord_index + 0],
                    attrib.texcoords[2 * index.texcoord_index + 1],
-                   0.0f ) );
+                   0.0f );
             }
 
             // Normal
             if( index.normal_index >= 0 )
             {
-               vertex.setAttribute<Vertex::Normal>( glm::vec3(
+               vertex.normal = glm::vec3(
                    attrib.normals[3 * index.normal_index + 0],
                    attrib.normals[3 * index.normal_index + 1],
-                   attrib.normals[3 * index.normal_index + 2] ) );
+                   attrib.normals[3 * index.normal_index + 2] );
 
                hasNormals = true;
             }
@@ -86,30 +87,26 @@ void GraphicsIO::LoadMesh(
          if( hasNormals )
          {
             // Tangent
-            const glm::vec3 deltaPos0 =
-                face[1].getAttribute<Vertex::Position>() - face[0].getAttribute<Vertex::Position>();
-            const glm::vec3 deltaPos1 =
-                face[2].getAttribute<Vertex::Position>() - face[0].getAttribute<Vertex::Position>();
-            const glm::vec3 deltaUV0 =
-                face[1].getAttribute<Vertex::Texcoord>() - face[0].getAttribute<Vertex::Texcoord>();
-            const glm::vec3 deltaUV1 =
-                face[2].getAttribute<Vertex::Texcoord>() - face[0].getAttribute<Vertex::Texcoord>();
+            const glm::vec3 deltaPos0 = face[1].pos - face[0].pos;
+            const glm::vec3 deltaPos1 = face[2].pos - face[0].pos;
+            const glm::vec3 deltaUV0  = face[1].uv - face[0].uv;
+            const glm::vec3 deltaUV1  = face[2].uv - face[0].uv;
 
             const float denom = 1.0f / ( deltaUV0.x * deltaUV1.y - deltaUV1.x * deltaUV0.y );
 
-            glm::vec3 tangent(
+            const glm::vec3 tangent(
                 denom * ( deltaUV1.y * deltaPos0.x - deltaUV0.y * deltaPos1.x ),
                 denom * ( deltaUV1.y * deltaPos0.y - deltaUV0.y * deltaPos1.y ),
                 denom * ( deltaUV1.y * deltaPos0.z - deltaUV0.y * deltaPos1.z ) );
 
-            face[0].setAttribute<Vertex::Tangent>( tangent );
-            face[1].setAttribute<Vertex::Tangent>( tangent );
-            face[2].setAttribute<Vertex::Tangent>( tangent );
+            face[0].tangent = tangent;
+            face[1].tangent = tangent;
+            face[2].tangent = tangent;
          }
 
          for( uint32_t v = 0; v < fv; ++v )
          {
-            const Vertex_PUNT& vertex = face[v];
+            const VertexData& vertex = face[v];
             if( uniqueVertices.count( vertex ) == 0 )
             {
                uniqueVertices[vertex] = static_cast<uint32_t>( tempVertices.size() );
@@ -126,11 +123,11 @@ void GraphicsIO::LoadMesh(
    vertices.allocate( tempVertices.size() );
    for( uint32_t i = 0; i < tempVertices.size(); ++i )
    {
-      const Vertex_PUNT& vertex = tempVertices[i];
-      vertices.setValue<Vertex::Position>( i, vertex.getAttribute<Vertex::Position>() );
-      vertices.setValue<Vertex::Texcoord>( i, vertex.getAttribute<Vertex::Texcoord>() );
-      vertices.setValue<Vertex::Normal>( i, vertex.getAttribute<Vertex::Normal>() );
-      vertices.setValue<Vertex::Tangent>( i, vertex.getAttribute<Vertex::Tangent>() );
+      const VertexData& vertex = tempVertices[i];
+      vertices.setValue<Vertex::Position>( i, vertex.pos );
+      vertices.setValue<Vertex::Texcoord>( i, vertex.uv );
+      vertices.setValue<Vertex::Normal>( i, vertex.normal );
+      vertices.setValue<Vertex::Tangent>( i, vertex.tangent );
    }
 }
 
@@ -166,8 +163,14 @@ void* GraphicsIO::LoadImage(
       case PixelFormat::R32F:
          imageData = stbi_loadf( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
          break;
+      case PixelFormat::R8_UNORM:
+         imageData = stbi_load( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
+         break;
       case PixelFormat::R16_UNORM:
          imageData = stbi_load_16( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
+         break;
+      case PixelFormat::R32_UINT:
+         imageData = stbi_load( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
          break;
       default:
          // TODO Format to pixel size function

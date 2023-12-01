@@ -43,8 +43,12 @@ VkFormat cydToVkFormat( CYD::PixelFormat format )
          return VK_FORMAT_R32_SFLOAT;
       case CYD::PixelFormat::D32_SFLOAT:
          return VK_FORMAT_D32_SFLOAT;
+      case CYD::PixelFormat::R32_UINT:
+         return VK_FORMAT_R32_UINT;
       case CYD::PixelFormat::R16_UNORM:
          return VK_FORMAT_R16_UNORM;
+      case CYD::PixelFormat::R8_UNORM:
+         return VK_FORMAT_R8_UNORM;
       default:
          CYD_ASSERT( !"TypeConversions:: Unrecognized pixel format" );
    }

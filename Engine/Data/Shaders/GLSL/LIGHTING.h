@@ -41,7 +41,7 @@ float LambertianDiffuse( vec3 lightDir, vec3 normal )
 
 float ColorRampDiffuse( vec3 lightDir, vec3 normal )
 {
-   const float diffuseTerm = step(0.5, max( dot( normal, lightDir ), 0.0 ));
+   const float diffuseTerm = step( 0.5, max( dot( normal, lightDir ), 0.0 ) );
    return diffuseTerm;
 }
 
@@ -87,7 +87,7 @@ float ShadowPCF( sampler2DShadow shadowMap, vec3 shadowCoords )
 
    shadow /= count;
 
-   // Edge fade
+   // Far fade
    /*
    const float fade      = 0.01;  // Last 1% of shadow result are linearly faded
    const float startFade = 1.0 - fade;
@@ -100,9 +100,60 @@ float ShadowPCF( sampler2DShadow shadowMap, vec3 shadowCoords )
    if( maxCoord > startFade && maxCoord <= 1.0 )
    {
       const float t = ( maxCoord - startFade ) / fade;
-      edgeFade      = mix( 1.0, 0.0, t );
+      edgeFade   a   = mix( 1.0, 0.0, t );
    }
    */
 
    return shadow;
+}
+
+// Parallax Occlusion Mapping
+// ================================================================================================
+vec2 POMDown( sampler2D heightMap, vec2 inUV, vec3 TSviewDir, vec3 TSnormal )
+{
+   const float heightScale = 0.1;
+
+   const int minSamples = 4;
+   const int maxSamples = 32;
+
+   float tMax = -length( TSviewDir.xy ) / TSviewDir.z;
+   tMax *= heightScale;
+
+   const vec2 offsetDir = normalize( TSviewDir.xy );
+   const vec2 maxOffset = offsetDir * tMax;
+
+   // We want to have more samples if the view direction and the normal are perpendicular
+   const float lod      = 1.0 - dot( TSviewDir, TSnormal );
+   const int numSamples = int( mix( minSamples, maxSamples, lod ) );
+
+   const float stepSize = 1.0 / numSamples;
+
+   float currentRayHeight     = 1.0;
+   vec2 currentUVOffset       = vec2( 0.0 );
+   float currentSampledHeight = textureLod( heightMap, inUV + currentUVOffset, 0.0 ).r;
+
+   vec2 prevUVOffset          = vec2( 0.0 );
+   float prevSampledHeight    = 0.0;
+   
+   int currentSample = 1;
+   while( currentSample < numSamples && currentSampledHeight < currentRayHeight )
+   {
+      // Post intersection not found, keep going
+      currentRayHeight -= stepSize;
+      prevUVOffset      = currentUVOffset;
+      prevSampledHeight = currentSampledHeight;
+
+      currentUVOffset += stepSize * maxOffset;
+
+      currentSampledHeight = textureLod( heightMap, inUV + currentUVOffset, 0.0 ).r;
+      currentSample++;
+   }
+
+   // Post intersection found
+   float delta0    = currentSampledHeight - currentRayHeight;
+   float delta1    = currentRayHeight + stepSize - prevSampledHeight;
+   float ratio     = delta0 / ( delta0 + delta1 );
+   currentUVOffset = ratio * prevUVOffset + ( 1.0 - ratio ) * currentUVOffset;
+
+   return inUV + currentUVOffset;
 }

@@ -1,7 +1,8 @@
 #include <Graphics/Utility/MeshGeneration.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Vertex.h>
+#include <Graphics/VertexList.h>
+#include <Graphics/VertexData.h>
 
 #include <glm/ext.hpp>
 
@@ -12,44 +13,52 @@ namespace CYD::MeshGeneration
 void TriangleGrid(
     VertexList& vertices,
     std::vector<uint32_t>& indices,
+    uint32_t scale,
     uint32_t rows,
     uint32_t columns )
 {
-   vertices.allocate( rows * columns );
+   const uint32_t numVerticesRows    = rows + 1;
+   const uint32_t numVerticesColumns = columns + 1;
+
+   vertices.allocate( numVerticesRows * numVerticesColumns );
 
    // Vertices in triangles
-   for( uint32_t r = 0; r < rows; ++r )
+   for( uint32_t r = 0; r < numVerticesRows; ++r )
    {
-      for( uint32_t c = 0; c < columns; ++c )
+      for( uint32_t c = 0; c < numVerticesColumns; ++c )
       {
-         const uint32_t index = ( r * columns ) + c;
+         const uint32_t index = ( r * numVerticesColumns ) + c;
          vertices.setValue<Vertex::Position>(
              index,
              glm::vec3(
-                 ( static_cast<float>( c ) / static_cast<float>( columns ) ) - 0.5f,
+                 scale * ( static_cast<float>( c ) / columns ) - ( scale / 2.0f ),
                  0.0f,
-                 ( static_cast<float>( r ) / static_cast<float>( rows ) ) - 0.5f ) );
+                 scale * ( static_cast<float>( r ) / rows ) - ( scale / 2.0f ) ) );
 
          vertices.setValue<Vertex::Texcoord>(
              index,
              glm::vec3( static_cast<float>( c ) / columns, static_cast<float>( r ) / rows, 0.0f ) );
 
          vertices.setValue<Vertex::Normal>( index, glm::vec3( 0.0, 1.0f, 0.0f ) );
+
+         vertices.setValue<Vertex::Tangent>( index, glm::vec3( 1.0, 0.0f, 0.0f ) );
       }
    }
 
-   // Indices in quads (hence the -1)
-   for( uint32_t r = 0; r < ( rows - 1 ); ++r )
+   indices.resize( rows * columns * 6 );
+   for( uint32_t r = 0; r < rows; ++r )
    {
-      for( uint32_t c = 0; c < ( columns - 1 ); ++c )
+      for( uint32_t c = 0; c < columns; ++c )
       {
-         indices.push_back( c + ( r * columns ) );
-         indices.push_back( c + ( ( r + 1 ) * columns ) );
-         indices.push_back( c + ( ( r + 1 ) * columns ) + 1 );
+         uint32_t index = ( r * columns + c ) * 6;
 
-         indices.push_back( c + ( r * columns ) );
-         indices.push_back( c + ( ( r + 1 ) * columns ) + 1 );
-         indices.push_back( c + ( r * columns + 1 ) );
+         indices[index]     = ( c + r * numVerticesColumns );
+         indices[index + 1] = ( c + ( ( r + 1 ) * numVerticesColumns ) );
+         indices[index + 2] = ( c + ( ( r + 1 ) * numVerticesColumns ) + 1 );
+
+         indices[index + 3] = ( c + ( r * numVerticesColumns ) );
+         indices[index + 4] = ( c + ( ( r + 1 ) * numVerticesColumns ) + 1 );
+         indices[index + 5] = ( c + ( r * numVerticesColumns + 1 ) );
       }
    }
 }
@@ -98,7 +107,7 @@ void PatchGrid(
 // Recursive subdivision function for icosphere generation
 static void subdivide(
     uint32_t& curVertexCount,
-    std::unordered_map<CYD::Vertex_PN, uint32_t>& uniqueVertices,
+    std::unordered_map<CYD::VertexData, uint32_t>& uniqueVertices,
     VertexList& vertices,
     std::vector<uint32_t>& indices,
     const glm::vec3& p0,
@@ -113,13 +122,13 @@ static void subdivide(
 
    if( subdivision == 0 )
    {
-      Vertex_PN v0, v1, v2;
-      v0.setAttribute<Vertex::Position>( p0 );
-      v1.setAttribute<Vertex::Position>( p1 );
-      v2.setAttribute<Vertex::Position>( p2 );
-      v0.setAttribute<Vertex::Normal>( n0 );
-      v1.setAttribute<Vertex::Normal>( n1 );
-      v2.setAttribute<Vertex::Normal>( n2 );
+      VertexData v0, v1, v2;
+      v0.pos    = p0;
+      v1.pos    = p1;
+      v2.pos    = p2;
+      v0.normal = n0;
+      v1.normal = n1;
+      v2.normal = n2;
 
       // We're at the lowest level of subdivision, add the vertices
       if( uniqueVertices.count( v0 ) == 0 )
@@ -224,7 +233,7 @@ void Icosphere(
 
    vertices.allocate( vertexCount );
 
-   std::unordered_map<Vertex_PN, uint32_t> uniqueVertices = {};
+   std::unordered_map<VertexData, uint32_t> uniqueVertices = {};
    uint32_t curVertexCount                                = 0;
    for( uint32_t i = 0; i < 21; ++i )
    {

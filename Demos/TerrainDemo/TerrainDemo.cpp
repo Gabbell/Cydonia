@@ -1,10 +1,9 @@
-#include <Sandbox.h>
+#include <TerrainDemo.h>
 
 #include <Graphics/StaticPipelines.h>
 
 #include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderInterface.h>
-#include <Graphics/GRIS/TextureCache.h>
 
 #include <Graphics/Scene/MeshCache.h>
 #include <Graphics/Scene/MaterialCache.h>
@@ -36,6 +35,7 @@
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
 #include <ECS/Systems/Scene/ViewUpdateSystem.h>
+#include <ECS/Systems/Rendering/InstanceUpdateSystem.h>
 #include <ECS/Systems/UI/ImGuiSystem.h>
 
 #if CYD_DEBUG
@@ -54,12 +54,11 @@
 
 namespace CYD
 {
-Sandbox::Sandbox( uint32_t width, uint32_t height, const char* title )
+TerrainDemo::TerrainDemo( uint32_t width, uint32_t height, const char* title )
     : Application( width, height, title )
 {
    // Core initializers
    GRIS::InitRenderBackend( GRIS::API::VK, *m_window );
-   GRIS::TextureCache::Initialize();
    StaticPipelines::Initialize();
    Noise::Initialize();
 
@@ -68,7 +67,7 @@ Sandbox::Sandbox( uint32_t width, uint32_t height, const char* title )
    m_ecs       = std::make_unique<EntityManager>();
 }
 
-void Sandbox::preLoop()
+void TerrainDemo::preLoop()
 {
    // Systems Initialization
    // =============================================================================================
@@ -77,6 +76,7 @@ void Sandbox::preLoop()
    m_ecs->addSystem<WindowSystem>( *m_window );
    m_ecs->addSystem<LightUpdateSystem>();
    m_ecs->addSystem<ViewUpdateSystem>();
+   m_ecs->addSystem<InstanceUpdateSystem>();
    m_ecs->addSystem<TessellationUpdateSystem>();
 
    // Resources
@@ -121,7 +121,7 @@ void Sandbox::preLoop()
    m_ecs->assign<TransformComponent>( sun, glm::vec3( 0.0f, 20.0f, -90.0f ) );
    m_ecs->assign<LightComponent>( sun );
    m_ecs->assign<ViewComponent>(
-       sun, "SUN", -3600.0f, 3600.0f, -3600.0f, 3600.0f, -5000.0f, 5000.0f );
+       sun, "SUN", -3600.0f, 3600.0f, -3600.0f, 3600.0f, -32000.0f, 32000.0f );
 
 #if CYD_DEBUG
    m_ecs->assign<DebugDrawComponent>( sun, DebugDrawComponent::Type::SPHERE );
@@ -142,12 +142,25 @@ void Sandbox::preLoop()
    terrainNoise.invert     = true;
    terrainNoise.octaves    = 5;
 
+   VertexLayout PUVertexLayout;
+   PUVertexLayout.addAttribute( VertexLayout::Attribute::POSITION, PixelFormat::RGB32F );
+   PUVertexLayout.addAttribute( VertexLayout::Attribute::TEXCOORD, PixelFormat::RGB32F );
+
+   m_meshes->enqueueMesh(
+       "TERRAIN_TILE",
+       PUVertexLayout,
+       MeshGeneration::PatchGrid,
+       128 /*scale*/,
+       16 /*vertex resolution*/ );
+
    const EntityHandle terrain = m_ecs->createEntity( "Terrain" );
    m_ecs->assign<RenderableComponent>( terrain, terrainDesc );
-   m_ecs->assign<TransformComponent>( terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 50.0f ) );
-   m_ecs->assign<MeshComponent>( terrain, "GRID" );
+   m_ecs->assign<TransformComponent>(
+       terrain, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 50.0f, 500.0f, 50.0f ) );
+   m_ecs->assign<MeshComponent>( terrain, "TERRAIN_TILE" );
    m_ecs->assign<TessellatedComponent>( terrain, 0.04f, 0.85f );
-   m_ecs->assign<MaterialComponent>( terrain, "TERRAIN_DISPLACEMENT" );
+   m_ecs->assign<InstancedComponent>( terrain, InstancedComponent::Type::TILED, 64, 64 );
+   m_ecs->assign<MaterialComponent>( terrain, "TERRAIN" );
    m_ecs->assign<ProceduralDisplacementComponent>(
        terrain, Noise::Type::SIMPLEX_NOISE, 2048, 2048, terrainNoise );
 
@@ -176,7 +189,7 @@ void Sandbox::preLoop()
    m_ecs->assign<AtmosphereComponent>( atmosphere, atmosDesc );
 }
 
-void Sandbox::tick( double deltaS )
+void TerrainDemo::tick( double deltaS )
 {
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
@@ -199,7 +212,7 @@ void Sandbox::tick( double deltaS )
    GRIS::RenderBackendCleanup();
 }
 
-Sandbox::~Sandbox()
+TerrainDemo::~TerrainDemo()
 {
    GRIS::WaitUntilIdle();
 
@@ -208,7 +221,6 @@ Sandbox::~Sandbox()
    m_meshes.reset();
 
    // Core uninitializers
-   GRIS::TextureCache::Uninitialize();
    GRIS::UninitRenderBackend();
    Noise::Uninitialize();
    StaticPipelines::Uninitialize();

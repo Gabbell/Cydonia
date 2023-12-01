@@ -8,6 +8,7 @@
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/GRIS/Backends/VKRenderBackend.h>
 #include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
+#include <Graphics/GRIS/TextureCache.h>
 
 #include <Profiling.h>
 
@@ -26,29 +27,37 @@ bool InitRenderBackend( API api, const Window& window )
 {
    delete b;
 
+   bool validAPI = false;
    switch( api )
    {
       case API::VK:
-         b = new VKRenderBackend( window );
-         return true;
+         b        = new VKRenderBackend( window );
+         validAPI = true;
       case API::D3D12:
          // b = new D3D12RenderBackend( window );
-         return true;
+         validAPI = true;
       case API::D3D11:
-         return false;
+         validAPI = false;
       case API::GL:
          // b = new GLRenderBackend( window );
-         return false;
+         validAPI = false;
       case API::MTL:
-         return false;
+         validAPI = false;
       default:
-         return false;
+         validAPI = false;
    }
 
-   return false;
+   GRIS::TextureCache::Initialize();
+
+   return validAPI;
 }
 
-void UninitRenderBackend() { delete b; }
+void UninitRenderBackend()
+{
+   GRIS::TextureCache::Uninitialize();
+
+   delete b;
+}
 
 bool InitializeUIBackend()
 {

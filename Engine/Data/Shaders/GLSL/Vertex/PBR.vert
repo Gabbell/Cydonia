@@ -17,8 +17,8 @@ layout( location = 3 ) in vec3 inTangent;
 // Interpolators
 // =================================================================================================
 layout( location = 0 ) out vec2 outUV;
-layout( location = 1 ) out vec3 outWorldPos;
-layout( location = 2 ) out vec3 outShadowCoord;
+layout( location = 1 ) out vec3 outShadowCoord;
+layout( location = 2 ) out vec3 outTSViewDir;
 layout( location = 3 ) out mat3 outTBN;
 
 // =================================================================================================
@@ -46,12 +46,15 @@ void main()
    T            = normalize( T - dot( T, N ) * N );  // Reorthogonalize
    const vec3 B = cross( N, T );
 
+   const mat3 TBN                 = mat3( T, B, N );
+   const mat3 worldToTangentSpace = transpose( TBN );
+
    vec4 shadowCoord = biasMat * lightView.proj * lightView.view * worldPos;
 
    outUV          = vec2( inTexCoord.x, 1.0 - inTexCoord.y );
-   outWorldPos    = worldPos.xyz;
    outShadowCoord = shadowCoord.xyz / shadowCoord.w;
-   outTBN         = mat3( T, B, N );
+   outTSViewDir   = worldToTangentSpace * ( worldPos.xyz - mainView.pos.xyz );
+   outTBN         = TBN;
 
    gl_Position = mainView.proj * mainView.view * worldPos;
 }

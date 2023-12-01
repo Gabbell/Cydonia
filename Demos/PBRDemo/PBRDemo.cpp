@@ -127,7 +127,7 @@ void PBRDemo::preLoop()
    atmosDesc.groundAlbedo                  = glm::vec3( 0.0f );
    atmosDesc.groundRadiusMM                = 6.36f;
    atmosDesc.atmosphereRadiusMM            = 6.46f;
-   atmosDesc.miePhase                      = 0.92f;
+   atmosDesc.miePhase                      = 0.8f;
    atmosDesc.mieScatteringScale            = 0.00952f;
    atmosDesc.mieAbsorptionScale            = 0.00077f;
    atmosDesc.rayleighScatteringScale       = 0.03624f;
@@ -136,9 +136,10 @@ void PBRDemo::preLoop()
    atmosDesc.mieHeight                     = 1.2f;
    atmosDesc.heightFogHeight               = 0.025f;
    atmosDesc.heightFogFalloff              = 0.016f;
-   atmosDesc.heightFogStrength             = 5.0f;
+   atmosDesc.heightFogStrength             = 0.0f;
 
    const EntityHandle atmosphere = m_ecs->createEntity( "Atmosphere" );
+   m_ecs->assign<RenderableComponent>( atmosphere );
    m_ecs->assign<AtmosphereComponent>( atmosphere, atmosDesc );
 }
 

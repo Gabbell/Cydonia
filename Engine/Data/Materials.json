@@ -4,20 +4,10 @@
       "NAME": "NO_TEX"
     },
     {
-      "NAME": "SOLO_TEX_RGBA8",
+      "NAME": "TERRAIN",
       "TEXTURES": [
         {
-          "NAME": "TEXTURE",
-          "FORMAT": "RGBA8_UNORM",
-          "TYPE": "TEXTURE2D"
-        }
-      ]
-    },
-    {
-      "NAME": "TERRAIN_DISPLACEMENT",
-      "TEXTURES": [
-        {
-          "NAME": "TEXTURE",
+          "SLOT": "DISPLACEMENT",
           "FORMAT": "R32F",
           "TYPE": "TEXTURE2D"
         }
@@ -27,7 +17,7 @@
       "NAME": "OCEAN",
       "TEXTURES": [
         {
-          "NAME": "DISPLACEMENT_MAP",
+          "SLOT": "DISPLACEMENT",
           "FORMAT": "R32F",
           "TYPE": "TEXTURE2D"
         }
@@ -37,34 +27,81 @@
       "NAME": "SWORD",
       "TEXTURES": [
         {
-          "NAME": "ALBEDO",
+          "SLOT": "ALBEDO",
           "FORMAT": "RGBA8_UNORM",
           "TYPE": "TEXTURE2D",
           "PATH": "Sword/albedo.png"
         },
         {
-          "NAME": "NORMAL",
+          "SLOT": "NORMAL",
           "FORMAT": "RGBA8_UNORM",
           "TYPE": "TEXTURE2D",
           "PATH": "Sword/normal.png"
         },
         {
-          "NAME": "METALNESS",
+          "SLOT": "METALNESS",
           "FORMAT": "R16_UNORM",
           "TYPE": "TEXTURE2D",
           "PATH": "Sword/metalness.png"
         },
         {
-          "NAME": "ROUGHNESS",
+          "SLOT": "ROUGHNESS",
           "FORMAT": "R16_UNORM",
           "TYPE": "TEXTURE2D",
           "PATH": "Sword/roughness.png"
         },
         {
-          "NAME": "AO",
+          "SLOT": "AMBIENT_OCCLUSION",
           "FORMAT": "R16_UNORM",
           "TYPE": "TEXTURE2D",
           "PATH": "Sword/ao.png"
+        },
+        {
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D",
+          "FALLBACK": "BLACK"
+        }
+      ]
+    },
+    {
+      "NAME": "SNOW",
+      "TEXTURES": [
+        {
+          "SLOT": "ALBEDO",
+          "FORMAT": "RGBA8_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_color_4k.jpg"
+        },
+        {
+          "SLOT": "NORMAL",
+          "FORMAT": "RGBA8_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_normal_opengl_4k.png"
+        },
+        {
+          "SLOT": "METALNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "FALLBACK": "BLACK"
+        },
+        {
+          "SLOT": "ROUGHNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_roughness_4k.jpg"
+        },
+        {
+          "SLOT": "AMBIENT_OCCLUSION",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_ao_4k.jpg"
+        },
+        {
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_height_4k.png"
         }
       ]
     }

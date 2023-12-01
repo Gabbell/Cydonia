@@ -26,7 +26,7 @@ class InstancedComponent final : public BaseComponent
    };
 
    InstancedComponent() = default;
-   InstancedComponent( Type type, uint32_t count, uint32_t radius )
+   InstancedComponent( Type type, uint32_t count, float radius )
        : type( type ), count( count ), radius( radius )
    {
    }
@@ -40,7 +40,7 @@ class InstancedComponent final : public BaseComponent
    Type type = Type::TILED;
 
    uint32_t count  = 0;
-   uint32_t radius = 0;
+   float radius = 0;
 
    bool needsUpdate = true;
 };

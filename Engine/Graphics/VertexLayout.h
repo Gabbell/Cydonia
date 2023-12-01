@@ -4,8 +4,6 @@
 
 #include <Graphics/GraphicsTypes.h>
 
-#include <unordered_set>
-
 namespace CYD
 {
 // ================================================================================================
@@ -27,6 +25,8 @@ class VertexLayout
       BITANGENT,
       COLOR
    };
+
+   static constexpr uint32_t INVALID_LOCATION_OFFSET = 0xFFFFFFFF;
 
    struct AttributeInfo
    {

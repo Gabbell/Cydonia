@@ -11,5 +11,6 @@ void Uninitialize();
 
 void BindBlackTexture( CmdListHandle cmdList, uint32_t binding, uint32_t set );
 void BindWhiteTexture(CmdListHandle cmdList, uint32_t binding, uint32_t set);
+void BindPinkTexture( CmdListHandle cmdList, uint32_t binding, uint32_t set );
 }
 }

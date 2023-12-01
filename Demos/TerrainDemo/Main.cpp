@@ -1,9 +1,9 @@
-#include <Sandbox.h>
+#include <TerrainDemo.h>
 
 int main()
 {
    {
-      CYD::Sandbox app( 2560, 1440, "CYDONIA" );
+      CYD::TerrainDemo app( 2560, 1440, "CYDONIA" );
       app.startLoop();
    }
 

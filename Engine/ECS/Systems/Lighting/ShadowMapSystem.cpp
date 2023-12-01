@@ -82,25 +82,25 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
    for( const auto& entityEntry : m_entities )
    {
       const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      const TransformComponent& transform   = GetComponent<TransformComponent>( entityEntry );
+      const MaterialComponent& material     = GetComponent<MaterialComponent>( entityEntry );
+      const MeshComponent& mesh             = GetComponent<MeshComponent>( entityEntry );
 
       if( !renderable.desc.isShadowCasting )
       {
          continue;
       }
 
-      const TransformComponent& transform = GetComponent<TransformComponent>( entityEntry);
-      const MaterialComponent& material   = GetComponent<MaterialComponent>( entityEntry);
-      const MeshComponent& mesh           = GetComponent<MeshComponent>( entityEntry);
+      if( renderable.pipelineIdx == INVALID_PIPELINE_IDX || mesh.meshIdx == INVALID_MESH_IDX ||
+          material.materialIdx == INVALID_MATERIAL_IDX )
+      {
+         continue;
+      }
 
       // Vertex and index buffers
       // ==========================================================================================
       if( prevMesh != mesh.meshIdx )
       {
-         if( mesh.meshIdx == INVALID_MESH_IDX )
-         {
-            continue;
-         }
-
          m_meshes.bind( cmdList, mesh.meshIdx );
 
          prevMesh = mesh.meshIdx;
@@ -110,11 +110,6 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       // ==========================================================================================
       if( prevMaterial != material.materialIdx )
       {
-         if( material.materialIdx == INVALID_MATERIAL_IDX )
-         {
-            continue;
-         }
-
          m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
 
          prevMaterial = material.materialIdx;
@@ -133,7 +128,7 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       if( renderable.isInstanced )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
-         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "InstancesData", pipInfo );
+         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "Instances", pipInfo );
       }
 
       if( renderable.isTessellated )

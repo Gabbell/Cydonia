@@ -154,14 +154,35 @@ void MaterialCache::bind( CmdListHandle cmdList, MaterialIndex index, uint8_t se
 
    for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
    {
+      // TODO Allow non-contiguous bindings?
+      // TODO Allow different sampling?
+      SamplerInfo sampler;
+      sampler.addressMode   = AddressMode::REPEAT;
+      sampler.magFilter     = Filter::LINEAR;
+      sampler.minFilter     = Filter::LINEAR;
+      sampler.minLod        = 0.0f;
+      sampler.maxLod        = 32.0f;
+      sampler.maxAnisotropy = 16.0f;
+
       const TextureEntry& textureEntry = material->textures[i];
       if( textureEntry.texHandle )
       {
-         // TODO Allow non-contiguous bindings?
-         // TODO Allow different sampling?
-         SamplerInfo sampler;
-         sampler.addressMode = AddressMode::REPEAT;
          GRIS::BindTexture( cmdList, textureEntry.texHandle, sampler, i, set );
+      }
+      else if( textureEntry.useFallback || !textureEntry.path.empty() )
+      {
+         switch( textureEntry.fallback )
+         {
+            case TextureFallback::BLACK:
+               GRIS::TextureCache::BindBlackTexture( cmdList, i, set );
+               break;
+            case TextureFallback::WHITE:
+               GRIS::TextureCache::BindWhiteTexture( cmdList, i, set );
+               break;
+            case TextureFallback::PINK:
+               GRIS::TextureCache::BindPinkTexture( cmdList, i, set );
+               break;
+         }
       }
    }
 }
@@ -223,9 +244,17 @@ static PixelFormat StringToPixelFormat( const std::string& formatString )
    {
       return PixelFormat::RGBA8_SRGB;
    }
+   if( formatString == "R32_UINT" )
+   {
+      return PixelFormat::R32_UINT;
+   }
    if( formatString == "R16_UNORM" )
    {
       return PixelFormat::R16_UNORM;
+   }
+   if( formatString == "R8_UNORM" )
+   {
+      return PixelFormat::R8_UNORM;
    }
    if( formatString == "RGBA8_UNORM" )
    {
@@ -253,6 +282,52 @@ static ImageType StringToTextureType( const std::string& formatString )
 
    CYD_ASSERT( !"Materials: Could not recognize string as a texture type" );
    return ImageType::TEXTURE_2D;
+}
+
+static MaterialCache::TextureSlot StringToTextureSlot( const std::string& slotString )
+{
+   if( slotString == "ALBEDO" || slotString == "DIFFUSE" )
+   {
+      return MaterialCache::TextureSlot::ALBEDO;
+   }
+   if( slotString == "NORMAL" )
+   {
+      return MaterialCache::TextureSlot::NORMAL;
+   }
+   if( slotString == "METALNESS" )
+   {
+      return MaterialCache::TextureSlot::METALNESS;
+   }
+   if( slotString == "ROUGHNESS" || slotString == "GLOSSINESS" )
+   {
+      return MaterialCache::TextureSlot::ROUGHNESS;
+   }
+   if( slotString == "AMBIENT_OCCLUSION" )
+   {
+      return MaterialCache::TextureSlot::AMBIENT_OCCLUSION;
+   }
+   if( slotString == "DISPLACEMENT" )
+   {
+      return MaterialCache::TextureSlot::DISPLACEMENT;
+   }
+
+   CYD_ASSERT( !"Materials: Could not recognize string as a texture slot" );
+   return MaterialCache::TextureSlot::ALBEDO;
+}
+
+static MaterialCache::TextureFallback StringToTextureFallback( const std::string& fallbackString )
+{
+   if( fallbackString == "BLACK" )
+   {
+      return MaterialCache::TextureFallback::BLACK;
+   }
+   if( fallbackString == "WHITE" )
+   {
+      return MaterialCache::TextureFallback::WHITE;
+   }
+
+   CYD_ASSERT( !"Materials: Could not recognize string as a texture fallback" );
+   return MaterialCache::TextureFallback::BLACK;
 }
 
 void MaterialCache::_initializeStaticMaterials()
@@ -295,11 +370,15 @@ void MaterialCache::_initializeStaticMaterials()
       const auto& texturesIt = materialJson.find( "TEXTURES" );
       if( texturesIt != materialJson.end() )
       {
-         uint32_t index = 0;
          for( const auto& texture : *texturesIt )
          {
-            std::string path   = "";
-            const auto& pathIt = texture.find( "PATH" );
+            const TextureSlot slot     = StringToTextureSlot( texture["SLOT"] );
+            TextureEntry& textureEntry = material->textures[slot];
+
+            std::string path       = "";
+            const auto& pathIt     = texture.find( "PATH" );
+            const auto& fallbackIt = texture.find( "FALLBACK" );
+
             if( pathIt != texture.end() )
             {
                path = std::string( MATERIAL_PATH );
@@ -309,7 +388,12 @@ void MaterialCache::_initializeStaticMaterials()
                material->needsLoadFromStorage = true;
             }
 
-            TextureEntry& textureEntry        = material->textures[index];
+            if( fallbackIt != texture.end() )
+            {
+               textureEntry.fallback    = StringToTextureFallback( *fallbackIt );
+               textureEntry.useFallback = true;
+            }
+
             textureEntry.path                 = path;
             textureEntry.desc.format          = StringToPixelFormat( texture["FORMAT"] );
             textureEntry.desc.type            = StringToTextureType( texture["TYPE"] );
@@ -321,8 +405,6 @@ void MaterialCache::_initializeStaticMaterials()
             {
                textureEntry.desc.usage |= ImageUsage::TRANSFER_SRC;
             }
-
-            index++;
          }
       }
 

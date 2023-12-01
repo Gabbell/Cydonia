@@ -3,7 +3,6 @@
 #include <Common/Assert.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/Vertex.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/Utility/MeshGeneration.h>
@@ -24,43 +23,6 @@ MeshCache::MeshCache( EMP::ThreadPool& threadPool ) : m_threadPool( threadPool )
    // Create default vertex layout
    s_defaultLayout.addAttribute( VertexLayout::Attribute::POSITION, PixelFormat::RGB32F );
    s_defaultLayout.addAttribute( VertexLayout::Attribute::TEXCOORD, PixelFormat::RGB32F );
-
-   // Initialize default meshes
-   _initDefaultMeshes();
-}
-
-void MeshCache::_initDefaultMeshes()
-{
-   CmdListHandle cmdList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Init Default Meshes" );
-
-   // #if CYD_DEBUG
-   MeshIndex sphereMeshIdx = m_meshes.insertObject();
-   MeshIndex gridMeshIdx   = m_meshes.insertObject();
-
-   Mesh* sphereMesh = m_meshes[sphereMeshIdx];
-   Mesh* gridMesh   = m_meshes[gridMeshIdx];
-   CYD_ASSERT( sphereMesh );
-   CYD_ASSERT( gridMesh );
-
-   sphereMesh->vertices.setLayout( s_defaultLayout );
-   gridMesh->vertices.setLayout( s_defaultLayout );
-
-   MeshGeneration::Icosphere( sphereMesh->vertices, sphereMesh->indices, 2 );
-   MeshGeneration::PatchGrid( gridMesh->vertices, gridMesh->indices, 128, 16 );
-
-   sphereMesh->currentState = MeshCache::State::LOADED_TO_RAM;
-   gridMesh->currentState   = MeshCache::State::LOADED_TO_RAM;
-
-   _loadToVRAM( cmdList, *sphereMesh );
-   _loadToVRAM( cmdList, *gridMesh );
-
-   m_meshNames["DEBUG_SPHERE"] = sphereMeshIdx;
-   m_meshNames["GRID"]         = gridMeshIdx;
-   // #endif
-
-   GRIS::SubmitCommandList( cmdList );
-   GRIS::WaitOnCommandList( cmdList );
-   GRIS::DestroyCommandList( cmdList );
 }
 
 MeshCache::Mesh::~Mesh()
@@ -107,7 +69,15 @@ void MeshCache::_loadToRAM( Mesh& mesh )
 
    mesh.currentState = State::LOADING_TO_RAM;
 
-   GraphicsIO::LoadMesh( mesh.path, mesh.vertices, mesh.indices );
+   if( mesh.generator )
+   {
+      mesh.generator();
+   }
+   else
+   {
+      CYD_ASSERT( !mesh.path.empty() && "MeshCache: Mesh to load did not have a path" );
+      GraphicsIO::LoadMesh( mesh.path, mesh.vertexList, mesh.indices );
+   }
 
    mesh.currentState = State::LOADED_TO_RAM;
 }
@@ -120,16 +90,16 @@ void MeshCache::_loadToVRAM( CmdListHandle cmdList, Mesh& mesh )
 
    mesh.currentState = State::LOADING_TO_VRAM;
 
-   mesh.vertexBuffer = GRIS::CreateVertexBuffer( mesh.vertices.getSize(), mesh.path );
+   mesh.vertexBuffer = GRIS::CreateVertexBuffer( mesh.vertexList.getSize(), mesh.path );
    mesh.indexBuffer =
        GRIS::CreateIndexBuffer( mesh.indices.size() * sizeof( uint32_t ), mesh.path );
 
-   GRIS::UploadToVertexBuffer( cmdList, mesh.vertexBuffer, mesh.vertices );
+   GRIS::UploadToVertexBuffer( cmdList, mesh.vertexBuffer, mesh.vertexList );
 
    UploadToBufferInfo info = { 0, sizeof( uint32_t ) * mesh.indices.size() };
    GRIS::UploadToIndexBuffer( cmdList, mesh.indexBuffer, mesh.indices.data(), info );
 
-   mesh.vertexCount = mesh.vertices.getVertexCount();
+   mesh.vertexCount = mesh.vertexList.getVertexCount();
    mesh.indexCount  = static_cast<uint32_t>( mesh.indices.size() );
 
    mesh.currentState = State::LOADED_TO_VRAM;
@@ -173,7 +143,7 @@ MeshCache::State MeshCache::progressLoad( CmdListHandle cmdList, MeshIndex meshI
    if( mesh.currentState == State::LOADED_TO_VRAM )
    {
       // Make sure we're freeing RAM
-      mesh.vertices.freeList();
+      mesh.vertexList.freeList();
       mesh.indices.clear();
       mesh.indices.shrink_to_fit();
    }

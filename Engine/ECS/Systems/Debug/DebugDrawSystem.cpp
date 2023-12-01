@@ -66,7 +66,14 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
       {
          case DebugDrawComponent::Type::SPHERE:
          {
+            const MeshIndex sphereMesh = m_meshes.findMesh( "DEBUG_SPHERE" );
+            if( sphereMesh == INVALID_MESH_IDX )
+            {
+               continue;
+            }
+
             const DebugDrawComponent::SphereParams& sphere = debug.params.sphere;
+            const MeshCache::DrawInfo drawInfo             = m_meshes.getDrawInfo( sphereMesh );
 
             modelMatrix = Transform::GetModelMatrix(
                 glm::vec3( sphere.radius ), glm::quat(), transform.position );
@@ -76,9 +83,6 @@ void DebugDrawSystem::tick( double /*deltaS*/ )
                 cmdList, PipelineStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
 
             GRIS::BindUniformBuffer( cmdList, scene.debugParamsBuffer, 1, 0 );
-
-            const MeshIndex sphereMesh         = m_meshes.findMesh( "DEBUG_SPHERE" );
-            const MeshCache::DrawInfo drawInfo = m_meshes.getDrawInfo( sphereMesh );
 
             m_meshes.bind( cmdList, sphereMesh );
             GRIS::DrawIndexed( cmdList, drawInfo.indexCount );

@@ -262,7 +262,7 @@ void DrawTransformComponentMenu( CmdListHandle /*cmdList*/, const TransformCompo
    // Hello darkness, my old friend
    TransformComponent& notConst = const_cast<TransformComponent&>( transform );
 
-   ImGui::InputFloat3( "Position (X, Y, Z)", glm::value_ptr( notConst.position ) );
+   ImGui::SliderFloat3( "Position (X, Y, Z)", glm::value_ptr( notConst.position ), -100.0f, 100.0f );
    ImGui::SliderFloat3( "Scale (X, Y, Z)", glm::value_ptr( notConst.scaling ), 0.0f, 100000.0f );
 
    glm::vec3 eulerAngles = glm::eulerAngles( transform.rotation );  // pitch, yaw, roll

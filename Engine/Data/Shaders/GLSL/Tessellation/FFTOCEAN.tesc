@@ -12,7 +12,6 @@ layout( push_constant ) uniform PushConstant { mat4 model; };
 layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
 layout( set = 0, binding = 2 ) uniform INSTANCES { InstancingData instances[MAX_INSTANCES]; };
 layout( set = 0, binding = 3 ) uniform TESSELATION { TessellationParams params; };
-
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 // Inputs & Outputs (Interpolators)

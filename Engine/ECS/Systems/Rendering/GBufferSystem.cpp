@@ -87,8 +87,7 @@ void GBufferSystem::tick( double /*deltaS*/ )
          continue;
       }
 
-      if( renderable.pipelineIdx == INVALID_PIPELINE_IDX || mesh.meshIdx == INVALID_MESH_IDX ||
-          material.materialIdx == INVALID_MATERIAL_IDX )
+      if( renderable.pipelineIdx == INVALID_PIPELINE_IDX || mesh.meshIdx == INVALID_MESH_IDX )
       {
          continue;
       }
@@ -152,8 +151,7 @@ void GBufferSystem::tick( double /*deltaS*/ )
       if( renderable.isInstanced )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
-         GRIS::NamedBufferBinding(
-             cmdList, renderable.instancesBuffer, "InstancesData", *curPipInfo );
+         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "Instances", *curPipInfo );
       }
 
       if( renderable.isTessellated )

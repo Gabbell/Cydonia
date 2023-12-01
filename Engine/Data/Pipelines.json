@@ -95,10 +95,30 @@
           "TYPE": "UNIFORM",
           "STAGES": [
             "TESS_CONTROL",
-            "TESS_EVAL"
+            "TESS_EVAL",
+            "FRAGMENT"
           ],
           "SET": 0,
           "BINDING": 0
+        },
+        {
+          "NAME": "Lights",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "Instances",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "TESS_CONTROL",
+            "TESS_EVAL"
+          ],
+          "SET": 0,
+          "BINDING": 2
         },
         {
           "NAME": "TessellationParams",
@@ -107,7 +127,16 @@
             "TESS_CONTROL"
           ],
           "SET": 0,
-          "BINDING": 1
+          "BINDING": 3
+        },
+        {
+          "NAME": "ShadowMap",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 4
         },
         {
           "NAME": "HeightMap",
@@ -119,15 +148,6 @@
           ],
           "SET": 1,
           "BINDING": 5
-        },
-        {
-          "NAME": "ShadowMap",
-          "TYPE": "SAMPLER",
-          "STAGES": [
-            "FRAGMENT"
-          ],
-          "SET": 0,
-          "BINDING": 2
         }
       ]
     },
@@ -185,13 +205,23 @@
           "BINDING": 0
         },
         {
+          "NAME": "Instances",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "TESS_CONTROL",
+            "TESS_EVAL"
+          ],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
           "NAME": "TessellationParams",
           "TYPE": "UNIFORM",
           "STAGES": [
             "TESS_CONTROL"
           ],
           "SET": 0,
-          "BINDING": 1
+          "BINDING": 3
         },
         {
           "NAME": "HeightMap",
@@ -539,7 +569,8 @@
           "NAME": "Views",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "VERTEX"
+            "VERTEX",
+            "FRAGMENT"
           ],
           "SET": 0,
           "BINDING": 0
@@ -597,6 +628,15 @@
           ],
           "SET": 1,
           "BINDING": 4
+        },
+        {
+          "NAME": "Height",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 1,
+          "BINDING": 5
         }
       ]
     },

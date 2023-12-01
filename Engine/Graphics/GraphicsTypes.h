@@ -119,6 +119,7 @@ enum class PixelFormat : uint8_t
    R32F,
    R8_UNORM,
    R16_UNORM,
+   R32_UINT,
    D32_SFLOAT
 };
 

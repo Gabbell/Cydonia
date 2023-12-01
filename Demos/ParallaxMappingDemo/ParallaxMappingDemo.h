@@ -22,16 +22,16 @@ class MaterialCache;
 // Definition
 // ================================================================================================
 /*
-This Vulkan sandbox is used as a template to experiment
+Demo to show off parallax occlusion mapping (POM)
 */
 namespace CYD
 {
-class Sandbox final : public Application
+class ParallaxMappingDemo final : public Application
 {
   public:
-   Sandbox( uint32_t width, uint32_t height, const char* title );
-   NON_COPIABLE( Sandbox );
-   ~Sandbox() override;
+   ParallaxMappingDemo( uint32_t width, uint32_t height, const char* title );
+   NON_COPIABLE( ParallaxMappingDemo );
+   ~ParallaxMappingDemo() override;
 
   protected:
    void preLoop() override;

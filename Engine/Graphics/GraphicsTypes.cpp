@@ -28,6 +28,7 @@ uint32_t GetPixelSizeInBytes( PixelFormat format )
       case PixelFormat::BGRA8_UNORM:
       case PixelFormat::RGBA8_UNORM:
       case PixelFormat::RGBA8_SRGB:
+      case PixelFormat::R32_UINT:
       case PixelFormat::R32F:
       case PixelFormat::D32_SFLOAT:
          return 4;
@@ -51,6 +52,7 @@ uint32_t GetChannelsCount( PixelFormat format )
    {
       case PixelFormat::R8_UNORM:
       case PixelFormat::R16_UNORM:
+      case PixelFormat::R32_UINT:
       case PixelFormat::R32F:
       case PixelFormat::D32_SFLOAT:
          return 1;

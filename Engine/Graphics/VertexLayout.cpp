@@ -4,6 +4,11 @@
 
 namespace CYD
 {
+void InitializeVertexLayouts()
+{
+   //
+}
+
 uint32_t VertexLayout::getLocationOffset( Attribute type ) const
 {
    for( const auto& attribute : m_attributes )
@@ -14,7 +19,7 @@ uint32_t VertexLayout::getLocationOffset( Attribute type ) const
       }
    }
 
-   return 0;
+   return INVALID_LOCATION_OFFSET;
 }
 
 void VertexLayout::addAttribute( Attribute type, PixelFormat vecFormat )

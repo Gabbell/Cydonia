@@ -1,5 +1,4 @@
 #pragma once
-#pragma once
 
 #include <Common/Include.h>
 
@@ -50,55 +49,6 @@ class Vertex
    COPIABLE( Vertex );
 };
 
-template <typename... Attributes>
-class VertexData final : public Vertex
-{
-  public:
-   VertexData() = default;
-   COPIABLE( VertexData );
-   virtual ~VertexData() = default;
-
-   template <typename Attribute>
-   const auto& getAttribute() const
-   {
-      return std::get<Attribute>( m_attributes ).data;
-   }
-
-   template <typename Attribute, typename Data>
-   void setAttribute( const Data& data )
-   {
-      std::get<Attribute>( m_attributes ).data = data;
-   }
-
-   bool operator==( const VertexData& other ) const
-   {
-      return _attributesEqual<0>( m_attributes, other.m_attributes );
-   }
-
-  private:
-   template <size_t INDEX>
-   bool _attributesEqual(
-       const std::tuple<Attributes...>& tup,
-       const std::tuple<Attributes...>& otherTup ) const
-   {
-      if constexpr( INDEX == sizeof...( Attributes ) )
-      {
-         return true;
-      }
-      else
-      {
-         return std::get<INDEX>( tup ).data == std::get<INDEX>( otherTup ).data &&
-                _attributesEqual<INDEX + 1>( tup, otherTup );
-      }
-   }
-
-   std::tuple<Attributes...> m_attributes;
-};
-
-using Vertex_PN   = VertexData<Vertex::Position, Vertex::Normal>;
-using Vertex_PUNT = VertexData<Vertex::Position, Vertex::Texcoord, Vertex::Normal, Vertex::Tangent>;
-using Vertex_PUNC = VertexData<Vertex::Position, Vertex::Texcoord, Vertex::Normal, Vertex::Color>;
-
 class VertexList
 {
   public:
@@ -134,13 +84,3 @@ class VertexList
    uint32_t m_vertexCount = 0;
 };
 }
-
-template <typename... Attributes>
-struct std::hash<CYD::VertexData<Attributes...>>
-{
-   size_t operator()( const CYD::VertexData<Attributes...>& vertex ) const noexcept
-   {
-      size_t seed = 0;
-      return seed;
-   }
-};

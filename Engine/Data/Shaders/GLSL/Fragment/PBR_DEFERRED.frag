@@ -22,7 +22,7 @@ void main()
 {
    const vec3 albedo = texture( albedo, inUV ).rgb;
    const vec3 normal = texture( normals, inUV ).xyz;
-   const vec3 pbr    = texture( pbr, inUV ).rgb;
+   const vec4 pbr    = texture( pbr, inUV ).rgba;
    const vec4 shadow = texture( shadowMask, inUV );
    const float depth = texture( depth, inUV ).r;
 
@@ -78,7 +78,9 @@ void main()
    }
 
    // Add made-up ambient contribution
-   totalRadiance += vec3( 0.03 ) * albedo;
+   totalRadiance += vec3( 0.05 ) * albedo * ao;
+
+   totalRadiance = totalRadiance / (totalRadiance + vec3(1.0));
 
    outColor = vec4( totalRadiance, 1.0 );
 }

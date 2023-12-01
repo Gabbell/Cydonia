@@ -50,7 +50,9 @@ class Swapchain final
    bool isReady() const { return m_ready; }
 
    // For render pass begin info
-   const VkExtent2D& getVKExtent() const { return *m_extent; }
+   const VkExtent2D& getVKExtent() const { return m_extent; }
+   uint32_t getWidth() const { return m_extent.width; }
+   uint32_t getHeight() const { return m_extent.height; }
 
    const RenderPassInfo& getRenderPass() const { return m_renderPasses[m_shouldClear ? 0 : 1]; }
 
@@ -64,7 +66,7 @@ class Swapchain final
    VkImageView getColorVKImageView() const { return m_colorImageViews[m_currentFrame]; }
    CYD::Access getColorVKImageAccess() const { return m_colorImageAccess[m_currentFrame]; }
 
-   const VkSurfaceFormatKHR& getFormat() const noexcept { return *m_surfaceFormat; }
+   const CYD::PixelFormat getPixelFormat() const noexcept { return m_pixelFormat; }
 
    uint32_t getImageCount() const { return m_imageCount; }
    uint32_t getCurrentFrame() const { return m_currentFrame; }
@@ -92,6 +94,8 @@ class Swapchain final
    uint32_t m_imageCount = 0;
    uint32_t m_imageIndex = 0;
 
+   CYD::PixelFormat m_pixelFormat;
+
    std::vector<VkImage> m_colorImages;
    std::vector<VkImageView> m_colorImageViews;
    std::vector<CYD::Access> m_colorImageAccess;
@@ -111,7 +115,7 @@ class Swapchain final
 
    // Swapchain Properties
    VkPresentModeKHR m_presentMode;                       // Presentation mode
-   std::unique_ptr<VkSurfaceFormatKHR> m_surfaceFormat;  // Swapchain image format
-   std::unique_ptr<VkExtent2D> m_extent;                 // Actual swapchain extent
+   VkSurfaceFormatKHR m_surfaceFormat;  // Swapchain image format
+   VkExtent2D m_extent;                 // Actual swapchain extent
 };
 }

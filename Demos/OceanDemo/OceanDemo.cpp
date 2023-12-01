@@ -113,6 +113,7 @@ void OceanDemo::preLoop()
        sun, "SUN", -3600.0f, 3600.0f, -3600.0f, 3600.0f, -5000.0f, 5000.0f );
 
    // Ocean
+   // =============================================================================================
    RenderableComponent::Description oceanRenderableDesc;
    oceanRenderableDesc.pipelineName      = "OCEAN";
    oceanRenderableDesc.type              = RenderableComponent::Type::FORWARD;
@@ -127,16 +128,29 @@ void OceanDemo::preLoop()
    oceanDesc.horizontalScale     = 8.0f;
    oceanDesc.verticalScale       = 12.0f;
 
+   VertexLayout PUVertexLayout;
+   PUVertexLayout.addAttribute( VertexLayout::Attribute::POSITION, PixelFormat::RGB32F );
+   PUVertexLayout.addAttribute( VertexLayout::Attribute::TEXCOORD, PixelFormat::RGB32F );
+
+   // Generate mesh for a singular ocean tile
+   m_meshes->enqueueMesh(
+       "OCEAN_TILE",
+       PUVertexLayout,
+       MeshGeneration::PatchGrid,
+       128 /*scale*/,
+       16 /*vertex resolution*/ );
+
    const EntityHandle ocean = m_ecs->createEntity( "Ocean" );
    m_ecs->assign<RenderableComponent>( ocean, oceanRenderableDesc );
    m_ecs->assign<TransformComponent>( ocean, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 50.0f ) );
-   m_ecs->assign<MeshComponent>( ocean, "GRID" );
+   m_ecs->assign<MeshComponent>( ocean, "OCEAN_TILE" );
    m_ecs->assign<MaterialComponent>( ocean, "OCEAN" );
    m_ecs->assign<TessellatedComponent>( ocean, 0.25f, 1.0f );
    m_ecs->assign<InstancedComponent>( ocean, InstancedComponent::Type::TILED, 64, 64 );
    m_ecs->assign<FFTOceanComponent>( ocean, oceanDesc );
 
    // Atmosphere
+   // =============================================================================================
    AtmosphereComponent::Description atmosDesc;
    atmosDesc.mieScatteringCoefficient      = glm::vec3( 0.576f, 0.576f, 0.576f );
    atmosDesc.mieAbsorptionCoefficient      = glm::vec3( 0.576f, 0.576f, 0.576f );

@@ -41,7 +41,7 @@ void GBuffer::resize( uint32_t width, uint32_t height )
 
    // PBR
    texDesc.name   = "GBuffer PBR";
-   texDesc.format = PixelFormat::BGRA8_UNORM;
+   texDesc.format = PixelFormat::RGBA32F;
    texDesc.usage  = ImageUsage::COLOR | ImageUsage::SAMPLED;
 
    m_textures[PBR] = GRIS::CreateTexture( texDesc );

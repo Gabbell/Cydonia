@@ -44,6 +44,13 @@ class MaterialCache final
       COUNT
    };
 
+   enum TextureFallback
+   {
+      PINK,
+      BLACK,
+      WHITE
+   };
+
    enum class State
    {
       UNINITIALIZED,
@@ -72,11 +79,15 @@ class MaterialCache final
    struct TextureEntry
    {
       TextureDescription desc;
+      TextureSlot slot;
+      TextureFallback fallback;
 
       std::string path;
 
       void* imageData = nullptr;
       TextureHandle texHandle;
+
+      bool useFallback = false;  // Formally use the fallback as the texture itself
    };
 
    struct Material

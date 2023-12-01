@@ -32,13 +32,8 @@ void MaterialLoaderSystem::tick( double /*deltaS*/ )
       }
 
       const MaterialCache::State assetState = m_materialCache.progressLoad( cmdList, materialIdx );
-      if( assetState == MaterialCache::State::LOADED_TO_VRAM )
-      {
-         materialComponent.materialIdx = materialIdx;
 
-         CYD_ASSERT(
-             materialComponent.materialIdx != INVALID_MATERIAL_IDX && "Could not find material" );
-      }
+      materialComponent.materialIdx = materialIdx;
 
       allLoaded &= ( assetState == MaterialCache::State::LOADED_TO_VRAM );
    }

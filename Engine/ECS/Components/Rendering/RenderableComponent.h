@@ -49,8 +49,8 @@ class RenderableComponent final : public BaseComponent
    BufferHandle instancesBuffer;
    uint32_t instanceCount = 0;
 
-   bool isInstanced   = false;
-   bool isTessellated = false;
-   bool isTransparent = false;
+   bool isInstanced : 1   = false;
+   bool isTessellated : 1 = false;
+   bool isTransparent : 1 = false;
 };
 }

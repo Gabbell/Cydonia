@@ -939,25 +939,66 @@ void CommandBuffer::copyToSwapchain( Texture* sourceTexture, Swapchain& swapchai
    Synchronization::ImageMemory( this, sourceTexture, CYD::Access::TRANSFER_READ );
    swapchain.transitionColorImage( this, CYD::Access::TRANSFER_WRITE );
 
-   VkImageCopy region;
-   region.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-   region.srcSubresource.layerCount     = 1;
-   region.srcSubresource.baseArrayLayer = 0;
-   region.srcSubresource.mipLevel       = 0;
-   region.srcOffset                     = { 0, 0, 0 };
+   if( sourceTexture->getPixelFormat() == swapchain.getPixelFormat() )
+   {
+      // Format matches, we can do a copy
+      VkImageCopy region;
+      region.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+      region.srcSubresource.layerCount     = 1;
+      region.srcSubresource.baseArrayLayer = 0;
+      region.srcSubresource.mipLevel       = 0;
+      region.srcOffset                     = { 0, 0, 0 };
 
-   region.dstSubresource = region.srcSubresource;
-   region.dstOffset      = { 0, 0, 0 };
-   region.extent         = { sourceTexture->getWidth(), sourceTexture->getHeight(), 1 };
+      region.dstSubresource = region.srcSubresource;
+      region.dstOffset      = { 0, 0, 0 };
+      region.extent         = { sourceTexture->getWidth(), sourceTexture->getHeight(), 1 };
 
-   vkCmdCopyImage(
-       m_vkCmdBuffer,
-       sourceTexture->getVKImage(),
-       Synchronization::GetLayoutFromAccess( sourceTexture->getPreviousAccess() ),
-       swapchain.getColorVKImage(),
-       Synchronization::GetLayoutFromAccess( swapchain.getColorVKImageAccess() ),
-       1,
-       &region );
+      vkCmdCopyImage(
+          m_vkCmdBuffer,
+          sourceTexture->getVKImage(),
+          Synchronization::GetLayoutFromAccess( sourceTexture->getPreviousAccess() ),
+          swapchain.getColorVKImage(),
+          Synchronization::GetLayoutFromAccess( swapchain.getColorVKImageAccess() ),
+          1,
+          &region );
+   }
+   else
+   {
+      // Format doesn't match, do a blit
+      CYD_ASSERT_AND_RETURN(
+          sourceTexture->getWidth() == swapchain.getWidth() &&
+              sourceTexture->getHeight() == swapchain.getHeight() &&
+              "CommandBuffer: copyToSwapchain dimensions mismatched, filtering will occur",
+          ; );
+
+      VkImageBlit region;
+      region.srcSubresource.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+      region.srcSubresource.layerCount     = 1;
+      region.srcSubresource.baseArrayLayer = 0;
+      region.srcSubresource.mipLevel       = 0;
+      region.srcOffsets[0]                 = { 0, 0, 0 };
+      region.srcOffsets[1]                 = {
+          static_cast<int32_t>( sourceTexture->getWidth() ),
+          static_cast<int32_t>( sourceTexture->getHeight() ),
+          1 };
+
+      region.dstSubresource = region.srcSubresource;
+      region.dstOffsets[0]  = { 0, 0, 0 };
+      region.dstOffsets[1]  = {
+          static_cast<int32_t>( swapchain.getWidth() ),
+          static_cast<int32_t>( swapchain.getHeight() ),
+          1 };
+
+      vkCmdBlitImage(
+          m_vkCmdBuffer,
+          sourceTexture->getVKImage(),
+          Synchronization::GetLayoutFromAccess( sourceTexture->getPreviousAccess() ),
+          swapchain.getColorVKImage(),
+          Synchronization::GetLayoutFromAccess( swapchain.getColorVKImageAccess() ),
+          1,
+          &region,
+          VK_FILTER_LINEAR );
+   }
 
    swapchain.transitionColorImage( this, CYD::Access::PRESENT );
 }

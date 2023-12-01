@@ -6,6 +6,7 @@ namespace CYD::GRIS::TextureCache
 {
 TextureHandle s_blackTex = {};
 TextureHandle s_whiteTex = {};
+TextureHandle s_pinkTex  = {};
 
 void Initialize()
 {
@@ -22,6 +23,9 @@ void Initialize()
    texDesc.name = "Default White Texture";
    s_whiteTex   = GRIS::CreateTexture( texDesc );
 
+   texDesc.name = "Default Pink Texture";
+   s_pinkTex    = GRIS::CreateTexture( texDesc );
+
    CmdListHandle cmdList = GRIS::CreateCommandList( QueueUsage::TRANSFER, "Initial TextureCache" );
 
    ClearValue clearVal = {};
@@ -29,6 +33,11 @@ void Initialize()
 
    memset( clearVal.color.u32, 0xFFFFFFFF, sizeof( clearVal.color.u32 ) );
    GRIS::ClearTexture( cmdList, s_whiteTex, clearVal );
+
+   clearVal.color.f32[0] = 1.0f;
+   clearVal.color.f32[1] = 0.0f;
+   clearVal.color.f32[2] = 1.0f;
+   GRIS::ClearTexture( cmdList, s_pinkTex, clearVal );
 
    GRIS::SubmitCommandList( cmdList );
    GRIS::WaitOnCommandList( cmdList );
@@ -49,5 +58,10 @@ void BindBlackTexture( CmdListHandle cmdList, uint32_t binding, uint32_t set )
 void BindWhiteTexture( CmdListHandle cmdList, uint32_t binding, uint32_t set )
 {
    GRIS::BindTexture( cmdList, s_whiteTex, binding, set );
+}
+
+void BindPinkTexture( CmdListHandle cmdList, uint32_t binding, uint32_t set )
+{
+   GRIS::BindTexture( cmdList, s_pinkTex, binding, set );
 }
 }

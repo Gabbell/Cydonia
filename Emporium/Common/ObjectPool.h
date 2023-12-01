@@ -1,5 +1,10 @@
 #pragma once
 
+#include <Common/Assert.h>
+#include <Common/Include.h>
+
+#include <array>
+
 namespace EMP
 {
 template <class OBJECT_TYPE, size_t MAX_SIZE = 1024 * 128 /*128kB by default*/>
@@ -31,7 +36,7 @@ class ObjectPool
          }
       }
 
-      assert( !"ObjectPool: Ran out of slots" );
+      CYD_ASSERT( !"ObjectPool: Ran out of slots" );
       return INVALID_POOL_IDX;
    }
 

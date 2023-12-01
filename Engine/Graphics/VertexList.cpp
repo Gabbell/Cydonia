@@ -1,4 +1,4 @@
-#include <Graphics/Vertex.h>
+#include <Graphics/VertexList.h>
 
 #include <Common/Assert.h>
 

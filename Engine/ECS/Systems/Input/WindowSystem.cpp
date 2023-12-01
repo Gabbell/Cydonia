@@ -80,7 +80,7 @@ void WindowSystem::tick( double /*deltaS*/ )
 
       // Main Color
       TextureDescription colorDesc;
-      colorDesc.format = PixelFormat::BGRA8_UNORM;
+      colorDesc.format = PixelFormat::RGBA32F;
       colorDesc.width  = newWidth;
       colorDesc.height = newHeight;
       colorDesc.usage =

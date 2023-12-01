@@ -22,7 +22,7 @@ class MaterialCache;
 // Definition
 // ================================================================================================
 /*
-Ocean demo to show off physically-based rendering
+Demo to show off physically-based rendering
 */
 namespace CYD
 {

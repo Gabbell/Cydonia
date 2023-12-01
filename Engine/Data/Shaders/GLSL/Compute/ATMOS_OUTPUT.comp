@@ -60,9 +60,8 @@ float GetHeightFogAmount( AtmosphereParameters params, vec3 worldPos, vec3 viewP
    // We would need 3D noise to make the rolling effect convincingly volumetric, but 2D is good
    // enough for far distances
    fogAmount *= SimplexFBM( worldPos.xz + ( params.time * 35.0 ), noiseParams );
-   fogAmount = clamp( fogAmount, 0.0, 1.0 );
 
-   return fogAmount * params.heightFog.z;
+   return clamp(fogAmount * params.heightFog.z, 0.0, 1.0);
 }
 
 // ================================================================================================

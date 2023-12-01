@@ -3,7 +3,7 @@
 
 #include "../LIGHTING.h"
 
-layout( set = 0, binding = 2 ) uniform sampler2DShadow shadowMap;
+layout( set = 0, binding = 4 ) uniform sampler2DShadow shadowMap;
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 layout( location = 0 ) in vec2 inUV;
@@ -19,19 +19,23 @@ layout( location = 4 ) out float outDepth;
 // This should be done only once and baked
 vec3 getNormals( vec2 uv )
 {
-   const vec2 texelSize = 1.0 / textureSize( heightMap, 0 );
-   const ivec3 off      = ivec3( -1, 0, 1 );
-   const vec3 size      = vec3( 2.0 * texelSize.x, 2.0 * texelSize.y, 0.0 );
+   const ivec3 off = ivec3( -1, 0, 1 );
 
-   // Uses 4 samples to create one normal, effectively "blurring" the normals
-   // I don't think these are scaled properly, noon looks weird
-   float hL = textureOffset( heightMap, uv, off.xy ).r;
-   float hR = textureOffset( heightMap, uv, off.zy ).r;
-   float hU = textureOffset( heightMap, uv, off.yx ).r;
-   float hD = textureOffset( heightMap, uv, off.yz ).r;
+   const float hO = texture( heightMap, uv ).r*500.0;
+   const float hL = textureOffset( heightMap, uv, off.xy ).r*500.0;
+   const float hR = textureOffset( heightMap, uv, off.zy ).r*500.0;
+   const float hT = textureOffset( heightMap, uv, off.yx ).r*500.0;
+   const float hB = textureOffset( heightMap, uv, off.yz ).r*500.0;
 
-   vec3 va = vec3( size.x, hR - hL, size.z );
-   vec3 vb = vec3( size.z, hU - hD, -size.y );
+   const vec3 left   = vec3( -1.0, hL, 0.0 ) - hO;
+   const vec3 right  = vec3( 1.0, hR, 0.0 ) - hO;
+   const vec3 top    = vec3( 0.0, hT, -1.0 ) - hO;
+   const vec3 bottom = vec3( 0.0, hB, 1.0 ) - hO;
+
+   const vec3 topRight    = cross( right, top );
+   const vec3 topLeft     = cross( top, left );
+   const vec3 bottomLeft  = cross( left, bottom );
+   const vec3 bottomRight = cross( bottom, right );
 
    /*
    // 3 samples variant
@@ -43,8 +47,7 @@ vec3 getNormals( vec2 uv )
    vec3 vb = (vec3(size.y, hU - hO, -size.x));
    */
 
-   vec3 up = vec3( 0.0, 1.0, 0.0 );
-   return normalize( up + normalize( cross( va, vb ) ) );
+   return normalize( topRight + topLeft + bottomLeft + bottomRight );
 }
 
 // =================================================================================================
@@ -57,7 +60,7 @@ void main()
    vec3 unlitColor   = rockColor;
    const vec3 normal = getNormals( inUV );
    const vec3 up     = vec3( 0.0, 1.0, 0.0 );
-   if( dot( up, normal ) > 0.73 )
+   if( dot( up, normal ) > 0.2 )
    {
       unlitColor = snowColor;
    }

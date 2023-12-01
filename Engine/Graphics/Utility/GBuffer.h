@@ -18,7 +18,7 @@ class GBuffer : public Framebuffer
    {
       ALBEDO,
       NORMAL,
-      PBR,  // R = Roughess, Y = Metalness, Z = AO, W = Unused
+      PBR,  // R = Roughness, Y = Metalness, Z = AO, W = Unused
       SHADOW,
       DEPTH,
       COUNT = DEPTH
