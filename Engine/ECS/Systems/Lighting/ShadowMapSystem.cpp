@@ -110,7 +110,8 @@ void ShadowMapSystem::tick( double /*deltaS*/ )
       // ==========================================================================================
       if( prevMaterial != material.materialIdx )
       {
-         m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
+         m_materials.bindSlot(
+             cmdList, material.materialIdx, MaterialCache::TextureSlot::DISPLACEMENT, 1 /*set*/ );
 
          prevMaterial = material.materialIdx;
       }

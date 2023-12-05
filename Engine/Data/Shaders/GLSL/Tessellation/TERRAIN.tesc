@@ -20,10 +20,10 @@ layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 layout( vertices = VERTICES_PER_PATCH ) out;
 
-layout( location = 0 ) in vec2 inUV[];
+layout( location = 0 ) in vec3 inUV[];
 layout( location = 1 ) flat in uint inInstanceIndex[];
 
-layout( location = 0 ) out vec2 outUV[VERTICES_PER_PATCH];
+layout( location = 0 ) out vec3 outUV[VERTICES_PER_PATCH];
 layout( location = 1 ) flat out uint outInstanceIndex[VERTICES_PER_PATCH];
 
 // Functions
@@ -112,7 +112,7 @@ void main()
       const mat4 instanceModelMat = model * instances[instanceIndex].modelMat;
 
       // Culling is wrong at steep angles
-      if( !frustumCheck( instanceModelMat ) )
+      if( false /*!frustumCheck( instanceModelMat )*/ )
       {
          gl_TessLevelInner[0] = 0.0;
          gl_TessLevelInner[1] = 0.0;

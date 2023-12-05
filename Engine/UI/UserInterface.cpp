@@ -7,7 +7,7 @@
 #include <ECS/Components/Transforms/TransformComponent.h>
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/TessellatedComponent.h>
-#include <ECS/Components/Procedural/ProceduralDisplacementComponent.h>
+#include <ECS/Components/Procedural/DisplacementComponent.h>
 #include <ECS/Components/Procedural/AtmosphereComponent.h>
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 #include <ECS/Components/Procedural/FogComponent.h>
@@ -20,7 +20,6 @@
 namespace CYD::UI
 {
 static ImTextureID s_oceanDispTexture = nullptr;
-static ImTextureID s_noiseTexture     = nullptr;
 
 static ImTextureID s_shadowMapTexture  = nullptr;
 static ImTextureID s_albedoTexture     = nullptr;
@@ -28,9 +27,9 @@ static ImTextureID s_normalsTexture    = nullptr;
 static ImTextureID s_pbrTexture        = nullptr;
 static ImTextureID s_shadowMaskTexture = nullptr;
 
-static ImTextureID s_transmittanceLUTTexture     = nullptr;
-static ImTextureID s_multiScatteringLUTTexture   = nullptr;
-static ImTextureID s_skyViewLUTTexture           = nullptr;
+static ImTextureID s_transmittanceLUTTexture   = nullptr;
+static ImTextureID s_multiScatteringLUTTexture = nullptr;
+static ImTextureID s_skyViewLUTTexture         = nullptr;
 
 void Initialize() { GRIS::InitializeUIBackend(); }
 
@@ -166,7 +165,8 @@ void DrawECSWindow( CmdListHandle cmdList, const EntityManager& entityManager )
          for( const auto& componentsPair : componentsMap )
          {
             if( ImGui::TreeNodeEx(
-                    GetComponentName( componentsPair.first ).data(), ImGuiTreeNodeFlags_SpanAvailWidth ) )
+                    GetComponentName( componentsPair.first ).data(),
+                    ImGuiTreeNodeFlags_SpanAvailWidth ) )
             {
                DrawComponentsMenu( cmdList, componentsPair.first, componentsPair.second );
                ImGui::TreePop();
@@ -197,11 +197,11 @@ void DrawComponentsMenu( CmdListHandle cmdList, ComponentType type, const BaseCo
          DrawRenderableComponentMenu( cmdList, renderable );
          break;
       }
-      case ComponentType::PROCEDURAL_DISPLACEMENT:
+      case ComponentType::DISPLACEMENT:
       {
-         const ProceduralDisplacementComponent& displacement =
-             *static_cast<const ProceduralDisplacementComponent*>( component );
-         DrawProceduralDisplacementComponentMenu( cmdList, displacement );
+         const DisplacementComponent& displacement =
+             *static_cast<const DisplacementComponent*>( component );
+         DrawDisplacementComponentMenu( cmdList, displacement );
          break;
       }
       case ComponentType::ATMOSPHERE:
@@ -262,7 +262,8 @@ void DrawTransformComponentMenu( CmdListHandle /*cmdList*/, const TransformCompo
    // Hello darkness, my old friend
    TransformComponent& notConst = const_cast<TransformComponent&>( transform );
 
-   ImGui::SliderFloat3( "Position (X, Y, Z)", glm::value_ptr( notConst.position ), -100.0f, 100.0f );
+   ImGui::SliderFloat3(
+       "Position (X, Y, Z)", glm::value_ptr( notConst.position ), -100.0f, 100.0f );
    ImGui::SliderFloat3( "Scale (X, Y, Z)", glm::value_ptr( notConst.scaling ), 0.0f, 100000.0f );
 
    glm::vec3 eulerAngles = glm::eulerAngles( transform.rotation );  // pitch, yaw, roll
@@ -274,13 +275,12 @@ void DrawTransformComponentMenu( CmdListHandle /*cmdList*/, const TransformCompo
    notConst.rotation = glm::quat( eulerAngles );
 }
 
-void DrawProceduralDisplacementComponentMenu(
+void DrawDisplacementComponentMenu(
     CmdListHandle cmdList,
-    const ProceduralDisplacementComponent& displacement )
+    const DisplacementComponent& displacement )
 {
    // Hello darkness, my old friend
-   ProceduralDisplacementComponent& notConst =
-       const_cast<ProceduralDisplacementComponent&>( displacement );
+   DisplacementComponent& notConst = const_cast<DisplacementComponent&>( displacement );
 
    ImGui::Value( "Width", displacement.width );
    ImGui::Value( "Height", displacement.height );
@@ -324,18 +324,6 @@ void DrawProceduralDisplacementComponentMenu(
    triggerUpdate |= ImGui::SliderInt( "Octaves", (int*)&displacement.params.octaves, 1, 10 );
 
    notConst.needsUpdate |= triggerUpdate;
-
-   if( s_noiseTexture == nullptr )
-   {
-      s_noiseTexture = GRIS::AddDebugTexture( displacement.texture );
-   }
-
-   ImGui::Text( "Noise Texture" );
-   float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
-   float displayHeight = displayWidth * static_cast<float>( displacement.height ) /
-                         static_cast<float>( displacement.width );
-   const ImVec2 dimensions( displayWidth, displayHeight );
-   ImGui::Image( s_noiseTexture, dimensions );
 }
 
 void DrawAtmosphereComponentMenu( CmdListHandle cmdList, const AtmosphereComponent& atmosphere )

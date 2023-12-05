@@ -139,12 +139,20 @@
           "BINDING": 4
         },
         {
-          "NAME": "HeightMap",
+          "NAME": "NORMALS",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 1,
+          "BINDING": 1
+        },
+        {
+          "NAME": "HEIGHT",
           "TYPE": "SAMPLER",
           "STAGES": [
             "TESS_CONTROL",
-            "TESS_EVAL",
-            "FRAGMENT"
+            "TESS_EVAL"
           ],
           "SET": 1,
           "BINDING": 5
@@ -585,7 +593,7 @@
           "BINDING": 1
         },
         {
-          "NAME": "Albedo",
+          "NAME": "ALBEDO",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -594,7 +602,7 @@
           "BINDING": 0
         },
         {
-          "NAME": "Normals",
+          "NAME": "NORMALS",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -603,7 +611,7 @@
           "BINDING": 1
         },
         {
-          "NAME": "Metalness",
+          "NAME": "METALNESS",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -612,7 +620,7 @@
           "BINDING": 2
         },
         {
-          "NAME": "Roughness",
+          "NAME": "ROUGHNESS",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -621,7 +629,7 @@
           "BINDING": 3
         },
         {
-          "NAME": "AmbientOcclusion",
+          "NAME": "AMBIENTOCCLUSION",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -630,7 +638,7 @@
           "BINDING": 4
         },
         {
-          "NAME": "Height",
+          "NAME": "HEIGHT",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -894,7 +902,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 36
+          "SIZE": 40
         },
         {
           "NAME": "noiseImage",
@@ -918,7 +926,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 36
+          "SIZE": 40
         },
         {
           "NAME": "noiseImage",
@@ -942,7 +950,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 36
+          "SIZE": 40
         },
         {
           "NAME": "noiseImage",
@@ -966,7 +974,7 @@
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 36
+          "SIZE": 40
         },
         {
           "NAME": "noiseImage",
@@ -1359,6 +1367,39 @@
           ],
           "SET": 1,
           "BINDING": 4
+        }
+      ]
+    },
+    {
+      "NAME": "HEIGHT_TO_NORMAL",
+      "TYPE": "COMPUTE",
+      "COMPUTE_SHADER": "HEIGHT_TO_NORMAL_COMP",
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "Scale",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SIZE": 4
+        },
+        {
+          "NAME": "HEIGHT",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "NORMALS",
+          "TYPE": "IMAGE",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 1
         }
       ]
     }

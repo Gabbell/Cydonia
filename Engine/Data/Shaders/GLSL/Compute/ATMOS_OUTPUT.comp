@@ -22,7 +22,8 @@ layout( set = 0, binding = 3 ) uniform sampler3D aerialPerspectiveLUT;
 layout( set = 0, binding = 4, rgba32f ) uniform image2D colorImage;
 layout( set = 0, binding = 5 ) uniform sampler2D depthSampler;
 
-const NoiseParameters noiseParams = { 0.0, 1.0, 0.25, 0.003, 3.00, 1.0, false, false, 3 };
+// Height fog top feathering noise
+const NoiseParameters noiseParams = { 0.0, 1.0, 1.0, 0.25, 0.0004, 3.00, 1.0, false, false, 3 };
 
 vec3 GetSunCircle( AtmosphereParameters params, vec3 rayDir, vec3 sunDir, vec3 viewPosMM )
 {
@@ -53,13 +54,18 @@ float GetHeightFogAmount( AtmosphereParameters params, vec3 worldPos, vec3 viewP
    const float distance = length( camToFrag );
    const vec3 viewDir   = camToFrag / distance;
 
-   float fogAmount = ( params.heightFog.x / params.heightFog.y ) *
+   // Density
+   const float fogDensity = ( params.heightFog.x / params.heightFog.y ) *
                      exp( -viewPos.y * params.heightFog.y ) *
                      ( 1.0 - exp( -distance * viewDir.y * params.heightFog.y ) ) / viewDir.y;
 
-   // We would need 3D noise to make the rolling effect convincingly volumetric, but 2D is good
-   // enough for far distances
-   fogAmount *= SimplexFBM( worldPos.xz + ( params.time * 35.0 ), noiseParams );
+   // We apply a feathering to the less dense parts of the fog.
+   // As our previous calculated density decreases we want to increase the presence of this FBM noise. 
+   // This is not physically based but is a convincing effect to imitate non-constant volumetric fog
+   const float topFeather = SimplexFBM( worldPos.xz + ( params.time * 100.0 ), noiseParams );
+   const float featherFactor = mix(topFeather, 1.0, fogDensity);
+
+   const float fogAmount = fogDensity * featherFactor;
 
    return clamp(fogAmount * params.heightFog.z, 0.0, 1.0);
 }
@@ -137,13 +143,13 @@ void main()
       const vec4 APLookup  = texture( aerialPerspectiveLUT, vec3( uv, w ) );
 
       const vec3 aerialPerspective = nearFade * APLookup.rgb;  // * APLookup.a;
-
       fog = mix( inColor, aerialPerspective, normDepth );
-      if( params.heightFog.z > 0.001 )
+
+      if( params.heightFog.z > 0.0 )
       {
          const float heightFogAmount =
              GetHeightFogAmount( params, worldPos.xyz, viewInfo.viewPos.xyz );
-         fog = mix( fog, aerialPerspective, heightFogAmount );
+         fog = mix( fog, APLookup.rgb, heightFogAmount );
       }
    }
    // Compiling and adjusting luminance

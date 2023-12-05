@@ -4,6 +4,7 @@
 struct NoiseParameters
 {
    float seed;
+   float scale;
    float amplitude;
    float gain;
    float frequency;
@@ -56,7 +57,7 @@ float NoiseFinalize( float noiseValue, NoiseParameters params )
    // Invert the values
    if( params.invert ) noiseValue = 1.0 - noiseValue;
 
-   return noiseValue;
+   return params.scale * noiseValue;
 }
 
 // Description : GLSL 2D simplex noise function

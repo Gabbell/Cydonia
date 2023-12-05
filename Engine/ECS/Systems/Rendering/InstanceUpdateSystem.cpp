@@ -35,22 +35,21 @@ void InstanceUpdateSystem::tick( double /*deltaS*/ )
             const float distance = ( sqrtCount - 1.0f ) * instanced.radius;
             const float diameter = 2.0f * instanced.radius;
 
-            glm::vec3 position = glm::vec3( 0.0f );
-            glm::vec3 scaling  = glm::vec3( 1.0f );
-            glm::quat rotation = glm::quat( 1.0f, 0.0f, 0.0f, 0.0f );
+            glm::vec3 position = transform.position;
+            glm::vec3 scaling  = glm::vec3(1.0f);
+            glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f);
 
             // Creating GPU data
             for( uint32_t instanceIdx = 0; instanceIdx < instanced.count; ++instanceIdx )
             {
-               position.x = -distance + diameter * (instanceIdx % sqrtCount);
-               position.z = -distance + diameter * (instanceIdx / sqrtCount);
+               position.x = -distance + diameter * ( instanceIdx % sqrtCount );
+               position.z = -distance + diameter * ( instanceIdx / sqrtCount );
 
                InstancedComponent::ShaderParams& shaderParams = ubo.emplace_back();
 
-               shaderParams.modelMat =
-                   glm::toMat4( glm::conjugate( rotation ) ) *
-                   glm::scale( glm::mat4( 1.0f ), glm::vec3( 1.0f ) / scaling ) *
-                   glm::translate( glm::mat4( 1.0f ), position );
+               shaderParams.modelMat = glm::toMat4( glm::conjugate( rotation ) ) *
+                                       glm::scale( glm::mat4( 1.0f ), scaling ) *
+                                       glm::translate( glm::mat4( 1.0f ), position );
             }
          }
 

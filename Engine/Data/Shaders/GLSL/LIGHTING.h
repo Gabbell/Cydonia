@@ -60,7 +60,8 @@ float BlinnPhongSpecular( vec3 lightDir, vec3 viewDir, vec3 normal )
 float ShadowPCF( sampler2DShadow shadowMap, vec3 shadowCoords )
 {
    // ShadowCoords are NDC coordinates of the current fragment from the point of view of the light
-   if( shadowCoords.z <= -1.0 || shadowCoords.z >= 1.0 )
+   if( shadowCoords.z <= -1.0 || shadowCoords.z >= 1.0 || shadowCoords.x < 0.0 ||
+       shadowCoords.x > 1.0 || shadowCoords.y < 0.0 || shadowCoords.y > 1.0 )
    {
       return 1.0;
    }
@@ -132,9 +133,9 @@ vec2 POMDown( sampler2D heightMap, vec2 inUV, vec3 TSviewDir, vec3 TSnormal )
    vec2 currentUVOffset       = vec2( 0.0 );
    float currentSampledHeight = textureLod( heightMap, inUV + currentUVOffset, 0.0 ).r;
 
-   vec2 prevUVOffset          = vec2( 0.0 );
-   float prevSampledHeight    = 0.0;
-   
+   vec2 prevUVOffset       = vec2( 0.0 );
+   float prevSampledHeight = 0.0;
+
    int currentSample = 1;
    while( currentSample < numSamples && currentSampledHeight < currentRayHeight )
    {

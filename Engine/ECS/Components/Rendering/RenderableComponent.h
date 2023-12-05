@@ -29,7 +29,7 @@ class RenderableComponent final : public BaseComponent
       std::string_view pipelineName = "";
       Type type                     = Type::UNDEFINED;
       bool isVisible                = true;
-      bool isShadowReceiving        = false;
+      bool isShadowReceiving        = false;  // TODO Unimplemented
       bool isShadowCasting          = false;
       bool useEnvironmentMap        = false;
    };

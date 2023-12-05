@@ -36,7 +36,7 @@ enum class ComponentType : int16_t
 
    // Procedural
    // ==============================================================================================
-   PROCEDURAL_DISPLACEMENT,
+   DISPLACEMENT,
    OCEAN,
    FOG,
    ATMOSPHERE,

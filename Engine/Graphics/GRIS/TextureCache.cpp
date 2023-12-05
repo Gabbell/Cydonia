@@ -48,6 +48,7 @@ void Uninitialize()
 {
    GRIS::DestroyTexture( s_blackTex );
    GRIS::DestroyTexture( s_whiteTex );
+   GRIS::DestroyTexture( s_pinkTex );
 }
 
 void BindBlackTexture( CmdListHandle cmdList, uint32_t binding, uint32_t set )

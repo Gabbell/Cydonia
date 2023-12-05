@@ -15,7 +15,7 @@ std::string_view GetComponentName( ComponentType type )
        "Particles Volume",
        "Instanced",
        "Tessellated",
-       "Procedural Displacement",
+       "Displacement",
        "Ocean",
        "Fog",
        "Atmosphere",

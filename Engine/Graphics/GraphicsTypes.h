@@ -213,7 +213,10 @@ enum class ImageType
 {
    TEXTURE_1D,
    TEXTURE_2D,
-   TEXTURE_3D
+   TEXTURE_2D_ARRAY,
+   TEXTURE_3D,
+   TEXTURE_CUBE,
+   TEXTURE_CUBE_ARRAY
 };
 
 enum class ShaderResourceType

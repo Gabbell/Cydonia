@@ -11,16 +11,16 @@ layout( push_constant ) uniform PushConstant { mat4 model; };
 layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
 layout( set = 0, binding = 2 ) uniform INSTANCES { InstancingData instances[MAX_INSTANCES]; };
 
-layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
+layout( set = 1, binding = 5 ) uniform sampler2DArray heightMap;
 
 // Inputs & Outputs (Interpolators)
 // =================================================================================================
 layout( quads, equal_spacing, cw ) in;
 
-layout( location = 0 ) in vec2 inUV[];
+layout( location = 0 ) in vec3 inUV[];
 layout( location = 1 ) flat in uint inInstanceIndex[];
 
-layout( location = 0 ) out vec2 outUV;
+layout( location = 0 ) out vec3 outUV;
 layout( location = 1 ) out vec3 outWorldPos;
 layout( location = 2 ) out vec3 outShadowCoord;
 
@@ -39,11 +39,14 @@ void main()
    const View lightView = views[1];
 
    // Interpolate UV coordinates
-   vec2 uv1 = mix( inUV[0], inUV[1], gl_TessCoord.x );
-   vec2 uv2 = mix( inUV[3], inUV[2], gl_TessCoord.x );
-   outUV    = mix( uv1, uv2, gl_TessCoord.y );
+   const vec3 uv1 = mix( inUV[0], inUV[1], gl_TessCoord.x );
+   const vec3 uv2 = mix( inUV[3], inUV[2], gl_TessCoord.x );
+   vec3 uv  = mix( uv1, uv2, gl_TessCoord.y ); // Interpolated UV
 
-   const float displacement = texture( heightMap, outUV.xy ).r;
+   const vec2 size = textureSize(heightMap, 0).xy;
+   uv.xy = uv.xy * ((size - 1.0) / size) + (0.5 / size); // Snapped UV
+
+   const float displacement = texture( heightMap, uv).r;
 
    // Interpolate positions
    vec4 pos1 = mix( gl_in[0].gl_Position, gl_in[1].gl_Position, gl_TessCoord.x );
@@ -57,6 +60,7 @@ void main()
    vec4 worldPos               = instanceModelMat * pos;
    gl_Position                 = mainView.proj * mainView.view * worldPos;
 
+   outUV            = uv;
    outWorldPos      = worldPos.xyz;
    vec4 shadowCoord = biasMat * lightView.proj * lightView.view * worldPos;
    outShadowCoord   = shadowCoord.xyz / shadowCoord.w;

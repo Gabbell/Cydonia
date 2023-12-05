@@ -66,6 +66,7 @@ class MaterialCache final
    // Loads, unloads and binds GPU resources
    State progressLoad( CmdListHandle cmdList, MaterialIndex materialIdx );
 
+   void bindSlot( CmdListHandle cmdList, MaterialIndex index, TextureSlot slot, uint8_t set ) const;
    void bind( CmdListHandle cmdList, MaterialIndex index, uint8_t set ) const;
    void updateMaterial( MaterialIndex materialIdx, TextureSlot slot, TextureHandle texHandle );
 

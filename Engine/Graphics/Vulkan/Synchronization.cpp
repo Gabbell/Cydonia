@@ -88,7 +88,7 @@ void ImageMemory(
    barrier.subresourceRange.baseMipLevel   = mipLevel;
    barrier.subresourceRange.levelCount     = 1;
    barrier.subresourceRange.baseArrayLayer = 0;
-   barrier.subresourceRange.layerCount     = texture->getDepth();
+   barrier.subresourceRange.layerCount     = texture->getLayerCount();
 
    thsvsCmdPipelineBarrier( cmdBuffer->getVKCmdBuffer(), nullptr, 0, nullptr, 1, &barrier );
 

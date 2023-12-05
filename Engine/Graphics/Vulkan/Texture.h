@@ -41,7 +41,8 @@ class Texture final
    size_t getSize() const noexcept { return m_size; }
    uint32_t getWidth() const noexcept { return m_width; }
    uint32_t getHeight() const noexcept { return m_height; }
-   uint32_t getDepth() const noexcept { return m_type == CYD::ImageType::TEXTURE_2D ? m_depth : 1; }
+   uint32_t getLayerCount() const;
+   uint32_t getDepth() const;
    uint32_t getMipLevels() const noexcept { return m_mipLevels; }
    CYD::PixelFormat getPixelFormat() const noexcept { return m_format; }
    CYD::PipelineStageFlag getStages() const noexcept { return m_stages; }

@@ -147,43 +147,52 @@ MaterialCache::State MaterialCache::progressLoad( CmdListHandle cmdList, Materia
    return material.currentState;
 }
 
-void MaterialCache::bind( CmdListHandle cmdList, MaterialIndex index, uint8_t set ) const
+void MaterialCache::bindSlot(
+    CmdListHandle cmdList,
+    MaterialIndex index,
+    TextureSlot slot,
+    uint8_t set ) const
 {
    const Material* material = m_materials[index];
    CYD_ASSERT( material );
 
+   // TODO Allow non-contiguous bindings?
+   // TODO Allow different sampling?
+   SamplerInfo sampler;
+   sampler.addressMode   = AddressMode::REPEAT;
+   sampler.magFilter     = Filter::LINEAR;
+   sampler.minFilter     = Filter::LINEAR;
+   sampler.minLod        = 0.0f;
+   sampler.maxLod        = 32.0f;
+   sampler.maxAnisotropy = 16.0f;
+
+   const TextureEntry& textureEntry = material->textures[slot];
+   if( textureEntry.texHandle )
+   {
+      GRIS::BindTexture( cmdList, textureEntry.texHandle, sampler, slot, set );
+   }
+   else if( textureEntry.useFallback || !textureEntry.path.empty() )
+   {
+      switch( textureEntry.fallback )
+      {
+         case TextureFallback::BLACK:
+            GRIS::TextureCache::BindBlackTexture( cmdList, slot, set );
+            break;
+         case TextureFallback::WHITE:
+            GRIS::TextureCache::BindWhiteTexture( cmdList, slot, set );
+            break;
+         case TextureFallback::PINK:
+            GRIS::TextureCache::BindPinkTexture( cmdList, slot, set );
+            break;
+      }
+   }
+}
+
+void MaterialCache::bind( CmdListHandle cmdList, MaterialIndex index, uint8_t set ) const
+{
    for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
    {
-      // TODO Allow non-contiguous bindings?
-      // TODO Allow different sampling?
-      SamplerInfo sampler;
-      sampler.addressMode   = AddressMode::REPEAT;
-      sampler.magFilter     = Filter::LINEAR;
-      sampler.minFilter     = Filter::LINEAR;
-      sampler.minLod        = 0.0f;
-      sampler.maxLod        = 32.0f;
-      sampler.maxAnisotropy = 16.0f;
-
-      const TextureEntry& textureEntry = material->textures[i];
-      if( textureEntry.texHandle )
-      {
-         GRIS::BindTexture( cmdList, textureEntry.texHandle, sampler, i, set );
-      }
-      else if( textureEntry.useFallback || !textureEntry.path.empty() )
-      {
-         switch( textureEntry.fallback )
-         {
-            case TextureFallback::BLACK:
-               GRIS::TextureCache::BindBlackTexture( cmdList, i, set );
-               break;
-            case TextureFallback::WHITE:
-               GRIS::TextureCache::BindWhiteTexture( cmdList, i, set );
-               break;
-            case TextureFallback::PINK:
-               GRIS::TextureCache::BindPinkTexture( cmdList, i, set );
-               break;
-         }
-      }
+      bindSlot( cmdList, index, static_cast<TextureSlot>( i ), set );
    }
 }
 

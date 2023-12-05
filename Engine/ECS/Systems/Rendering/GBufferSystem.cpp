@@ -92,6 +92,8 @@ void GBufferSystem::tick( double /*deltaS*/ )
          continue;
       }
 
+      CYD_SCOPED_GPUTRACE( cmdList, m_ecs->getEntity(entityEntry.handle)->getName().c_str() );
+
       // Pipeline
       // ==========================================================================================
       const PipelineInfo* curPipInfo = nullptr;

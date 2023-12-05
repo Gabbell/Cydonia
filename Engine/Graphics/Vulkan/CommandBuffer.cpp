@@ -184,6 +184,17 @@ void CommandBuffer::release()
       m_stagesToWait.clear();
       m_semsToWait.clear();
       m_semsToSignal.clear();
+      m_setsToBind.fill( nullptr );
+      m_buffersToUpdate.clear();
+      m_texturesToUpdate.clear();
+      m_samplers.clear();
+      m_boundPip        = nullptr;
+      m_boundPipLayout  = nullptr;
+      m_boundRenderPass = nullptr;
+      m_boundRenderPassInfo.reset();
+      m_boundPipInfo.reset();
+      m_targets.clear();
+      m_renderArea = {};
 
       m_pDevice = nullptr;
       m_name    = DEFAULT_CMDBUFFER_NAME;
@@ -1098,6 +1109,7 @@ void CommandBuffer::endRendering()
    m_boundPip        = nullptr;
    m_boundPipLayout  = nullptr;
    m_boundRenderPass = nullptr;
+   m_boundRenderPassInfo.reset();
    m_boundPipInfo.reset();
 
    m_targets.clear();
