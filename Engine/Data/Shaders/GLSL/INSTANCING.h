@@ -7,6 +7,7 @@
 
 struct InstancingData
 {
+   uint index;
    mat4x4 modelMat;
 };
 

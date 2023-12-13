@@ -1,4 +1,4 @@
-#include <ECS/Systems/Procedural/DisplacementSystem.h>
+#include <ECS/Systems/Procedural/DisplacementUpdateSystem.h>
 
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
@@ -22,23 +22,21 @@ static PipelineIndex s_heightToNormalPip = INVALID_PIPELINE_IDX;
 static void Initialize()
 {
    Noise::Initialize();
-   s_heightToNormalPip = StaticPipelines::FindByName( "HEIGHT_TO_NORMAL" );
+   s_heightToNormalPip = StaticPipelines::FindByName( "SIMPLEX_NORMAL" );
    s_initialized       = true;
 }
 
-// TODO Make GenerateNoise and GenerateNormals run in parallel using the same noise function
-// Better normals, maybe equal performance?
 static void
 GenerateNoise( CmdListHandle cmdList, const DisplacementComponent& noise, uint32_t layerCount )
 {
-   CYD_SCOPED_GPUTRACE( cmdList, "Generate Noise" );
+   CYD_SCOPED_GPUTRACE( cmdList, "Generate Displacement" );
 
    GRIS::BindPipeline( cmdList, Noise::GetPipeline( noise.type ) );
 
    GRIS::UpdateConstantBuffer(
        cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( noise.params ), &noise.params );
 
-   GRIS::BindImage( cmdList, noise.noiseTex, 0, 0 );
+   GRIS::BindImage( cmdList, noise.displacementMap, 0, 0 );
 
    constexpr float localSizeX = 16.0f;
    constexpr float localSizeY = 16.0f;
@@ -48,22 +46,17 @@ GenerateNoise( CmdListHandle cmdList, const DisplacementComponent& noise, uint32
    GRIS::Dispatch( cmdList, groupsX, groupsY, layerCount );
 }
 
-static void GenerateNormals(
-    CmdListHandle cmdList,
-    const TransformComponent& transform,
-    const DisplacementComponent& noise,
-    uint32_t layerCount )
+static void
+GenerateNormals( CmdListHandle cmdList, const DisplacementComponent& noise, uint32_t layerCount )
 {
    CYD_SCOPED_GPUTRACE( cmdList, "Generate Normals" );
 
    GRIS::BindPipeline( cmdList, s_heightToNormalPip );
 
-   GRIS::BindTexture( cmdList, noise.noiseTex, 0, 0 );
-   GRIS::BindImage( cmdList, noise.normalMap, 1, 0 );
+   GRIS::UpdateConstantBuffer(
+       cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( noise.params ), &noise.params );
 
-   // The full displacement scaling factor is required to properly calculate the normals
-   const float scale = noise.params.scale * transform.scaling.y;
-   GRIS::UpdateConstantBuffer( cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( float ), &scale );
+   GRIS::BindImage( cmdList, noise.normalMap, 0, 0 );
 
    constexpr float localSizeX = 16.0f;
    constexpr float localSizeY = 16.0f;
@@ -74,7 +67,7 @@ static void GenerateNormals(
 }
 
 // ================================================================================================
-void DisplacementSystem::tick( double deltaS )
+void DisplacementUpdateSystem::tick( double deltaS )
 {
    CYD_TRACE();
 
@@ -84,23 +77,27 @@ void DisplacementSystem::tick( double deltaS )
    }
 
    // Start command list recording
-   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
-   CYD_SCOPED_GPUTRACE( cmdList, "DisplacementSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER_P1 );
+   CYD_SCOPED_GPUTRACE( cmdList, "DisplacementUpdateSystem" );
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
       // Read-Write Components
       const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
-      const TransformComponent& transform   = GetComponent<TransformComponent>( entityEntry );
       const MaterialComponent& material     = GetComponent<MaterialComponent>( entityEntry );
       DisplacementComponent& noise          = GetComponent<DisplacementComponent>( entityEntry );
 
-      const uint32_t layerCount = renderable.isInstanced ? renderable.instanceCount : 1;
+      const uint32_t layerCount = renderable.isInstanced ? renderable.maxInstanceCount : 1;
 
       if( noise.resolutionChanged )
       {
-         GRIS::DestroyTexture( noise.noiseTex );
+         SamplerInfo sampler;
+         sampler.addressMode = AddressMode::CLAMP_TO_EDGE;
+         sampler.magFilter   = Filter::LINEAR;
+         sampler.minFilter   = Filter::LINEAR;
+
+         GRIS::DestroyTexture( noise.displacementMap );
 
          TextureDescription noiseTexDesc;
          noiseTexDesc.width  = noise.width;
@@ -111,10 +108,13 @@ void DisplacementSystem::tick( double deltaS )
          noiseTexDesc.usage  = ImageUsage::STORAGE | ImageUsage::SAMPLED;
          noiseTexDesc.stages = PipelineStage::COMPUTE_STAGE;
 
-         noise.noiseTex = GRIS::CreateTexture( noiseTexDesc );
+         noise.displacementMap = GRIS::CreateTexture( noiseTexDesc );
 
          m_materials.updateMaterial(
-             material.materialIdx, MaterialCache::TextureSlot::DISPLACEMENT, noise.noiseTex );
+             material.materialIdx,
+             MaterialCache::TextureSlot::DISPLACEMENT,
+             noise.displacementMap,
+             sampler );
 
          if( noise.generateNormals )
          {
@@ -132,7 +132,10 @@ void DisplacementSystem::tick( double deltaS )
             noise.normalMap = GRIS::CreateTexture( normalMapDesc );
 
             m_materials.updateMaterial(
-                material.materialIdx, MaterialCache::TextureSlot::NORMAL, noise.normalMap );
+                material.materialIdx,
+                MaterialCache::TextureSlot::NORMAL,
+                noise.normalMap,
+                sampler );
          }
 
          noise.resolutionChanged = false;
@@ -147,7 +150,7 @@ void DisplacementSystem::tick( double deltaS )
 
          if( noise.generateNormals )
          {
-            GenerateNormals( cmdList, transform, noise, layerCount );
+            GenerateNormals( cmdList, noise, layerCount );
          }
 
          noise.needsUpdate = false;

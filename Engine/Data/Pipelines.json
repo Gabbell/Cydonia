@@ -20,7 +20,7 @@
         "DEPTH_TEST_ENABLE": true,
         "STENCIL_TEST_ENABLE": false,
         "DEPTH_WRITE_ENABLE": true,
-        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+        "DEPTH_COMPARE_OP": "LESS_EQUAL"
       },
       "SHADER_RESOURCES": [
         {
@@ -55,11 +55,7 @@
       "NAME": "TERRAIN_GBUFFER",
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "TERRAIN_VERT",
-      "TESS_CONTROL_SHADER": "TERRAIN_TESC",
-      "TESS_EVAL_SHADER": "TERRAIN_TESE",
       "FRAGMENT_SHADER": "TERRAIN_GBUFFER_FRAG",
-      "POLYGON_MODE": "FILL",
-      "PRIMITIVE": "PATCHES",
       "VERTEX_LAYOUT": [
         {
           "ATTRIBUTE": "POSITION",
@@ -74,63 +70,59 @@
         "DEPTH_TEST_ENABLE": true,
         "STENCIL_TEST_ENABLE": false,
         "DEPTH_WRITE_ENABLE": true,
-        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+        "DEPTH_COMPARE_OP": "LESS_EQUAL"
       },
-      "TESSELLATION": {
-        "ENABLE": true,
-        "PATCH_VERTICES": 4
+      "RASTERIZER": {
+        "PRIMITIVE": "TRIANGLES",
+        "POLYGON_MODE": "FILL"
       },
       "SHADER_RESOURCES": [
         {
-          "NAME": "Model",
+          "NAME": "MODEL",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
+            "VERTEX"
           ],
           "SIZE": 64
         },
         {
-          "NAME": "Views",
+          "NAME": "VIEWS",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL",
-            "FRAGMENT"
+            "VERTEX"
           ],
           "SET": 0,
           "BINDING": 0
         },
         {
-          "NAME": "Lights",
+          "NAME": "INSTANCES",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "FRAGMENT"
+            "VERTEX"
           ],
           "SET": 0,
           "BINDING": 1
         },
         {
-          "NAME": "Instances",
+          "NAME": "LIGHTS",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
+            "FRAGMENT"
           ],
           "SET": 0,
           "BINDING": 2
         },
         {
-          "NAME": "TessellationParams",
+          "NAME": "SHADOWS",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "TESS_CONTROL"
+            "FRAGMENT"
           ],
           "SET": 0,
           "BINDING": 3
         },
         {
-          "NAME": "ShadowMap",
+          "NAME": "SHADOWMAP",
           "TYPE": "SAMPLER",
           "STAGES": [
             "FRAGMENT"
@@ -151,8 +143,7 @@
           "NAME": "HEIGHT",
           "TYPE": "SAMPLER",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
+            "VERTEX"
           ],
           "SET": 1,
           "BINDING": 5
@@ -162,11 +153,8 @@
     {
       "NAME": "TERRAIN_SHADOWMAP",
       "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "TERRAIN_VERT",
-      "TESS_CONTROL_SHADER": "TERRAIN_TESC",
-      "TESS_EVAL_SHADER": "TERRAIN_SHADOWMAP_TESE",
+      "VERTEX_SHADER": "TERRAIN_SHADOWMAP_VERT",
       "FRAGMENT_SHADER": "EMPTY_FRAG",
-      "PRIMITIVE": "PATCHES",
       "VERTEX_LAYOUT": [
         {
           "ATTRIBUTE": "POSITION",
@@ -177,56 +165,59 @@
           "FORMAT": "RGB32F"
         }
       ],
+      "RASTERIZER": {
+        "PRIMITIVE": "TRIANGLES",
+        "POLYGON_MODE": "FILL",
+        "CULL_MODE": "NONE",
+        "DEPTH_CLAMP": true
+      },
       "DEPTH_STENCIL": {
         "DEPTH_TEST_ENABLE": true,
         "STENCIL_TEST_ENABLE": false,
         "DEPTH_WRITE_ENABLE": true,
-        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
-      },
-      "RASTERIZER": {
-        "DEPTH_BIAS_ENABLE": true,
-        "DEPTH_CONSTANT": -83886.08,
-        "DEPTH_SLOPE_SCALE": -1.75
-      },
-      "TESSELLATION": {
-        "ENABLE": true,
-        "PATCH_VERTICES": 4
+        "DEPTH_COMPARE_OP": "LESS_EQUAL"
       },
       "SHADER_RESOURCES": [
         {
-          "NAME": "Model",
+          "NAME": "MODEL_AND_CASCADE_INDEX",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
+            "VERTEX"
           ],
-          "SIZE": 64
+          "SIZE": 68
         },
         {
-          "NAME": "Views",
+          "NAME": "VIEWS",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
+            "VERTEX"
           ],
           "SET": 0,
           "BINDING": 0
         },
         {
-          "NAME": "Instances",
+          "NAME": "SHADOWMAPS",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
+            "VERTEX"
+          ],
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "FRUSTUMS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "VERTEX"
           ],
           "SET": 0,
           "BINDING": 2
         },
         {
-          "NAME": "TessellationParams",
+          "NAME": "INSTANCES",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "TESS_CONTROL"
+            "VERTEX"
           ],
           "SET": 0,
           "BINDING": 3
@@ -235,8 +226,91 @@
           "NAME": "HeightMap",
           "TYPE": "SAMPLER",
           "STAGES": [
-            "TESS_CONTROL",
-            "TESS_EVAL"
+            "VERTEX"
+          ],
+          "SET": 1,
+          "BINDING": 5
+        }
+      ]
+    },
+    {
+      "NAME": "TERRAIN_EXP_SHADOWMAP",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "TERRAIN_SHADOWMAP_VERT",
+      "FRAGMENT_SHADER": "EXPONENTIAL_SHADOWMAP_FRAG",
+      "VERTEX_LAYOUT": [
+        {
+          "ATTRIBUTE": "POSITION",
+          "FORMAT": "RGB32F"
+        },
+        {
+          "ATTRIBUTE": "TEXCOORD",
+          "FORMAT": "RGB32F"
+        }
+      ],
+      "RASTERIZER": {
+        "PRIMITIVE": "TRIANGLE_STRIPS",
+        "PRIMITIVE_RESTART": true,
+        "CULL_MODE": "NONE",
+        "DEPTH_CLAMP": true
+      },
+      "DEPTH_STENCIL": {
+        "DEPTH_TEST_ENABLE": true,
+        "STENCIL_TEST_ENABLE": false,
+        "DEPTH_WRITE_ENABLE": true,
+        "DEPTH_COMPARE_OP": "LESS_EQUAL"
+      },
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "MODEL_AND_CASCADE_INDEX",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": [
+            "VERTEX"
+          ],
+          "SIZE": 68
+        },
+        {
+          "NAME": "VIEWS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "VERTEX",
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "SHADOWMAPS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "VERTEX"
+          ],
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "FRUSTUMS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "VERTEX"
+          ],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "INSTANCES",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "VERTEX"
+          ],
+          "SET": 0,
+          "BINDING": 3
+        },
+        {
+          "NAME": "HeightMap",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "VERTEX"
           ],
           "SET": 1,
           "BINDING": 5
@@ -286,41 +360,12 @@
       ]
     },
     {
-      "NAME": "FULLSCREEN",
-      "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "FULLSCREEN_VERT",
-      "FRAGMENT_SHADER": "FULLSCREEN_FRAG",
-      "PRIMITIVE": "TRIANGLE_STRIPS",
-      "POLYGON_MODE": "FILL"
-    },
-    {
-      "NAME": "FULLSCREEN_2DTEX",
-      "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "FULLSCREEN_VERT",
-      "FRAGMENT_SHADER": "FULLSCREEN_2DTEX_FRAG",
-      "PRIMITIVE": "TRIANGLE_STRIPS",
-      "POLYGON_MODE": "FILL",
-      "SHADER_RESOURCES": [
-        {
-          "NAME": "texSampler",
-          "TYPE": "SAMPLER",
-          "STAGES": [
-            "FRAGMENT"
-          ],
-          "SET": 0,
-          "BINDING": 0
-        }
-      ]
-    },
-    {
       "NAME": "OCEAN",
       "TYPE": "GRAPHICS",
-      "VERTEX_SHADER": "TERRAIN_VERT",
+      "VERTEX_SHADER": "TERRAIN_TESS_VERT",
       "TESS_CONTROL_SHADER": "FFTOCEAN_TESC",
       "TESS_EVAL_SHADER": "FFTOCEAN_TESE",
       "FRAGMENT_SHADER": "FFTOCEAN_FRAG",
-      "POLYGON_MODE": "FILL",
-      "PRIMITIVE": "PATCHES",
       "VERTEX_LAYOUT": [
         {
           "ATTRIBUTE": "POSITION",
@@ -335,15 +380,22 @@
         "DEPTH_TEST_ENABLE": true,
         "STENCIL_TEST_ENABLE": false,
         "DEPTH_WRITE_ENABLE": true,
-        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+        "DEPTH_COMPARE_OP": "LESS_EQUAL"
+      },
+      "BLEND": {
+        "BLEND_ENABLE": true
       },
       "TESSELLATION": {
         "ENABLE": true,
         "PATCH_VERTICES": 4
       },
+      "RASTERIZER": {
+        "PRIMITIVE": "PATCHES",
+        "POLYGON_MODE": "FILL"
+      },
       "SHADER_RESOURCES": [
         {
-          "NAME": "Model",
+          "NAME": "MODEL",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": [
             "TESS_CONTROL",
@@ -352,7 +404,7 @@
           "SIZE": 64
         },
         {
-          "NAME": "Views",
+          "NAME": "VIEWS",
           "TYPE": "UNIFORM",
           "STAGES": [
             "TESS_CONTROL",
@@ -363,16 +415,16 @@
           "BINDING": 0
         },
         {
-          "NAME": "Lights",
+          "NAME": "FRUSTUMS",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "FRAGMENT"
+            "TESS_CONTROL"
           ],
           "SET": 0,
           "BINDING": 1
         },
         {
-          "NAME": "Instances",
+          "NAME": "INSTANCES",
           "TYPE": "UNIFORM",
           "STAGES": [
             "TESS_CONTROL",
@@ -382,7 +434,7 @@
           "BINDING": 2
         },
         {
-          "NAME": "TessellationParams",
+          "NAME": "TESSELLATION",
           "TYPE": "UNIFORM",
           "STAGES": [
             "TESS_CONTROL"
@@ -391,8 +443,8 @@
           "BINDING": 3
         },
         {
-          "NAME": "ShadowMap",
-          "TYPE": "SAMPLER",
+          "NAME": "LIGHTS",
+          "TYPE": "UNIFORM",
           "STAGES": [
             "FRAGMENT"
           ],
@@ -400,13 +452,40 @@
           "BINDING": 4
         },
         {
-          "NAME": "EnvironmentMap",
-          "TYPE": "SAMPLER",
+          "NAME": "SHADOWS",
+          "TYPE": "UNIFORM",
           "STAGES": [
             "FRAGMENT"
           ],
           "SET": 0,
           "BINDING": 5
+        },
+        {
+          "NAME": "SHADOWMAP",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 6
+        },
+        {
+          "NAME": "ENVIRONMENTMAP",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 7
+        },
+        {
+          "NAME": "NormalMap",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 1,
+          "BINDING": 1
         },
         {
           "NAME": "HeightMap",
@@ -418,15 +497,6 @@
           ],
           "SET": 1,
           "BINDING": 5
-        },
-        {
-          "NAME": "NormalMap",
-          "TYPE": "SAMPLER",
-          "STAGES": [
-            "FRAGMENT"
-          ],
-          "SET": 1,
-          "BINDING": 1
         }
       ]
     },
@@ -457,7 +527,7 @@
         "DEPTH_TEST_ENABLE": true,
         "STENCIL_TEST_ENABLE": false,
         "DEPTH_WRITE_ENABLE": true,
-        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+        "DEPTH_COMPARE_OP": "LESS_EQUAL"
       },
       "SHADER_RESOURCES": [
         {
@@ -539,7 +609,6 @@
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "PBR_VERT",
       "FRAGMENT_SHADER": "PBR_GBUFFER_FRAG",
-      "POLYGON_MODE": "FILL",
       "VERTEX_LAYOUT": [
         {
           "ATTRIBUTE": "POSITION",
@@ -562,11 +631,11 @@
         "DEPTH_TEST_ENABLE": true,
         "STENCIL_TEST_ENABLE": false,
         "DEPTH_WRITE_ENABLE": true,
-        "DEPTH_COMPARE_OP": "GREATER_EQUAL"
+        "DEPTH_COMPARE_OP": "LESS_EQUAL"
       },
       "SHADER_RESOURCES": [
         {
-          "NAME": "Model",
+          "NAME": "MODEL",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": [
             "VERTEX"
@@ -574,23 +643,40 @@
           "SIZE": 64
         },
         {
-          "NAME": "Views",
+          "NAME": "VIEWS",
           "TYPE": "UNIFORM",
           "STAGES": [
-            "VERTEX",
-            "FRAGMENT"
+            "VERTEX"
           ],
           "SET": 0,
           "BINDING": 0
         },
         {
-          "NAME": "ShadowMap",
-          "TYPE": "SAMPLER",
+          "NAME": "LIGHTS",
+          "TYPE": "UNIFORM",
           "STAGES": [
             "FRAGMENT"
           ],
           "SET": 0,
           "BINDING": 1
+        },
+        {
+          "NAME": "SHADOWS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "SHADOWMAP",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 3
         },
         {
           "NAME": "ALBEDO",
@@ -1058,7 +1144,7 @@
           "SIZE": 128
         },
         {
-          "NAME": "viewInfo",
+          "NAME": "INVERSE_VIEWS",
           "TYPE": "UNIFORM",
           "STAGES": [
             "COMPUTE"
@@ -1067,8 +1153,8 @@
           "BINDING": 0
         },
         {
-          "NAME": "transmittanceLUT",
-          "TYPE": "SAMPLER",
+          "NAME": "LIGHTS",
+          "TYPE": "UNIFORM",
           "STAGES": [
             "COMPUTE"
           ],
@@ -1076,7 +1162,7 @@
           "BINDING": 1
         },
         {
-          "NAME": "multipleScatteringLUT",
+          "NAME": "transmittanceLUT",
           "TYPE": "SAMPLER",
           "STAGES": [
             "COMPUTE"
@@ -1085,13 +1171,22 @@
           "BINDING": 2
         },
         {
+          "NAME": "multipleScatteringLUT",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 3
+        },
+        {
           "NAME": "skyViewLUT",
           "TYPE": "IMAGE",
           "STAGES": [
             "COMPUTE"
           ],
           "SET": 0,
-          "BINDING": 3
+          "BINDING": 4
         }
       ]
     },
@@ -1109,7 +1204,7 @@
           "SIZE": 128
         },
         {
-          "NAME": "viewInfo",
+          "NAME": "VIEWS",
           "TYPE": "UNIFORM",
           "STAGES": [
             "COMPUTE"
@@ -1118,13 +1213,31 @@
           "BINDING": 0
         },
         {
+          "NAME": "INVERSE_VIEWS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 1
+        },
+        {
+          "NAME": "LIGHTS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
           "NAME": "transmittanceLUT",
           "TYPE": "SAMPLER",
           "STAGES": [
             "COMPUTE"
           ],
           "SET": 0,
-          "BINDING": 1
+          "BINDING": 3
         },
         {
           "NAME": "multipleScatteringLUT",
@@ -1133,7 +1246,7 @@
             "COMPUTE"
           ],
           "SET": 0,
-          "BINDING": 2
+          "BINDING": 4
         },
         {
           "NAME": "aerialPerspectiveLUT",
@@ -1142,7 +1255,7 @@
             "COMPUTE"
           ],
           "SET": 0,
-          "BINDING": 3
+          "BINDING": 5
         }
       ]
     },
@@ -1160,7 +1273,7 @@
           "SIZE": 128
         },
         {
-          "NAME": "viewInfo",
+          "NAME": "INVERSE_VIEWS",
           "TYPE": "UNIFORM",
           "STAGES": [
             "COMPUTE"
@@ -1169,8 +1282,8 @@
           "BINDING": 0
         },
         {
-          "NAME": "transmittanceLUT",
-          "TYPE": "SAMPLER",
+          "NAME": "LIGHTS",
+          "TYPE": "UNIFORM",
           "STAGES": [
             "COMPUTE"
           ],
@@ -1178,7 +1291,7 @@
           "BINDING": 1
         },
         {
-          "NAME": "skyViewLUT",
+          "NAME": "depthSampler",
           "TYPE": "SAMPLER",
           "STAGES": [
             "COMPUTE"
@@ -1187,7 +1300,7 @@
           "BINDING": 2
         },
         {
-          "NAME": "aerialPerspectiveLUT",
+          "NAME": "transmittanceLUT",
           "TYPE": "SAMPLER",
           "STAGES": [
             "COMPUTE"
@@ -1196,8 +1309,8 @@
           "BINDING": 3
         },
         {
-          "NAME": "colorImage",
-          "TYPE": "IMAGE",
+          "NAME": "skyViewLUT",
+          "TYPE": "SAMPLER",
           "STAGES": [
             "COMPUTE"
           ],
@@ -1205,13 +1318,31 @@
           "BINDING": 4
         },
         {
-          "NAME": "depthImage",
+          "NAME": "aerialPerspectiveLUT",
           "TYPE": "SAMPLER",
           "STAGES": [
             "COMPUTE"
           ],
           "SET": 0,
           "BINDING": 5
+        },
+        {
+          "NAME": "SHADOWMASK",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 6
+        },
+        {
+          "NAME": "colorImage",
+          "TYPE": "IMAGE",
+          "STAGES": [
+            "COMPUTE"
+          ],
+          "SET": 0,
+          "BINDING": 7
         }
       ]
     },
@@ -1220,8 +1351,9 @@
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "FULLSCREEN_VERT",
       "FRAGMENT_SHADER": "BLINN_PHONG_DEFERRED_FRAG",
-      "POLYGON_MODE": "FILL",
-      "PRIMITIVE": "TRIANGLE_STRIPS",
+      "RASTERIZER": {
+        "PRIMITIVE": "TRIANGLE_STRIPS"
+      },
       "SHADER_RESOURCES": [
         {
           "NAME": "Views",
@@ -1293,8 +1425,9 @@
       "TYPE": "GRAPHICS",
       "VERTEX_SHADER": "FULLSCREEN_VERT",
       "FRAGMENT_SHADER": "PBR_DEFERRED_FRAG",
-      "POLYGON_MODE": "FILL",
-      "PRIMITIVE": "TRIANGLE_STRIPS",
+      "RASTERIZER": {
+        "PRIMITIVE": "TRIANGLE_STRIPS"
+      },
       "SHADER_RESOURCES": [
         {
           "NAME": "Views",
@@ -1371,26 +1504,17 @@
       ]
     },
     {
-      "NAME": "HEIGHT_TO_NORMAL",
+      "NAME": "SIMPLEX_NORMAL",
       "TYPE": "COMPUTE",
-      "COMPUTE_SHADER": "HEIGHT_TO_NORMAL_COMP",
+      "COMPUTE_SHADER": "SIMPLEX_NORMAL_COMP",
       "SHADER_RESOURCES": [
         {
-          "NAME": "Scale",
+          "NAME": "NoiseParameters",
           "TYPE": "PUSH_CONSTANT",
           "STAGES": [
             "COMPUTE"
           ],
-          "SIZE": 4
-        },
-        {
-          "NAME": "HEIGHT",
-          "TYPE": "SAMPLER",
-          "STAGES": [
-            "COMPUTE"
-          ],
-          "SET": 0,
-          "BINDING": 0
+          "SIZE": 40
         },
         {
           "NAME": "NORMALS",
@@ -1399,7 +1523,117 @@
             "COMPUTE"
           ],
           "SET": 0,
+          "BINDING": 0
+        }
+      ]
+    },
+    {
+      "NAME": "TERRAIN_SHADOWMASK",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "FULLSCREEN_VERT",
+      "FRAGMENT_SHADER": "TERRAIN_SHADOWMASK_FRAG",
+      "RASTERIZER": {
+        "PRIMITIVE": "TRIANGLE_STRIPS"
+      },
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "MODEL",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SIZE": 64
+        },
+        {
+          "NAME": "VIEWS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 0
+        },
+        {
+          "NAME": "INVERSE_VIEWS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
           "BINDING": 1
+        },
+        {
+          "NAME": "LIGHTS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 2
+        },
+        {
+          "NAME": "SHADOWMAPS",
+          "TYPE": "UNIFORM",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 3
+        },
+        {
+          "NAME": "SHADOWMAP",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 4
+        },
+        {
+          "NAME": "DEPTH",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 5
+        },
+        {
+          "NAME": "HEIGHTMAP",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 6
+        }
+      ]
+    },
+    {
+      "NAME": "GAUSSIAN_BLUR",
+      "TYPE": "GRAPHICS",
+      "VERTEX_SHADER": "FULLSCREEN_VERT",
+      "FRAGMENT_SHADER": "GAUSSIAN_BLUR_FRAG",
+      "RASTERIZER": {
+        "PRIMITIVE": "TRIANGLE_STRIPS"
+      },
+      "SHADER_RESOURCES": [
+        {
+          "NAME": "PASS",
+          "TYPE": "PUSH_CONSTANT",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SIZE": 4
+        },
+        {
+          "NAME": "COLOR",
+          "TYPE": "SAMPLER",
+          "STAGES": [
+            "FRAGMENT"
+          ],
+          "SET": 0,
+          "BINDING": 0
         }
       ]
     }

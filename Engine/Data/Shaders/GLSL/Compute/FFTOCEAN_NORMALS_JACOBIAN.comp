@@ -43,12 +43,12 @@ void main()
 
    // We are accumulating and decaying foam
    const float jacobianDet    = jxx * jzz - jxz * jzx;
-   const float jacobianFactor = 4.0;
-   const float jacobianBias   = -0.01;
-   const float newFoam        = max(jacobianFactor * ( -jacobianDet + jacobianBias ), 0.0);
+   const float jacobianFactor = 1.0;
+   const float jacobianBias   = -0.03;
+   const float newFoam        = max( jacobianFactor * ( -jacobianDet + jacobianBias ), 0.0 );
 
    const float prevFoam  = imageLoad( normals, ssCoord ).a;
-   const float decay     = clamp(pow( prevFoam, 5 ), 0.0, 0.1);
+   const float decay     = clamp( pow( prevFoam, 2 ), 0.0, 1.0 );
    const float totalFoam = clamp( prevFoam + newFoam - decay, 0.0, 1.0 );
 
    imageStore( normals, ssCoord, vec4( normal, totalFoam ) );

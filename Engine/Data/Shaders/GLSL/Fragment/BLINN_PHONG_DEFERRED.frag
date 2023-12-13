@@ -32,12 +32,12 @@ void main()
    // Using view-space coordinates is not enough because it doesn't consider
    // the current view's rotation
    const vec4 ndc = vec4( inUV * 2.0 - 1.0, depth, 1.0 );
-   vec4 worldPos  = inverseMainView.invView * inverseMainView.invProj * ndc;
+   vec4 worldPos  = inverseMainView.invViewMat * inverseMainView.invProjMat * ndc;
    worldPos       = worldPos / worldPos.w;
 
-   const Light curLight = lights[0];
-   const vec3 lightDir  = normalize( curLight.position.xyz );
-   const vec3 fragToView   = normalize( mainView.pos.xyz - worldPos.xyz );
+   const Light curLight  = lights[0];
+   const vec3 lightDir   = normalize( curLight.position.xyz );
+   const vec3 fragToView = normalize( mainView.pos.xyz - worldPos.xyz );
 
    const vec3 ambientTerm = curLight.color.rgb * ConstantAmbient();
    const float sunFactor =
@@ -48,7 +48,8 @@ void main()
    vec3 finalColor = nightColor;
    if( sunFactor > 0.0 && curLight.params.x > 0.0 )
    {
-      const vec3 diffuseTerm = curLight.color.rgb * LambertianDiffuse( lightDir, normal ) * shadow.r;
+      const vec3 diffuseTerm =
+          curLight.color.rgb * LambertianDiffuse( lightDir, normal ) * shadow.r;
       const vec3 specularTerm =
           curLight.color.rgb * BlinnPhongSpecular( lightDir, fragToView, normal ) * shadow.r;
 

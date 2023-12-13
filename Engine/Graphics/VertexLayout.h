@@ -30,10 +30,17 @@ class VertexLayout
 
    struct AttributeInfo
    {
+      bool operator==( const AttributeInfo& other ) const
+      {
+         return type == other.type && vecFormat == other.vecFormat && offset == other.offset;
+      }
+
       Attribute type;
       PixelFormat vecFormat;
       uint32_t offset;
    };
+
+   bool operator==( const VertexLayout& other ) const;
 
    const std::vector<AttributeInfo>& getAttributes() const { return m_attributes; }
    bool isEmpty() const { return m_attributes.empty(); }

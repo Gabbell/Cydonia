@@ -114,7 +114,7 @@ class Swapchain final
    VkSwapchainKHR m_vkSwapchain = nullptr;
 
    // Swapchain Properties
-   VkPresentModeKHR m_presentMode;                       // Presentation mode
+   VkPresentModeKHR m_presentMode;      // Presentation mode
    VkSurfaceFormatKHR m_surfaceFormat;  // Swapchain image format
    VkExtent2D m_extent;                 // Actual swapchain extent
 };

@@ -4,6 +4,8 @@
 
 #include <ECS/Components/ComponentTypes.h>
 
+#include <Graphics/Utility/ShaderMemoryLayout.h>
+
 #include <glm/glm.hpp>
 #include <glm/gtx/quaternion.hpp>
 
@@ -22,7 +24,8 @@ class InstancedComponent final : public BaseComponent
 
    struct ShaderParams  // GPU
    {
-      glm::mat4x4 modelMat;
+      uint32_t index;
+      CYD_SHADER_ALIGN glm::mat4x4 modelMat;
    };
 
    InstancedComponent() = default;
@@ -39,8 +42,8 @@ class InstancedComponent final : public BaseComponent
 
    Type type = Type::TILED;
 
-   uint32_t count  = 0;
-   float radius = 0;
+   uint32_t count = 0;
+   float radius   = 0;
 
    bool needsUpdate = true;
 };

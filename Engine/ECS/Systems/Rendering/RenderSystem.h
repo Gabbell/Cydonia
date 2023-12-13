@@ -31,9 +31,9 @@ class RenderSystem
    NON_COPIABLE( RenderSystem );
    virtual ~RenderSystem() = default;
 
-  protected:
-   uint32_t getViewIndex( const SceneComponent& scene, std::string_view name ) const;
+   void tick( double deltaS ) override {}
 
+  protected:
    void bindView(
        CmdListHandle cmdList,
        const SceneComponent& scene,

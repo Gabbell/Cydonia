@@ -22,7 +22,8 @@ void ImageMemory(
     const CommandBuffer* cmdBuffer,
     Texture* texture,
     CYD::Access nextAccess,
-    uint32_t mipLevel = 0 );
+    uint32_t mipLevel = CYD::ALL_MIP_LEVELS,
+    uint32_t layer    = CYD::ALL_ARRAY_LAYERS );
 
 void ImageMemory(
     VkCommandBuffer cmdBuffer,
@@ -32,5 +33,5 @@ void ImageMemory(
     CYD::Access prevAccess,
     CYD::Access nextAccess );
 
-void GlobalMemory( VkCommandBuffer cmdBuffer, CYD::Access prevAccess, CYD::Access nextAccess );
+void SyncQueue( VkCommandBuffer cmdBuffer, CYD::PipelineType type );
 }

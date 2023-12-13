@@ -4,11 +4,6 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
-#include <ECS/Components/Rendering/MaterialComponent.h>
-#include <ECS/Components/Rendering/MeshComponent.h>
-
 // ================================================================================================
 // Definition
 // ================================================================================================

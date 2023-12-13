@@ -25,7 +25,8 @@ static bool s_drawStatsOverlay    = false;
 ImGuiSystem::ImGuiSystem( const EntityManager& entityManager ) : m_entityManager( entityManager )
 {
    // We initialize the UI here
-   // It needs to be after the WindowSystem is initialized because if we initialize it before, we override ImGui's GLFW callbacks
+   // It needs to be after the WindowSystem is initialized because if we initialize it before, we
+   // override ImGui's GLFW callbacks
    UI::Initialize();
 }
 

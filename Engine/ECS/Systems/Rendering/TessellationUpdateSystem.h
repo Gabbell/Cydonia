@@ -9,7 +9,8 @@
 
 namespace CYD
 {
-class TessellationUpdateSystem final : public CommonSystem<RenderableComponent, TessellatedComponent>
+class TessellationUpdateSystem final
+    : public CommonSystem<RenderableComponent, TessellatedComponent>
 {
   public:
    TessellationUpdateSystem() = default;

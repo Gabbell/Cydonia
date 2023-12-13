@@ -29,7 +29,7 @@ class DisplacementComponent final : public BaseComponent
    Noise::Type type           = Noise::Type::WHITE_NOISE;
    Noise::ShaderParams params = {};
 
-   TextureHandle noiseTex;
+   TextureHandle displacementMap;
    TextureHandle normalMap;
 
    uint32_t width           = 0;

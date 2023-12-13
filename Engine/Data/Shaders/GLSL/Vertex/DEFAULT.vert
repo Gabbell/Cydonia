@@ -31,5 +31,5 @@ void main()
    outNormal   = normalize( vec3( modelMat * vec4( inNormal, 0.0 ) ) );
    outWorldPos = worldPos;
 
-   gl_Position = mainView.proj * mainView.view * vec4( worldPos, 1.0 );
+   gl_Position = mainView.projMat * mainView.viewMat * vec4( worldPos, 1.0 );
 }

@@ -36,8 +36,11 @@ class D3D12RenderBackendImp
 
    void waitUntilIdle() const {};
 
-   CmdListHandle
-   createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
+   CmdListHandle createCommandList(
+       QueueUsageFlag usage,
+       const std::string_view name,
+       bool async,
+       bool presentable )
    {
       return {};
    }
@@ -201,7 +204,7 @@ class D3D12RenderBackendImp
 
    void beginRendering( CmdListHandle cmdList ) const {}
 
-   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb ) const {}
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer ) const {}
 
    void nextPass( CmdListHandle cmdList ) const {}
 
@@ -254,9 +257,10 @@ void D3D12RenderBackend::waitUntilIdle() { _imp->waitUntilIdle(); }
 CmdListHandle D3D12RenderBackend::createCommandList(
     QueueUsageFlag usage,
     const std::string_view name,
+    bool async,
     bool presentable )
 {
-   return _imp->createCommandList( usage, name, presentable );
+   return _imp->createCommandList( usage, name, async, presentable );
 }
 
 void D3D12RenderBackend::submitCommandList( CmdListHandle cmdList )
@@ -484,9 +488,12 @@ void D3D12RenderBackend::beginRendering( CmdListHandle cmdList )
    _imp->beginRendering( cmdList );
 }
 
-void D3D12RenderBackend::beginRendering( CmdListHandle cmdList, const Framebuffer& fb )
+void D3D12RenderBackend::beginRendering(
+    CmdListHandle cmdList,
+    const Framebuffer& fb,
+    uint32_t layer )
 {
-   _imp->beginRendering( cmdList, fb );
+   _imp->beginRendering( cmdList, fb, layer );
 }
 
 void D3D12RenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmdList ); }

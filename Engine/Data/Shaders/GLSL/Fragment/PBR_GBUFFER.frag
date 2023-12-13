@@ -1,11 +1,12 @@
 #version 450
 #extension GL_ARB_separate_shader_objects : enable
 
-#include "../VIEW.h"
 #include "../LIGHTING.h"
+#include "../SHADOW.h"
 
-layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
-layout( set = 0, binding = 1 ) uniform sampler2DShadow shadowMap;
+layout( set = 0, binding = 1 ) uniform LIGHTS { Light lights[MAX_LIGHTS]; };
+layout( set = 0, binding = 2 ) uniform SHADOWMAPS { ShadowMap shadowMaps[MAX_SHADOW_MAPS]; };
+layout( set = 0, binding = 3 ) uniform SHADOW_SAMPLER shadowMap;
 
 layout( set = 1, binding = 0 ) uniform sampler2D albedo;
 layout( set = 1, binding = 1 ) uniform sampler2D normals;
@@ -15,9 +16,10 @@ layout( set = 1, binding = 4 ) uniform sampler2D ambientOcclusion;
 layout( set = 1, binding = 5 ) uniform sampler2D height;
 
 layout( location = 0 ) in vec2 inUV;
-layout( location = 1 ) in vec3 inShadowCoord;
-layout( location = 2 ) in vec3 inTSViewDir;
-layout( location = 3 ) in mat3 inTBN;
+layout( location = 1 ) in vec3 inVSPos;
+layout( location = 2 ) in vec3 inWorldPos;
+layout( location = 3 ) in vec3 inTSViewDir;
+layout( location = 4 ) in mat3 inTBN;
 
 layout( location = 0 ) out vec4 outAlbedo;
 layout( location = 1 ) out vec4 outNormal;
@@ -28,8 +30,6 @@ layout( location = 4 ) out float outDepth;
 // =================================================================================================
 void main()
 {
-   const View mainView = views[0];
-
    vec2 uv = inUV;
 
    // Parallax Occlusion Mapping
@@ -51,9 +51,23 @@ void main()
 
    const vec3 normal = normalize( inTBN * TSnormal );
 
+   // Shadow Mapping
+   // ============================================================================================]
+   const Light sunLight = lights[0];
+   const vec3 sunDir    = -sunLight.direction.xyz;
+
+   const ShadowMap shadowMapParams = shadowMaps[0];
+
+   float shadow = 1.0;
+   if( shadowMapParams.enabled )
+   {
+      const vec4 shadowUV = GetShadowUV( shadowMapParams, inWorldPos, inVSPos.z, normal, sunDir );
+      shadow              = ShadowFactor( shadowMap, shadowMapParams, shadowUV );
+   }
+
    outAlbedo = vec4( albedo, 1.0 );
    outNormal = vec4( normal, 1.0 );
-   outPBR    = vec4( roughness, metalness, ao, 0.0 );
-   outShadow = vec4( ShadowPCF( shadowMap, inShadowCoord ), 0.0, 0.0, 1.0 );
+   outPBR    = vec4( roughness, metalness, ao, 1.0 );
+   outShadow = vec4( shadow, 0.0, 0.0, 1.0 );
    outDepth  = gl_FragCoord.z;
 }

@@ -17,16 +17,6 @@ struct Light
 
 // ================================================================================================
 
-vec3 GammaToLinear( vec3 color )
-{
-   return vec3( pow( color.r, 2.2 ), pow( color.g, 2.2 ), pow( color.b, 2.2 ) );
-}
-
-vec3 LinearToGamma( vec3 color )
-{
-   return vec3( pow( color.r, 1.0 / 2.2 ), pow( color.g, 1.0 / 2.2 ), pow( color.b, 1.0 / 2.2 ) );
-}
-
 float ConstantAmbient()
 {
    const float ambientTerm = 0.1;
@@ -57,65 +47,14 @@ float BlinnPhongSpecular( vec3 lightDir, vec3 viewDir, vec3 normal )
    return specularTerm;
 }
 
-float ShadowPCF( sampler2DShadow shadowMap, vec3 shadowCoords )
-{
-   // ShadowCoords are NDC coordinates of the current fragment from the point of view of the light
-   if( shadowCoords.z <= -1.0 || shadowCoords.z >= 1.0 || shadowCoords.x < 0.0 ||
-       shadowCoords.x > 1.0 || shadowCoords.y < 0.0 || shadowCoords.y > 1.0 )
-   {
-      return 1.0;
-   }
-
-   // Calculate bias (based on depth map resolution and slope)
-   // const vec3 lightDir = normalize( lightPos - worldPos );
-   // float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
-
-   // PCF
-   const vec2 texelSize = 1.0 / textureSize( shadowMap, 0 );
-   const int range      = 1;  // 9 Samples
-   int count            = 0;
-   float shadow         = 0.0;
-   for( int x = -range; x <= range; ++x )
-   {
-      for( int y = -range; y <= range; ++y )
-      {
-         const vec2 offset          = vec2( x, y ) * texelSize;
-         const vec3 curShadowCoords = vec3( shadowCoords.xy + offset, shadowCoords.z );
-         shadow += texture( shadowMap, curShadowCoords );
-         count++;
-      }
-   }
-
-   shadow /= count;
-
-   // Far fade
-   /*
-   const float fade      = 0.01;  // Last 1% of shadow result are linearly faded
-   const float startFade = 1.0 - fade;
-
-   const vec2 ndcShadowCoords = shadowCoords.xy * 2.0 - 1.0;  // XY from -1.0 to 1.0 centered
-   const float maxCoord =
-       clamp( max( abs( ndcShadowCoords.x ), abs( ndcShadowCoords.y ) ), 0.0, 1.0 );
-
-   float edgeFade = 1.0;
-   if( maxCoord > startFade && maxCoord <= 1.0 )
-   {
-      const float t = ( maxCoord - startFade ) / fade;
-      edgeFade   a   = mix( 1.0, 0.0, t );
-   }
-   */
-
-   return shadow;
-}
-
 // Parallax Occlusion Mapping
 // ================================================================================================
 vec2 POMDown( sampler2D heightMap, vec2 inUV, vec3 TSviewDir, vec3 TSnormal )
 {
    const float heightScale = 0.1;
 
-   const int minSamples = 4;
-   const int maxSamples = 32;
+   const uint minSamples = 4;
+   const uint maxSamples = 32;
 
    float tMax = -length( TSviewDir.xy ) / TSviewDir.z;
    tMax *= heightScale;
@@ -124,8 +63,8 @@ vec2 POMDown( sampler2D heightMap, vec2 inUV, vec3 TSviewDir, vec3 TSnormal )
    const vec2 maxOffset = offsetDir * tMax;
 
    // We want to have more samples if the view direction and the normal are perpendicular
-   const float lod      = 1.0 - dot( TSviewDir, TSnormal );
-   const int numSamples = int( mix( minSamples, maxSamples, lod ) );
+   const float lod       = 1.0 - dot( TSviewDir, TSnormal );
+   const uint numSamples = int( mix( minSamples, maxSamples, lod ) );
 
    const float stepSize = 1.0 / numSamples;
 
@@ -136,7 +75,7 @@ vec2 POMDown( sampler2D heightMap, vec2 inUV, vec3 TSviewDir, vec3 TSnormal )
    vec2 prevUVOffset       = vec2( 0.0 );
    float prevSampledHeight = 0.0;
 
-   int currentSample = 1;
+   uint currentSample = 1;
    while( currentSample < numSamples && currentSampledHeight < currentRayHeight )
    {
       // Post intersection not found, keep going

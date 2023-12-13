@@ -17,7 +17,7 @@ class ImGuiSystem final : public CommonSystem<>
    NON_COPIABLE( ImGuiSystem );
    virtual ~ImGuiSystem();
 
-   bool hasToTick() const noexcept override { return true; } 
+   bool hasToTick() const noexcept override { return true; }
    void tick( double deltaS ) override;
 
   private:

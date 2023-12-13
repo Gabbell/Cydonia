@@ -1,4 +1,4 @@
-#include <ECS/Systems/Procedural/FFTOceanSystem.h>
+#include <ECS/Systems/Procedural/FFTOceanUpdateSystem.h>
 
 #include <Graphics/PipelineInfos.h>
 #include <Graphics/StaticPipelines.h>
@@ -45,6 +45,8 @@ static void Initialize()
 
 static void GeneratePhillipsSpectrum( CmdListHandle cmdList, FFTOceanComponent& ocean )
 {
+   CYD_TRACE();
+
    // Generate the two Phillips spectrum textures
    CYD_SCOPED_GPUTRACE( cmdList, "Generate Philips Spectra" );
 
@@ -72,6 +74,8 @@ static void GeneratePhillipsSpectrum( CmdListHandle cmdList, FFTOceanComponent& 
 static void
 GenerateButterflyTexture( CmdListHandle cmdList, FFTOceanComponent& ocean, uint32_t numberOfStages )
 {
+   CYD_TRACE();
+
    // Generating Butterfly texture
    CYD_SCOPED_GPUTRACE( cmdList, "Generate Butterfly Texture" );
 
@@ -102,6 +106,8 @@ GenerateButterflyTexture( CmdListHandle cmdList, FFTOceanComponent& ocean, uint3
 
 static void GenerateFourierComponents( CmdListHandle cmdList, FFTOceanComponent& ocean )
 {
+   CYD_TRACE();
+
    // Generating Fourier components time-dependent textures (dy, dx, dz)
    CYD_SCOPED_GPUTRACE( cmdList, "Generate Fourier Components Textures" );
 
@@ -135,6 +141,8 @@ static void ComputeDisplacement(
     Axis axis,
     uint32_t numberOfStages )
 {
+   CYD_TRACE();
+
    // Cooley-Tukey Radix-2 FFT GPU algorithm
    CYD_GPUTRACE_BEGIN( cmdList, "Butterfly Operations" );
 
@@ -180,7 +188,7 @@ static void ComputeDisplacement(
 
       GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
 
-      // Horizontal butterfly shaderpass
+      // Horizontal butterfly pass
       ocean.params.pingpong = !ocean.params.pingpong;
    }
 
@@ -198,13 +206,13 @@ static void ComputeDisplacement(
 
       GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
 
-      // Vertical butterfly shaderpass
+      // Vertical butterfly pass
       ocean.params.pingpong = !ocean.params.pingpong;
    }
 
    CYD_GPUTRACE_END( cmdList );
 
-   // Inversion and permutation shaderpass
+   // Inversion and permutation pass
    CYD_GPUTRACE_BEGIN( cmdList, "Inversions Permutations" );
 
    GRIS::BindPipeline( cmdList, s_inversionPermutationPip );
@@ -243,15 +251,18 @@ static void ComputeDisplacement(
 
 static void ComputeNormalsAndJacobian( CmdListHandle cmdList, FFTOceanComponent& ocean )
 {
+   CYD_TRACE();
+
    // Calculating Normals and Jacobian (Fold map)
    CYD_SCOPED_GPUTRACE( cmdList, "Computing Normals & Jacobian" );
 
+   const uint32_t normalMapResolution =
+       FFTOceanComponent::NORMAL_MAP_RESOLUTION_MULT * ocean.params.resolution;
+
    constexpr float localSizeX = 16.0f;
    constexpr float localSizeY = 16.0f;
-   const uint32_t groupsX =
-       static_cast<uint32_t>( std::ceil( ocean.params.resolution / localSizeX ) );
-   const uint32_t groupsY =
-       static_cast<uint32_t>( std::ceil( ocean.params.resolution / localSizeY ) );
+   const uint32_t groupsX = static_cast<uint32_t>( std::ceil( normalMapResolution / localSizeX ) );
+   const uint32_t groupsY = static_cast<uint32_t>( std::ceil( normalMapResolution / localSizeY ) );
 
    GRIS::BindPipeline( cmdList, s_normalsJacobianPip );
 
@@ -269,7 +280,7 @@ static void ComputeNormalsAndJacobian( CmdListHandle cmdList, FFTOceanComponent&
    GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
 }
 
-void FFTOceanSystem::tick( double deltaS )
+void FFTOceanUpdateSystem::tick( double deltaS )
 {
    CYD_TRACE();
 
@@ -279,16 +290,22 @@ void FFTOceanSystem::tick( double deltaS )
       Initialize();
    }
 
-   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
-   CYD_SCOPED_GPUTRACE( cmdList, "FFTOceanSystem" );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::ASYNC_COMPUTE );
+   CYD_SCOPED_GPUTRACE( cmdList, "FFTOceanUpdateSystem" );
 
    for( const auto& entityEntry : m_entities )
    {
-      MaterialComponent& material = GetComponent<MaterialComponent>( entityEntry );
-      FFTOceanComponent& ocean    = GetComponent<FFTOceanComponent>( entityEntry );
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      MaterialComponent& material           = GetComponent<MaterialComponent>( entityEntry );
+      FFTOceanComponent& ocean              = GetComponent<FFTOceanComponent>( entityEntry );
 
       // Updating time elapsed
       ocean.params.time += static_cast<float>( deltaS );
+
+      if( !renderable.desc.isVisible )
+      {
+         continue;
+      }
 
       const uint32_t numberOfStages = static_cast<uint32_t>( std::log2( ocean.params.resolution ) );
 
@@ -309,7 +326,12 @@ void FFTOceanSystem::tick( double deltaS )
 
          GRIS::DestroyTexture( ocean.displacementMap );
 
-         // TODO Size based on dimensions and pixel format
+         SamplerInfo sampler;
+         sampler.addressMode   = AddressMode::REPEAT;
+         sampler.magFilter     = Filter::LINEAR;
+         sampler.minFilter     = Filter::LINEAR;
+         sampler.maxAnisotropy = 16.0f;
+
          TextureDescription rgTexDesc = {};
          rgTexDesc.width              = ocean.params.resolution;
          rgTexDesc.height             = ocean.params.resolution;
@@ -338,7 +360,8 @@ void FFTOceanSystem::tick( double deltaS )
          ocean.butterflyTexture = GRIS::CreateTexture( butterflyDesc );
 
          ocean.bitReversedIndices = GRIS::CreateBuffer(
-             sizeof( uint32_t ) * ocean.params.resolution, "FFTOceanSystem Bit-Reversed Indices" );
+             sizeof( uint32_t ) * ocean.params.resolution,
+             "FFTOceanUpdateSystem Bit-Reversed Indices" );
 
          TextureDescription dispTexDesc = {};
          dispTexDesc.width              = ocean.params.resolution;
@@ -353,11 +376,13 @@ void FFTOceanSystem::tick( double deltaS )
          ocean.displacementMap = GRIS::CreateTexture( dispTexDesc );
 
          TextureDescription normalTexDesc = {};
-         normalTexDesc.width              = ocean.params.resolution;
-         normalTexDesc.height             = ocean.params.resolution;
-         normalTexDesc.type               = ImageType::TEXTURE_2D;
-         normalTexDesc.format             = PixelFormat::RGBA32F;
-         normalTexDesc.usage              = ImageUsage::STORAGE | ImageUsage::SAMPLED;
+         const uint32_t normalMapResolution =
+             FFTOceanComponent::NORMAL_MAP_RESOLUTION_MULT * ocean.params.resolution;
+         normalTexDesc.width  = normalMapResolution;
+         normalTexDesc.height = normalMapResolution;
+         normalTexDesc.type   = ImageType::TEXTURE_2D;
+         normalTexDesc.format = PixelFormat::RGBA32F;
+         normalTexDesc.usage  = ImageUsage::STORAGE | ImageUsage::SAMPLED;
          normalTexDesc.stages = PipelineStage::COMPUTE_STAGE | PipelineStage::FRAGMENT_STAGE;
          normalTexDesc.name   = "FFTOcean Normal+Fold Map";
 
@@ -366,10 +391,11 @@ void FFTOceanSystem::tick( double deltaS )
          m_materials.updateMaterial(
              material.materialIdx,
              MaterialCache::TextureSlot::DISPLACEMENT,
-             ocean.displacementMap );
+             ocean.displacementMap,
+             sampler );
 
          m_materials.updateMaterial(
-             material.materialIdx, MaterialCache::TextureSlot::NORMAL, ocean.normalMap );
+             material.materialIdx, MaterialCache::TextureSlot::NORMAL, ocean.normalMap, sampler );
 
          ocean.resolutionChanged = false;
 
@@ -399,5 +425,8 @@ void FFTOceanSystem::tick( double deltaS )
 
       ComputeNormalsAndJacobian( cmdList, ocean );
    }
+
+   const CmdListHandle toCmdList = GetCommandList( RenderGraph::Pass::ALPHA_RENDER );
+   GRIS::SyncOnCommandList( cmdList, toCmdList );
 }
 }

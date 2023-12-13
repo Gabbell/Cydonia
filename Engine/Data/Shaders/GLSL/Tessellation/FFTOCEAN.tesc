@@ -10,6 +10,7 @@
 layout( push_constant ) uniform PushConstant { mat4 model; };
 
 layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
+layout( set = 0, binding = 1 ) uniform FRUSTUMS { Frustum frustums[MAX_VIEWS]; };
 layout( set = 0, binding = 2 ) uniform INSTANCES { InstancingData instances[MAX_INSTANCES]; };
 layout( set = 0, binding = 3 ) uniform TESSELATION { TessellationParams params; };
 layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
@@ -20,65 +21,25 @@ layout( set = 1, binding = 5 ) uniform sampler2D heightMap;
 
 layout( vertices = VERTICES_PER_PATCH ) out;
 
-layout( location = 0 ) in vec2 inUV[];
-layout( location = 1 ) flat in uint inInstanceIndex[];
+layout( location = 0 ) in vec3 inUV[];
 
-layout( location = 0 ) out vec2 outUV[VERTICES_PER_PATCH];
-layout( location = 1 ) flat out uint outInstanceIndex[VERTICES_PER_PATCH];
-
-// Functions
-// =================================================================================================
-
-// Calculate the tessellation factor based on screen space
-// dimensions of the edge
-float screenSpaceTessFactor( mat4x4 instanceModelMat, vec4 p0, vec4 p1 )
-{
-   const View mainView = views[0];
-
-   // Calculate edge mid point
-   vec4 midPoint = 0.5 * ( p0 + p1 );
-
-   // Sphere radius as distance between the control points
-   float radius = distance( p0, p1 ) / 2.0;
-
-   // View space
-   vec4 v0 = mainView.view * instanceModelMat * midPoint;
-
-   // Project into clip space
-   vec4 clip0 = ( mainView.proj * ( v0 - vec4( radius, vec3( 0.0 ) ) ) );
-   vec4 clip1 = ( mainView.proj * ( v0 + vec4( radius, vec3( 0.0 ) ) ) );
-
-   // Get normalized device coordinates
-   clip0 /= clip0.w;
-   clip1 /= clip1.w;
-
-   // Convert to viewport coordinates
-   clip0.xy *= params.viewportDims;
-   clip1.xy *= params.viewportDims;
-
-   // Return the tessellation factor based on the screen size
-   // given by the distance of the two edge control points in screen space
-   // and a reference (min.) tessellation size for the edge set by the application
-   return clamp(
-       distance( clip0, clip1 ) / params.tessellatedEdgeSize * params.tessellationFactor,
-       1.0,
-       64.0 );  // 64 is the minimum maximum of tessellation levels
-}
+layout( location = 0 ) out vec3 outUV[VERTICES_PER_PATCH];
 
 // Checks the current's patch visibility against the frustum using a sphere check
 // Sphere radius is given by the patch size
-bool frustumCheck( mat4x4 instanceModelMat )
+bool FrustumCheck( uint viewIndex, mat4 instanceModelMat )
 {
    // Fixed radius (increase if patch size is increased)
-   const float radius = 600.0f; // TODO Not sure how this works TBH
+   const float radius = 600.0f;  // TODO Not sure how this works TBH
    vec4 pos           = gl_in[gl_InvocationID].gl_Position;
-   // pos.xyz += texture( heightMap, inUV[0] ).xyz;
+
+   pos.y += texture( heightMap, inUV[gl_InvocationID].xy ).r;
    pos = instanceModelMat * pos;
 
    // Check sphere against frustum planes
    for( int i = 0; i < 6; i++ )
    {
-      if( dot( pos, params.frustumPlanes[i] ) + radius < 0.0 )
+      if( dot( pos, frustums[viewIndex].planes[i] ) + radius < 0.0 )
       {
          return false;
       }
@@ -107,12 +68,15 @@ void main()
 {
    if( gl_InvocationID == 0 )
    {
+      const uint viewIndex = 0;
+      const View view = views[viewIndex];
+
       // Doesn't really matter, the whole patch is the same instance
-      const uint instanceIndex    = inInstanceIndex[gl_InvocationID];
+      const uint instanceIndex    = uint( inUV[0].z );
       const mat4 instanceModelMat = model * instances[instanceIndex].modelMat;
 
       // Culling is wrong at steep angles
-      if( !frustumCheck( instanceModelMat ) )
+      if( false/*!FrustumCheck( viewIndex, instanceModelMat )*/ )
       {
          gl_TessLevelInner[0] = 0.0;
          gl_TessLevelInner[1] = 0.0;
@@ -125,14 +89,38 @@ void main()
       {
          if( params.tessellationFactor > 0.0 )
          {
-            gl_TessLevelOuter[0] = screenSpaceTessFactor(
-                instanceModelMat, gl_in[3].gl_Position, gl_in[0].gl_Position );
-            gl_TessLevelOuter[1] = screenSpaceTessFactor(
-                instanceModelMat, gl_in[0].gl_Position, gl_in[1].gl_Position );
-            gl_TessLevelOuter[2] = screenSpaceTessFactor(
-                instanceModelMat, gl_in[1].gl_Position, gl_in[2].gl_Position );
-            gl_TessLevelOuter[3] = screenSpaceTessFactor(
-                instanceModelMat, gl_in[2].gl_Position, gl_in[3].gl_Position );
+            gl_TessLevelOuter[0] = ScreenSpaceTessFactor(
+                params,
+                instanceModelMat,
+                view.viewMat,
+                view.projMat,
+                gl_in[3].gl_Position,
+                gl_in[0].gl_Position );
+
+            gl_TessLevelOuter[1] = ScreenSpaceTessFactor(
+                params,
+                instanceModelMat,
+                view.viewMat,
+                view.projMat,
+                gl_in[0].gl_Position,
+                gl_in[1].gl_Position );
+
+            gl_TessLevelOuter[2] = ScreenSpaceTessFactor(
+                params,
+                instanceModelMat,
+                view.viewMat,
+                view.projMat,
+                gl_in[1].gl_Position,
+                gl_in[2].gl_Position );
+
+            gl_TessLevelOuter[3] = ScreenSpaceTessFactor(
+                params,
+                instanceModelMat,
+                view.viewMat,
+                view.projMat,
+                gl_in[2].gl_Position,
+                gl_in[3].gl_Position );
+
             gl_TessLevelInner[0] = mix( gl_TessLevelOuter[0], gl_TessLevelOuter[3], 0.5 );
             gl_TessLevelInner[1] = mix( gl_TessLevelOuter[2], gl_TessLevelOuter[1], 0.5 );
          }
@@ -152,5 +140,4 @@ void main()
 
    gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
    outUV[gl_InvocationID]              = inUV[gl_InvocationID];
-   outInstanceIndex[gl_InvocationID]   = inInstanceIndex[gl_InvocationID];
 }

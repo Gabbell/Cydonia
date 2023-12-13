@@ -3,16 +3,17 @@
 
 #include "../VIEW.h"
 #include "../PBR.h"
+#include "../COLOR.h"
 
-layout( set = 0, binding = 0 ) uniform Views { View views[MAX_VIEWS]; };
-layout( set = 0, binding = 1 ) uniform InverseViews { InverseView inverseViews[MAX_VIEWS]; };
-layout( set = 0, binding = 2 ) uniform Lights { Light lights[MAX_LIGHTS]; };
+layout( set = 0, binding = 0 ) uniform VIEWS { View views[MAX_VIEWS]; };
+layout( set = 0, binding = 1 ) uniform INVERSE_VIEWS { InverseView inverseViews[MAX_VIEWS]; };
+layout( set = 0, binding = 2 ) uniform LIGHTS { Light lights[MAX_LIGHTS]; };
 
 layout( set = 1, binding = 0 ) uniform sampler2D albedo;
 layout( set = 1, binding = 1 ) uniform sampler2D normals;
 layout( set = 1, binding = 2 ) uniform sampler2D pbr;
-layout( set = 1, binding = 3 ) uniform sampler2D shadowMask;
-layout( set = 1, binding = 4 ) uniform sampler2D depth;
+layout( set = 1, binding = 3 ) uniform sampler2D depth;
+layout( set = 1, binding = 4 ) uniform sampler2D shadowMask;
 
 layout( location = 0 ) in vec2 inUV;
 
@@ -38,7 +39,7 @@ void main()
    // Using view-space coordinates is not enough because it doesn't consider
    // the current view's rotation
    const vec4 ndc = vec4( inUV * 2.0 - 1.0, depth, 1.0 );
-   vec4 worldPos  = inverseMainView.invView * inverseMainView.invProj * ndc;
+   vec4 worldPos  = inverseMainView.invViewMat * inverseMainView.invProjMat * ndc;
    worldPos       = worldPos / worldPos.w;
 
    const vec3 fragToView = normalize( mainView.pos.xyz - worldPos.xyz );  // View direction
@@ -78,9 +79,7 @@ void main()
    }
 
    // Add made-up ambient contribution
-   totalRadiance += vec3( 0.05 ) * albedo * ao;
-
-   totalRadiance = totalRadiance / (totalRadiance + vec3(1.0));
+   totalRadiance += vec3( 0.005 ) * albedo * ao;
 
    outColor = vec4( totalRadiance, 1.0 );
 }

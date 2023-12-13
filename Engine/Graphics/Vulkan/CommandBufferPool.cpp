@@ -15,10 +15,12 @@ CommandBufferPool::CommandBufferPool(
     const Device& device,
     uint32_t familyIndex,
     CYD::QueueUsageFlag type,
+    bool async,
     bool supportsPresentation )
     : m_pDevice( &device ),
       m_type( type ),
       m_familyIndex( familyIndex ),
+      m_async( async ),
       m_supportsPresentation( supportsPresentation )
 {
    // This is necessary to prevent resizing and invalidating all pointers in the handle manager
@@ -33,11 +35,10 @@ CommandBuffer* CommandBufferPool::createCommandBuffer(
 {
    // Check to see if we have a free spot for a command buffer. Either one that is already
    // released or one that has been completed, freed and is not in use anymore
-   auto it = std::find_if(
-       m_cmdBuffers.rbegin(),
-       m_cmdBuffers.rend(),
-       []( CommandBuffer& cmdBuffer )
-       { return cmdBuffer.isReleased() || ( cmdBuffer.isFree() && !cmdBuffer.inUse() ); } );
+   auto it =
+       std::find_if( m_cmdBuffers.rbegin(), m_cmdBuffers.rend(), []( CommandBuffer& cmdBuffer ) {
+          return cmdBuffer.isReleased() || ( cmdBuffer.isFree() && !cmdBuffer.inUse() );
+       } );
 
    if( it != m_cmdBuffers.rend() )
    {

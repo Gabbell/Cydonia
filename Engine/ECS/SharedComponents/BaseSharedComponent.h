@@ -2,6 +2,8 @@
 
 #include <Common/Include.h>
 
+#include <ECS/SharedComponents/SharedComponentType.h>
+
 namespace CYD
 {
 class BaseSharedComponent

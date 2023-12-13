@@ -133,7 +133,10 @@ class CommandBuffer final
    // Rendering scope
    // =============================================================================================
    void beginRendering( Swapchain& swapchain );
-   void beginRendering( const CYD::Framebuffer& fb, const std::vector<Texture*>& targets );
+   void beginRendering(
+       const CYD::Framebuffer& fb,
+       const std::vector<Texture*>& targets,
+       uint32_t layer = 0 );
    void nextPass() const;
    void endRendering();
 
@@ -202,6 +205,7 @@ class CommandBuffer final
    void _addDependency( T* dependency );
 
    void _setRenderArea( int offsetX, int offsetY, uint32_t width, uint32_t height );
+   void _insertRenderPassBarrier();
 
    // Member Variables
    // =============================================================================================
@@ -271,6 +275,5 @@ class CommandBuffer final
    CYD::QueueUsageFlag m_usage   = CYD::QueueUsage::UNKNOWN;
    VkCommandBuffer m_vkCmdBuffer = nullptr;
    VkFence m_vkFence             = nullptr;
-   VkSampler m_defaultSampler    = nullptr;
 };
 }

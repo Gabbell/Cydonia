@@ -11,10 +11,10 @@ class NodeGraph
   public:
    using NodeHandle = uint32_t;
 
-   NodeGraph()                                  = default;
-   NodeGraph( const NodeGraph& )                = delete;
-   NodeGraph( NodeGraph&& ) noexcept            = default;
-   NodeGraph& operator=( const NodeGraph& )     = delete;
+   NodeGraph()                       = default;
+   NodeGraph( const NodeGraph& )     = delete;
+   NodeGraph( NodeGraph&& ) noexcept = default;
+   NodeGraph& operator=( const NodeGraph& ) = delete;
    NodeGraph& operator=( NodeGraph&& ) noexcept = default;
    virtual ~NodeGraph()                         = default;
 

@@ -4,8 +4,10 @@
 #include <Graphics/StaticPipelines.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
+#include <Graphics/GRIS/TextureCache.h>
 #include <Graphics/GRIS/RenderHelpers.h>
 #include <Graphics/Utility/Transforms.h>
+#include <Graphics/Utility/ShadowMapping.h>
 
 #include <Graphics/Scene/MeshCache.h>
 #include <Graphics/Scene/MaterialCache.h>
@@ -26,9 +28,10 @@ void ForwardRenderSystem::sort()
       const RenderableComponent& firstRenderable  = GetComponent<RenderableComponent>( first );
       const RenderableComponent& secondRenderable = GetComponent<RenderableComponent>( second );
 
-      return ( firstRenderable.desc.type == RenderableComponent::Type::FORWARD ||
-               secondRenderable.desc.type != RenderableComponent::Type::FORWARD ) &&
-             first.handle < second.handle;
+      const bool firstIsForward  = firstRenderable.desc.type == RenderableComponent::Type::FORWARD;
+      const bool secondIsForward = secondRenderable.desc.type == RenderableComponent::Type::FORWARD;
+
+      return firstIsForward && !secondIsForward;
    };
 
    std::sort( m_entities.begin(), m_entities.end(), forwardRenderSort );
@@ -40,7 +43,7 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
    CYD_TRACE();
 
    // Start command list recording
-   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::OPAQUE_RENDER );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::ALPHA_RENDER );
    CYD_SCOPED_GPUTRACE( cmdList, "ForwardRenderSystem" );
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
@@ -124,42 +127,51 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
       const glm::mat4 modelMatrix =
           Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
 
-      GRIS::NamedUpdateConstantBuffer( cmdList, "Model", &modelMatrix, *curPipInfo );
-
-      GRIS::NamedBufferBinding(
-          cmdList, scene.viewsBuffer, "Views", *curPipInfo, 0, sizeof( scene.views ) );
-
-      GRIS::NamedBufferBinding( cmdList, scene.lightsBuffer, "Lights", *curPipInfo );
+      GRIS::NamedUpdateConstantBuffer( cmdList, "MODEL", &modelMatrix, *curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.viewsBuffer, "VIEWS", *curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.frustumsBuffer, "FRUSTUMS", *curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.lightsBuffer, "LIGHTS", *curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.shadowMapsBuffer, "SHADOWS", *curPipInfo );
 
       if( renderable.desc.isShadowReceiving )
       {
-         CYD_ASSERT( scene.shadowMap );
-
-         SamplerInfo sampler;
-         sampler.useCompare  = true;  // For PCF
-         sampler.compare     = CompareOperator::GREATER_EQUAL;
-         sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
-         sampler.borderColor = BorderColor::OPAQUE_BLACK;
-         GRIS::NamedTextureBinding( cmdList, scene.shadowMap, sampler, "ShadowMap", *curPipInfo );
+         if( scene.shadowMapTextures[0] )
+         {
+            GRIS::NamedTextureBinding(
+                cmdList,
+                scene.shadowMapTextures[0],
+                ShadowMapping::GetSampler(),
+                "SHADOWMAP",
+                *curPipInfo );
+         }
+         else
+         {
+            GRIS::NamedTextureBinding(
+                cmdList,
+                GRIS::TextureCache::GetDepthTextureArray(),
+                ShadowMapping::GetSampler(),
+                "SHADOWMAP",
+                *curPipInfo );
+         }
       }
 
       if( renderable.desc.useEnvironmentMap )
       {
          CYD_ASSERT( scene.envMap );
-         GRIS::NamedTextureBinding( cmdList, scene.envMap, "EnvironmentMap", *curPipInfo );
+         GRIS::NamedTextureBinding( cmdList, scene.envMap, "ENVIRONMENTMAP", *curPipInfo );
       }
 
       if( renderable.isInstanced )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
-         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "Instances", *curPipInfo );
+         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "INSTANCES", *curPipInfo );
       }
 
       if( renderable.isTessellated )
       {
          CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation params buffer" );
          GRIS::NamedBufferBinding(
-             cmdList, renderable.tessellationBuffer, "TessellationParams", *curPipInfo );
+             cmdList, renderable.tessellationBuffer, "TESSELLATION", *curPipInfo );
       }
 
       // Draw
@@ -189,7 +201,5 @@ void ForwardRenderSystem::tick( double /*deltaS*/ )
    }
 
    GRIS::EndRendering( cmdList );
-
-   scene.mainFramebuffer.setClearAll( false );
 }
 }

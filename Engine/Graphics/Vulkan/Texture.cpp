@@ -9,7 +9,11 @@
 
 namespace vk
 {
-Texture::Texture() { m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 ); }
+Texture::Texture()
+{
+   m_useCount = std::make_unique<std::atomic<uint32_t>>( 0 );
+   _clearPreviousAccess();
+}
 
 void Texture::acquire( const Device& device, const CYD::TextureDescription& desc )
 {
@@ -33,11 +37,10 @@ void Texture::acquire( const Device& device, const CYD::TextureDescription& desc
       m_mipLevels = 1;
    }
 
-   m_prevAccesses.fill( CYD::Access::UNDEFINED );
-
    _createImage();
    _allocateMemory();
-   _createImageView();
+
+   m_vkImageView = _createImageView();
 
    incUse();
 }
@@ -49,43 +52,70 @@ void Texture::release()
       CYD_ASSERT( m_useCount->load() == 0 && "Texture: released a still used texture" );
 
       vkDestroyImageView( m_pDevice->getVKDevice(), m_vkImageView, nullptr );
+
+      for( uint32_t mipLevel = 0; mipLevel < m_mipLevels; ++mipLevel )
+      {
+         for( uint32_t layer = 0; layer < m_depth; ++layer )
+         {
+            if( m_vkImageViews[mipLevel][layer] != VK_NULL_HANDLE )
+            {
+               vkDestroyImageView(
+                   m_pDevice->getVKDevice(), m_vkImageViews[mipLevel][layer], nullptr );
+            }
+         }
+      }
+
       vkDestroyImage( m_pDevice->getVKDevice(), m_vkImage, nullptr );
       vkFreeMemory( m_pDevice->getVKDevice(), m_vkMemory, nullptr );
 
-      m_size      = 0;
-      m_width     = 0;
-      m_height    = 0;
-      m_depth     = 1;
-      m_mipLevels = 1;
-      m_prevAccesses.fill( CYD::Access::UNDEFINED );
+      _clearPreviousAccess();
+
+      m_size        = 0;
+      m_width       = 0;
+      m_height      = 0;
+      m_depth       = 1;
+      m_mipLevels   = 1;
       m_type        = CYD::ImageType::TEXTURE_2D;
-      m_format      = CYD::PixelFormat::RGBA8_SRGB;
+      m_format      = CYD::PixelFormat::UNKNOWN;
       m_usage       = 0;
       m_stages      = 0;
-      m_pDevice     = nullptr;
-      m_vkImageView = nullptr;
-      m_vkImage     = nullptr;
-      m_vkMemory    = nullptr;
+      m_pDevice     = VK_NULL_HANDLE;
+      m_vkImageView = VK_NULL_HANDLE;
+      m_vkImage     = VK_NULL_HANDLE;
+      m_vkMemory    = VK_NULL_HANDLE;
+
+      memset( m_vkImageViews.data(), 0, sizeof( m_vkImageViews ) );
    }
 }
 
-CYD::Access Texture::getPreviousAccess( uint32_t mipLevel ) const
+CYD::Access Texture::getPreviousAccess( uint32_t layer, uint32_t mipLevel ) const
 {
    CYD_ASSERT( mipLevel < m_mipLevels );
    if( mipLevel < m_mipLevels )
    {
-      return m_prevAccesses[mipLevel];
+      return m_prevAccesses[mipLevel][layer];
    }
 
    return CYD::Access::UNDEFINED;
 }
 
-void Texture::setPreviousAccess( CYD::Access access, uint32_t mipLevel )
+void Texture::setPreviousAccess( CYD::Access access, uint32_t layer, uint32_t mipLevel )
 {
    CYD_ASSERT( mipLevel < m_mipLevels );
    if( mipLevel < m_mipLevels )
    {
-      m_prevAccesses[mipLevel] = access;
+      m_prevAccesses[mipLevel][layer] = access;
+   }
+}
+
+void Texture::_clearPreviousAccess()
+{
+   for( uint32_t mipLevel = 0; mipLevel < MAX_MIP_LEVEL; ++mipLevel )
+   {
+      for( uint32_t layer = 0; layer < MAX_DEPTH_LEVEL; ++layer )
+      {
+         m_prevAccesses[mipLevel][layer] = CYD::Access::UNDEFINED;
+      }
    }
 }
 
@@ -103,8 +133,8 @@ void Texture::decUse()
 
 uint32_t Texture::getLayerCount() const
 {
-   if( m_type == CYD::ImageType::TEXTURE_2D || m_type == CYD::ImageType::TEXTURE_2D_ARRAY ||
-       m_type == CYD::ImageType::TEXTURE_CUBE || m_type == CYD::ImageType::TEXTURE_CUBE_ARRAY )
+   if( m_type == CYD::ImageType::TEXTURE_2D_ARRAY || m_type == CYD::ImageType::TEXTURE_CUBE ||
+       m_type == CYD::ImageType::TEXTURE_CUBE_ARRAY )
    {
       return m_depth;
    }
@@ -120,6 +150,17 @@ uint32_t Texture::getDepth() const
    }
 
    return 1;
+}
+
+VkImageView Texture::getIndexedVKImageView( uint32_t layer, uint32_t mipLevel )
+{
+   // These image views are lazy-initialized because they should only be created if needed
+   if( m_vkImageViews[mipLevel][layer] == VK_NULL_HANDLE )
+   {
+      m_vkImageViews[mipLevel][layer] = _createImageView( layer, mipLevel );
+   }
+
+   return m_vkImageViews[mipLevel][layer];
 }
 
 void Texture::_createImage()
@@ -208,8 +249,22 @@ void Texture::_allocateMemory()
    vkBindImageMemory( m_pDevice->getVKDevice(), m_vkImage, m_vkMemory, 0 );
 }
 
-void Texture::_createImageView()
+VkImageView Texture::_createImageView( uint32_t layer, uint32_t mipLevel )
 {
+   bool allMipLevels = false;
+   if( mipLevel == CYD::ALL_MIP_LEVELS )
+   {
+      mipLevel     = 0;
+      allMipLevels = true;
+   }
+
+   bool allArrayLayers = false;
+   if( layer == CYD::ALL_ARRAY_LAYERS )
+   {
+      layer          = 0;
+      allArrayLayers = true;
+   }
+
    VkImageViewCreateInfo viewInfo = {};
    viewInfo.sType                 = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
    viewInfo.image                 = m_vkImage;
@@ -226,7 +281,14 @@ void Texture::_createImageView()
          viewInfo.viewType = VK_IMAGE_VIEW_TYPE_3D;
          break;
       case CYD::ImageType::TEXTURE_2D_ARRAY:
-         viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+         if( allArrayLayers )
+         {
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+         }
+         else
+         {
+            viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+         }
          break;
       case CYD::ImageType::TEXTURE_CUBE:
          viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
@@ -240,14 +302,18 @@ void Texture::_createImageView()
 
    viewInfo.format                          = TypeConversions::cydToVkFormat( m_format );
    viewInfo.subresourceRange.aspectMask     = TypeConversions::getAspectMask( m_format );
-   viewInfo.subresourceRange.baseMipLevel   = 0;
-   viewInfo.subresourceRange.levelCount     = m_mipLevels;
-   viewInfo.subresourceRange.baseArrayLayer = 0;
-   viewInfo.subresourceRange.layerCount     = getLayerCount();
+   viewInfo.subresourceRange.baseMipLevel   = allMipLevels ? 0 : mipLevel;
+   viewInfo.subresourceRange.levelCount     = allMipLevels ? VK_REMAINING_MIP_LEVELS : 1;
+   viewInfo.subresourceRange.baseArrayLayer = allArrayLayers ? 0 : layer;
+   viewInfo.subresourceRange.layerCount     = allArrayLayers ? VK_REMAINING_ARRAY_LAYERS : 1;
+
+   VkImageView vkImageView;
 
    VkResult result =
-       vkCreateImageView( m_pDevice->getVKDevice(), &viewInfo, nullptr, &m_vkImageView );
+       vkCreateImageView( m_pDevice->getVKDevice(), &viewInfo, nullptr, &vkImageView );
    CYD_ASSERT( result == VK_SUCCESS && "Texture: Could not create image view" );
+
+   return vkImageView;
 }
 
 Texture::~Texture() { release(); }

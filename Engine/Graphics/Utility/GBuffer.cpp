@@ -48,16 +48,10 @@ void GBuffer::resize( uint32_t width, uint32_t height )
 
    // Shadow
    texDesc.name   = "GBuffer Shadow Mask";
-   texDesc.format = PixelFormat::R32F;
-   texDesc.usage  = ImageUsage::COLOR | ImageUsage::SAMPLED;
+   texDesc.format = PixelFormat::RG32F;
+   texDesc.usage  = ImageUsage::COLOR | ImageUsage::STORAGE | ImageUsage::SAMPLED;
 
    m_textures[SHADOW] = GRIS::CreateTexture( texDesc );
-
-   ClearValue colorClear;
-   colorClear.color.f32[0] = 0.0f;
-   colorClear.color.f32[1] = 0.0f;
-   colorClear.color.f32[2] = 0.0f;
-   colorClear.color.f32[3] = 1.0f;
 
    Framebuffer::resize( width, height );
    attach( ALBEDO, m_textures[ALBEDO], Access::FRAGMENT_SHADER_READ );
@@ -69,17 +63,24 @@ void GBuffer::resize( uint32_t width, uint32_t height )
 void GBuffer::bind( CmdListHandle cmdList ) const
 {
    // This could be more flexible if needed
-   Framebuffer::bind( cmdList, ALBEDO, 0, 1 );
-   Framebuffer::bind( cmdList, NORMAL, 1, 1 );
-   Framebuffer::bind( cmdList, PBR, 2, 1 );
-   Framebuffer::bind( cmdList, SHADOW, 3, 1 );
-   Framebuffer::bind( cmdList, DEPTH, 4, 1 );
+   Framebuffer::bindTexture( cmdList, ALBEDO, 0, 1 );
+   Framebuffer::bindTexture( cmdList, NORMAL, 1, 1 );
+   Framebuffer::bindTexture( cmdList, PBR, 2, 1 );
+   Framebuffer::bindTexture( cmdList, SHADOW, 3, 1 );
+   Framebuffer::bindTexture( cmdList, DEPTH, 4, 1 );
 }
 
-void GBuffer::bind( CmdListHandle cmdList, Index index, uint32_t binding ) const
+void GBuffer::bindImage( CmdListHandle cmdList, Index index, uint32_t binding, uint32_t set ) const
 {
-   Framebuffer::bind( cmdList, index, binding );
+   Framebuffer::bindImage( cmdList, index, binding, set );
 }
+
+void GBuffer::bindTexture( CmdListHandle cmdList, Index index, uint32_t binding, uint32_t set )
+    const
+{
+   Framebuffer::bindTexture( cmdList, index, binding, set );
+}
+
 void GBuffer::_destroy()
 {
    GRIS::DestroyTexture( m_textures[ALBEDO] );

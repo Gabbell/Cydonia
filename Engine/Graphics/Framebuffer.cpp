@@ -6,10 +6,11 @@
 
 namespace CYD
 {
-void Framebuffer::resize( uint32_t width, uint32_t height )
+void Framebuffer::resize( uint32_t width, uint32_t height, uint32_t layers )
 {
    m_width  = width;
    m_height = height;
+   m_layers = layers;
 }
 
 void Framebuffer::attach(
@@ -39,7 +40,17 @@ void Framebuffer::replace(
 
 void Framebuffer::detach( uint32_t idx ) { m_targets[idx].texture = {}; }
 
-void Framebuffer::bind( CmdListHandle cmdList, uint32_t idx, uint32_t binding, uint32_t set ) const
+void Framebuffer::bindImage( CmdListHandle cmdList, uint32_t idx, uint32_t binding, uint32_t set )
+    const
+{
+   if( m_targets[idx].texture )
+   {
+      GRIS::BindImage( cmdList, m_targets[idx].texture, binding, set );
+   }
+}
+
+void Framebuffer::bindTexture( CmdListHandle cmdList, uint32_t idx, uint32_t binding, uint32_t set )
+    const
 {
    if( m_targets[idx].texture )
    {
@@ -47,6 +58,6 @@ void Framebuffer::bind( CmdListHandle cmdList, uint32_t idx, uint32_t binding, u
    }
 }
 
-bool Framebuffer::isValid() const { return m_width > 0 && m_height > 0 && !m_targets.empty(); }
+bool Framebuffer::isValid() const { return m_width > 0 && m_height > 0; }
 void Framebuffer::setClearAll( bool shouldClear ) { m_clearAll = shouldClear; }
 }

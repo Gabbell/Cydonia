@@ -4,6 +4,7 @@
 
 #include <Common/Include.h>
 
+#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/MaterialComponent.h>
 #include <ECS/Components/Procedural/FFTOceanComponent.h>
 
@@ -23,13 +24,14 @@ namespace CYD
 {
 class MaterialCache;
 
-class FFTOceanSystem final : public CommonSystem<MaterialComponent, FFTOceanComponent>
+class FFTOceanUpdateSystem final
+    : public CommonSystem<RenderableComponent, MaterialComponent, FFTOceanComponent>
 {
   public:
-   FFTOceanSystem() = delete;
-   FFTOceanSystem( MaterialCache& materials ) : m_materials( materials ) {}
-   NON_COPIABLE( FFTOceanSystem );
-   virtual ~FFTOceanSystem() = default;
+   FFTOceanUpdateSystem() = delete;
+   FFTOceanUpdateSystem( MaterialCache& materials ) : m_materials( materials ) {}
+   NON_COPIABLE( FFTOceanUpdateSystem );
+   virtual ~FFTOceanUpdateSystem() = default;
 
    void tick( double deltaS ) override;
 

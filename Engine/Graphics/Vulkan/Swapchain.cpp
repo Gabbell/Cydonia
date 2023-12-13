@@ -12,6 +12,8 @@
 #include <Graphics/Vulkan/RenderPassCache.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
+#include <Profiling.h>
+
 #include <algorithm>
 
 namespace vk
@@ -72,10 +74,7 @@ static VkSurfaceFormatKHR chooseFormat(
    desiredFormat.colorSpace = TypeConversions::cydToVkSpace( space );
 
    auto it = std::find_if(
-       formats.begin(),
-       formats.end(),
-       [&desiredFormat]( const VkSurfaceFormatKHR& format )
-       {
+       formats.begin(), formats.end(), [&desiredFormat]( const VkSurfaceFormatKHR& format ) {
           return format.format == desiredFormat.format &&
                  format.colorSpace == desiredFormat.colorSpace;
        } );
@@ -187,7 +186,8 @@ void Swapchain::_cleanupSwapchain()
       m_colorImageViews[i] = nullptr;
    }
 
-   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+   CYD_ASSERT( m_renderDoneSems.size() == m_availableSems.size() );
+   for( uint32_t i = 0; i < m_renderDoneSems.size(); i++ )
    {
       vkDestroySemaphore( m_device.getVKDevice(), m_renderDoneSems[i], nullptr );
       vkDestroySemaphore( m_device.getVKDevice(), m_availableSems[i], nullptr );
@@ -284,23 +284,27 @@ void Swapchain::_createFramebuffers()
 
 void Swapchain::_createSyncObjects()
 {
+   VkSemaphoreCreateInfo semaphoreInfo;
+   semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+   semaphoreInfo.pNext = nullptr;
+   semaphoreInfo.flags = 0;
+
+   VkResult result;
+
    m_availableSems.resize( MAX_FRAMES_IN_FLIGHT );
-   m_renderDoneSems.resize( MAX_FRAMES_IN_FLIGHT );
-
-   VkSemaphoreCreateInfo semaphoreInfo = {};
-   semaphoreInfo.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-   for( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
    {
-      if( vkCreateSemaphore(
-              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_availableSems[i] ) !=
-              VK_SUCCESS ||
-          vkCreateSemaphore(
-              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] ) !=
-              VK_SUCCESS )
-      {
-         CYD_ASSERT( !"Swapchain: Could not create sync objects" );
-      }
+      result =
+          vkCreateSemaphore( m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_availableSems[i] );
+      CYD_ASSERT( result == VK_SUCCESS );
+   }
+
+   m_renderDoneSems.resize( MAX_FRAMES_IN_FLIGHT );
+   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+   {
+      result = vkCreateSemaphore(
+          m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] );
+      CYD_ASSERT( result == VK_SUCCESS );
    }
 }
 
@@ -316,8 +320,11 @@ void Swapchain::transitionColorImage( const CommandBuffer* cmdBuffer, CYD::Acces
 
    m_colorImageAccess[m_currentFrame] = nextAccess;
 }
+
 bool Swapchain::acquireImage()
 {
+   CYD_TRACE();
+
    VkResult result = vkAcquireNextImageKHR(
        m_device.getVKDevice(),
        m_vkSwapchain,

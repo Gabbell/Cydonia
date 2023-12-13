@@ -53,6 +53,7 @@ void WaitUntilIdle();
 CmdListHandle CreateCommandList(
     QueueUsageFlag usage,
     const std::string_view name = "",
+    bool async                  = false,  // Async here means anything that is not the main queue
     bool presentable            = false );
 void SubmitCommandList( CmdListHandle cmdList );
 
@@ -146,7 +147,7 @@ IndexBufferHandle CreateIndexBuffer( size_t size, const std::string_view name );
 BufferHandle CreateUniformBuffer( size_t size, const std::string_view name );
 BufferHandle CreateBuffer( size_t size, const std::string_view name );
 
-void* AddDebugTexture( TextureHandle texture );
+void* AddDebugTexture( TextureHandle texture, uint32_t layer = 0 );
 void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle texture );
 void RemoveDebugTexture( void* texture );
 
@@ -176,7 +177,7 @@ void DestroyBuffer( BufferHandle bufferHandle );
 // ===============================================================================================
 void BeginFrame();
 void BeginRendering( CmdListHandle cmdList );
-void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb );
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer = 0 );
 void NextPass( CmdListHandle cmdList );
 void EndRendering( CmdListHandle cmdList );
 void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex = 0 );

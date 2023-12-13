@@ -33,7 +33,9 @@ class LightComponent final : public BaseComponent
 
    static constexpr ComponentType TYPE = ComponentType::LIGHT;
 
-   static constexpr float DIRECTIONAL_POSITION_SCALE = 10000.0f;
+   using LightIndex                                = uint32_t;
+   static constexpr LightIndex INVALID_LIGHT_INDEX = 0xFFFFFFFF;
+   uint32_t index                                  = INVALID_LIGHT_INDEX;
 
    Type type = Type::DIRECTIONAL;
 

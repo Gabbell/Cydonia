@@ -10,6 +10,8 @@
 #include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
 #include <Graphics/GRIS/TextureCache.h>
 
+#include <UI/UserInterface.h>
+
 #include <Profiling.h>
 
 #include <ThirdParty/ImGui/imgui.h>
@@ -84,6 +86,7 @@ void DrawUI( CmdListHandle cmdList )
 void RenderBackendCleanup()
 {
    CYD_TRACE();
+   UI::Cleanup();
    b->cleanup();
 }
 
@@ -94,15 +97,19 @@ void ReloadShaders()
    b->reloadShaders();
 }
 
-void WaitUntilIdle() { b->waitUntilIdle(); }
+void WaitUntilIdle()
+{
+   CYD_TRACE();
+   b->waitUntilIdle();
+}
 
 // =================================================================================================
 // Command Buffers/Lists
 //
 CmdListHandle
-CreateCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
+CreateCommandList( QueueUsageFlag usage, const std::string_view name, bool async, bool presentable )
 {
-   return b->createCommandList( usage, name, presentable );
+   return b->createCommandList( usage, name, async, presentable );
 }
 
 void SubmitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
@@ -120,26 +127,31 @@ void SyncToSwapchain( CmdListHandle cmdList ) { b->syncToSwapchain( cmdList ); }
 //
 void SetViewport( CmdListHandle cmdList, const Viewport& viewport )
 {
+   CYD_TRACE();
    b->setViewport( cmdList, viewport );
 }
 
 void SetScissor( CmdListHandle cmdList, const Rectangle& scissor )
 {
+   CYD_TRACE();
    b->setScissor( cmdList, scissor );
 }
 
 void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo )
 {
+   CYD_TRACE();
    b->bindPipeline( cmdList, pipInfo );
 }
 
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )
 {
+   CYD_TRACE();
    b->bindPipeline( cmdList, pipInfo );
 }
 
 void BindPipeline( CmdListHandle cmdList, const PipelineInfo* pPipInfo )
 {
+   CYD_TRACE();
    if( pPipInfo )
    {
       switch( pPipInfo->type )
@@ -162,6 +174,7 @@ void BindPipeline( CmdListHandle cmdList, PipelineIndex index )
 
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
 {
+   CYD_TRACE();
    b->bindVertexBuffer( cmdList, bufferHandle );
 }
 
@@ -171,6 +184,7 @@ void BindIndexBuffer<uint16_t>(
     IndexBufferHandle bufferHandle,
     uint32_t offset )
 {
+   CYD_TRACE();
    b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT16, offset );
 }
 
@@ -180,11 +194,13 @@ void BindIndexBuffer<uint32_t>(
     IndexBufferHandle bufferHandle,
     uint32_t offset )
 {
+   CYD_TRACE();
    b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT32, offset );
 }
 
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
+   CYD_TRACE();
    b->bindTexture( cmdList, texHandle, binding, set );
 }
 
@@ -195,11 +211,13 @@ void BindTexture(
     uint32_t binding,
     uint32_t set )
 {
+   CYD_TRACE();
    b->bindTexture( cmdList, texHandle, sampler, binding, set );
 }
 
 void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
+   CYD_TRACE();
    b->bindImage( cmdList, texHandle, binding, set );
 }
 
@@ -211,6 +229,7 @@ void BindBuffer(
     uint32_t offset,
     uint32_t range )
 {
+   CYD_TRACE();
    b->bindBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
@@ -222,6 +241,7 @@ void BindUniformBuffer(
     uint32_t offset,
     uint32_t range )
 {
+   CYD_TRACE();
    b->bindUniformBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
@@ -232,17 +252,23 @@ void UpdateConstantBuffer(
     size_t size,
     const void* pData )
 {
+   CYD_TRACE();
    b->updateConstantBuffer( cmdList, stages, offset, size, pData );
 }
 
 // =================================================================================================
 // Resources
 //
-TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
+TextureHandle CreateTexture( const TextureDescription& desc )
+{
+   CYD_TRACE();
+   return b->createTexture( desc );
+}
 
 TextureHandle
 CreateTexture( CmdListHandle cmdList, const TextureDescription& desc, const void* pTexels )
 {
+   CYD_TRACE();
    return b->createTexture( cmdList, desc, pTexels );
 }
 
@@ -252,6 +278,7 @@ TextureHandle CreateTexture(
     uint32_t layerCount,
     const void** ppTexels )
 {
+   CYD_TRACE();
    return b->createTexture( cmdList, desc, layerCount, ppTexels );
 }
 
@@ -280,7 +307,10 @@ BufferHandle CreateBuffer( size_t size, const std::string_view name )
    return b->createBuffer( size, name );
 }
 
-void* AddDebugTexture( TextureHandle texture ) { return b->addDebugTexture( texture ); }
+void* AddDebugTexture( TextureHandle texture, uint32_t layer )
+{
+   return b->addDebugTexture( texture, layer );
+}
 void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle textureHandle )
 {
    return b->updateDebugTexture( cmdList, textureHandle );
@@ -338,24 +368,35 @@ void BeginFrame()
    b->beginFrame();
 }
 
-void BeginRendering( CmdListHandle cmdList ) { b->beginRendering( cmdList ); }
-
-void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb )
+void BeginRendering( CmdListHandle cmdList )
 {
-   b->beginRendering( cmdList, fb );
+   CYD_TRACE();
+   b->beginRendering( cmdList );
+}
+
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer )
+{
+   CYD_TRACE();
+   b->beginRendering( cmdList, fb, layer );
 }
 
 void NextPass( CmdListHandle cmdList ) { b->nextPass( cmdList ); }
 
-void EndRendering( CmdListHandle cmdList ) { b->endRendering( cmdList ); }
+void EndRendering( CmdListHandle cmdList )
+{
+   CYD_TRACE();
+   b->endRendering( cmdList );
+}
 
 void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
 {
+   CYD_TRACE();
    b->draw( cmdList, vertexCount, firstVertex );
 }
 
 void DrawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )
 {
+   CYD_TRACE();
    b->drawIndexed( cmdList, indexCount, firstIndex );
 }
 
@@ -366,6 +407,7 @@ void DrawInstanced(
     size_t firstVertex,
     size_t firstInstance )
 {
+   CYD_TRACE();
    b->drawInstanced( cmdList, vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
@@ -376,11 +418,13 @@ void DrawIndexedInstanced(
     size_t firstIndex,
     size_t firstInstance )
 {
+   CYD_TRACE();
    b->drawIndexedInstanced( cmdList, indexCount, instanceCount, firstIndex, firstInstance );
 }
 
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )
 {
+   CYD_TRACE();
    b->dispatch( cmdList, workX, workY, workZ );
 }
 

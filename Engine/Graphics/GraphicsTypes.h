@@ -21,6 +21,9 @@ static constexpr MaterialIndex INVALID_MATERIAL_IDX = std::numeric_limits<Materi
 using PipelineIndex                                 = size_t;
 static constexpr PipelineIndex INVALID_PIPELINE_IDX = std::numeric_limits<PipelineIndex>::max();
 
+static constexpr uint32_t ALL_MIP_LEVELS   = 0xFFFFFFFF;
+static constexpr uint32_t ALL_ARRAY_LAYERS = 0xFFFFFFFF;
+
 // ================================================================================================
 // Flags
 
@@ -144,12 +147,15 @@ enum class Access
    VERTEX_SHADER_READ,
    FRAGMENT_SHADER_READ,
    COMPUTE_SHADER_READ,
+   ANY_SHADER_READ,
+   COLOR_ATTACHMENT_READ,
    DEPTH_STENCIL_ATTACHMENT_READ,
    TRANSFER_READ,
    HOST_READ,
    VERTEX_SHADER_WRITE,
    FRAGMENT_SHADER_WRITE,
    COMPUTE_SHADER_WRITE,
+   ANY_SHADER_WRITE,
    COLOR_ATTACHMENT_WRITE,
    DEPTH_STENCIL_ATTACHMENT_WRITE,
    TRANSFER_WRITE,
@@ -200,13 +206,6 @@ enum class DrawPrimitive
    TRIANGLES,
    TRIANGLE_STRIPS,
    PATCHES
-};
-
-enum class PolygonMode
-{
-   FILL,
-   LINE,
-   POINT
 };
 
 enum class ImageType

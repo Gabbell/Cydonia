@@ -14,6 +14,7 @@ enum class SharedComponentType : uint8_t
 {
    INPUT,
    SCENE,
+   OPTIONS,
    COUNT  //  Keep at the end
 };
 

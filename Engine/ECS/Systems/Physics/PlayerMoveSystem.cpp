@@ -20,20 +20,19 @@ void PlayerMoveSystem::tick( double deltaS )
       if( input.rightClick )
       {
          const glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
-
-         Transform::RotateLocal( transform.rotation, rotationAngles.y, 0, 0 );
-         Transform::Rotate( transform.rotation, 0, rotationAngles.x, 0 );
+         Transform::RotateLocal( transform.rotation, rotationAngles.y, 0.0, 0.0 );
+         Transform::Rotate( transform.rotation, 0.0, rotationAngles.x, 0.0 );
       }
 
       // Modifying the acceleration component for position in local coordinates
       glm::vec3 accelerationVec( 0.0f );
       if( input.goingForwards )
       {
-         accelerationVec.z -= 1.0f;
+         accelerationVec.z += 1.0f;
       }
       if( input.goingBackwards )
       {
-         accelerationVec.z += 1.0f;
+         accelerationVec.z -= 1.0f;
       }
       if( input.goingRight )
       {
@@ -86,7 +85,7 @@ void PlayerMoveSystem::tick( double deltaS )
       const float maxVelocitySquared = motion.maxVelocity * motion.maxVelocity;
 
       // Rounding to 0 if the velocity is small
-      if( magSquared < 0.01f )
+      if( magSquared < 0.01 )
       {
          motion.velocity = glm::vec3( 0.0f );
       }

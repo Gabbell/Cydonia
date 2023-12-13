@@ -34,6 +34,7 @@ class CommandPoolManager final
    CommandBuffer* acquire(
        CYD::QueueUsageFlag usage,
        const std::string_view name,
+       bool async,
        bool presentable,
        uint32_t currentFrame );
 

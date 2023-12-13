@@ -4,6 +4,7 @@
 
 #include <Common/Include.h>
 
+#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Procedural/AtmosphereComponent.h>
 
 // ================================================================================================
@@ -24,12 +25,12 @@ https://www.shadertoy.com/view/slSXRW
 */
 namespace CYD
 {
-class AtmosphereSystem final : public CommonSystem<AtmosphereComponent>
+class AtmosphereUpdateSystem final : public CommonSystem<RenderableComponent, AtmosphereComponent>
 {
   public:
-   AtmosphereSystem() = default;
-   NON_COPIABLE( AtmosphereSystem );
-   virtual ~AtmosphereSystem() = default;
+   AtmosphereUpdateSystem() = default;
+   NON_COPIABLE( AtmosphereUpdateSystem );
+   virtual ~AtmosphereUpdateSystem() = default;
 
    void tick( double deltaS ) override;
 };

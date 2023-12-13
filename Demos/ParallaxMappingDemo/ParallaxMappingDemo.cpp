@@ -15,16 +15,14 @@
 #include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Systems/Input/WindowSystem.h>
 #include <ECS/Systems/Lighting/LightUpdateSystem.h>
-#include <ECS/Systems/Lighting/ShadowMapSystem.h>
 #include <ECS/Systems/Physics/PlayerMoveSystem.h>
 #include <ECS/Systems/Physics/MotionSystem.h>
-#include <ECS/Systems/Procedural/FFTOceanSystem.h>
-#include <ECS/Systems/Procedural/AtmosphereSystem.h>
+#include <ECS/Systems/Procedural/AtmosphereUpdateSystem.h>
 #include <ECS/Systems/Rendering/TessellationUpdateSystem.h>
 #include <ECS/Systems/Rendering/GBufferSystem.h>
 #include <ECS/Systems/Rendering/DeferredRenderSystem.h>
 #include <ECS/Systems/Rendering/ForwardRenderSystem.h>
-#include <ECS/Systems/Rendering/AtmosphereRenderSystem.h>
+#include <ECS/Systems/Rendering/AtmosphereSystem.h>
 #include <ECS/Systems/Resources/PipelineLoaderSystem.h>
 #include <ECS/Systems/Resources/MaterialLoaderSystem.h>
 #include <ECS/Systems/Resources/MeshLoaderSystem.h>
@@ -62,21 +60,24 @@ void ParallaxMappingDemo::preLoop()
 
    // Core
    m_ecs->addSystem<WindowSystem>( *m_window );
+   m_ecs->addSystem<PlayerMoveSystem>();
+
+   // Physics/Motion
+   m_ecs->addSystem<MotionSystem>();
+
+   // Update
    m_ecs->addSystem<LightUpdateSystem>();
    m_ecs->addSystem<ViewUpdateSystem>();
+   m_ecs->addSystem<TessellationUpdateSystem>();
 
    // Resources
    m_ecs->addSystem<PipelineLoaderSystem>();
    m_ecs->addSystem<MeshLoaderSystem>( *m_meshes );
    m_ecs->addSystem<MaterialLoaderSystem>( *m_materials );
 
-   // Physics/Motion
-   m_ecs->addSystem<PlayerMoveSystem>();
-   m_ecs->addSystem<MotionSystem>();
-
    // Pre-Render
-   m_ecs->addSystem<AtmosphereSystem>();
-   m_ecs->addSystem<ShadowMapSystem>( *m_meshes, *m_materials );
+   m_ecs->addSystem<AtmosphereUpdateSystem>();
+
    m_ecs->addSystem<GBufferSystem>( *m_meshes, *m_materials );
 
    // Rendering
@@ -84,7 +85,7 @@ void ParallaxMappingDemo::preLoop()
    m_ecs->addSystem<ForwardRenderSystem>( *m_meshes, *m_materials );
 
    // Post-Process
-   m_ecs->addSystem<AtmosphereRenderSystem>();
+   m_ecs->addSystem<AtmosphereSystem>();
 
    // UI
    m_ecs->addSystem<ImGuiSystem>( *m_ecs );
@@ -93,15 +94,15 @@ void ParallaxMappingDemo::preLoop()
    // =============================================================================================
    const EntityHandle player = m_ecs->createEntity( "Player" );
    m_ecs->assign<InputComponent>( player );
-   m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 15.0f, 20.0f ) );
+   m_ecs->assign<TransformComponent>( player, glm::vec3( 0.0f, 20.0f, -40.0f ) );
    m_ecs->assign<MotionComponent>( player, 100.0f, 10.0f );
-   m_ecs->assign<ViewComponent>( player, "MAIN" );
+   m_ecs->assign<ViewComponent>( player, 60.0f /*fov*/, 10.0f /*near*/, 32000.0f /*far*/ );
 
    const EntityHandle sun = m_ecs->createEntity( "Sun" );
-   m_ecs->assign<TransformComponent>( sun, glm::vec3( 0.0f, 20.0f, -90.0f ) );
-   m_ecs->assign<LightComponent>( sun );
-   m_ecs->assign<ViewComponent>(
-       sun, "SUN", -3600.0f, 3600.0f, -3600.0f, 3600.0f, -5000.0f, 5000.0f );
+   m_ecs->assign<TransformComponent>( sun );
+   m_ecs->assign<LightComponent>(
+       sun, LightComponent::Type::DIRECTIONAL, glm::vec4( 1.0f ), glm::vec3( 0.0f, -0.5f, -1.0f ) );
+   m_ecs->assign<ViewComponent>( sun, player /*fitToEntity*/ );
 
    // Plane
    // =============================================================================================
@@ -122,8 +123,7 @@ void ParallaxMappingDemo::preLoop()
        PUNTVertexLayout,
        MeshGeneration::TriangleGrid,
        32, /*scale*/
-       1,  /*rows*/
-       1 /*columns*/ );
+       1 /*resolution*/ );
 
    const EntityHandle plane = m_ecs->createEntity( "Plane" );
    m_ecs->assign<RenderableComponent>( plane, planeDesc );
@@ -134,6 +134,8 @@ void ParallaxMappingDemo::preLoop()
    // Atmosphere
    // =============================================================================================
    AtmosphereComponent::Description atmosDesc;
+   atmosDesc.nearClip                      = 0.1f;
+   atmosDesc.farClip                       = 32000.0f;
    atmosDesc.mieScatteringCoefficient      = glm::vec3( 0.576f, 0.576f, 0.576f );
    atmosDesc.mieAbsorptionCoefficient      = glm::vec3( 0.576f, 0.576f, 0.576f );
    atmosDesc.rayleighScatteringCoefficient = glm::vec3( 0.161f, 0.373f, 0.914f );

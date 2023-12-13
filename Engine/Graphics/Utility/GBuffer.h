@@ -26,7 +26,9 @@ class GBuffer : public Framebuffer
 
    void resize( uint32_t width, uint32_t height );
    void bind( CmdListHandle cmdList ) const;
-   void bind( CmdListHandle cmdList, Index index, uint32_t binding ) const;
+
+   void bindImage( CmdListHandle cmdList, Index index, uint32_t binding, uint32_t set = 1 ) const;
+   void bindTexture( CmdListHandle cmdList, Index index, uint32_t binding, uint32_t set = 1 ) const;
 
   private:
    void _destroy();

@@ -1,4 +1,4 @@
-#include  "CONSTANTS.h"
+#include "CONSTANTS.h"
 
 struct AtmosphereParameters
 {
@@ -57,9 +57,14 @@ vec3 getDirFromSpherical( float theta, float phi )
    return vec3( sinTheta * sinPhi, cosPhi, sinPhi * cosTheta );
 }
 
-vec3 getMMPosition( float groundRadiusMM, vec3 viewPos )
+vec3 getMMPosition( float groundRadiusMM, vec3 position )
 {
-   return vec3( viewPos / 1e6 ) + vec3( 0.0, groundRadiusMM, 0.0 );
+   return ( position / 1e6 ) + vec3( 0.0, groundRadiusMM, 0.0 );
+}
+
+vec3 getWorldPosition( float groundRadiusMM, vec3 mmPosition )
+{
+   return ( mmPosition - vec3( 0.0, groundRadiusMM, 0.0 ) ) * 1e6;
 }
 
 vec2 LUTParameterization( float groundRadiusMM, float atmosphereRadiusMM, vec3 sunDir, vec3 posMM )
@@ -116,13 +121,6 @@ void getScatteringValues(
 
    extinction =
        rayleighScattering + rayleighAbsorption + mieScattering + mieAbsorption + ozoneAbsorption;
-}
-
-vec3 colorCorrect(vec3 luminance)
-{
-   vec3 white_point = vec3( 1.08241, 0.96756, 0.95003 );
-   float exposure   = 20.0;
-   return vec3( 1.0 ) - exp( -luminance.rgb / white_point * exposure );
 }
 
 // ===============================================================================================

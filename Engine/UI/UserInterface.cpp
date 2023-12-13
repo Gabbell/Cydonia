@@ -2,10 +2,13 @@
 #include <UI/UserInterface.h>
 
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/RenderGraph.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Transforms/TransformComponent.h>
 #include <ECS/Components/Rendering/RenderableComponent.h>
+#include <ECS/Components/Lighting/LightComponent.h>
+#include <ECS/Components/Lighting/ShadowMapComponent.h>
 #include <ECS/Components/Rendering/TessellatedComponent.h>
 #include <ECS/Components/Procedural/DisplacementComponent.h>
 #include <ECS/Components/Procedural/AtmosphereComponent.h>
@@ -19,20 +22,23 @@
 
 namespace CYD::UI
 {
-static ImTextureID s_oceanDispTexture = nullptr;
-
-static ImTextureID s_shadowMapTexture  = nullptr;
-static ImTextureID s_albedoTexture     = nullptr;
-static ImTextureID s_normalsTexture    = nullptr;
-static ImTextureID s_pbrTexture        = nullptr;
-static ImTextureID s_shadowMaskTexture = nullptr;
-
-static ImTextureID s_transmittanceLUTTexture   = nullptr;
-static ImTextureID s_multiScatteringLUTTexture = nullptr;
-static ImTextureID s_skyViewLUTTexture         = nullptr;
+static std::vector<ImTextureID> s_debugTextures = {};
 
 void Initialize() { GRIS::InitializeUIBackend(); }
+void Cleanup()
+{
+   if( !s_debugTextures.empty() )
+   {
+      GRIS::WaitUntilIdle();
 
+      for( ImTextureID textureID : s_debugTextures )
+      {
+         GRIS::RemoveDebugTexture( textureID );
+      }
+
+      s_debugTextures.clear();
+   }
+}
 void Uninitialize() { GRIS::UninitializeUIBackend(); }
 
 void DrawMainMenuBar(
@@ -197,6 +203,18 @@ void DrawComponentsMenu( CmdListHandle cmdList, ComponentType type, const BaseCo
          DrawRenderableComponentMenu( cmdList, renderable );
          break;
       }
+      case ComponentType::LIGHT:
+      {
+         const LightComponent& light = *static_cast<const LightComponent*>( component );
+         DrawLightComponentMenu( cmdList, light );
+         break;
+      }
+      case ComponentType::SHADOW_MAP:
+      {
+         const ShadowMapComponent& shadowMap = *static_cast<const ShadowMapComponent*>( component );
+         DrawShadowMapComponentMenu( cmdList, shadowMap );
+         break;
+      }
       case ComponentType::DISPLACEMENT:
       {
          const DisplacementComponent& displacement =
@@ -311,6 +329,8 @@ void DrawDisplacementComponentMenu(
    }
 
    triggerUpdate |=
+       ImGui::SliderFloat( "Scale", (float*)&displacement.params.scale, 0.0f, 5000.0f );
+   triggerUpdate |=
        ImGui::SliderFloat( "Amplitude", (float*)&displacement.params.amplitude, 0.0f, 2.0f );
    triggerUpdate |= ImGui::SliderFloat( "Gain", (float*)&displacement.params.gain, 0.0f, 1.0f );
    triggerUpdate |=
@@ -335,6 +355,9 @@ void DrawAtmosphereComponentMenu( CmdListHandle cmdList, const AtmosphereCompone
    ImVec2 dimensions;
 
    bool triggerUpdate = false;
+
+   ImGui::InputFloat( "Near Clip", (float*)&atmosphere.params.nearClip );
+   ImGui::InputFloat( "Far Clip", (float*)&atmosphere.params.farClip );
 
    ImGui::SeparatorText( "Mie" );
 
@@ -427,47 +450,38 @@ void DrawAtmosphereComponentMenu( CmdListHandle cmdList, const AtmosphereCompone
 
    if( ImGui::TreeNodeEx( "Transmittance LUT" ) )
    {
-      if( s_transmittanceLUTTexture == nullptr )
-      {
-         s_transmittanceLUTTexture = GRIS::AddDebugTexture( atmosphere.transmittanceLUT );
-      }
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( atmosphere.transmittanceLUT ) );
 
       displayHeight = displayWidth *
                       static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_HEIGHT ) /
                       static_cast<float>( AtmosphereComponent::TRANSMITTANCE_LUT_WIDTH );
       dimensions = ImVec2( displayWidth, displayHeight );
-      ImGui::Image( s_transmittanceLUTTexture, dimensions );
+      ImGui::Image( s_debugTextures.back(), dimensions );
 
       ImGui::TreePop();
    }
 
    if( ImGui::TreeNodeEx( "Multiple Scattering LUT" ) )
    {
-      if( s_multiScatteringLUTTexture == nullptr )
-      {
-         s_multiScatteringLUTTexture = GRIS::AddDebugTexture( atmosphere.multipleScatteringLUT );
-      }
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( atmosphere.multipleScatteringLUT ) );
 
       displayHeight = displayWidth *
                       static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM ) /
                       static_cast<float>( AtmosphereComponent::MULTIPLE_SCATTERING_LUT_DIM );
       dimensions = ImVec2( displayWidth, displayHeight );
-      ImGui::Image( s_multiScatteringLUTTexture, dimensions );
+      ImGui::Image( s_debugTextures.back(), dimensions );
 
       ImGui::TreePop();
    }
 
    if( ImGui::TreeNodeEx( "Sky View LUT" ) )
    {
-      if( s_skyViewLUTTexture == nullptr )
-      {
-         s_skyViewLUTTexture = GRIS::AddDebugTexture( atmosphere.skyViewLUT );
-      }
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( atmosphere.skyViewLUT ) );
 
       displayHeight = displayWidth * static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_HEIGHT ) /
                       static_cast<float>( AtmosphereComponent::SKYVIEW_LUT_WIDTH );
       dimensions = ImVec2( displayWidth, displayHeight );
-      ImGui::Image( s_skyViewLUTTexture, dimensions );
+      ImGui::Image( s_debugTextures.back(), dimensions );
 
       ImGui::TreePop();
    }
@@ -496,12 +510,9 @@ void DrawFFTOceanComponentMenu( CmdListHandle cmdList, const FFTOceanComponent& 
    const ImVec2 dimensions( displayWidth, displayHeight );
 
    ImGui::SeparatorText( "Displacement Map" );
-   if( s_oceanDispTexture == nullptr )
-   {
-      s_oceanDispTexture = GRIS::AddDebugTexture( ocean.displacementMap );
-   }
+   s_debugTextures.emplace_back( GRIS::AddDebugTexture( ocean.displacementMap ) );
 
-   ImGui::Image( s_oceanDispTexture, dimensions );
+   ImGui::Image( s_debugTextures.back(), dimensions );
 
    FFTOceanComponent& notConst = const_cast<FFTOceanComponent&>( ocean );
    notConst.needsUpdate        = triggerUpdate;
@@ -519,7 +530,37 @@ void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableCompone
 {
    ImGui::Checkbox( "Is Visible", (bool*)&renderable.desc.isVisible );
    ImGui::Checkbox( "Casts Shadows", (bool*)&renderable.desc.isShadowCasting );
+   ImGui::Checkbox( "Casts Volumetric Shadows", (bool*)&renderable.desc.isVolumeShadowCasting );
    ImGui::Checkbox( "Receives Shadows", (bool*)&renderable.desc.isShadowReceiving );
+}
+
+void DrawLightComponentMenu( CmdListHandle /*cmdList*/, const LightComponent& light )
+{
+   // Hello darkness, my old friend
+   LightComponent& notConst = const_cast<LightComponent&>( light );
+
+   glm::vec3 newDirection = notConst.direction;
+   ImGui::SliderFloat3( "Direction (X, Y, Z)", glm::value_ptr( newDirection ), -1.0f, 1.0f );
+
+   notConst.direction = glm::normalize( newDirection );
+}
+
+void DrawShadowMapComponentMenu( CmdListHandle cmdList, const ShadowMapComponent& shadowMap )
+{
+   ImGui::Checkbox( "Enabled", (bool*)&shadowMap.enabled );
+
+   ImGui::SliderFloat( "Split Lambda", (float*)&shadowMap.splitLambda, 0.0f, 1.0f );
+
+   static int32_t cascade = 0;
+   ImGui::SliderInt( "Cascade", &cascade, 0, shadowMap.numCascades - 1 );
+
+   s_debugTextures.emplace_back( GRIS::AddDebugTexture( shadowMap.depth, cascade ) );
+
+   float displayWidth = ImGui::GetWindowWidth() * 0.85f;
+   float displayHeight =
+       displayWidth * static_cast<float>( 2048.0f ) / static_cast<float>( 2048.0f );
+   ImVec2 dimensions = ImVec2( displayWidth, displayHeight );
+   ImGui::Image( s_debugTextures.back(), dimensions );
 }
 
 void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedComponent& tessellated )
@@ -535,67 +576,47 @@ void DrawSceneSharedComponentMenu( CmdListHandle cmdList, const SceneComponent& 
    const GBuffer::RenderTargets& rts = scene.gbuffer.getRenderTargets();
 
    float displayWidth  = ImGui::GetWindowWidth() * 0.85f;
-   float displayHeight = 0.0f;
-   ImVec2 dimensions;
-
-   if( ImGui::TreeNodeEx( "Shadow Map Texture", ImGuiTreeNodeFlags_SpanAvailWidth ) )
-   {
-      if( s_shadowMapTexture == nullptr )
-      {
-         s_shadowMapTexture = GRIS::AddDebugTexture( scene.shadowMap );
-      }
-
-      displayHeight = displayWidth * static_cast<float>( 2048.0f ) / static_cast<float>( 2048.0f );
-      dimensions    = ImVec2( displayWidth, displayHeight );
-      ImGui::Image( s_shadowMapTexture, dimensions );
-      ImGui::TreePop();
-   }
-
-   displayHeight = displayWidth * static_cast<float>( scene.extent.height ) /
-                   static_cast<float>( scene.extent.width );
-   dimensions = ImVec2( displayWidth, displayHeight );
+   float displayHeight = displayWidth * static_cast<float>( scene.extent.height ) /
+                         static_cast<float>( scene.extent.width );
+   ImVec2 dimensions = ImVec2( displayWidth, displayHeight );
 
    if( ImGui::TreeNodeEx( "GBuffer Albedo", ImGuiTreeNodeFlags_SpanAvailWidth ) )
    {
-      if( s_albedoTexture == nullptr )
-      {
-         s_albedoTexture = GRIS::AddDebugTexture( rts[GBuffer::ALBEDO].texture );
-      }
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( rts[GBuffer::ALBEDO].texture ) );
 
-      ImGui::Image( s_albedoTexture, dimensions );
+      ImGui::Image( s_debugTextures.back(), dimensions );
       ImGui::TreePop();
    }
 
    if( ImGui::TreeNodeEx( "GBuffer Normals", ImGuiTreeNodeFlags_SpanAvailWidth ) )
    {
-      if( s_normalsTexture == nullptr )
-      {
-         s_normalsTexture = GRIS::AddDebugTexture( rts[GBuffer::NORMAL].texture );
-      }
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( rts[GBuffer::NORMAL].texture ) );
 
-      ImGui::Image( s_normalsTexture, dimensions );
+      ImGui::Image( s_debugTextures.back(), dimensions );
       ImGui::TreePop();
    }
 
    if( ImGui::TreeNodeEx( "GBuffer PBR", ImGuiTreeNodeFlags_SpanAvailWidth ) )
    {
-      if( s_pbrTexture == nullptr )
-      {
-         s_pbrTexture = GRIS::AddDebugTexture( rts[GBuffer::PBR].texture );
-      }
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( rts[GBuffer::PBR].texture ) );
 
-      ImGui::Image( s_pbrTexture, dimensions );
+      ImGui::Image( s_debugTextures.back(), dimensions );
       ImGui::TreePop();
    }
 
    if( ImGui::TreeNodeEx( "GBuffer Shadow Mask", ImGuiTreeNodeFlags_SpanAvailWidth ) )
    {
-      if( s_shadowMaskTexture == nullptr )
-      {
-         s_shadowMaskTexture = GRIS::AddDebugTexture( rts[GBuffer::SHADOW].texture );
-      }
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( rts[GBuffer::SHADOW].texture ) );
 
-      ImGui::Image( s_shadowMaskTexture, dimensions );
+      ImGui::Image( s_debugTextures.back(), dimensions );
+      ImGui::TreePop();
+   }
+
+   if( ImGui::TreeNodeEx( "Quarter Res Shadow Mask", ImGuiTreeNodeFlags_SpanAvailWidth ) )
+   {
+      s_debugTextures.emplace_back( GRIS::AddDebugTexture( scene.quarterResShadowMask ) );
+
+      ImGui::Image( s_debugTextures.back(), dimensions );
       ImGui::TreePop();
    }
 }

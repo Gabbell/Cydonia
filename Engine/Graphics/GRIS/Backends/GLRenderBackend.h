@@ -9,4 +9,4 @@
 
 GRIS_RENDERBACKEND_DECLARATION( GLRenderBackend )
 
-#include  <Graphics/GRIS/Backends/RenderBackendMacrosEnd.h>
+#include <Graphics/GRIS/Backends/RenderBackendMacrosEnd.h>

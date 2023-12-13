@@ -4,12 +4,12 @@
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/Handles/ResourceHandle.h>
-#include <Graphics/Scene/Frustum.h>
+#include <Graphics/Utility/ShaderStructs.h>
 #include <Graphics/Utility/GBuffer.h>
 
-#include <ECS/SharedComponents/SharedComponentType.h>
+#include <ECS/Components/Lighting/LightComponent.h>
 
-#include <glm/glm.hpp>
+#include <ECS/SharedComponents/SharedComponentType.h>
 
 #include <array>
 
@@ -23,6 +23,10 @@ class SceneComponent final : public BaseSharedComponent
    virtual ~SceneComponent();
 
    static constexpr SharedComponentType TYPE = SharedComponentType::SCENE;
+
+   // TODO
+   // Some of these buffers could be host-side buffers (staging) and we could be writing into them
+   // right away
 
    // Main Render Targets
    // =============================================================================================
@@ -40,46 +44,36 @@ class SceneComponent final : public BaseSharedComponent
    // =============================================================================================
    static constexpr uint32_t MAX_VIEWS = 8;
 
-   struct ViewShaderParams
-   {
-      glm::vec4 position;
-      glm::mat4 viewMat;
-      glm::mat4 projMat;
-   };
-
-   struct InverseViewShaderParams
-   {
-      glm::mat4 invViewMat;
-      glm::mat4 invProjMat;
-   };
-
-   std::array<std::string, MAX_VIEWS> viewNames;
+   std::array<std::string, MAX_VIEWS> viewNames    = {};
    ViewShaderParams views[MAX_VIEWS]               = {};
    InverseViewShaderParams inverseViews[MAX_VIEWS] = {};
-
-   Frustum frustums[MAX_VIEWS] = {};
+   FrustumShaderParams frustums[MAX_VIEWS]         = {};
 
    // Lights
    // =============================================================================================
    static constexpr uint32_t MAX_LIGHTS = 3;
 
-   struct LightShaderParams
-   {
-      glm::vec4 position;
-      glm::vec4 direction;
-      glm::vec4 color;
-      glm::vec4 enabled;
-   };
+   std::array<std::string, MAX_LIGHTS> lightNames = {};
+   LightShaderParams lights[MAX_LIGHTS]           = {};
 
-   LightShaderParams lights[MAX_LIGHTS] = {};
+   // Shadows
+   // =============================================================================================
+   static constexpr uint32_t MAX_SHADOW_MAPS = 3;
+
+   std::array<std::string, MAX_SHADOW_MAPS> shadowMapNames = {};
+   ShadowMapShaderParams shadowMaps[MAX_SHADOW_MAPS]       = {};
+   TextureHandle shadowMapTextures[MAX_SHADOW_MAPS]        = {};
+   Framebuffer shadowMapFBs[MAX_SHADOW_MAPS]               = {};
 
    // Ressource Handles
    // =============================================================================================
    BufferHandle viewsBuffer;
    BufferHandle inverseViewsBuffer;
+   BufferHandle frustumsBuffer;
    BufferHandle lightsBuffer;
+   BufferHandle shadowMapsBuffer;
 
-   TextureHandle shadowMap;  // TODO This shouldn't be here, not a very elegant solution
+   TextureHandle quarterResShadowMask;  // Used for raymarching
    TextureHandle envMap;
 
    GBuffer gbuffer;

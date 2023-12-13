@@ -12,12 +12,12 @@
 // ================================================================================================
 namespace CYD
 {
-class AtmosphereRenderSystem final : public CommonSystem<RenderableComponent, AtmosphereComponent>
+class AtmosphereSystem final : public CommonSystem<RenderableComponent, AtmosphereComponent>
 {
   public:
-   AtmosphereRenderSystem() = default;
-   NON_COPIABLE( AtmosphereRenderSystem );
-   virtual ~AtmosphereRenderSystem() = default;
+   AtmosphereSystem() = default;
+   NON_COPIABLE( AtmosphereSystem );
+   virtual ~AtmosphereSystem() = default;
 
    void tick( double deltaS ) override;
 };

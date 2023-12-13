@@ -37,7 +37,7 @@ unimplemented in a render backend
       GRIS_RENDERBACKEND_FUNC( void waitUntilIdle(), )                                             \
       GRIS_RENDERBACKEND_FUNC(                                                                     \
           CmdListHandle createCommandList(                                                         \
-              QueueUsageFlag usage, const std::string_view name, bool presentable ),               \
+              QueueUsageFlag usage, const std::string_view name, bool async, bool presentable ),   \
           return {}; )                                                                             \
       GRIS_RENDERBACKEND_FUNC( void submitCommandList( CmdListHandle cmdList ), );                 \
       GRIS_RENDERBACKEND_FUNC( void resetCommandList( CmdListHandle cmdList ), );                  \
@@ -143,7 +143,8 @@ unimplemented in a render backend
               TextureHandle srcTexHandle,                                                          \
               TextureHandle dstTexHandle,                                                          \
               const TextureCopyInfo& info ), )                                                     \
-      GRIS_RENDERBACKEND_FUNC( void* addDebugTexture( TextureHandle texture ), return nullptr; )   \
+      GRIS_RENDERBACKEND_FUNC( void* addDebugTexture( TextureHandle texture, uint32_t layer = 0 ), \
+                               return nullptr; )                                                   \
       GRIS_RENDERBACKEND_FUNC(                                                                     \
           void updateDebugTexture( CmdListHandle cmdList, TextureHandle texture ), )               \
       GRIS_RENDERBACKEND_FUNC( void removeDebugTexture( void* texture ), )                         \
@@ -154,7 +155,8 @@ unimplemented in a render backend
       GRIS_RENDERBACKEND_FUNC( void beginFrame(), )                                                \
       GRIS_RENDERBACKEND_FUNC( void beginRendering( CmdListHandle cmdList ), )                     \
       GRIS_RENDERBACKEND_FUNC(                                                                     \
-          void beginRendering( CmdListHandle cmdList, const Framebuffer& fb ), )                   \
+          void beginRendering(                                                                     \
+              CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer = 0 ), )                \
       GRIS_RENDERBACKEND_FUNC( void nextPass( CmdListHandle cmdList ), )                           \
       GRIS_RENDERBACKEND_FUNC( void endRendering( CmdListHandle cmdList ), )                       \
       GRIS_RENDERBACKEND_FUNC(                                                                     \

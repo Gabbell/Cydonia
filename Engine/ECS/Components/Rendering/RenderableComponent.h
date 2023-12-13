@@ -31,6 +31,7 @@ class RenderableComponent final : public BaseComponent
       bool isVisible                = true;
       bool isShadowReceiving        = false;  // TODO Unimplemented
       bool isShadowCasting          = false;
+      bool isVolumeShadowCasting    = false;
       bool useEnvironmentMap        = false;
    };
 
@@ -47,7 +48,8 @@ class RenderableComponent final : public BaseComponent
 
    BufferHandle tessellationBuffer;
    BufferHandle instancesBuffer;
-   uint32_t instanceCount = 0;
+   uint32_t maxInstanceCount = 0;
+   uint32_t instanceCount    = 0;
 
    bool isInstanced : 1   = false;
    bool isTessellated : 1 = false;

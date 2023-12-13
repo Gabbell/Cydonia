@@ -33,6 +33,8 @@ class FFTOceanComponent final : public BaseComponent
 
    static constexpr ComponentType TYPE = ComponentType::OCEAN;
 
+   static constexpr float NORMAL_MAP_RESOLUTION_MULT = 1.0f;
+
    // Properties used as a single push constant in the multiple shader passes
    struct ShaderParameters
    {
@@ -66,7 +68,7 @@ class FFTOceanComponent final : public BaseComponent
    TextureHandle fourierComponentsY;  // ~h(k,t)
    TextureHandle fourierComponentsZ;  //
 
-   TextureHandle pingpongTex;
+   TextureHandle pingpongTex;  // TODO Part of texture cache
 
    // RGB = XYZ displacement,
    TextureHandle displacementMap;

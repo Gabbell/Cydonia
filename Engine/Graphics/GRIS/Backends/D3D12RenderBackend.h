@@ -9,4 +9,4 @@
 
 GRIS_RENDERBACKEND_DECLARATION( D3D12RenderBackend )
 
-#include  <Graphics/GRIS/Backends/RenderBackendMacrosEnd.h>
+#include <Graphics/GRIS/Backends/RenderBackendMacrosEnd.h>

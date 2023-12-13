@@ -22,7 +22,7 @@ DisplacementComponent::DisplacementComponent(
 
 DisplacementComponent::~DisplacementComponent()
 {
-   GRIS::DestroyTexture( noiseTex );
+   GRIS::DestroyTexture( displacementMap );
    GRIS::DestroyTexture( normalMap );
 }
 }

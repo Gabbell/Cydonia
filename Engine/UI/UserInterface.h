@@ -12,6 +12,8 @@ class BaseComponent;
 class BaseSharedComponent;
 class TransformComponent;
 class RenderableComponent;
+class LightComponent;
+class ShadowMapComponent;
 class TessellatedComponent;
 class DisplacementComponent;
 class AtmosphereComponent;
@@ -23,6 +25,8 @@ namespace UI
 {
 void Initialize();
 void Uninitialize();
+
+void Cleanup();
 
 // Main Menus
 void DrawMainMenuBar(
@@ -49,6 +53,8 @@ void DrawSharedComponentsMenu(
     const BaseSharedComponent* component );
 void DrawTransformComponentMenu( CmdListHandle cmdList, const TransformComponent& transform );
 void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable );
+void DrawLightComponentMenu( CmdListHandle cmdList, const LightComponent& light );
+void DrawShadowMapComponentMenu( CmdListHandle cmdList, const ShadowMapComponent& shadowMap );
 void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedComponent& tessellated );
 void DrawDisplacementComponentMenu(
     CmdListHandle cmdList,

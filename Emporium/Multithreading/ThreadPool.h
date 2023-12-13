@@ -14,10 +14,10 @@ class ThreadPool
   public:
    ThreadPool();
 
-   ThreadPool( const ThreadPool& )            = delete;
-   ThreadPool( ThreadPool&& )                 = delete;
+   ThreadPool( const ThreadPool& ) = delete;
+   ThreadPool( ThreadPool&& )      = delete;
    ThreadPool& operator=( const ThreadPool& ) = delete;
-   ThreadPool& operator=( ThreadPool&& )      = delete;
+   ThreadPool& operator=( ThreadPool&& ) = delete;
    ~ThreadPool();
 
    // Initialize or shutdown the threadpool

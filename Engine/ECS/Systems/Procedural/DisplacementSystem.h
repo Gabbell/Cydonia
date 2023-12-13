@@ -16,14 +16,14 @@ namespace CYD
 {
 class MaterialCache;
 
-class DisplacementSystem final
-    : public CommonSystem<RenderableComponent, TransformComponent, DisplacementComponent, MaterialComponent>
+class DisplacementUpdateSystem final
+    : public CommonSystem<RenderableComponent, DisplacementComponent, MaterialComponent>
 {
   public:
-   DisplacementSystem() = delete;
-   DisplacementSystem( MaterialCache& materials ) : m_materials( materials ) {}
-   NON_COPIABLE( DisplacementSystem );
-   virtual ~DisplacementSystem() = default;
+   DisplacementUpdateSystem() = delete;
+   DisplacementUpdateSystem( MaterialCache& materials ) : m_materials( materials ) {}
+   NON_COPIABLE( DisplacementUpdateSystem );
+   virtual ~DisplacementUpdateSystem() = default;
 
    void tick( double deltaS ) override;
 

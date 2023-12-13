@@ -43,8 +43,7 @@ float GeometrySchlickGGX( float cosTheta, float k )
 // This is determined by roughness and affects the diffuse gradient
 float GeometrySmith( float NdotL, float NdotV, float roughness )
 {
-   float r = ( roughness + 1.0 );
-   float k = ( r * r ) / 8.0;
+   float k = ( roughness * roughness ) / 2.0;
 
    return GeometrySchlickGGX( NdotL, k ) * GeometrySchlickGGX( NdotV, k );
 }
@@ -74,10 +73,10 @@ vec3 ComputeLightCookTorranceBRDF(
     float roughness,
     float ao )
 {
-   const vec3 V = fragToView;             // View direction
-   const vec3 L = normalize( lightDir );  // Light direction
-   const vec3 N = normalize( normal );    // Normal
-   const vec3 H = normalize( V + L );     // Halfway light vector
+   const vec3 V = fragToView;          // View direction
+   const vec3 L = lightDir;            // Light direction
+   const vec3 N = normal;              // Normal
+   const vec3 H = normalize( V + L );  // Halfway light vector
 
    float NdotV = clamp( dot( N, V ), 0.0, 1.0 );
    float NdotL = clamp( dot( N, L ), 0.0, 1.0 );

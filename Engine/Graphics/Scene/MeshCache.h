@@ -49,6 +49,30 @@ class MeshCache final
    MeshIndex addMesh( std::string_view name, const VertexLayout& layout );
 
    template <typename MeshGenerationFunction, typename... Args>
+   MeshIndex loadMesh(
+       CmdListHandle cmdList,
+       std::string_view name,
+       const VertexLayout& layout,
+       MeshGenerationFunction genFunc,
+       Args&&... args )
+   {
+      const MeshIndex newMeshIdx = addMesh( name, layout );
+
+      Mesh& newMesh = *m_meshes[newMeshIdx];
+      newMesh.vertexList.setLayout( layout );
+      newMesh.generator = std::bind(
+          genFunc, std::ref( newMesh.vertexList ), std::ref( newMesh.indices ), args... );
+
+      newMesh.currentState = State::LOADING_TO_RAM;
+      _loadToRAM( newMesh );
+
+      newMesh.currentState = State::LOADING_TO_VRAM;
+      _loadToVRAM( cmdList, newMesh );
+
+      return newMeshIdx;
+   }
+
+   template <typename MeshGenerationFunction, typename... Args>
    MeshIndex enqueueMesh(
        std::string_view name,
        const VertexLayout& layout,
@@ -73,6 +97,7 @@ class MeshCache final
 
    // Drawing
    // ============================================================================================
+   bool meshReady( MeshIndex meshIdx ) const;
    DrawInfo getDrawInfo( MeshIndex meshIdx ) const;
 
   private:

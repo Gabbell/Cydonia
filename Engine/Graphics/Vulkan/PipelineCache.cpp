@@ -295,8 +295,8 @@ VkPipeline PipelineCache::findOrCreate(
    // Input assembly
    VkPipelineInputAssemblyStateCreateInfo inputAssembly = {};
    inputAssembly.sType    = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-   inputAssembly.topology = TypeConversions::cydToVkDrawPrim( pipInfo.drawPrim );
-   inputAssembly.primitiveRestartEnable = VK_FALSE;
+   inputAssembly.topology = TypeConversions::cydToVkDrawPrim( pipInfo.rasterizer.drawPrim );
+   inputAssembly.primitiveRestartEnable = pipInfo.rasterizer.usePrimitiveRestart;
 
    VkPipelineTessellationStateCreateInfo tessellation = {};
    tessellation.sType              = VK_STRUCTURE_TYPE_PIPELINE_TESSELLATION_STATE_CREATE_INFO;
@@ -327,13 +327,13 @@ VkPipeline PipelineCache::findOrCreate(
    // Rasterizer
    VkPipelineRasterizationStateCreateInfo rasterizer = {};
    rasterizer.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-   rasterizer.depthClampEnable        = VK_FALSE;
+   rasterizer.depthClampEnable        = pipInfo.rasterizer.useDepthClamp;
    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-   rasterizer.polygonMode             = TypeConversions::cydToVkPolyMode( pipInfo.polyMode );
-   rasterizer.lineWidth               = 1.0f;
-   rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
-   rasterizer.frontFace               = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-   rasterizer.depthBiasEnable         = pipInfo.rasterizer.useDepthBias;
+   rasterizer.polygonMode     = TypeConversions::cydToVkPolyMode( pipInfo.rasterizer.polyMode );
+   rasterizer.lineWidth       = 1.0f;
+   rasterizer.cullMode        = TypeConversions::cydToVkCullMode( pipInfo.rasterizer.cullMode );
+   rasterizer.frontFace       = VK_FRONT_FACE_CLOCKWISE;
+   rasterizer.depthBiasEnable = pipInfo.rasterizer.useDepthBias;
    rasterizer.depthBiasConstantFactor = pipInfo.rasterizer.depthBiasConstant;
    rasterizer.depthBiasSlopeFactor    = pipInfo.rasterizer.depthBiasSlopeScale;
 

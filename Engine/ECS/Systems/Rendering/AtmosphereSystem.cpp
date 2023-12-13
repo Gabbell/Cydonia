@@ -1,4 +1,4 @@
-#include <ECS/Systems/Rendering/AtmosphereRenderSystem.h>
+#include <ECS/Systems/Rendering/AtmosphereSystem.h>
 
 #include <Graphics/PipelineInfos.h>
 #include <Graphics/StaticPipelines.h>
@@ -6,6 +6,7 @@
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
 #include <Graphics/GRIS/RenderHelpers.h>
+#include <Graphics/GRIS/TextureCache.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Scene/ViewComponent.h>
@@ -27,7 +28,7 @@ static void Initialize()
 }
 
 // ================================================================================================
-void AtmosphereRenderSystem::tick( double /*deltaS*/ )
+void AtmosphereSystem::tick( double /*deltaS*/ )
 {
    CYD_TRACE();
 
@@ -38,16 +39,15 @@ void AtmosphereRenderSystem::tick( double /*deltaS*/ )
 
    // Start command list recording
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::POST_PROCESS );
-   CYD_SCOPED_GPUTRACE( cmdList, "AtmosphereRenderSystem" );
+   CYD_SCOPED_GPUTRACE( cmdList, "AtmosphereSystem" );
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
-   CYD_GPUTRACE_BEGIN( cmdList, "Atmosphere Output" );
-
    constexpr float localSizeX = 16.0f;
    constexpr float localSizeY = 16.0f;
-   uint32_t groupsX = static_cast<uint32_t>( std::ceil( scene.viewport.width / localSizeX ) );
-   uint32_t groupsY = static_cast<uint32_t>( std::ceil( scene.viewport.height / localSizeY ) );
+   const uint32_t groupsX = static_cast<uint32_t>( std::ceil( scene.viewport.width / localSizeX ) );
+   const uint32_t groupsY =
+       static_cast<uint32_t>( std::ceil( scene.viewport.height / localSizeY ) );
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
@@ -65,19 +65,29 @@ void AtmosphereRenderSystem::tick( double /*deltaS*/ )
       GRIS::BindPipeline( cmdList, s_atmosOutputPip );
 
       // We're using texture+samplers here instead of images to reduce banding
-      GRIS::BindUniformBuffer( cmdList, atmos.viewInfoBuffer, 0 );
-      GRIS::BindTexture( cmdList, atmos.transmittanceLUT, 1 );
-      GRIS::BindTexture( cmdList, atmos.skyViewLUT, 2 );
-      GRIS::BindTexture( cmdList, atmos.aerialPerspectiveLUT, 3 );
-      GRIS::BindImage( cmdList, scene.mainColor, 4 );
-      GRIS::BindTexture( cmdList, scene.mainDepth, 5 );
+      GRIS::BindUniformBuffer( cmdList, scene.inverseViewsBuffer, 0 );
+      GRIS::BindUniformBuffer( cmdList, scene.lightsBuffer, 1 );
+
+      GRIS::BindTexture( cmdList, scene.mainDepth, 2 );
+      GRIS::BindTexture( cmdList, atmos.transmittanceLUT, 3 );
+      GRIS::BindTexture( cmdList, atmos.skyViewLUT, 4 );
+      GRIS::BindTexture( cmdList, atmos.aerialPerspectiveLUT, 5 );
+
+      if( scene.quarterResShadowMask )
+      {
+         GRIS::BindTexture( cmdList, scene.quarterResShadowMask, 6 );
+      }
+      else
+      {
+         GRIS::TextureCache::BindWhiteTexture( cmdList, 6, 0 );
+      }
+
+      GRIS::BindImage( cmdList, scene.mainColor, 7 );
 
       GRIS::UpdateConstantBuffer(
           cmdList, PipelineStage::COMPUTE_STAGE, 0, sizeof( atmos.params ), &atmos.params );
 
       GRIS::Dispatch( cmdList, groupsX, groupsY, 1 );
    }
-
-   CYD_GPUTRACE_END( cmdList );
 }
 }

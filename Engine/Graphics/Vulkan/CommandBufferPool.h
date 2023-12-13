@@ -31,6 +31,7 @@ class CommandBufferPool final
        const Device& device,
        uint32_t familyIndex,
        CYD::QueueUsageFlag usage,
+       bool async,
        bool supportsPresentation );
    MOVABLE( CommandBufferPool );
    ~CommandBufferPool();
@@ -46,6 +47,7 @@ class CommandBufferPool final
    CYD::QueueUsageFlag getType() const noexcept { return m_type; }
    uint32_t getFamilyIndex() const noexcept { return m_familyIndex; }
    bool supportsPresentation() const noexcept { return m_supportsPresentation; }
+   bool isAsync() const noexcept { return m_async; }
 
   private:
    void _createCommandBufferPool();
@@ -53,7 +55,7 @@ class CommandBufferPool final
    const Device* m_pDevice = nullptr;
 
    // Command Buffer Pool
-   static constexpr uint32_t MAX_CMD_BUFFERS_IN_FLIGHT = 16;
+   static constexpr uint32_t MAX_CMD_BUFFERS_IN_FLIGHT = 32;
    std::vector<CommandBuffer> m_cmdBuffers;
    uint32_t m_cmdBuffersInUse = 0;
 
@@ -61,6 +63,7 @@ class CommandBufferPool final
 
    CYD::QueueUsageFlag m_type;
    uint32_t m_familyIndex      = 0;
+   bool m_async                = false;
    bool m_supportsPresentation = false;
 };
 }

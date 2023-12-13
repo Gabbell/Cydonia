@@ -38,7 +38,7 @@ void main()
    vec3 transmittance = vec3( 1.0 );
    for( float i = 0.0; i < sunTransmittanceSteps; i++ )
    {
-      float newT = (i + 0.5) * ( atmoDist / sunTransmittanceSteps );
+      float newT = ( i + 0.5 ) * ( atmoDist / sunTransmittanceSteps );
       float dt   = newT - t;
       t          = newT;
 

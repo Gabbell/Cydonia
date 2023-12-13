@@ -16,9 +16,8 @@ class ViewUpdateSystem final : public CommonSystem<TransformComponent, ViewCompo
    NON_COPIABLE( ViewUpdateSystem );
    virtual ~ViewUpdateSystem() = default;
 
-   void tick( double deltaS ) override;
+   void sort() override;
 
-  protected:
-   bool _compareEntities( const EntityEntry& first, const EntityEntry& second ) override;
+   void tick( double deltaS ) override;
 };
 }

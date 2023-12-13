@@ -66,9 +66,18 @@ class MaterialCache final
    // Loads, unloads and binds GPU resources
    State progressLoad( CmdListHandle cmdList, MaterialIndex materialIdx );
 
-   void bindSlot( CmdListHandle cmdList, MaterialIndex index, TextureSlot slot, uint8_t set ) const;
-   void bind( CmdListHandle cmdList, MaterialIndex index, uint8_t set ) const;
-   void updateMaterial( MaterialIndex materialIdx, TextureSlot slot, TextureHandle texHandle );
+   void bindSlot(
+       CmdListHandle cmdList,
+       MaterialIndex index,
+       TextureSlot slot,
+       uint8_t binding,
+       uint8_t set = 0 ) const;
+   void bind( CmdListHandle cmdList, MaterialIndex index, uint8_t set = 1 ) const;
+   void updateMaterial(
+       MaterialIndex materialIdx,
+       TextureSlot slot,
+       TextureHandle texHandle,
+       const SamplerInfo& sampler = {} );
 
   private:
    //  ============================================================================================
@@ -79,6 +88,7 @@ class MaterialCache final
 
    struct TextureEntry
    {
+      SamplerInfo sampler;
       TextureDescription desc;
       TextureSlot slot;
       TextureFallback fallback;

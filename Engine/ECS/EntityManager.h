@@ -39,6 +39,7 @@ class EntityManager final
    // ================================================================================================
    EntityHandle createEntity( std::string_view name = "" );
    const Entity* getEntity( EntityHandle handle ) const;
+   const std::string& getEntityName( EntityHandle handle ) const;
    void removeEntity( EntityHandle handle );
 
    // Shared component accessor

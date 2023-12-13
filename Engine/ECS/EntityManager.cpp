@@ -9,6 +9,8 @@
 
 namespace CYD
 {
+static const std::string UNKNOWN_ENTITY_STRING = "Unknown Entity";
+
 EntityManager::EntityManager()
 {
    // Initializing shared components
@@ -67,6 +69,17 @@ const Entity* EntityManager::getEntity( EntityHandle handle ) const
    }
 
    return &it->second;
+}
+
+const std::string& EntityManager::getEntityName( EntityHandle handle ) const
+{
+   const Entity* entity = getEntity( handle );
+   if( entity )
+   {
+      return entity->getName();
+   }
+
+   return UNKNOWN_ENTITY_STRING;
 }
 
 void EntityManager::removeEntity( EntityHandle handle )

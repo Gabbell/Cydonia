@@ -59,6 +59,7 @@ class Device final
    CommandBuffer* createCommandBuffer(
        CYD::QueueUsageFlag usage,
        const std::string_view name,
+       bool async       = false,
        bool presentable = false );
 
    // Buffer creation function
@@ -100,6 +101,7 @@ class Device final
        CYD::QueueUsageFlag usage,
        bool supportsPresentation = false ) const;
    VkQueue getQueueFromUsage( CYD::QueueUsageFlag usage, bool supportsPresentation = false ) const;
+   uint32_t getQueueCount() const { return m_queueCount; }
 
    // Support
    uint32_t findMemoryType( uint32_t typeFilter, uint32_t properties ) const;
@@ -140,6 +142,7 @@ class Device final
    std::unique_ptr<PipelineCache> m_pipelines;
 
    std::vector<QueueFamily> m_queueFamilies;
+   uint32_t m_queueCount;
 
    // Extensions used to create the device
    const std::vector<const char*>& m_extensions;

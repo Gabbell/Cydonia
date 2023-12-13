@@ -26,9 +26,30 @@ bool PipelineLayoutInfo::operator==( const PipelineLayoutInfo& other ) const
 
 bool SamplerInfo::operator==( const SamplerInfo& other ) const
 {
-   return maxAnisotropy == other.maxAnisotropy &&
-          magFilter == other.magFilter && minFilter == other.minFilter &&
-          addressMode == other.addressMode;
+   return maxAnisotropy == other.maxAnisotropy && magFilter == other.magFilter &&
+          minFilter == other.minFilter && addressMode == other.addressMode;
+}
+
+bool RasterizerState::operator==( const RasterizerState& other ) const
+{
+   return polyMode == other.polyMode && cullMode == other.cullMode && drawPrim == other.drawPrim &&
+          usePrimitiveRestart == other.usePrimitiveRestart &&
+          useDepthClamp == other.useDepthClamp && useDepthBias == other.useDepthBias &&
+          depthBiasConstant == other.depthBiasConstant &&
+          depthBiasSlopeScale == other.depthBiasSlopeScale;
+}
+
+bool DepthStencilState::operator==( const DepthStencilState& other ) const
+{
+   return useDepthTest == other.useDepthTest && useStencilTest == other.useStencilTest &&
+          depthWrite == other.depthWrite && depthCompareOp == other.depthCompareOp;
+}
+
+bool BlendState::operator==( const BlendState& other ) const { return useBlend == other.useBlend; }
+
+bool TessellationState::operator==( const TessellationState& other ) const
+{
+   return enabled == other.enabled && patchControlPoints == other.patchControlPoints;
 }
 
 PipelineInfo::PipelineInfo()  = default;
@@ -81,8 +102,10 @@ GraphicsPipelineInfo::GraphicsPipelineInfo() : PipelineInfo( PipelineType::GRAPH
 // TODO Also compare shader constants
 bool GraphicsPipelineInfo::operator==( const GraphicsPipelineInfo& other ) const
 {
-   return pipLayout == other.pipLayout && drawPrim == other.drawPrim &&
-          polyMode == other.polyMode && extent == other.extent && shaders == other.shaders;
+   return pipLayout == other.pipLayout && vertLayout == other.vertLayout &&
+          rasterizer == other.rasterizer && dsState == other.dsState &&
+          blendState == other.blendState && tessState == other.tessState &&
+          extent == other.extent && shaders == other.shaders;
 }
 GraphicsPipelineInfo::~GraphicsPipelineInfo() = default;
 

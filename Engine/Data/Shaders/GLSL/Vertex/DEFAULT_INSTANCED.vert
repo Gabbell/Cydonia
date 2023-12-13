@@ -25,7 +25,7 @@ layout( location = 2 ) out vec3 outWorldPos;
 // =================================================================================================
 void main()
 {
-   const View mainView  = views[0];
+   const View mainView = views[0];
 
    const mat4x4 instanceModelMat = modelMat * mat4( instances[gl_InstanceIndex].modelMat );
    vec3 worldPos = vec3( instanceModelMat * vec4( inPosition, 1.0 ) );  // World coordinates
@@ -34,5 +34,5 @@ void main()
    outNormal   = normalize( vec3( instanceModelMat * vec4( inNormal, 0.0 ) ) );
    outWorldPos = worldPos;
 
-   gl_Position = mainView.proj * mainView.view * vec4( worldPos, 1.0 );
+   gl_Position = mainView.projMat * mainView.viewMat * vec4( worldPos, 1.0 );
 }

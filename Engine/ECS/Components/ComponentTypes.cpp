@@ -8,6 +8,7 @@ std::string_view GetComponentName( ComponentType type )
        "Transform",
        "View",
        "Light",
+       "Shadow Map",
        "Material",
        "Mesh",
        "Renderable",

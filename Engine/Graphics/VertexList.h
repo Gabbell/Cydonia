@@ -69,10 +69,13 @@ class VertexList
       const size_t vertexOffset   = vertexIdx * m_layout.getStride();
       const size_t locationOffset = m_layout.getLocationOffset( Attribute::TYPE );
 
-      Value* value = reinterpret_cast<Value*>(
-          reinterpret_cast<uint8_t*>( m_vertices ) + vertexOffset + locationOffset );
+      if( locationOffset != VertexLayout::INVALID_LOCATION_OFFSET )
+      {
+         Value* value = reinterpret_cast<Value*>(
+             reinterpret_cast<uint8_t*>( m_vertices ) + vertexOffset + locationOffset );
 
-      *value = newValue;
+         *value = newValue;
+      }
    }
 
    void allocate( size_t vertexCount );

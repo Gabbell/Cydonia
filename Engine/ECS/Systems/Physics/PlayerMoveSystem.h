@@ -24,7 +24,7 @@ class PlayerMoveSystem final
    // Coefficients
    static constexpr float FRICTION_MODIFIER = 0.5f;  // Between 0 and 1
    static constexpr float SPEED_MODIFIER    = 2.0f;  // Sprinting
-   static constexpr float MOUSE_SENS        = 0.001f;
+   static constexpr float MOUSE_SENS        = 0.1f;
 
    void tick( double deltaS ) override;
 };

@@ -50,9 +50,9 @@ class VKRenderBackendImp
       // Initializing swapchain on main device
       m_scInfo.imageCount = imageCount;
       m_scInfo.extent     = window.getExtent();
-      m_scInfo.format     = PixelFormat::BGRA8_UNORM;
+      m_scInfo.format     = PixelFormat::RGBA8_SRGB;
       m_scInfo.space      = ColorSpace::SRGB_NONLINEAR;
-      m_scInfo.mode       = PresentMode::IMMEDIATE;
+      m_scInfo.mode       = PresentMode::FIFO;
 
       m_mainSwapchain = m_mainDevice.createSwapchain( m_scInfo );
 
@@ -102,8 +102,9 @@ class VKRenderBackendImp
           &init_info, m_mainDevice.getRenderPassCache().findOrCreate( renderPass ) );
 
       // Loading fonts
-      const CmdListHandle cmdList = createCommandList( GRAPHICS, "ImGui Font Loading", false );
-      auto cmdBuffer              = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
+      const CmdListHandle cmdList =
+          createCommandList( GRAPHICS, "ImGui Font Loading", false, false );
+      auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
       ImGui_ImplVulkan_CreateFontsTexture( cmdBuffer->getVKCmdBuffer() );
 
@@ -187,10 +188,13 @@ class VKRenderBackendImp
 
    void waitUntilIdle() const { m_mainDevice.waitUntilIdle(); }
 
-   CmdListHandle
-   createCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
+   CmdListHandle createCommandList(
+       QueueUsageFlag usage,
+       const std::string_view name,
+       bool async,
+       bool presentable )
    {
-      const auto cmdBuffer = m_mainDevice.createCommandBuffer( usage, name, presentable );
+      const auto cmdBuffer = m_mainDevice.createCommandBuffer( usage, name, async, presentable );
       cmdBuffer->startRecording();
       return m_coreHandles.add( cmdBuffer, HandleType::CMDLIST );
    }
@@ -508,7 +512,7 @@ class VKRenderBackendImp
       return m_coreHandles.add( deviceBuffer, HandleType::BUFFER );
    }
 
-   void* addDebugTexture( TextureHandle texture )
+   void* addDebugTexture( TextureHandle texture, uint32_t layer )
    {
       auto vkTexture = static_cast<vk::Texture*>( m_coreHandles.get( texture ) );
       if( vkTexture == nullptr ) return nullptr;
@@ -518,7 +522,7 @@ class VKRenderBackendImp
 
       return ImGui_ImplVulkan_AddTexture(
           vkSampler,
-          vkTexture->getVKImageView(),
+          vkTexture->getIndexedVKImageView( layer, 0 ),
           vk::Synchronization::GetLayoutFromAccess( vkTexture->getPreviousAccess() ) );
    }
 
@@ -658,8 +662,6 @@ class VKRenderBackendImp
 
    void beginFrame()
    {
-      const uint32_t currentFrame = m_mainSwapchain->getCurrentFrame();
-
       m_window.poll();
 
       if( m_hasUI )
@@ -672,7 +674,7 @@ class VKRenderBackendImp
       // CPU wait for all work to be done for this frame before acquiring next
       // image Otherwise, there is a possibility that we feed the GPU too much
       // and cap our CPU-side resource limits
-      m_mainDevice.waitOnFrame( currentFrame );
+      // m_mainDevice.waitOnFrame( currentFrame );
 
       // Keeping swapchain the same size as the window extent
       const Extent2D& windowExtent      = m_window.getExtent();
@@ -701,7 +703,7 @@ class VKRenderBackendImp
       m_mainSwapchain->setClear( false );
    }
 
-   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb ) const
+   void beginRendering( CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
 
@@ -719,7 +721,7 @@ class VKRenderBackendImp
          }
       }
 
-      cmdBuffer->beginRendering( fb, vkTextures );
+      cmdBuffer->beginRendering( fb, vkTextures, layer );
    }
 
    void nextPass( CmdListHandle cmdList ) const
@@ -775,8 +777,10 @@ class VKRenderBackendImp
       cmdBuffer->dispatch( workX, workY, workZ );
    }
 
-   void clearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal )
-       const
+   void clearTexture(
+       CmdListHandle cmdList,
+       TextureHandle texHandle,
+       const ClearValue& clearVal ) const
    {
       auto cmdBuffer = static_cast<vk::CommandBuffer*>( m_coreHandles.get( cmdList ) );
       auto texture   = static_cast<vk::Texture*>( m_coreHandles.get( texHandle ) );
@@ -870,9 +874,10 @@ void VKRenderBackend::waitUntilIdle() { _imp->waitUntilIdle(); }
 CmdListHandle VKRenderBackend::createCommandList(
     QueueUsageFlag usage,
     const std::string_view name,
+    bool async,
     bool presentable )
 {
-   return _imp->createCommandList( usage, name, presentable );
+   return _imp->createCommandList( usage, name, async, presentable );
 }
 
 void VKRenderBackend::submitCommandList( CmdListHandle cmdList )
@@ -1045,9 +1050,9 @@ BufferHandle VKRenderBackend::createBuffer( size_t size, const std::string_view 
    return _imp->createBuffer( size, name );
 }
 
-void* VKRenderBackend::addDebugTexture( TextureHandle textureHandle )
+void* VKRenderBackend::addDebugTexture( TextureHandle textureHandle, uint32_t layer )
 {
-   return _imp->addDebugTexture( textureHandle );
+   return _imp->addDebugTexture( textureHandle, layer );
 }
 
 void VKRenderBackend::updateDebugTexture( CmdListHandle cmdList, TextureHandle textureHandle )
@@ -1115,9 +1120,9 @@ void VKRenderBackend::beginFrame() { _imp->beginFrame(); }
 
 void VKRenderBackend::beginRendering( CmdListHandle cmdList ) { _imp->beginRendering( cmdList ); }
 
-void VKRenderBackend::beginRendering( CmdListHandle cmdList, const Framebuffer& fb )
+void VKRenderBackend::beginRendering( CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer )
 {
-   _imp->beginRendering( cmdList, fb );
+   _imp->beginRendering( cmdList, fb, layer );
 }
 
 void VKRenderBackend::nextPass( CmdListHandle cmdList ) { _imp->nextPass( cmdList ); }

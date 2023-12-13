@@ -10,8 +10,8 @@
 
 struct RaymarchParams
 {
-	uint width;
-	uint height;
-	uint octaves;
-	float time;
-};	
+   uint width;
+   uint height;
+   uint octaves;
+   float time;
+};

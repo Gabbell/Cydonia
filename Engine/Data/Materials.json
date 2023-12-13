@@ -28,7 +28,7 @@
       "TEXTURES": [
         {
           "SLOT": "ALBEDO",
-          "FORMAT": "RGBA8_UNORM",
+          "FORMAT": "RGBA8_SRGB",
           "TYPE": "TEXTURE2D",
           "PATH": "Sword/albedo.png"
         },
@@ -69,7 +69,7 @@
       "TEXTURES": [
         {
           "SLOT": "ALBEDO",
-          "FORMAT": "RGBA8_UNORM",
+          "FORMAT": "RGBA8_SRGB",
           "TYPE": "TEXTURE2D",
           "PATH": "Snow/ground_0030_color_4k.jpg"
         },
@@ -102,6 +102,47 @@
           "FORMAT": "R32F",
           "TYPE": "TEXTURE2D",
           "PATH": "Snow/ground_0030_height_4k.png"
+        }
+      ]
+    },
+    {
+      "NAME": "GRASS",
+      "TEXTURES": [
+        {
+          "SLOT": "ALBEDO",
+          "FORMAT": "RGBA8_SRGB",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_color_4k.jpg"
+        },
+        {
+          "SLOT": "NORMAL",
+          "FORMAT": "RGBA8_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_normal_opengl_4k.png"
+        },
+        {
+          "SLOT": "METALNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "FALLBACK": "BLACK"
+        },
+        {
+          "SLOT": "ROUGHNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0009_roughness_4k.jpg"
+        },
+        {
+          "SLOT": "AMBIENT_OCCLUSION",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_ao_4k.jpg"
+        },
+        {
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_height_4k.png"
         }
       ]
     }

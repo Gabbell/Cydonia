@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Graphics/GraphicsTypes.h>
+#include <Graphics/PipelineInfos.h>
 #include <Graphics/Vulkan.h>
 
 // ================================================================================================
@@ -16,6 +17,7 @@ VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op );
 VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op );
 VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim );
 VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode );
+VkCullModeFlagBits cydToVkCullMode( CYD::CullMode cullMode );
 uint32_t cydToVkPipelineStages( CYD::PipelineStageFlag stages );
 uint32_t cydToVkShaderStages( CYD::PipelineStageFlag stages );
 VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type );

@@ -4,6 +4,11 @@
 
 namespace CYD
 {
+bool VertexLayout::operator==( const VertexLayout& other ) const
+{
+   return m_attributes == other.m_attributes && m_stride == other.m_stride;
+}
+
 void InitializeVertexLayouts()
 {
    //

@@ -56,6 +56,16 @@ MeshIndex MeshCache::addMesh( std::string_view name, const VertexLayout& layout 
    return newIdx;
 }
 
+bool MeshCache::meshReady( MeshIndex meshIdx ) const
+{
+   if( meshIdx == INVALID_MESH_IDX )
+   {
+      return false;
+   }
+
+   return m_meshes[meshIdx]->currentState == State::LOADED_TO_VRAM;
+}
+
 MeshCache::DrawInfo MeshCache::getDrawInfo( MeshIndex meshIdx ) const
 {
    return { m_meshes[meshIdx]->vertexCount, m_meshes[meshIdx]->indexCount };
@@ -65,9 +75,7 @@ void MeshCache::_loadToRAM( Mesh& mesh )
 {
    CYD_TRACE();
 
-   CYD_ASSERT_AND_RETURN( mesh.currentState == State::UNINITIALIZED, return; );
-
-   mesh.currentState = State::LOADING_TO_RAM;
+   CYD_ASSERT_AND_RETURN( mesh.currentState == State::LOADING_TO_RAM, return; );
 
    if( mesh.generator )
    {
@@ -86,9 +94,7 @@ void MeshCache::_loadToVRAM( CmdListHandle cmdList, Mesh& mesh )
 {
    CYD_TRACE();
 
-   CYD_ASSERT_AND_RETURN( mesh.currentState == State::LOADED_TO_RAM, return; );
-
-   mesh.currentState = State::LOADING_TO_VRAM;
+   CYD_ASSERT_AND_RETURN( mesh.currentState == State::LOADING_TO_VRAM, return; );
 
    mesh.vertexBuffer = GRIS::CreateVertexBuffer( mesh.vertexList.getSize(), mesh.path );
    mesh.indexBuffer =
@@ -126,11 +132,15 @@ MeshCache::State MeshCache::progressLoad( CmdListHandle cmdList, MeshIndex meshI
    if( mesh.currentState == State::UNINITIALIZED )
    {
       // This material is not loaded, start a load job
+      mesh.currentState = State::LOADING_TO_RAM;
+
       m_threadPool.submit( MeshCache::_loadToRAM, mesh );
    }
 
    if( mesh.currentState == State::LOADED_TO_RAM )
    {
+      mesh.currentState = State::LOADING_TO_VRAM;
+
       _loadToVRAM( cmdList, mesh );
    }
 

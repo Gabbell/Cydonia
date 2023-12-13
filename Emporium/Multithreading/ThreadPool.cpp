@@ -34,7 +34,7 @@ void ThreadPool::shutdown()
 ThreadPool::~ThreadPool() { shutdown(); }
 
 ThreadPool::ThreadWorker::ThreadWorker( ThreadPool* threadPool, const int threadIdx )
-    : m_threadIdx( threadIdx ),m_threadPool( threadPool )
+    : m_threadIdx( threadIdx ), m_threadPool( threadPool )
 {
    REF( m_threadIdx );
 }

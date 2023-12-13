@@ -2,6 +2,8 @@
 
 #include <Common/Assert.h>
 
+#include <Graphics/PipelineInfos.h>
+
 #include <Graphics/Vulkan.h>
 
 namespace vk::TypeConversions
@@ -170,6 +172,25 @@ VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode )
    }
 
    return VK_POLYGON_MODE_FILL;
+}
+
+VkCullModeFlagBits cydToVkCullMode( CYD::CullMode cullMode )
+{
+   switch( cullMode )
+   {
+      case CYD::CullMode::NONE:
+         return VK_CULL_MODE_NONE;
+      case CYD::CullMode::BACK:
+         return VK_CULL_MODE_BACK_BIT;
+      case CYD::CullMode::FRONT:
+         return VK_CULL_MODE_FRONT_BIT;
+      case CYD::CullMode::FRONT_AND_BACK:
+         return VK_CULL_MODE_FRONT_AND_BACK;
+      default:
+         CYD_ASSERT( !"TypeConversions:: Unrecognized cull mode" );
+   }
+
+   return VK_CULL_MODE_NONE;
 }
 
 VkPipelineStageFlags cydToVkPipelineStages( CYD::PipelineStageFlag stages )

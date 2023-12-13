@@ -1,4 +1,5 @@
 #pragma once
+#pragma once
 
 #include <ECS/Systems/CommonSystem.h>
 
@@ -19,6 +20,8 @@ class DeferredRenderSystem final : public CommonSystem<RenderableComponent>
    DeferredRenderSystem() = default;
    NON_COPIABLE( DeferredRenderSystem );
    virtual ~DeferredRenderSystem() = default;
+
+   void sort() override;
 
    void tick( double deltaS ) override;
 };

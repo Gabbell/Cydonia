@@ -27,10 +27,7 @@ void TessellationUpdateSystem::tick( double /*deltaS*/ )
 
       renderable.isTessellated = true;
 
-      const Frustum& mainViewFrustum = scene.frustums[0];
-
       tessellated.params.viewportDims = glm::vec2( scene.viewport.width, scene.viewport.height );
-      mainViewFrustum.getPlanes( tessellated.params.frustumPlanes );
 
       // Creating GPU data
       const size_t bufferSize = sizeof( TessellatedComponent::ShaderParams );

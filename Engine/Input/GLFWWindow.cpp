@@ -4,6 +4,8 @@
 
 #include <Graphics/Vulkan.h>
 
+#include <Profiling.h>
+
 #include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
 
@@ -51,7 +53,11 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
 
 bool Window::isRunning() const { return !glfwWindowShouldClose( m_glfwWindow ); }
 
-void Window::poll() const { glfwPollEvents(); }
+void Window::poll() const
+{
+   CYD_TRACE();
+   glfwPollEvents();
+}
 
 Window::~Window()
 {

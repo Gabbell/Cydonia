@@ -21,20 +21,17 @@ WindowSystem::WindowSystem( Window& window ) : m_window( window )
    glfwSetWindowUserPointer( m_window.getGLFWwindow(), this );
 
    // Callback wrappers
-   auto mainKeyCallback = []( GLFWwindow* window, int key, int scancode, int action, int mods )
-   {
+   auto mainKeyCallback = []( GLFWwindow* window, int key, int scancode, int action, int mods ) {
       static_cast<WindowSystem*>( glfwGetWindowUserPointer( window ) )
           ->_keyCallback( window, key, scancode, action, mods );
    };
 
-   auto mainMouseCallback = []( GLFWwindow* window, int button, int action, int mods )
-   {
+   auto mainMouseCallback = []( GLFWwindow* window, int button, int action, int mods ) {
       static_cast<WindowSystem*>( glfwGetWindowUserPointer( window ) )
           ->_mouseCallback( window, button, action, mods );
    };
 
-   auto mainResizeCallback = []( GLFWwindow* window, int width, int height )
-   {
+   auto mainResizeCallback = []( GLFWwindow* window, int width, int height ) {
       static_cast<WindowSystem*>( glfwGetWindowUserPointer( window ) )
           ->_resizeCallback( window, width, height );
    };
@@ -56,7 +53,7 @@ void WindowSystem::tick( double /*deltaS*/ )
    double curPosX, curPosY;
    glfwGetCursorPos( m_window.getGLFWwindow(), &curPosX, &curPosY );
    const glm::vec2 newCursorPos( curPosX, curPosY );
-   input.cursorDelta  = input.curCursorPos - newCursorPos;
+   input.cursorDelta  = newCursorPos - input.curCursorPos;
    input.curCursorPos = newCursorPos;
 
    // Updating scene extent to match window extent if needed

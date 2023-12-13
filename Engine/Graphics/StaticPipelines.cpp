@@ -208,6 +208,32 @@ static CompareOperator StringToCompareOp( const std::string& operatorString )
    return CompareOperator::ALWAYS;
 }
 
+static CullMode StringToCullMode( const std::string& cullModeString )
+{
+   if( cullModeString == "NONE" )
+   {
+      return CullMode::NONE;
+   }
+
+   if( cullModeString == "BACK" )
+   {
+      return CullMode::BACK;
+   }
+
+   if( cullModeString == "FRONT" )
+   {
+      return CullMode::FRONT;
+   }
+
+   if( cullModeString == "FRONT_AND_BACK" )
+   {
+      return CullMode::FRONT_AND_BACK;
+   }
+
+   CYD_ASSERT( !"Pipelines: Could not recognize string as a cull mode" );
+   return CullMode::NONE;
+}
+
 bool Initialize()
 {
    // Parse pipeline infos from JSON description
@@ -260,48 +286,39 @@ bool Initialize()
       {
          GraphicsPipelineInfo pipInfo;
          pipInfo.name = pipName;
-         pipInfo.shaders.push_back( pipeline["VERTEX_SHADER"] );
 
-         const auto& tessControl = pipeline.find( "TESS_CONTROL_SHADER" );
-         if( tessControl != pipeline.end() )
+         if( pipeline.contains( "VERTEX_SHADER" ) )
          {
-            pipInfo.shaders.push_back( *tessControl );
+            pipInfo.shaders.push_back( pipeline["VERTEX_SHADER"] );
          }
 
-         const auto& tessEval = pipeline.find( "TESS_EVAL_SHADER" );
-         if( tessEval != pipeline.end() )
+         if( pipeline.contains( "TESS_CONTROL_SHADER" ) )
          {
-            pipInfo.shaders.push_back( *tessEval );
+            pipInfo.shaders.push_back( pipeline["TESS_CONTROL_SHADER"] );
          }
 
-         pipInfo.shaders.push_back( pipeline["FRAGMENT_SHADER"] );
+         if( pipeline.contains( "TESS_EVAL_SHADER" ) )
+         {
+            pipInfo.shaders.push_back( pipeline["TESS_EVAL_SHADER"] );
+         }
+
+         if( pipeline.contains( "FRAGMENT_SHADER" ) )
+         {
+            pipInfo.shaders.push_back( pipeline["FRAGMENT_SHADER"] );
+         }
+
+         CYD_ASSERT( !pipInfo.shaders.empty() && "Pipeline: No shaders were added" );
 
          // Optional parameters
-         const auto& primIt = pipeline.find( "PRIMITIVE" );
-         if( primIt != pipeline.end() )
+         if( pipeline.contains( "PRIMITIVE" ) )
          {
-            pipInfo.drawPrim = StringToPrimitiveType( primIt->front() );
-         }
-         else
-         {
-            pipInfo.drawPrim = DrawPrimitive::TRIANGLES;
-         }
-
-         const auto& polyModeIt = pipeline.find( "POLYGON_MODE" );
-         if( polyModeIt == pipeline.end() )
-         {
-            pipInfo.polyMode = PolygonMode::FILL;
-         }
-         else
-         {
-            pipInfo.polyMode = StringToPolygonMode( polyModeIt->front() );
+            pipInfo.rasterizer.drawPrim = StringToPrimitiveType( pipeline["PRIMITIVE"] );
          }
 
          // Parsing vertex layout
-         const auto& vertexLayoutIt = pipeline.find( "VERTEX_LAYOUT" );
-         if( vertexLayoutIt != pipeline.end() )
+         if( pipeline.contains( "VERTEX_LAYOUT" ) )
          {
-            for( const auto& attribute : *vertexLayoutIt )
+            for( const auto& attribute : pipeline["VERTEX_LAYOUT"] )
             {
                const PixelFormat vecFormat = StringToPixelFormat( attribute["FORMAT"] );
 
@@ -313,10 +330,9 @@ bool Initialize()
          }
 
          // Parsing depth stencil state
-         const auto& depthStencilIt = pipeline.find( "DEPTH_STENCIL" );
-         if( depthStencilIt != pipeline.end() )
+         if( pipeline.contains( "DEPTH_STENCIL" ) )
          {
-            const auto& depthStencil       = *depthStencilIt;
+            const auto& depthStencil       = pipeline["DEPTH_STENCIL"];
             pipInfo.dsState.useDepthTest   = depthStencil["DEPTH_TEST_ENABLE"];
             pipInfo.dsState.useStencilTest = depthStencil["STENCIL_TEST_ENABLE"];
             pipInfo.dsState.depthWrite     = depthStencil["DEPTH_WRITE_ENABLE"];
@@ -324,28 +340,55 @@ bool Initialize()
          }
 
          // Parsing tessellation state
-         const auto& tessellationIt = pipeline.find( "TESSELLATION" );
-         if( tessellationIt != pipeline.end() )
+         if( pipeline.contains( "TESSELLATION" ) )
          {
-            const auto& tessellation             = *tessellationIt;
+            const auto& tessellation             = pipeline["TESSELLATION"];
             pipInfo.tessState.enabled            = tessellation["ENABLE"];
             pipInfo.tessState.patchControlPoints = tessellation["PATCH_VERTICES"];
          }
 
          // Parsing rasterizer state
-         const auto& rasterizerIt = pipeline.find( "RASTERIZER" );
-         if( rasterizerIt != pipeline.end() )
+         if( pipeline.contains( "RASTERIZER" ) )
          {
-            const auto& rasterizer                 = *rasterizerIt;
-            pipInfo.rasterizer.useDepthBias        = rasterizer["DEPTH_BIAS_ENABLE"];
-            pipInfo.rasterizer.depthBiasConstant   = rasterizer["DEPTH_CONSTANT"];
-            pipInfo.rasterizer.depthBiasSlopeScale = rasterizer["DEPTH_SLOPE_SCALE"];
+            const auto& rasterizer = pipeline["RASTERIZER"];
+
+            if( rasterizer.contains( "PRIMITIVE" ) )
+            {
+               pipInfo.rasterizer.drawPrim = StringToPrimitiveType( rasterizer["PRIMITIVE"] );
+            }
+
+            if( rasterizer.contains( "CULL_MODE" ) )
+            {
+               pipInfo.rasterizer.cullMode = StringToCullMode( rasterizer["CULL_MODE"] );
+            }
+
+            if( rasterizer.contains( "DEPTH_CLAMP" ) )
+            {
+               pipInfo.rasterizer.useDepthClamp = rasterizer["DEPTH_CLAMP"];
+            }
+
+            if( rasterizer.contains( "POLYGON_MODE" ) )
+            {
+               pipInfo.rasterizer.polyMode = StringToPolygonMode( rasterizer["POLYGON_MODE"] );
+            }
+
+            if( rasterizer.contains( "PRIMITIVE_RESTART" ) )
+            {
+               pipInfo.rasterizer.usePrimitiveRestart = rasterizer["PRIMITIVE_RESTART"];
+            }
+
+            if( rasterizer.contains( "DEPTH_BIAS_ENABLE" ) )
+            {
+               pipInfo.rasterizer.useDepthBias        = rasterizer["DEPTH_BIAS_ENABLE"];
+               pipInfo.rasterizer.depthBiasConstant   = rasterizer["DEPTH_CONSTANT"];
+               pipInfo.rasterizer.depthBiasSlopeScale = rasterizer["DEPTH_SLOPE_SCALE"];
+            }
          }
 
-         const auto& blendIt = pipeline.find( "BLEND" );
-         if( blendIt != pipeline.end() )
+         if( pipeline.contains( "BLEND" ) )
          {
-            const auto& blend           = *blendIt;
+            const auto& blend = pipeline["BLEND"];
+
             pipInfo.blendState.useBlend = blend["BLEND_ENABLE"];
          }
 
@@ -366,10 +409,9 @@ bool Initialize()
       }
 
       // Parsing shader resource sets and bindings
-      const auto& resourcesIt = pipeline.find( "SHADER_RESOURCES" );
-      if( resourcesIt != pipeline.end() )
+      if( pipeline.contains( "SHADER_RESOURCES" ) )
       {
-         for( const auto& resource : *resourcesIt )
+         for( const auto& resource : pipeline["SHADER_RESOURCES"] )
          {
             CYD::PipelineStageFlag stages = 0;
             for( const auto& shaderStage : resource["STAGES"] )
