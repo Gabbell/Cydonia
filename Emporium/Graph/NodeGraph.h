@@ -28,20 +28,22 @@ class NodeGraph
       std::array<NodeHandle, MAX_BRANCHING> children = {};
 
       uint8_t childrenCount = 0;
+
+      bool active : 1 = false;
    };
 
-   NodeHandle _addNode( std::unique_ptr<Node>&& newNode );
+   NodeHandle _addNode( Node&& newNode );
 
    // Visit/Search functions
    void _depthFirstSearch( NodeHandle root );
    void _breathFirstSearch( NodeHandle root );
 
    // This function is called for each node visited during the different types of graph searches
-   virtual void _interpretNode( NodeHandle handle, const Node* node );
+   virtual void _interpretNode( NodeHandle handle, const Node& node );
 
   private:
    static constexpr uint32_t MAX_AMOUNT_NODES = 512;  // Increase this if needed
    static constexpr NodeHandle ROOT_INDEX     = 0;
-   std::array<std::unique_ptr<Node>, MAX_AMOUNT_NODES> m_nodes;  // Graph nodes in contiguous memory
+   std::array<Node, MAX_AMOUNT_NODES> m_nodes;  // Graph nodes in contiguous memory
 };
 }

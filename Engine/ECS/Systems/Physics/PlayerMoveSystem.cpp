@@ -13,27 +13,26 @@ void PlayerMoveSystem::tick( double deltaS )
    for( const auto& entityEntry : m_entities )
    {
       const InputComponent& input   = m_ecs->getSharedComponent<InputComponent>();
-      TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      MotionComponent& motion       = *std::get<MotionComponent*>( entityEntry.arch );
+      TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      MotionComponent& motion       = GetComponent<MotionComponent>( entityEntry );
 
       // Modifying the transform component directly for rotation
       if( input.rightClick )
       {
          const glm::vec2 rotationAngles = input.cursorDelta * MOUSE_SENS;
-
-         Transform::RotateLocal( transform.rotation, rotationAngles.y, 0, 0 );
-         Transform::Rotate( transform.rotation, 0, rotationAngles.x, 0 );
+         Transform::RotateLocal( transform.rotation, rotationAngles.y, 0.0, 0.0 );
+         Transform::Rotate( transform.rotation, 0.0, rotationAngles.x, 0.0 );
       }
 
       // Modifying the acceleration component for position in local coordinates
       glm::vec3 accelerationVec( 0.0f );
       if( input.goingForwards )
       {
-         accelerationVec.z -= 1.0f;
+         accelerationVec.z += 1.0f;
       }
       if( input.goingBackwards )
       {
-         accelerationVec.z += 1.0f;
+         accelerationVec.z -= 1.0f;
       }
       if( input.goingRight )
       {
@@ -62,7 +61,7 @@ void PlayerMoveSystem::tick( double deltaS )
          accelerationVec = glm::normalize( accelerationVec );
       }
 
-      accelerationVec *= MOVE_ACCELERATION;
+      accelerationVec *= motion.moveAcceleration;
 
       // Sprinting
       if( input.sprinting )
@@ -74,25 +73,27 @@ void PlayerMoveSystem::tick( double deltaS )
       glm::vec3 frictionVec( 0.0f );
       if( motion.velocity != glm::zero<glm::vec3>() )
       {
-         frictionVec = -glm::normalize( motion.velocity ) * MOVE_ACCELERATION * FRICTION_MODIFIER;
+         frictionVec =
+             -glm::normalize( motion.velocity ) * motion.moveAcceleration * FRICTION_MODIFIER;
       }
 
       // Calculating velocity
       motion.velocity += ( accelerationVec * static_cast<float>( deltaS ) ) +
                          ( frictionVec * static_cast<float>( deltaS ) );
 
-      const float magSquared = glm::length2( motion.velocity );
+      const float magSquared         = glm::length2( motion.velocity );
+      const float maxVelocitySquared = motion.maxVelocity * motion.maxVelocity;
 
       // Rounding to 0 if the velocity is small
-      if( magSquared < MAX_VELOCITY / 100.0f )
+      if( magSquared < 0.01 )
       {
          motion.velocity = glm::vec3( 0.0f );
       }
 
       // Clamping to maximum velocity
-      if( magSquared > ( MAX_VELOCITY * MAX_VELOCITY ) )
+      if( magSquared > maxVelocitySquared )
       {
-         motion.velocity *= ( ( MAX_VELOCITY * MAX_VELOCITY ) / magSquared );
+         motion.velocity *= ( maxVelocitySquared / magSquared );
       }
 
       // Calculating delta position

@@ -1,13 +1,35 @@
 #include <Graphics/VertexLayout.h>
 
+#include <Common/Assert.h>
+
 namespace CYD
 {
-void VertexLayout::addAttribute(
-    PixelFormat vecFormat,
-    uint32_t location,
-    uint32_t offset,
-    uint32_t binding )
+bool VertexLayout::operator==( const VertexLayout& other ) const
 {
-   m_attributes.emplace_back( Attribute{ vecFormat, location, offset, binding } );
+   return m_attributes == other.m_attributes && m_stride == other.m_stride;
+}
+
+void InitializeVertexLayouts()
+{
+   //
+}
+
+uint32_t VertexLayout::getLocationOffset( Attribute type ) const
+{
+   for( const auto& attribute : m_attributes )
+   {
+      if( attribute.type == type )
+      {
+         return attribute.offset;
+      }
+   }
+
+   return INVALID_LOCATION_OFFSET;
+}
+
+void VertexLayout::addAttribute( Attribute type, PixelFormat vecFormat )
+{
+   m_attributes.emplace_back( AttributeInfo{ type, vecFormat, m_stride } );
+   m_stride += GetPixelSizeInBytes( vecFormat );
 }
 }

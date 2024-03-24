@@ -1,5 +1,7 @@
 #include <Graphics/GraphicsTypes.h>
 
+#include <Common/Assert.h>
+
 namespace CYD
 {
 bool IsColorFormat( PixelFormat format )
@@ -24,7 +26,9 @@ uint32_t GetPixelSizeInBytes( PixelFormat format )
       case PixelFormat::R16_UNORM:
          return 2;
       case PixelFormat::BGRA8_UNORM:
+      case PixelFormat::RGBA8_UNORM:
       case PixelFormat::RGBA8_SRGB:
+      case PixelFormat::R32_UINT:
       case PixelFormat::R32F:
       case PixelFormat::D32_SFLOAT:
          return 4;
@@ -35,6 +39,35 @@ uint32_t GetPixelSizeInBytes( PixelFormat format )
          return 12;
       case PixelFormat::RGBA32F:
          return 16;
+      default:
+         CYD_ASSERT( !"Unknown pixel format" );
+   }
+
+   return 0;
+}
+
+uint32_t GetChannelsCount( PixelFormat format )
+{
+   switch( format )
+   {
+      case PixelFormat::R8_UNORM:
+      case PixelFormat::R16_UNORM:
+      case PixelFormat::R32_UINT:
+      case PixelFormat::R32F:
+      case PixelFormat::D32_SFLOAT:
+         return 1;
+      case PixelFormat::RG32F:
+         return 2;
+      case PixelFormat::RGB32F:
+         return 3;
+      case PixelFormat::BGRA8_UNORM:
+      case PixelFormat::RGBA8_UNORM:
+      case PixelFormat::RGBA8_SRGB:
+      case PixelFormat::RGBA16F:
+      case PixelFormat::RGBA32F:
+         return 4;
+      default:
+         CYD_ASSERT( !"Unknown pixel format" );
    }
 
    return 0;

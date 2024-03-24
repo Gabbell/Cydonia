@@ -6,12 +6,18 @@
 struct View
 {
    vec4 pos;
-   mat4 view;
-   mat4 proj;
+   mat4 viewMat;
+   mat4 projMat;
 };
 
 struct InverseView
 {
-   mat4 invView;
-   mat4 invProj;
+   vec4 pos;
+   mat4 invViewMat;
+   mat4 invProjMat;
+};
+
+struct Frustum
+{
+   vec4 planes[6];
 };

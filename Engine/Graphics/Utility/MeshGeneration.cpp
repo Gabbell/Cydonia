@@ -1,80 +1,234 @@
 #include <Graphics/Utility/MeshGeneration.h>
 
 #include <Graphics/GraphicsTypes.h>
-#include <Graphics/VertexLayout.h>
+#include <Graphics/VertexList.h>
+#include <Graphics/VertexData.h>
+
+#include <glm/ext.hpp>
 
 #include <unordered_map>
 
 namespace CYD::MeshGeneration
 {
-void TriangleGrid(
-    std::vector<Vertex>& vertices,
-    std::vector<uint32_t>& indices,
-    uint32_t rows,
-    uint32_t columns )
-{
-   vertices.resize( rows * columns );
+static constexpr uint32_t PRIMITIVE_RESTART = 0xFFFFFFFF;
 
-   // Vertices in triangles
-   for( uint32_t r = 0; r < rows; ++r )
+void TriangleGrid(
+    VertexList& vertices,
+    std::vector<uint32_t>& indices,
+    uint32_t scale,
+    uint32_t resolution )
+{
+   const uint32_t numVerticesPerSide = resolution + 1;
+   vertices.allocate( numVerticesPerSide * numVerticesPerSide );
+
+   const float wx = static_cast<float>( scale ) / resolution;
+   const float wy = static_cast<float>( scale ) / resolution;
+
+   for( uint32_t x = 0; x < numVerticesPerSide; x++ )
    {
-      for( uint32_t c = 0; c < columns; ++c )
+      for( uint32_t y = 0; y < numVerticesPerSide; y++ )
       {
-         const uint32_t index = ( r * columns ) + c;
-         vertices[index].pos  = glm::vec3(
-             ( static_cast<float>( c ) / static_cast<float>( columns ) ) - 0.5f,
-             0.0f,
-             ( static_cast<float>( r ) / static_cast<float>( rows ) ) - 0.5f );
-         vertices[index].uv =
-             glm::vec3( static_cast<float>( c ) / columns, static_cast<float>( r ) / rows, 0.0f );
-         vertices[index].normal = glm::vec3( 0.0, 1.0f, 0.0f );
+         const uint32_t index = ( x + y * numVerticesPerSide );
+
+         vertices.setValue<Vertex::Position>(
+             index, glm::vec3( x * wx - scale / 2.0f, 0.0f, y * wy - scale / 2.0f ) );
+
+         vertices.setValue<Vertex::Texcoord>(
+             index, glm::vec3( (float)x / ( resolution ), (float)y / ( resolution ), 0.0f ) );
+
+         vertices.setValue<Vertex::Normal>( index, glm::vec3( 0.0, 1.0f, 0.0f ) );
+
+         vertices.setValue<Vertex::Tangent>( index, glm::vec3( 1.0, 0.0f, 0.0f ) );
       }
    }
 
-   // Indices in quads (hence the -1)
-   for( uint32_t r = 0; r < ( rows - 1 ); ++r )
+   indices.resize( resolution * resolution * 6 );
+   for( uint32_t x = 0; x < resolution; x++ )
    {
-      for( uint32_t c = 0; c < ( columns - 1 ); ++c )
+      for( uint32_t y = 0; y < resolution; y++ )
       {
-         indices.push_back( c + ( r * columns ) );
-         indices.push_back( c + ( ( r + 1 ) * columns ) );
-         indices.push_back( c + ( ( r + 1 ) * columns ) + 1 );
+         const uint32_t index = ( x + y * resolution ) * 6;
 
-         indices.push_back( c + ( r * columns ) );
-         indices.push_back( c + ( ( r + 1 ) * columns ) + 1 );
-         indices.push_back( c + ( r * columns + 1 ) );
+         indices[index]     = ( x + y * numVerticesPerSide );
+         indices[index + 1] = indices[index] + numVerticesPerSide;
+         indices[index + 2] = indices[index + 1] + 1;
+
+         indices[index + 3] = indices[index];
+         indices[index + 4] = indices[index + 2];
+         indices[index + 5] = indices[index] + 1;
       }
    }
 }
 
-void PatchGrid( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, uint32_t size )
+void TriangleStripGrid(
+    VertexList& vertices,
+    std::vector<uint32_t>& indices,
+    uint32_t scale,
+    uint32_t resolution )
 {
-   vertices.resize( size * size );
+   const uint32_t numVerticesPerSide = resolution + 1;
+   vertices.allocate( numVerticesPerSide * numVerticesPerSide );
 
-   const float wx = 2.0f;
-   const float wy = 2.0f;
+   const float wx = static_cast<float>( scale ) / resolution;
+   const float wy = static_cast<float>( scale ) / resolution;
 
-   for( uint32_t x = 0; x < size; x++ )
+   uint32_t index = 0;
+   for( uint32_t y = 0; y < numVerticesPerSide; y++ )
    {
-      for( uint32_t y = 0; y < size; y++ )
+      for( uint32_t x = 0; x < numVerticesPerSide; x++ )
       {
-         uint32_t index         = ( x + y * size );
-         vertices[index].pos[0] = x * wx + wx / 2.0f - (float)size * wx / 2.0f;
-         vertices[index].pos[1] = 0.0f;
-         vertices[index].pos[2] = y * wy + wy / 2.0f - (float)size * wy / 2.0f;
-         vertices[index].uv = glm::vec3( (float)x / ( size - 1 ), (float)y / ( size - 1 ), 0.0f );
+         vertices.setValue<Vertex::Position>(
+             index, glm::vec3( x * wx - scale / 2.0f, 0.0f, y * wy - scale / 2.0f ) );
+
+         vertices.setValue<Vertex::Texcoord>(
+             index, glm::vec3( (float)x / ( resolution ), (float)y / ( resolution ), 0.0f ) );
+
+         index++;
       }
    }
 
-   const uint32_t w = ( size - 1 );
-   indices.resize( w * w * 4 );
-   for( uint32_t x = 0; x < w; x++ )
+   indices.resize( ( 2 * numVerticesPerSide + 1 ) * ( numVerticesPerSide - 1 ) );
+
+   index = 0;
+   for( uint32_t y = 0; y < resolution; y++ )
    {
-      for( uint32_t y = 0; y < w; y++ )
+      // Triangular strip for each row
+      for( uint32_t x = 0; x < numVerticesPerSide; x++ )
       {
-         uint32_t index     = ( x + y * w ) * 4;
-         indices[index]     = ( x + y * size );
-         indices[index + 1] = indices[index] + size;
+         indices[index++] = y * numVerticesPerSide + x;
+         indices[index++] = ( y + 1 ) * numVerticesPerSide + x;
+      }
+
+      indices[index++] = PRIMITIVE_RESTART;
+   }
+}
+
+void TriangleCrossGrid(
+    VertexList& vertices,
+    std::vector<uint32_t>& indices,
+    uint32_t scale,
+    uint32_t resolution )
+{
+   const uint32_t numVerticesPerSide = resolution + 1;
+   const uint32_t totalVertices =
+       ( numVerticesPerSide * numVerticesPerSide ) + ( resolution * resolution );
+   vertices.allocate( totalVertices );
+
+   const float wx          = static_cast<float>( scale ) / resolution;
+   const float wy          = static_cast<float>( scale ) / resolution;
+   const float gridOffset  = scale / 2.0f;
+   const float halfXOffset = wx / 2.0f;
+   const float halfYOffset = wy / 2.0f;
+
+   uint32_t index = 0;
+   for( uint32_t y = 0; y < numVerticesPerSide; y++ )
+   {
+      for( uint32_t x = 0; x < numVerticesPerSide; x++ )
+      {
+         vertices.setValue<Vertex::Position>(
+             index, glm::vec3( ( x * wx ) - gridOffset, 0.0f, ( y * wy ) - gridOffset ) );
+
+         vertices.setValue<Vertex::Texcoord>(
+             index,
+             glm::vec3(
+                 static_cast<float>( x ) / resolution,
+                 static_cast<float>( y ) / resolution,
+                 0.0f ) );
+
+         index++;
+      }
+
+      if( y < numVerticesPerSide - 1 )
+      {
+         for( uint32_t x = 0; x < resolution; x++ )
+         {
+            vertices.setValue<Vertex::Position>(
+                index,
+                glm::vec3(
+                    ( x * wx ) - gridOffset + halfXOffset,
+                    0.0f,
+                    ( y * wy ) - gridOffset + halfYOffset ) );
+
+            vertices.setValue<Vertex::Texcoord>(
+                index, glm::vec3( ( x + 0.5f ) / resolution, ( y + 0.5f ) / resolution, 0.0f ) );
+
+            index++;
+         }
+      }
+   }
+
+   indices.resize( resolution * resolution * 4 * 3 );
+
+   index = 0;
+   for( uint32_t y = 0; y < resolution; y++ )
+   {
+      for( uint32_t x = 0; x < resolution; x++ )
+      {
+         const uint32_t topLeft     = ( y + 1 ) * ( numVerticesPerSide + resolution ) + x;
+         const uint32_t bottomLeft  = y * ( numVerticesPerSide + resolution ) + x;
+         const uint32_t topRight    = topLeft + 1;
+         const uint32_t bottomRight = bottomLeft + 1;
+         const uint32_t center      = bottomLeft + numVerticesPerSide;
+
+         // Top triangle
+         indices[index++] = center;
+         indices[index++] = topLeft;
+         indices[index++] = topRight;
+
+         // Right triangle
+         indices[index++] = center;
+         indices[index++] = topRight;
+         indices[index++] = bottomRight;
+
+         // Bottom triangle
+         indices[index++] = center;
+         indices[index++] = bottomRight;
+         indices[index++] = bottomLeft;
+
+         // Left triangle
+         indices[index++] = center;
+         indices[index++] = bottomLeft;
+         indices[index++] = topLeft;
+      }
+   }
+}
+
+void PatchGrid(
+    VertexList& vertices,
+    std::vector<uint32_t>& indices,
+    uint32_t scale,
+    uint32_t vertexResolution )
+{
+   const uint32_t numVerticesPerSide = vertexResolution + 1;
+   vertices.allocate( numVerticesPerSide * numVerticesPerSide );
+
+   const float wx = static_cast<float>( scale ) / vertexResolution;
+   const float wy = static_cast<float>( scale ) / vertexResolution;
+
+   for( uint32_t x = 0; x < numVerticesPerSide; x++ )
+   {
+      for( uint32_t y = 0; y < numVerticesPerSide; y++ )
+      {
+         const uint32_t index = ( x + y * numVerticesPerSide );
+
+         vertices.setValue<Vertex::Position>(
+             index, glm::vec3( x * wx - scale / 2.0f, 0.0f, y * wy - scale / 2.0f ) );
+
+         vertices.setValue<Vertex::Texcoord>(
+             index,
+             glm::vec3( (float)x / ( vertexResolution ), (float)y / ( vertexResolution ), 0.0f ) );
+      }
+   }
+
+   indices.resize( vertexResolution * vertexResolution * 4 );
+   for( uint32_t x = 0; x < vertexResolution; x++ )
+   {
+      for( uint32_t y = 0; y < vertexResolution; y++ )
+      {
+         const uint32_t index = ( x + y * vertexResolution ) * 4;
+
+         indices[index]     = ( x + y * numVerticesPerSide );
+         indices[index + 1] = indices[index] + numVerticesPerSide;
          indices[index + 2] = indices[index + 1] + 1;
          indices[index + 3] = indices[index] + 1;
       }
@@ -83,8 +237,9 @@ void PatchGrid( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices, u
 
 // Recursive subdivision function for icosphere generation
 static void subdivide(
-    std::unordered_map<Vertex, uint32_t>& uniqueVertices,
-    std::vector<Vertex>& vertices,
+    uint32_t& curVertexCount,
+    std::unordered_map<CYD::VertexData, uint32_t>& uniqueVertices,
+    VertexList& vertices,
     std::vector<uint32_t>& indices,
     const glm::vec3& p0,
     const glm::vec3& p1,
@@ -98,25 +253,41 @@ static void subdivide(
 
    if( subdivision == 0 )
    {
-      const Vertex v0( p0, n0 );
-      const Vertex v1( p1, n1 );
-      const Vertex v2( p2, n2 );
+      VertexData v0, v1, v2;
+      v0.pos    = p0;
+      v1.pos    = p1;
+      v2.pos    = p2;
+      v0.normal = n0;
+      v1.normal = n1;
+      v2.normal = n2;
 
       // We're at the lowest level of subdivision, add the vertices
       if( uniqueVertices.count( v0 ) == 0 )
       {
-         uniqueVertices[v0] = static_cast<uint32_t>( vertices.size() );
-         vertices.push_back( v0 );
+         uniqueVertices[v0] = curVertexCount;
+
+         vertices.setValue<Vertex::Position>( curVertexCount, p0 );
+         vertices.setValue<Vertex::Normal>( curVertexCount, n0 );
+
+         curVertexCount++;
       }
       if( uniqueVertices.count( v1 ) == 0 )
       {
-         uniqueVertices[v1] = static_cast<uint32_t>( vertices.size() );
-         vertices.push_back( v1 );
+         uniqueVertices[v1] = curVertexCount;
+
+         vertices.setValue<Vertex::Position>( curVertexCount, p1 );
+         vertices.setValue<Vertex::Normal>( curVertexCount, n1 );
+
+         curVertexCount++;
       }
       if( uniqueVertices.count( v2 ) == 0 )
       {
-         uniqueVertices[v2] = static_cast<uint32_t>( vertices.size() );
-         vertices.push_back( v2 );
+         uniqueVertices[v2] = curVertexCount;
+
+         vertices.setValue<Vertex::Position>( curVertexCount, p2 );
+         vertices.setValue<Vertex::Normal>( curVertexCount, n2 );
+
+         curVertexCount++;
       }
 
       indices.push_back( uniqueVertices[v0] );
@@ -143,6 +314,7 @@ static void subdivide(
    for( uint32_t i = 0; i < 4; ++i )
    {
       subdivide(
+          curVertexCount,
           uniqueVertices,
           vertices,
           indices,
@@ -155,7 +327,7 @@ static void subdivide(
 }
 
 void Icosphere(
-    std::vector<Vertex>& vertices,
+    VertexList& vertices,
     std::vector<uint32_t>& indices,
     uint32_t subdivisions,
     float divisionPerEdge )
@@ -183,12 +355,22 @@ void Icosphere(
          11, 10, 2, 10, 7, 6, 10, 7, 6, 7, 1, 8,  3, 9,  4,  3, 4, 2, 3, 2,  6,
          3,  6,  8, 3,  8, 9, 4,  9, 5, 2, 4, 11, 6, 2,  10, 8, 6, 7, 9, 8,  1 } };
 
-   std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
+   // Calculating number of vertices
+   const uint32_t numFaces =
+       20 *
+       static_cast<uint32_t>( powf( 4.0f * divisionPerEdge, static_cast<float>( subdivisions ) ) );
+   const uint32_t numEdges    = numFaces * 3;
+   const uint32_t vertexCount = 2 + numEdges - numFaces;  // Euler's Formula
 
+   vertices.allocate( vertexCount );
+
+   std::unordered_map<VertexData, uint32_t> uniqueVertices = {};
+   uint32_t curVertexCount                                 = 0;
    for( uint32_t i = 0; i < 21; ++i )
    {
       // Subdivision using recursion
       subdivide(
+          curVertexCount,
           uniqueVertices,
           vertices,
           indices,
@@ -200,7 +382,41 @@ void Icosphere(
    }
 }
 
-void Octahedron( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices )
+void Cube( VertexList& vertexList, std::vector<uint32_t>& indices, float size )
+{
+   static constexpr std::array<glm::vec3, 8> cubeVerts = { {
+       { -0.5f, -0.5f, -0.5f },
+       { -0.5f, -0.5f, 0.5f },
+       { 0.5f, -0.5f, 0.5f },
+       { 0.5f, -0.5f, -0.5f },
+       { -0.5f, 0.5f, -0.5f },
+       { -0.5f, 0.5f, 0.5f },
+       { 0.5f, 0.5f, 0.5f },
+       { 0.5f, 0.5f, -0.5f },
+   } };
+
+   static constexpr std::array<uint32_t, 36> cubeIdx = { 0, 1, 2, 0, 2, 3,    // Top
+                                                         1, 5, 0, 0, 5, 4,    // Left
+                                                         3, 7, 6, 3, 6, 2,    // Right
+                                                         0, 4, 7, 0, 7, 3,    // Front
+                                                         1, 6, 5, 1, 2, 6,    // Back
+                                                         3, 2, 1, 3, 2, 0 };  // Bottom
+
+   vertexList.allocate( cubeVerts.size() );
+   indices.resize( cubeIdx.size() );
+
+   for( uint32_t i = 0; i < cubeVerts.size(); ++i )
+   {
+      vertexList.setValue<Vertex::Position>( i, size * cubeVerts[i] );
+   }
+
+   for( uint32_t i = 0; i < cubeIdx.size(); ++i )
+   {
+      indices[i] = cubeIdx[i];
+   }
+}
+
+void Octahedron( VertexList& vertices, std::vector<uint32_t>& indices )
 {
    static constexpr std::array<glm::vec3, 6> octahedronVerts = {
        { { 0.0f, 1.0f, 0.0f },  // Top
@@ -214,15 +430,15 @@ void Octahedron( std::vector<Vertex>& vertices, std::vector<uint32_t>& indices )
        0, 2, 1, 0, 3, 2, 0, 4, 3, 0, 1, 4,    // Top
        1, 2, 5, 2, 3, 5, 3, 4, 5, 4, 1, 5 };  // Bottom
 
-   vertices.resize( octahedronVerts.size() );
+   vertices.allocate( octahedronVerts.size() );
    indices.resize( octahedronIdx.size() );
 
-   for( uint32_t i = 0; i < octahedronVerts.size(); ++i)
+   for( uint32_t i = 0; i < octahedronVerts.size(); ++i )
    {
-      vertices[i].pos = octahedronVerts[i];
+      vertices.setValue<Vertex::Position>( i, octahedronVerts[i] );
    }
 
-   for(uint32_t i = 0; i < octahedronIdx.size(); ++i)
+   for( uint32_t i = 0; i < octahedronIdx.size(); ++i )
    {
       indices[i] = octahedronIdx[i];
    }

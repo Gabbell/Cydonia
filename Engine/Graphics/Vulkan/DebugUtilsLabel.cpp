@@ -18,6 +18,8 @@ void Initialize( const Device& device )
        device.getVKDevice(), "vkCmdEndDebugUtilsLabelEXT" );
    vkCmdInsertDebugUtilsLabel = (PFN_vkCmdInsertDebugUtilsLabelEXT)vkGetDeviceProcAddr(
        device.getVKDevice(), "vkCmdInsertDebugUtilsLabelEXT" );
+
+   CYD_ASSERT( vkCmdBeginDebugUtilsLabel && vkCmdEndDebugUtilsLabel && vkCmdInsertDebugUtilsLabel );
 }
 
 void Begin( const CommandBuffer& cmdBuffer, const char* name, std::array<float, 4> color )
@@ -31,7 +33,10 @@ void Begin( const CommandBuffer& cmdBuffer, const char* name, std::array<float, 
    vkCmdBeginDebugUtilsLabel( cmdBuffer.getVKCmdBuffer(), &markerInfo );
 }
 
-void End( const CommandBuffer& cmdBuffer ) { vkCmdEndDebugUtilsLabel( cmdBuffer.getVKCmdBuffer() ); }
+void End( const CommandBuffer& cmdBuffer )
+{
+   vkCmdEndDebugUtilsLabel( cmdBuffer.getVKCmdBuffer() );
+}
 
 void Insert( const CommandBuffer& cmdBuffer, const char* name, std::array<float, 4> color )
 {

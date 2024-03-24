@@ -8,8 +8,8 @@ void EntityFollowSystem::tick( double /*deltaS*/ )
 {
    for( const auto& entityEntry : m_entities )
    {
-      const EntityFollowComponent& follow = *std::get<EntityFollowComponent*>( entityEntry.arch );
-      TransformComponent& transform       = *std::get<TransformComponent*>( entityEntry.arch );
+      const EntityFollowComponent& follow = GetComponent<EntityFollowComponent>( entityEntry );
+      TransformComponent& transform       = GetComponent<TransformComponent>( entityEntry );
 
       // Getting the position of the followed entity and setting the current entity's position to it
       const Entity* followedEntity = m_ecs->getEntity( follow.entity );

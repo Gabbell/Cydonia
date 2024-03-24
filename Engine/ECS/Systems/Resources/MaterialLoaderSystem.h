@@ -16,13 +16,13 @@ class MaterialCache;
 class MaterialLoaderSystem final : public CommonSystem<MaterialComponent>
 {
   public:
-   MaterialLoaderSystem( MaterialCache& materials ) : m_materials( materials ) {}
+   MaterialLoaderSystem( MaterialCache& materials ) : m_materialCache( materials ) {}
    NON_COPIABLE( MaterialLoaderSystem );
    virtual ~MaterialLoaderSystem() = default;
 
    void tick( double deltaS ) override;
 
   private:
-   MaterialCache& m_materials;
+   MaterialCache& m_materialCache;
 };
 }

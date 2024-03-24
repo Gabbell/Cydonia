@@ -6,6 +6,7 @@
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/PipelineInfos.h>
 #include <Graphics/Vulkan/VulkanTypes.h>
+#include <Graphics/Vulkan.h>
 
 #include <array>
 #include <atomic>
@@ -29,9 +30,6 @@ FWDHANDLE( VkBuffer );
 FWDHANDLE( VkImage );
 FWDHANDLE( VkImageView );
 FWDFLAG( VkPipelineStageFlags );
-
-enum VkDescriptorType : int;
-enum VkImageLayout : int;
 
 namespace vk
 {
@@ -135,7 +133,10 @@ class CommandBuffer final
    // Rendering scope
    // =============================================================================================
    void beginRendering( Swapchain& swapchain );
-   void beginRendering( const CYD::Framebuffer& fb, const std::vector<Texture*>& targets );
+   void beginRendering(
+       const CYD::Framebuffer& fb,
+       const std::vector<Texture*>& targets,
+       uint32_t layer = 0 );
    void nextPass() const;
    void endRendering();
 
@@ -149,6 +150,7 @@ class CommandBuffer final
    void draw( size_t vertexCount, size_t instanceCount, size_t firstVertex, size_t firstInstance );
    void
    drawIndexed( size_t indexCount, size_t instanceCount, size_t firstIndex, size_t firstInstance );
+   void clearTexture( Texture* tex, const CYD::ClearValue& clearVal ) const;
 
    // Compute
    // =============================================================================================
@@ -160,6 +162,7 @@ class CommandBuffer final
    void copyBufferToTexture( Buffer* src, Texture* dst, const CYD::BufferToTextureInfo& info );
    void copyTexture( Texture* src, Texture* dst, const CYD::TextureCopyInfo& info );
    void copyToSwapchain( Texture* sourceTexture, Swapchain& swapchain ) const;
+   void generateMipmaps( Texture* tex ) const;
 
   private:
    // Constants
@@ -202,6 +205,7 @@ class CommandBuffer final
    void _addDependency( T* dependency );
 
    void _setRenderArea( int offsetX, int offsetY, uint32_t width, uint32_t height );
+   void _insertRenderPassBarrier();
 
    // Member Variables
    // =============================================================================================
@@ -271,6 +275,5 @@ class CommandBuffer final
    CYD::QueueUsageFlag m_usage   = CYD::QueueUsage::UNKNOWN;
    VkCommandBuffer m_vkCmdBuffer = nullptr;
    VkFence m_vkFence             = nullptr;
-   VkSampler m_defaultSampler    = nullptr;
 };
 }

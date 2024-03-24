@@ -68,6 +68,13 @@ class CommonSystem : public BaseSystem
 
    bool m_keepSortedAtAllTimes : 1 = false;
 
+   template <class Component>
+   static Component& GetComponent( const EntityEntry& entity )
+   {
+      static_assert( std::is_base_of_v<BaseComponent, Component> );
+      return *std::get<Component*>( entity.arch );
+   }
+
    // This function is used when inserting new entities into a system. Only use this if you need
    // entities to be sorted at all times. Otherwise, override the sort function
    // By default, the entities are in the same order they were assigned to the system. Return true
@@ -93,10 +100,9 @@ class CommonSystem : public BaseSystem
 
       // Make sure that if the entity previously matched, we are not doubling components
       const auto it = std::find_if(
-          m_entities.cbegin(),
-          m_entities.cend(),
-          [entry]( const EntityEntry& desiredEntry )
-          { return entry.handle == desiredEntry.handle; } );
+          m_entities.cbegin(), m_entities.cend(), [entry]( const EntityEntry& desiredEntry ) {
+             return entry.handle == desiredEntry.handle;
+          } );
 
       if( it == m_entities.cend() )
       {
@@ -115,8 +121,9 @@ class CommonSystem : public BaseSystem
                        m_entities.cbegin(),
                        m_entities.cend(),
                        entry,
-                       [this]( const EntityEntry& first, const EntityEntry& second )
-                       { return _compareEntities( first, second ); } ),
+                       [this]( const EntityEntry& first, const EntityEntry& second ) {
+                          return _compareEntities( first, second );
+                       } ),
                    std::move( entry ) );
             }
 
@@ -132,8 +139,9 @@ class CommonSystem : public BaseSystem
           std::remove_if(
               m_entities.begin(),
               m_entities.end(),
-              [&entity]( const EntityEntry& entry )
-              { return entity.getHandle() == entry.handle; } ),
+              [&entity]( const EntityEntry& entry ) {
+                 return entity.getHandle() == entry.handle;
+              } ),
           m_entities.end() );
    }
 

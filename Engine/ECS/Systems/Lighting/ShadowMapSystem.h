@@ -4,11 +4,6 @@
 
 #include <Common/Include.h>
 
-#include <ECS/Components/Transforms/TransformComponent.h>
-#include <ECS/Components/Rendering/RenderableComponent.h>
-#include <ECS/Components/Rendering/MaterialComponent.h>
-#include <ECS/Components/Rendering/MeshComponent.h>
-
 // ================================================================================================
 // Definition
 // ================================================================================================
@@ -20,7 +15,10 @@ class ShadowMapSystem final : public RenderSystem
 {
   public:
    ShadowMapSystem() = delete;
-   ShadowMapSystem( const MaterialCache& materials ) : RenderSystem( materials ) {}
+   ShadowMapSystem( const MeshCache& meshes, const MaterialCache& materials )
+       : RenderSystem( meshes, materials )
+   {
+   }
    NON_COPIABLE( ShadowMapSystem );
    virtual ~ShadowMapSystem() = default;
 

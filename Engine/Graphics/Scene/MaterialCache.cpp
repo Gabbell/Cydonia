@@ -4,7 +4,12 @@
 
 #include <Graphics/GraphicsTypes.h>
 #include <Graphics/GRIS/RenderInterface.h>
+#include <Graphics/GRIS/TextureCache.h>
 #include <Graphics/Utility/GraphicsIO.h>
+
+#include <Multithreading/ThreadPool.h>
+
+#include <Profiling.h>
 
 #include <json/json.hpp>
 
@@ -14,45 +19,202 @@ namespace CYD
 {
 // Asset Paths Constants
 // ================================================================================================
-static constexpr uint32_t MAX_STATIC_MATERIALS = 128;
-static constexpr char STATIC_MATERIALS_PATH[]  = "Materials.json";
-//static constexpr char MATERIALS_PATH[]         = "../Engine/Data/Materials/";
+static constexpr char STATIC_MATERIALS_PATH[] = "Materials.json";
+static const char MATERIAL_PATH[]             = "../../Engine/Data/Materials/";
 
-MaterialCache::MaterialCache() { initializeStaticMaterials(); }
-
-MaterialIndex MaterialCache::addMaterial( const std::string& name, const Material::ResourcesDescription& desc )
+MaterialCache::MaterialCache( EMP::ThreadPool& threadPool ) : m_threadPool( threadPool )
 {
-   MaterialIndex index   = m_materials.insertObject( name, desc );
-   m_materialNames[name] = index;
-
-   return index;
+   _initializeStaticMaterials();
 }
 
-void MaterialCache::removeMaterial( MaterialIndex /*index*/ )
+MaterialCache::Material::~Material()
 {
-   // TODO
+   for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
+   {
+      // If we have a handle and we loaded from storage, we own the texture
+      TextureEntry& textureEntry = textures[i];
+      if( textureEntry.texHandle && needsLoadFromStorage )
+      {
+         GRIS::DestroyTexture( textureEntry.texHandle );
+      }
+   }
 }
 
-void MaterialCache::load( CmdListHandle transferList, MaterialIndex index )
+void MaterialCache::loadToRAM( Material& material )
 {
-   m_materials[index]->load( transferList );
+   CYD_TRACE();
+
+   CYD_ASSERT_AND_RETURN( material.currentState == MaterialCache::State::UNINITIALIZED, return; );
+
+   material.currentState = State::LOADING_TO_RAM;
+
+   for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
+   {
+      TextureEntry& textureEntry = material.textures[i];
+
+      // If we have a path, load from storage. If not, this texture is probably managed elsewhere
+      if( !textureEntry.path.empty() )
+      {
+         uint32_t size = 0;
+
+         textureEntry.imageData = GraphicsIO::LoadImage(
+             textureEntry.path,
+             textureEntry.desc.format,
+             textureEntry.desc.width,
+             textureEntry.desc.height,
+             size );
+      }
+   }
+
+   material.currentState = State::LOADED_TO_RAM;
 }
 
-void MaterialCache::unload( MaterialIndex index ) { m_materials[index]->unload(); }
+void MaterialCache::loadToVRAM( CmdListHandle cmdList, Material& material )
+{
+   CYD_TRACE();
+
+   CYD_ASSERT_AND_RETURN( material.currentState == MaterialCache::State::LOADED_TO_RAM, return; );
+
+   material.currentState = State::LOADING_TO_VRAM;
+
+   for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
+   {
+      TextureEntry& textureEntry = material.textures[i];
+      if( textureEntry.imageData )
+      {
+         textureEntry.texHandle =
+             GRIS::CreateTexture( cmdList, textureEntry.desc, textureEntry.imageData );
+
+         // Default sampler when loading textures
+         textureEntry.sampler.addressMode   = AddressMode::MIRRORED_REPEAT;
+         textureEntry.sampler.magFilter     = Filter::LINEAR;
+         textureEntry.sampler.minFilter     = Filter::LINEAR;
+         textureEntry.sampler.minLod        = 0.0f;
+         textureEntry.sampler.maxLod        = 32.0f;
+         textureEntry.sampler.maxAnisotropy = 16.0f;
+
+         if( textureEntry.desc.generateMipmaps )
+         {
+            // Create the mip maps
+            GRIS::GenerateMipmaps( cmdList, textureEntry.texHandle );
+         }
+      }
+   }
+
+   // This only works because we guarantee that the LOAD command list is first in the
+   // render graph so the transfer command list will have  uploaded this mesh data
+   // when the time comes to render
+   material.currentState = State::LOADED_TO_VRAM;
+}
+
+MaterialCache::State MaterialCache::progressLoad( CmdListHandle cmdList, MaterialIndex materialIdx )
+{
+   Material* pMaterial = m_materials[materialIdx];
+   CYD_ASSERT( pMaterial );
+
+   Material& material = *pMaterial;
+
+   if( material.currentState == State::UNINITIALIZED )
+   {
+      if( material.needsLoadFromStorage )
+      {
+         // This material is not loaded, start a load job
+         m_threadPool.submit( MaterialCache::loadToRAM, material );
+      }
+      else
+      {
+         material.currentState = State::LOADED_TO_VRAM;
+      }
+   }
+
+   if( material.currentState == State::LOADED_TO_RAM )
+   {
+      loadToVRAM( cmdList, material );
+   }
+
+   // We are setting the LOADED_TO_VRAM state right after loadToVRAM is called
+   // This only works because we guarantee that the LOAD command list is first in the
+   // render graph so the transfer command list will have  uploaded this mesh data
+   // when the time comes to render. We can also free the data here because it has been uploaded
+   // to a staging buffer already
+   // TODO Make it so that we can right away upload to a staging buffer instead of having to copy
+   if( material.currentState == State::LOADED_TO_VRAM )
+   {
+      // Make sure we're freeing RAM
+      for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
+      {
+         TextureEntry& textureEntry = material.textures[i];
+         if( textureEntry.imageData )
+         {
+            GraphicsIO::FreeImage( textureEntry.imageData );
+            textureEntry.imageData = nullptr;
+         }
+      }
+   }
+
+   return material.currentState;
+}
+
+void MaterialCache::bindSlot(
+    CmdListHandle cmdList,
+    MaterialIndex index,
+    TextureSlot slot,
+    uint8_t binding,
+    uint8_t set ) const
+{
+   const Material* material = m_materials[index];
+   CYD_ASSERT( material );
+
+   const TextureEntry& textureEntry = material->textures[slot];
+   if( textureEntry.texHandle )
+   {
+      GRIS::BindTexture( cmdList, textureEntry.texHandle, textureEntry.sampler, binding, set );
+   }
+   else if( textureEntry.useFallback || !textureEntry.path.empty() )
+   {
+      switch( textureEntry.fallback )
+      {
+         case TextureFallback::BLACK:
+            GRIS::TextureCache::BindBlackTexture( cmdList, binding, set );
+            break;
+         case TextureFallback::WHITE:
+            GRIS::TextureCache::BindWhiteTexture( cmdList, binding, set );
+            break;
+         case TextureFallback::PINK:
+            GRIS::TextureCache::BindPinkTexture( cmdList, binding, set );
+            break;
+      }
+   }
+}
 
 void MaterialCache::bind( CmdListHandle cmdList, MaterialIndex index, uint8_t set ) const
 {
-   m_materials[index]->bind( cmdList, set );
+   for( uint32_t i = 0; i < TextureSlot::COUNT; ++i )
+   {
+      bindSlot( cmdList, index, static_cast<TextureSlot>( i ), i, set );
+   }
 }
 
-void MaterialCache::updateMaterial( MaterialIndex index, TextureHandle texture, Material::TextureSlot slot)
+void MaterialCache::updateMaterial(
+    MaterialIndex index,
+    TextureSlot slot,
+    TextureHandle texHandle,
+    const SamplerInfo& sampler )
 {
-   return m_materials[index]->updateTexture( texture, slot );
+   Material* material = m_materials[index];
+   CYD_ASSERT( material );
+
+   TextureEntry& textureEntry = material->textures[slot];
+   if( !textureEntry.texHandle )
+   {
+      textureEntry.sampler   = sampler;
+      textureEntry.texHandle = texHandle;
+   }
 }
 
-MaterialIndex MaterialCache::getMaterialByName( const std::string& name ) const
+MaterialIndex MaterialCache::findMaterial( std::string_view name ) const
 {
-   const auto& findIt = m_materialNames.find( name );
+   const auto& findIt = m_materialNames.find( std::string( name ) );
    if( findIt != m_materialNames.end() )
    {
       return findIt->second;
@@ -61,11 +223,27 @@ MaterialIndex MaterialCache::getMaterialByName( const std::string& name ) const
    return INVALID_MATERIAL_IDX;
 }
 
+MaterialIndex MaterialCache::addMaterial( std::string_view name )
+{
+   const std::string nameString( name );
+
+   CYD_ASSERT( m_materialNames.find( nameString ) == m_materialNames.end() );
+
+   const size_t newIdx         = m_materials.insertObject();
+   m_materialNames[nameString] = newIdx;
+
+   return newIdx;
+}
+
 static PixelFormat StringToPixelFormat( const std::string& formatString )
 {
    if( formatString == "RGBA32F" )
    {
       return PixelFormat::RGBA32F;
+   }
+   if( formatString == "RGBA16F" )
+   {
+      return PixelFormat::RGBA16F;
    }
    if( formatString == "RGB32F" )
    {
@@ -78,6 +256,18 @@ static PixelFormat StringToPixelFormat( const std::string& formatString )
    if( formatString == "RGBA8_SRGB" )
    {
       return PixelFormat::RGBA8_SRGB;
+   }
+   if( formatString == "R32_UINT" )
+   {
+      return PixelFormat::R32_UINT;
+   }
+   if( formatString == "R16_UNORM" )
+   {
+      return PixelFormat::R16_UNORM;
+   }
+   if( formatString == "R8_UNORM" )
+   {
+      return PixelFormat::R8_UNORM;
    }
    if( formatString == "RGBA8_UNORM" )
    {
@@ -107,7 +297,53 @@ static ImageType StringToTextureType( const std::string& formatString )
    return ImageType::TEXTURE_2D;
 }
 
-void MaterialCache::initializeStaticMaterials()
+static MaterialCache::TextureSlot StringToTextureSlot( const std::string& slotString )
+{
+   if( slotString == "ALBEDO" || slotString == "DIFFUSE" )
+   {
+      return MaterialCache::TextureSlot::ALBEDO;
+   }
+   if( slotString == "NORMAL" )
+   {
+      return MaterialCache::TextureSlot::NORMAL;
+   }
+   if( slotString == "METALNESS" )
+   {
+      return MaterialCache::TextureSlot::METALNESS;
+   }
+   if( slotString == "ROUGHNESS" || slotString == "GLOSSINESS" )
+   {
+      return MaterialCache::TextureSlot::ROUGHNESS;
+   }
+   if( slotString == "AMBIENT_OCCLUSION" )
+   {
+      return MaterialCache::TextureSlot::AMBIENT_OCCLUSION;
+   }
+   if( slotString == "DISPLACEMENT" )
+   {
+      return MaterialCache::TextureSlot::DISPLACEMENT;
+   }
+
+   CYD_ASSERT( !"Materials: Could not recognize string as a texture slot" );
+   return MaterialCache::TextureSlot::ALBEDO;
+}
+
+static MaterialCache::TextureFallback StringToTextureFallback( const std::string& fallbackString )
+{
+   if( fallbackString == "BLACK" )
+   {
+      return MaterialCache::TextureFallback::BLACK;
+   }
+   if( fallbackString == "WHITE" )
+   {
+      return MaterialCache::TextureFallback::WHITE;
+   }
+
+   CYD_ASSERT( !"Materials: Could not recognize string as a texture fallback" );
+   return MaterialCache::TextureFallback::BLACK;
+}
+
+void MaterialCache::_initializeStaticMaterials()
 {
    // Parse material infos from JSON description
    nlohmann::json materialDescriptions;
@@ -115,7 +351,7 @@ void MaterialCache::initializeStaticMaterials()
 
    if( !materialsFile.is_open() )
    {
-      CYD_ASSERT( !"StaticMaterials: Could not find materials file" );
+      CYD_ASSERT( !"StaticMaterials: Could not find static materials file" );
       return;
    }
 
@@ -127,8 +363,8 @@ void MaterialCache::initializeStaticMaterials()
 
    for( uint32_t materialIdx = 0; materialIdx < materials.size(); ++materialIdx )
    {
-      const auto& material           = materials[materialIdx];
-      const std::string materialName = material["NAME"];
+      const auto& materialJson       = materials[materialIdx];
+      const std::string materialName = materialJson["NAME"];
 
       // Making sure there is no name duplication
 #if CYD_ASSERTIONS_ENABLED
@@ -140,33 +376,51 @@ void MaterialCache::initializeStaticMaterials()
       }
 #endif
 
-      Material::ResourcesDescription desc;
+      MaterialIndex index = m_materials.insertObject();
+      Material* material  = m_materials[index];
+      CYD_ASSERT( material );
 
-      const auto& texturesIt = material.find( "TEXTURES" );
-      if( texturesIt != material.end() )
+      const auto& texturesIt = materialJson.find( "TEXTURES" );
+      if( texturesIt != materialJson.end() )
       {
-         TextureDescription textureDesc;
-
          for( const auto& texture : *texturesIt )
          {
-            textureDesc.name   = texture["NAME"];
-            textureDesc.format = StringToPixelFormat( texture["FORMAT"] );
-            textureDesc.type   = StringToTextureType( texture["TYPE"] );
-            textureDesc.stages = PipelineStage::FRAGMENT_STAGE;
-            textureDesc.usage  = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;
+            const TextureSlot slot     = StringToTextureSlot( texture["SLOT"] );
+            TextureEntry& textureEntry = material->textures[slot];
 
-            std::string path   = "";
-            const auto& pathIt = texture.find( "PATH" );
+            std::string path       = "";
+            const auto& pathIt     = texture.find( "PATH" );
+            const auto& fallbackIt = texture.find( "FALLBACK" );
+
             if( pathIt != texture.end() )
             {
-               path = texture["PATH"];
+               path = std::string( MATERIAL_PATH );
+               path += texture["PATH"];
+
+               // This material has a path therefore it must be loaded from storage to VRAM
+               material->needsLoadFromStorage = true;
             }
 
-            desc.addTexture( textureDesc, path );
+            if( fallbackIt != texture.end() )
+            {
+               textureEntry.fallback    = StringToTextureFallback( *fallbackIt );
+               textureEntry.useFallback = true;
+            }
+
+            textureEntry.path                 = path;
+            textureEntry.desc.format          = StringToPixelFormat( texture["FORMAT"] );
+            textureEntry.desc.type            = StringToTextureType( texture["TYPE"] );
+            textureEntry.desc.stages          = PipelineStage::FRAGMENT_STAGE;
+            textureEntry.desc.usage           = ImageUsage::TRANSFER_DST | ImageUsage::SAMPLED;
+            textureEntry.desc.generateMipmaps = true;
+
+            if( textureEntry.desc.generateMipmaps )
+            {
+               textureEntry.desc.usage |= ImageUsage::TRANSFER_SRC;
+            }
          }
       }
 
-      MaterialIndex index           = m_materials.insertObject();
       m_materialNames[materialName] = index;
 
       printf( "Added material --> %s\n", materialName.c_str() );

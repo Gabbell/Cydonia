@@ -24,6 +24,8 @@ AtmosphereComponent::AtmosphereComponent( const Description& description )
        description.heightFogStrength,
        0.0f );
 
+   params.nearClip           = description.nearClip;
+   params.farClip            = description.farClip;
    params.groundAlbedo       = glm::vec4( description.groundAlbedo, 0.0f );
    params.groundRadiusMM     = description.groundRadiusMM;
    params.atmosphereRadiusMM = description.atmosphereRadiusMM;
@@ -34,7 +36,6 @@ AtmosphereComponent::AtmosphereComponent( const Description& description )
 
 AtmosphereComponent::~AtmosphereComponent()
 {
-   GRIS::DestroyBuffer( viewInfoBuffer );
    GRIS::DestroyTexture( transmittanceLUT );
    GRIS::DestroyTexture( multipleScatteringLUT );
    GRIS::DestroyTexture( skyViewLUT );

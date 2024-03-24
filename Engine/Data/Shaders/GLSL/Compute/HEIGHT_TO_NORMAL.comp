@@ -1,0 +1,43 @@
+#version 450
+
+#include "../NOISE.h"
+
+layout( local_size_x = 16, local_size_y = 16, local_size_z = 1 ) in;
+
+layout( push_constant ) uniform PUSH { NoiseParameters params; };
+
+layout( set = 0, binding = 0 ) writeonly uniform image2DArray normalMap;
+
+void main()
+{
+   vec3 dims  = imageSize( normalMap );
+   vec2 uv    = vec2( gl_GlobalInvocationID.xy / dims.xy );
+   uint layer = gl_GlobalInvocationID.z;
+
+   const vec2 texelSize = 1.0 / dims.xy;
+   const vec3 off       = vec3( texelSize.x, texelSize.y, 0.0 );
+
+   uv = uv * vec2( dims.x / dims.y, 1.0 ) + params.seed;  // Aspect ratio corrected
+   uv *= 1.0 + texelSize;  // Getting one more texel around the border
+   uv.x += layer % 8;
+   uv.y += layer / 8;
+
+   const float hL = SimplexFBM( uv - off.xz, params );
+   const float hR = SimplexFBM( uv + off.xz, params );
+   const float hB = SimplexFBM( uv + off.zy, params );
+   const float hT = SimplexFBM( uv - off.zy, params );
+
+   const vec3 left   = vec3( -1.0, hL, 0.0 );
+   const vec3 right  = vec3( 1.0, hR, 0.0 );
+   const vec3 bottom = vec3( 0.0, hB, 1.0 );
+   const vec3 top    = vec3( 0.0, hT, -1.0 );
+
+   const vec3 topRight    = cross( right, top );
+   const vec3 topLeft     = cross( top, left );
+   const vec3 bottomLeft  = cross( left, bottom );
+   const vec3 bottomRight = cross( bottom, right );
+
+   const vec3 normal = ( normalize( topRight + topLeft + bottomLeft + bottomRight ) + 1.0 ) / 2.0;
+
+   imageStore( normalMap, ivec3( gl_GlobalInvocationID.xyz ), vec4( normal, 1.0 ) );
+}

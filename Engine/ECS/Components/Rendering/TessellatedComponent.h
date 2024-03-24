@@ -32,7 +32,6 @@ class TessellatedComponent final : public BaseComponent
       {
       }
 
-      glm::vec4 frustumPlanes[6];
       glm::vec2 viewportDims;
       float tessellatedEdgeSize = 0.0f;
       float tessellationFactor  = 0.0f;

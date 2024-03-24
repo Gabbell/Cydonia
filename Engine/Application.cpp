@@ -19,6 +19,8 @@ Application::Application( uint32_t width, uint32_t height, const char* title )
 
    m_threadPool = std::make_unique<EMP::ThreadPool>();
    m_threadPool->init( std::thread::hardware_concurrency() );
+
+   Trace::Initialize();
 }
 
 void Application::startLoop()

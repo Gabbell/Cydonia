@@ -12,24 +12,30 @@
 #include <Profiling.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 #include <algorithm>
 
 namespace CYD
 {
-bool ViewUpdateSystem::_compareEntities( const EntityEntry& first, const EntityEntry& second )
+// ================================================================================================
+void ViewUpdateSystem::sort()
 {
-   const ViewComponent& viewFirst  = *std::get<ViewComponent*>( first.arch );
-   const ViewComponent& viewSecond = *std::get<ViewComponent*>( second.arch );
+   auto viewSort = []( const EntityEntry& first, const EntityEntry& second )
+   {
+      const ViewComponent& firstView  = GetComponent<ViewComponent>( first );
+      const ViewComponent& secondView = GetComponent<ViewComponent>( second );
 
-   // The views are alphabetically sorted, which is how we can know their indices in the shader.
-   // This is finicky
-   return viewFirst.name < viewSecond.name;
+      return firstView.fitToEntity > secondView.fitToEntity;
+   };
+
+   std::sort( m_entities.begin(), m_entities.end(), viewSort );
 }
 
+// ================================================================================================
 void ViewUpdateSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "ViewUpdateSystem" );
+   CYD_TRACE();
 
    // Write component
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
@@ -38,71 +44,148 @@ void ViewUpdateSystem::tick( double /*deltaS*/ )
 
    for( const auto& entityEntry : m_entities )
    {
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const ViewComponent& view           = *std::get<ViewComponent*>( entityEntry.arch );
+      const TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      ViewComponent& view                 = GetComponent<ViewComponent>( entityEntry );
 
-      // Finding view in the scene
-      auto it = std::find( scene.viewNames.begin(), scene.viewNames.end(), view.name );
-      if( it == scene.viewNames.end() )
+      // =============================================================================================
+      // Assign a new index if the view doesn't have one
+      if( view.index == ViewComponent::INVALID_VIEW_INDEX )
       {
+         const std::string& entityName = m_ecs->getEntityName( entityEntry.handle );
+
          // Could not find the view, seeing if there's a free spot
-         it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "" );
+         const auto it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "" );
          if( it == scene.viewNames.end() )
          {
-            CYD_ASSERT( !"Something went wrong when trying to find a free view UBO spot" );
+            CYD_ASSERT( !"Something went wrong when trying to find a free view spot" );
             return;
+         }
+
+         view.index = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
+
+         scene.viewNames[view.index] = entityName;
+      }
+
+      // =============================================================================================
+      // Updating view and projection matrix
+      const glm::vec3 forward = glm::rotate( transform.rotation, glm::vec3( 0.0f, 0.0, 1.0f ) );
+
+      const bool fitToEntityView = view.fitToEntity != Entity::INVALID_ENTITY;
+      if( fitToEntityView )
+      {
+         const Entity* fitToEntity = m_ecs->getEntity( view.fitToEntity );
+         CYD_ASSERT( fitToEntity && "Could not find entity" );
+
+         const ViewComponent* otherView = fitToEntity->getComponent<ViewComponent>();
+         CYD_ASSERT( otherView && "Entity did not have a view component" );
+
+         const ViewShaderParams& otherViewParams = scene.views[otherView->index];
+
+         // TODO This should be precalculated
+         const Frustum otherViewFrustum =
+             Frustum( otherViewParams.projMat, otherViewParams.viewMat );
+
+         glm::vec3 center = glm::vec3( 0.0f, 0.0f, 0.0f );
+         for( uint32_t i = 0; i < Frustum::CORNER_COUNT; ++i )
+         {
+            center += otherViewFrustum.getCorner( static_cast<Frustum::Corner>( i ) );
+         }
+         center /= Frustum::CORNER_COUNT;
+
+         view.viewMat = glm::lookAtLH( center, center + forward, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+
+         glm::vec3 minValues = glm::vec3( INFINITY, INFINITY, INFINITY );
+         glm::vec3 maxValues = glm::vec3( -INFINITY, -INFINITY, -INFINITY );
+         for( uint32_t i = 0; i < Frustum::CORNER_COUNT; ++i )
+         {
+            const glm::vec3& corner =
+                otherViewFrustum.getCorner( static_cast<Frustum::Corner>( i ) );
+
+            const glm::vec4 viewSpaceCorner = view.viewMat * glm::vec4( corner, 1.0f );
+
+            minValues = glm::min( minValues, glm::vec3( viewSpaceCorner ) );
+            maxValues = glm::max( maxValues, glm::vec3( viewSpaceCorner ) );
+         }
+
+         view.projMat = Transform::Ortho(
+             minValues.x, maxValues.x, minValues.y, maxValues.y, minValues.z, maxValues.z, true );
+      }
+      else
+      {
+         view.viewMat = glm::lookAtLH(
+             transform.position, transform.position + forward, glm::vec3( 0.0f, 1.0f, 0.0f ) );
+
+         switch( view.projMode )
+         {
+            case ViewComponent::ProjectionMode::PERSPECTIVE:
+               view.projMat = Transform::Perspective(
+                   view.params.perspective.fov,
+                   static_cast<float>( scene.extent.width ),
+                   static_cast<float>( scene.extent.height ),
+                   view.near,
+                   view.far,
+                   true /*invertY*/,
+                   view.reverseZ );
+               break;
+            case ViewComponent::ProjectionMode::ORTHOGRAPHIC:
+               view.projMat = Transform::Ortho(
+                   view.params.ortho.left,
+                   view.params.ortho.right,
+                   view.params.ortho.bottom,
+                   view.params.ortho.top,
+                   view.near,
+                   view.far,
+                   true /*invertY*/,
+                   view.reverseZ );
+               break;
+            case ViewComponent::ProjectionMode::UNKNOWN:
+               view.projMat = glm::mat4( 1.0f );
+               break;
          }
       }
 
-      const uint32_t viewIdx =
-          static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
-
-      // Naming this view
-      scene.viewNames[viewIdx] = view.name;
-
-      // Getting the right view UBO at this index and updating it
-      const glm::vec3 viewDir = glm::vec4( 0.0f, 0.0f, -1.0f, 1.0f ) *
-                                glm::toMat4( glm::conjugate( transform.rotation ) );
-
-      SceneComponent::ViewShaderParams& viewParams               = scene.views[viewIdx];
-      SceneComponent::InverseViewShaderParams& inverseViewParams = scene.inverseViews[viewIdx];
+      // =============================================================================================
+      // Getting the right view UBOs at this index and updating them
+      ViewShaderParams& viewParams               = scene.views[view.index];
+      InverseViewShaderParams& inverseViewParams = scene.inverseViews[view.index];
+      FrustumShaderParams& frustumParams         = scene.frustums[view.index];
 
       viewParams.position = glm::vec4( transform.position, 1.0f );
-      viewParams.viewMat  = glm::lookAt(
-          transform.position, transform.position + viewDir, glm::vec3( 0.0f, 1.0f, 0.0f ) );
 
-      switch( view.projMode )
-      {
-         case ViewComponent::ProjectionMode::PERSPECTIVE:
-            viewParams.projMat = Transform::PerspectiveReverseZ(
-                view.fov,
-                static_cast<float>( scene.extent.width ),
-                static_cast<float>( scene.extent.height ),
-                view.near,
-                view.far );
-            break;
-         case ViewComponent::ProjectionMode::ORTHOGRAPHIC:
-            viewParams.projMat = Transform::OrthoReverseZ(
-                view.left, view.right, view.bottom, view.top, view.near, view.far );
-            break;
-         case ViewComponent::ProjectionMode::UNKNOWN:
-            viewParams.projMat = glm::mat4( 1.0f );
-            break;
-      }
+      viewParams.viewMat = view.viewMat;
+      viewParams.projMat = view.projMat;
 
-      // Update inverse matrices
+      inverseViewParams.position   = glm::vec4( transform.position, 1.0f );
       inverseViewParams.invViewMat = glm::inverse( viewParams.viewMat );
       inverseViewParams.invProjMat = glm::inverse( viewParams.projMat );
 
-      // Update camera frustum
-      scene.frustums[viewIdx].update( viewParams.projMat, viewParams.viewMat );
+      Frustum viewFrustum( viewParams.projMat, viewParams.viewMat );
+      for( uint32_t i = 0; i < Frustum::PLANE_COUNT; ++i )
+      {
+         frustumParams.planes[i] = viewFrustum.getPlane( static_cast<Frustum::Plane>( i ) );
+      }
+
+#if CYD_DEBUG
+      if( view.updateDebugFrustum )
+      {
+         view.debugInverseViewMat = inverseViewParams.invViewMat;
+         view.debugInverseProjMat = inverseViewParams.invProjMat;
+         view.updateDebugFrustum  = false;
+      }
+#endif
    }
 
-   // Transferring all the views to one buffer
-   UploadToBufferInfo info = { 0, sizeof( scene.views ) };
+   // =============================================================================================
+   // Transferring all the view data to their respective buffer
+   UploadToBufferInfo info;
+
+   info = { 0, sizeof( scene.views ) };
    GRIS::UploadToBuffer( scene.viewsBuffer, &scene.views, info );
 
    info = { 0, sizeof( scene.inverseViews ) };
    GRIS::UploadToBuffer( scene.inverseViewsBuffer, &scene.inverseViews, info );
+
+   info = { 0, sizeof( scene.frustums ) };
+   GRIS::UploadToBuffer( scene.frustumsBuffer, &scene.frustums, info );
 }
 }

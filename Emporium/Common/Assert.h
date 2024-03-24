@@ -3,7 +3,7 @@
 #include <cstdio>
 
 #if CYD_ASSERTIONS_ENABLED
-#define CYD_ASSERT( EXPR )                                                       \
+#define CYD_ASSERT( EXPR )                                                      \
    if( !( EXPR ) )                                                              \
    {                                                                            \
       fprintf(                                                                  \
@@ -16,14 +16,14 @@
    }
 #else
 #define CYD_ASSERT( EXPR ) \
-   do                     \
-   {                      \
-      sizeof( EXPR );     \
+   do                      \
+   {                       \
+      sizeof( EXPR );      \
    } while( 0 );
 #endif
 
 #if CYD_ASSERTIONS_ENABLED
-#define CYD_ASSERT_AND_RETURN( EXPR, RET )                                       \
+#define CYD_ASSERT_AND_RETURN( EXPR, RET )                                      \
    if( !( EXPR ) )                                                              \
    {                                                                            \
       fprintf(                                                                  \

@@ -1,7 +1,11 @@
 workspace "Cydonia"
 	location "build"
 	configurations { "Debug", "Release", "Profiling" }
-	startproject "VKSandbox"
+	startproject "OceanDemo"
+	toolset "clang"
+
+	filter "system:Windows"
+		systemversion "10.0.19041.0"
 
 	objdir "intermediate"
 	targetdir "bin/%{cfg.buildcfg}"
@@ -89,24 +93,36 @@ project "Engine"
 
 		buildoutputs { "%{cfg.targetdir}/%{file.basename}.json" }
 
-project "VKSandbox"
-	location "Build/VKSandbox"
+-- ===============================================================================================
+-- Applications
+project "TerrainDemo"
+	location "Build/%{prj.name}"
 	language "C++"
 	cppdialect "C++20"
 	kind "ConsoleApp"
 	architecture "x86_64"
 
-	includedirs { "VKSandbox", "Engine", "Emporium", "include" }
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
 	links { "Engine" }
 
-	files { "VKSandbox/**.h",
-			"VKSandbox/**.cpp",
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
 			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
 
 	filter {}
 
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
 	filter { 'system:windows' }
-		files { 'VKSandbox/VKSandbox.rc', '**.ico' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
 
 	filter {}
 
@@ -119,6 +135,128 @@ project "VKSandbox"
 
 		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
 
+project "OceanDemo"
+	location "Build/%{prj.name}"
+	language "C++"
+	cppdialect "C++20"
+	kind "ConsoleApp"
+	architecture "x86_64"
+
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
+	links { "Engine" }
+
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
+			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
+
+	filter {}
+
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
+	filter { 'system:windows' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
+
+	filter {}
+
+	filter "files:CydoniaIcon.png"
+		buildmessage "Copying Icon %{file.abspath}"
+
+		buildcommands {
+			"{COPY} %{file.abspath} %{cfg.targetdir}"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
+
+project "PBRDemo"
+	location "Build/%{prj.name}"
+	language "C++"
+	cppdialect "C++20"
+	kind "ConsoleApp"
+	architecture "x86_64"
+
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
+	links { "Engine" }
+
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
+			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
+
+	filter {}
+
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
+	filter { 'system:windows' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
+
+	filter {}
+
+	filter "files:CydoniaIcon.png"
+		buildmessage "Copying Icon %{file.abspath}"
+
+		buildcommands {
+			"{COPY} %{file.abspath} %{cfg.targetdir}"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
+
+project "ParallaxMappingDemo"
+	location "Build/%{prj.name}"
+	language "C++"
+	cppdialect "C++20"
+	kind "ConsoleApp"
+	architecture "x86_64"
+
+	includedirs { "Demos/%{prj.name}", "Engine", "Emporium", "include" }
+	links { "Engine" }
+
+	files { "Demos/%{prj.name}/**.h",
+			"Demos/%{prj.name}/**.cpp",
+			"CydoniaIcon.png" }
+
+	filter { 'system:windows' }
+		files { 'Demos/%{prj.name}/%{prj.name}.rc', '**.ico' }
+
+	filter {}
+
+	vpaths {
+		["Headers"] = "**.h",
+		["Sources"] = "**.cpp"
+	}
+
+	filter { 'system:windows' }
+		vpaths {
+			["Resources"] = {"**.rc", "**.ico"}
+		}
+
+	filter {}
+
+	filter "files:CydoniaIcon.png"
+		buildmessage "Copying Icon %{file.abspath}"
+
+		buildcommands {
+			"{COPY} %{file.abspath} %{cfg.targetdir}"
+		}
+
+		buildoutputs { "%{cfg.targetdir}/%{file.basename}.png" }
+
+-- ===============================================================================================
+-- Shaders
 workspace "CydoniaShaders"
 	location "build"
 	configurations { "Release" }

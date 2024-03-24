@@ -1,5 +1,3 @@
-#pragma once
-
 #include <Graphics/GRIS/RenderHelpers.h>
 
 #include <Common/Assert.h>
@@ -36,6 +34,23 @@ void NamedTextureBinding(
    if( const FlatShaderBinding res = pipInfo.findBinding( texture, name ); res.valid )
    {
       GRIS::BindTexture( cmdList, texture, res.binding, res.set );
+   }
+   else
+   {
+      CYD_ASSERT( !"Could not find named texture" );
+   }
+}
+
+void NamedTextureBinding(
+    CmdListHandle cmdList,
+    TextureHandle texture,
+    const SamplerInfo& sampler,
+    std::string_view name,
+    const PipelineInfo& pipInfo )
+{
+   if( const FlatShaderBinding res = pipInfo.findBinding( texture, name ); res.valid )
+   {
+      GRIS::BindTexture( cmdList, texture, sampler, res.binding, res.set );
    }
    else
    {

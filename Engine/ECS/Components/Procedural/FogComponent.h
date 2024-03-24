@@ -20,20 +20,9 @@ class FogComponent final : public BaseComponent
   public:
    FogComponent() = default;
    COPIABLE( FogComponent );
-   virtual ~FogComponent();
+   virtual ~FogComponent() = default;
 
    static constexpr ComponentType TYPE = ComponentType::FOG;
-
-   struct ViewInfo
-   {
-      glm::mat4 invProj;
-      glm::mat4 invView;
-      glm::vec4 viewPos;
-      glm::vec4 lightDir;
-   } viewInfo;
-
-   // This shouldn't be duplicated for every fog component
-   BufferHandle viewInfoBuffer;
 
    struct Parameters
    {

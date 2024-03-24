@@ -1,6 +1,9 @@
 #include <ECS/Systems/Rendering/RenderSystem.h>
 
+#include <Graphics/StaticPipelines.h>
+
 #include <Graphics/GRIS/RenderHelpers.h>
+#include <Graphics/GRIS/RenderInterface.h>
 
 #include <ECS/SharedComponents/SceneComponent.h>
 
@@ -8,20 +11,6 @@
 
 namespace CYD
 {
-uint32_t RenderSystem::getViewIndex( const SceneComponent& scene, std::string_view name ) const
-{
-   // Finding main view
-   const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), name );
-   if( it == scene.viewNames.end() )
-   {
-      // TODO WARNING
-      CYD_ASSERT( !"Could not find main view, skipping render tick" );
-      return 0;
-   }
-
-   return static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
-}
-
 void RenderSystem::bindView(
     CmdListHandle cmdList,
     const SceneComponent& scene,
@@ -30,15 +19,10 @@ void RenderSystem::bindView(
 {
    CYD_ASSERT( pipInfo );
 
-   const uint32_t viewOffset = viewIndex * sizeof( SceneComponent::ViewShaderParams );
+   const uint32_t viewOffset = viewIndex * sizeof( ViewShaderParams );
 
    GRIS::NamedBufferBinding(
-       cmdList,
-       scene.viewsBuffer,
-       "Views",
-       *pipInfo,
-       viewOffset,
-       sizeof( SceneComponent::ViewShaderParams ) );
+       cmdList, scene.viewsBuffer, "Views", *pipInfo, viewOffset, sizeof( ViewShaderParams ) );
 }
 
 void RenderSystem::bindInverseView(
@@ -49,7 +33,7 @@ void RenderSystem::bindInverseView(
 {
    CYD_ASSERT( pipInfo );
 
-   const uint32_t viewOffset = viewIndex * sizeof( SceneComponent::InverseViewShaderParams );
+   const uint32_t viewOffset = viewIndex * sizeof( InverseViewShaderParams );
 
    GRIS::NamedBufferBinding(
        cmdList,
@@ -57,6 +41,6 @@ void RenderSystem::bindInverseView(
        "InverseViews",
        *pipInfo,
        viewOffset,
-       sizeof( SceneComponent::InverseViewShaderParams ) );
+       sizeof( InverseViewShaderParams ) );
 }
 }

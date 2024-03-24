@@ -16,6 +16,7 @@ namespace CYD
 {
 class Window;
 class Framebuffer;
+class VertexList;
 struct GraphicsPipelineInfo;
 struct ComputePipelineInfo;
 
@@ -52,6 +53,7 @@ void WaitUntilIdle();
 CmdListHandle CreateCommandList(
     QueueUsageFlag usage,
     const std::string_view name = "",
+    bool async                  = false,  // Async here means anything that is not the main queue
     bool presentable            = false );
 void SubmitCommandList( CmdListHandle cmdList );
 
@@ -83,7 +85,6 @@ void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo );
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo );
 
 // Bind vertex and index buffers
-template <class VertexLayout>
 void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle );
 
 template <class Type>
@@ -131,40 +132,38 @@ void UpdateConstantBuffer(
 // Resources
 // ===============================================================================================
 TextureHandle CreateTexture( const TextureDescription& desc );
-TextureHandle CreateTexture(
-    CmdListHandle transferList,
-    const TextureDescription& desc,
-    const std::string& path );
-TextureHandle CreateTexture(
-    CmdListHandle transferList,
-    const TextureDescription& desc,
-    const std::vector<std::string>& paths );
 TextureHandle
-CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels );
-
-VertexBufferHandle CreateVertexBuffer(
+CreateTexture( CmdListHandle cmdList, const TextureDescription& desc, const void* pTexels );
+TextureHandle CreateTexture(
     CmdListHandle transferList,
-    uint32_t count,
-    uint32_t stride,
-    const void* pVertices,
-    const std::string_view name );
+    const TextureDescription& desc,
+    uint32_t layerCount,
+    const void** ppTexels );
+void GenerateMipmaps( CmdListHandle cmdList, TextureHandle texHandle );
 
-IndexBufferHandle CreateIndexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    const void* pIndices,
-    const std::string_view name );
+VertexBufferHandle CreateVertexBuffer( size_t size, const std::string_view name );
+IndexBufferHandle CreateIndexBuffer( size_t size, const std::string_view name );
 
 BufferHandle CreateUniformBuffer( size_t size, const std::string_view name );
 BufferHandle CreateBuffer( size_t size, const std::string_view name );
 
-void* AddDebugTexture( TextureHandle texture );
+void* AddDebugTexture( TextureHandle texture, uint32_t layer = 0 );
 void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle texture );
 void RemoveDebugTexture( void* texture );
 
 void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadToBufferInfo& info );
+void UploadToVertexBuffer(
+    CmdListHandle cmdList,
+    VertexBufferHandle bufferHandle,
+    const VertexList& vertices );
+void UploadToIndexBuffer(
+    CmdListHandle cmdList,
+    IndexBufferHandle bufferHandle,
+    const void* pIndices,
+    const UploadToBufferInfo& info );
+
 void CopyTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     TextureHandle srcTexHandle,
     TextureHandle dstTexHandle,
     const TextureCopyInfo& info );
@@ -178,7 +177,7 @@ void DestroyBuffer( BufferHandle bufferHandle );
 // ===============================================================================================
 void BeginFrame();
 void BeginRendering( CmdListHandle cmdList );
-void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb );
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer = 0 );
 void NextPass( CmdListHandle cmdList );
 void EndRendering( CmdListHandle cmdList );
 void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex = 0 );
@@ -196,6 +195,7 @@ void DrawIndexedInstanced(
     size_t firstIndex    = 0,
     size_t firstInstance = 0 );
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ );
+void ClearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal );
 void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle );
 void PresentFrame();
 

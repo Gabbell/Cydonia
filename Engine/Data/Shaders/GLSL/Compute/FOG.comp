@@ -52,15 +52,15 @@ void main()
    const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
    const vec2 uv       = ssCoord / vec2( textureSize( depthSampler, 0 ) );
 
-   const vec3 color  = imageLoad( colorImage, ssCoord ).rgb;
-   const float depth = texture( depthSampler, uv ).r;  // From 0 to 1
+   const vec3 color = imageLoad( colorImage, ssCoord ).rgb;
 
    // Reconstruct world-space coordinates
    // Using view-space coordinates is not enough because it doesn't consider
    // the current view's rotation
-   const vec4 ndc = vec4( uv * 2.0 - 1.0, depth, 1.0 );
-   vec4 worldPos  = viewInfo.invView * viewInfo.invProj * ndc;
-   worldPos       = worldPos / worldPos.w;
+   const float depth = texture( depthSampler, uv ).r;  // From 0 to 1
+   const vec4 ndc    = vec4( uv * 2.0 - 1.0, depth, 1.0 );
+   vec4 worldPos     = viewInfo.invView * viewInfo.invProj * ndc;
+   worldPos /= worldPos.w;
 
    const vec3 viewDir   = normalize( worldPos.xyz - viewInfo.viewPos.xyz );
    const float distance = distance( worldPos.xyz, viewInfo.viewPos.xyz );

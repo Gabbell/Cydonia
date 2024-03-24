@@ -12,6 +12,8 @@
 #include <Graphics/Vulkan/RenderPassCache.h>
 #include <Graphics/Vulkan/TypeConversions.h>
 
+#include <Profiling.h>
+
 #include <algorithm>
 
 namespace vk
@@ -72,10 +74,7 @@ static VkSurfaceFormatKHR chooseFormat(
    desiredFormat.colorSpace = TypeConversions::cydToVkSpace( space );
 
    auto it = std::find_if(
-       formats.begin(),
-       formats.end(),
-       [&desiredFormat]( const VkSurfaceFormatKHR& format )
-       {
+       formats.begin(), formats.end(), [&desiredFormat]( const VkSurfaceFormatKHR& format ) {
           return format.format == desiredFormat.format &&
                  format.colorSpace == desiredFormat.colorSpace;
        } );
@@ -143,9 +142,10 @@ void Swapchain::_createSwapchain( const CYD::SwapchainInfo& info )
    VkSurfaceCapabilitiesKHR caps;
    vkGetPhysicalDeviceSurfaceCapabilitiesKHR( physDevice, vkSurface, &caps );
 
-   m_surfaceFormat = std::make_unique<VkSurfaceFormatKHR>(
-       chooseFormat( info.format, info.space, physDevice, vkSurface ) );
-   m_extent      = std::make_unique<VkExtent2D>( chooseExtent( info.extent, caps ) );
+   m_surfaceFormat = chooseFormat( info.format, info.space, physDevice, vkSurface );
+   m_pixelFormat   = TypeConversions::vkToCydFormat( m_surfaceFormat.format );
+
+   m_extent      = chooseExtent( info.extent, caps );
    m_imageCount  = chooseImageCount( info.imageCount, caps );
    m_presentMode = choosePresentMode( info.mode, physDevice, vkSurface );
 
@@ -154,9 +154,9 @@ void Swapchain::_createSwapchain( const CYD::SwapchainInfo& info )
    createInfo.surface                  = vkSurface;
 
    createInfo.minImageCount    = m_imageCount;
-   createInfo.imageFormat      = m_surfaceFormat->format;
-   createInfo.imageColorSpace  = m_surfaceFormat->colorSpace;
-   createInfo.imageExtent      = *m_extent;
+   createInfo.imageFormat      = m_surfaceFormat.format;
+   createInfo.imageColorSpace  = m_surfaceFormat.colorSpace;
+   createInfo.imageExtent      = m_extent;
    createInfo.imageArrayLayers = 1;
    createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
 
@@ -186,7 +186,8 @@ void Swapchain::_cleanupSwapchain()
       m_colorImageViews[i] = nullptr;
    }
 
-   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+   CYD_ASSERT( m_renderDoneSems.size() == m_availableSems.size() );
+   for( uint32_t i = 0; i < m_renderDoneSems.size(); i++ )
    {
       vkDestroySemaphore( m_device.getVKDevice(), m_renderDoneSems[i], nullptr );
       vkDestroySemaphore( m_device.getVKDevice(), m_availableSems[i], nullptr );
@@ -196,7 +197,7 @@ void Swapchain::_cleanupSwapchain()
    }
 
    vkDestroySwapchainKHR( m_device.getVKDevice(), m_vkSwapchain, nullptr );
-   m_vkSwapchain  = nullptr;
+   m_vkSwapchain = nullptr;
 
    m_shouldClear  = true;
    m_currentFrame = 0;
@@ -210,10 +211,10 @@ void Swapchain::_createRenderPasses()
    // Initializing main render passes
    Attachment colorAttachment;
    colorAttachment.type          = CYD::AttachmentType::COLOR_PRESENTATION;
-   colorAttachment.format        = TypeConversions::vkToCydFormat( m_surfaceFormat->format );
+   colorAttachment.format        = m_pixelFormat;
    colorAttachment.loadOp        = CYD::LoadOp::CLEAR;
    colorAttachment.storeOp       = CYD::StoreOp::STORE;
-   colorAttachment.clear.color   = { 0.0f, 0.0f, 0.0f, 1.0f };
+   colorAttachment.clear.color   = { { 0.0f, 0.0f, 0.0f, 1.0f } };
    colorAttachment.initialAccess = CYD::Access::PRESENT;
    colorAttachment.nextAccess    = CYD::Access::PRESENT;
 
@@ -251,7 +252,7 @@ void Swapchain::_createFramebuffers()
       colorViewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
       colorViewInfo.image                           = m_colorImages[i];
       colorViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
-      colorViewInfo.format                          = m_surfaceFormat->format;
+      colorViewInfo.format                          = m_surfaceFormat.format;
       colorViewInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
       colorViewInfo.components.g                    = VK_COMPONENT_SWIZZLE_IDENTITY;
       colorViewInfo.components.b                    = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -271,8 +272,8 @@ void Swapchain::_createFramebuffers()
       framebufferInfo.renderPass              = m_vkRenderPasses[1];  // Load
       framebufferInfo.attachmentCount         = 1;
       framebufferInfo.pAttachments            = &m_colorImageViews[i];
-      framebufferInfo.width                   = m_extent->width;
-      framebufferInfo.height                  = m_extent->height;
+      framebufferInfo.width                   = m_extent.width;
+      framebufferInfo.height                  = m_extent.height;
       framebufferInfo.layers                  = 1;
 
       VkResult result = vkCreateFramebuffer(
@@ -283,23 +284,27 @@ void Swapchain::_createFramebuffers()
 
 void Swapchain::_createSyncObjects()
 {
+   VkSemaphoreCreateInfo semaphoreInfo;
+   semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+   semaphoreInfo.pNext = nullptr;
+   semaphoreInfo.flags = 0;
+
+   VkResult result;
+
    m_availableSems.resize( MAX_FRAMES_IN_FLIGHT );
-   m_renderDoneSems.resize( MAX_FRAMES_IN_FLIGHT );
-
-   VkSemaphoreCreateInfo semaphoreInfo = {};
-   semaphoreInfo.sType                 = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-   for( size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
    {
-      if( vkCreateSemaphore(
-              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_availableSems[i] ) !=
-              VK_SUCCESS ||
-          vkCreateSemaphore(
-              m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] ) !=
-              VK_SUCCESS )
-      {
-         CYD_ASSERT( !"Swapchain: Could not create sync objects" );
-      }
+      result =
+          vkCreateSemaphore( m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_availableSems[i] );
+      CYD_ASSERT( result == VK_SUCCESS );
+   }
+
+   m_renderDoneSems.resize( MAX_FRAMES_IN_FLIGHT );
+   for( uint32_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++ )
+   {
+      result = vkCreateSemaphore(
+          m_device.getVKDevice(), &semaphoreInfo, nullptr, &m_renderDoneSems[i] );
+      CYD_ASSERT( result == VK_SUCCESS );
    }
 }
 
@@ -309,14 +314,17 @@ void Swapchain::transitionColorImage( const CommandBuffer* cmdBuffer, CYD::Acces
        cmdBuffer->getVKCmdBuffer(),
        getColorVKImage(),
        1,
-       m_surfaceFormat->format,
+       m_surfaceFormat.format,
        getColorVKImageAccess(),
        nextAccess );
 
    m_colorImageAccess[m_currentFrame] = nextAccess;
 }
+
 bool Swapchain::acquireImage()
 {
+   CYD_TRACE();
+
    VkResult result = vkAcquireNextImageKHR(
        m_device.getVKDevice(),
        m_vkSwapchain,

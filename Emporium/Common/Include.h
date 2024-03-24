@@ -2,13 +2,11 @@
 
 #include <functional>  // for std::hash
 
-#if( CYD_DEBUG )
 #define REF( EXPR )   \
    do                 \
    {                  \
       sizeof( EXPR ); \
    } while( 0 );
-#endif
 
 // Forward including handles
 #define FWDHANDLE( obj ) typedef struct obj##_T* obj;

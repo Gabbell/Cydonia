@@ -4,6 +4,7 @@
 struct NoiseParameters
 {
    float seed;
+   float scale;
    float amplitude;
    float gain;
    float frequency;
@@ -36,10 +37,7 @@ float rand( vec2 p )
 
 // White Noise implementation using the golden ratio
 // https://www.shadertoy.com/view/ltB3zD
-float GoldNoise( in vec2 xy )
-{
-   return fract( tan( distance( xy * PHI, xy ) ) * xy.x );
-}
+float GoldNoise( in vec2 xy ) { return fract( tan( distance( xy * PHI, xy ) ) * xy.x ); }
 
 float NoiseFinalize( float noiseValue, NoiseParameters params )
 {
@@ -56,7 +54,7 @@ float NoiseFinalize( float noiseValue, NoiseParameters params )
    // Invert the values
    if( params.invert ) noiseValue = 1.0 - noiseValue;
 
-   return noiseValue;
+   return params.scale * noiseValue;
 }
 
 // Description : GLSL 2D simplex noise function

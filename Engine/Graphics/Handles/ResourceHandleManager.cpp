@@ -7,12 +7,12 @@
 namespace CYD
 {
 HandleManager::HandleEntry::HandleEntry()
-    : _nextFreeIndex( 0 ), _counter( 1 ), _active( 0 ), _endOfList( 0 ), _entry( nullptr )
+    : _nextFreeIndex( 0 ), _counter( 0 ), _active( 0 ), _endOfList( 0 ), _entry( nullptr )
 {
 }
 
 HandleManager::HandleEntry::HandleEntry( uint32_t nextFreeIndex )
-    : _nextFreeIndex( nextFreeIndex ), _counter( 1 ), _active( 0 ), _endOfList( 0 ), _entry( NULL )
+    : _nextFreeIndex( nextFreeIndex ), _counter( 0 ), _active( 0 ), _endOfList( 0 ), _entry( NULL )
 {
 }
 

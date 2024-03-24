@@ -1,0 +1,48 @@
+#version 450
+
+#include "../NOISE.h"
+#include "../TERRAIN.h"
+#include "../INSTANCING.h"
+
+layout( local_size_x = 16, local_size_y = 16, local_size_z = 1 ) in;
+
+layout( push_constant ) uniform PUSH { NoiseParameters params; };
+
+layout( set = 0, binding = 0 ) writeonly uniform image2DArray normalMap;
+
+void main()
+{
+   const vec2 size	= imageSize( normalMap ).xy;
+   const uint layer	= gl_GlobalInvocationID.z;
+
+   vec2 uv = vec2( ( gl_GlobalInvocationID.xy + 0.5 ) / size ) + params.seed;
+
+   const vec2 texelSize = 1.0 / size;
+   const vec3 offset    = vec3( texelSize.x, texelSize.y, 0.0 );
+
+   // Cheap way of making it tile across instances
+   uv *= 1.0 + texelSize;  // Getting one more texel around the border
+   uv.x += layer % TERRAIN_TILING_X;
+   uv.y += layer / TERRAIN_TILING_X;
+
+   const float hL = SimplexFBM( uv - offset.xz, params );
+   const float hR = SimplexFBM( uv + offset.xz, params );
+   const float hB = SimplexFBM( uv + offset.zy, params );
+   const float hT = SimplexFBM( uv - offset.zy, params );
+   
+   // This scaling factor only works with uniform XYZ scaling
+   const float scale = params.scale * texelSize.x;
+   const vec3 left   = vec3( -scale, hL, 0.0 );
+   const vec3 right  = vec3( scale, hR, 0.0 );
+   const vec3 bottom = vec3( 0.0, hB, scale );
+   const vec3 top    = vec3( 0.0, hT, -scale );
+
+   const vec3 topRight    = cross( right, top );
+   const vec3 topLeft     = cross( top, left );
+   const vec3 bottomLeft  = cross( left, bottom );
+   const vec3 bottomRight = cross( bottom, right );
+
+   const vec3 normal = ( normalize( topRight + topLeft + bottomLeft + bottomRight ) + 1.0 ) / 2.0;
+
+   imageStore( normalMap, ivec3( gl_GlobalInvocationID.xyz ), vec4( normal, 1.0 ) );
+}

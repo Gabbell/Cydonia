@@ -15,10 +15,12 @@ PipelineIndex s_noisePipelines[] = {
     INVALID_PIPELINE_IDX };
 
 const char* s_noiseNames[] =
-    { "WHITE_NOISE", "SIMPLEX_NOISE", "VORONOI_NOISE", "BLUE_NOISE", "DOMAIN_WARP" };
+    { "WHITE_NOISE", "SIMPLEX_NOISE", "VORONOI_NOISE", "BLUE_NOISE", "DOMAIN_WARPED_NOISE" };
 
 static_assert( ARRSIZE( s_noisePipelines ) == static_cast<size_t>( Type::COUNT ) );
 static_assert( ARRSIZE( s_noiseNames ) == static_cast<size_t>( Type::COUNT ) );
+
+std::string_view GetNoiseName( Type type ) { return s_noiseNames[UNDERLYING( type )]; }
 
 void Initialize()
 {
