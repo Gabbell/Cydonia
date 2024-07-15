@@ -33,9 +33,13 @@ University of Technology]. https://doi.org/10.15480/882.1436
    * Tessendorf, J. (2004). Simulating Ocean Water.
 * Parallax Occlusion Mapping (POM)
 
-https://github.com/Gabbell/Cydonia/assets/10086598/83e1bf9d-cb3f-4497-9797-b60624ad2317
 
-https://github.com/Gabbell/Cydonia/assets/10086598/0e4777c2-b8f1-431d-9d15-bca54951c2ad
+
+https://github.com/user-attachments/assets/d2c36262-b678-4f89-bae0-51a91cb26e71
+
+
+https://github.com/user-attachments/assets/9c5df034-f368-4165-bbf7-dc16c8c02a7a
+
 
 # Notes
 
