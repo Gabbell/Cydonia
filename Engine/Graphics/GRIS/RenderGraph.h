@@ -8,10 +8,12 @@
 
 namespace CYD::RenderGraph
 {
-enum class Pass
+enum Pass
 {
    LOAD,
-   PRE_RENDER,
+   ASYNC_COMPUTE,
+   PRE_RENDER_P1,
+   PRE_RENDER_P2,
    OPAQUE_RENDER,
    ALPHA_RENDER,
    POST_PROCESS,

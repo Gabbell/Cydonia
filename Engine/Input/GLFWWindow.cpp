@@ -4,6 +4,8 @@
 
 #include <Graphics/Vulkan.h>
 
+#include <Profiling.h>
+
 #include <GLFW/glfw3.h>
 #include <stb/stb_image.h>
 
@@ -13,12 +15,12 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
 {
    if( !glfwInit() )
    {
-      CYD_ASSERT_AND_RETURN( !"GLFW: Init failed", false );
+      CYD_ASSERT_AND_RETURN( !"GLFW: Init failed", return false; );
    }
 
    if( !glfwVulkanSupported() )
    {
-      CYD_ASSERT_AND_RETURN( !"GLFW: Vulkan not supported", false );
+      CYD_ASSERT_AND_RETURN( !"GLFW: Vulkan not supported", return false; );
    }
 
    m_extent = { width, height };
@@ -26,7 +28,7 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
    // Creating GLFWwindow
    glfwWindowHint( GLFW_CLIENT_API, GLFW_NO_API );  // Tell GLFW we do not need a GL context
    m_glfwWindow = glfwCreateWindow( width, height, title, nullptr, nullptr );
-   CYD_ASSERT_AND_RETURN( m_glfwWindow && "Could not create GLFW window", false );
+   CYD_ASSERT_AND_RETURN( m_glfwWindow && "Could not create GLFW window", return false; );
 
    // Assigning icon
    GLFWimage images[1];
@@ -40,7 +42,7 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
    const char** extensions  = glfwGetRequiredInstanceExtensions( &extensionsCount );
    m_extensions             = std::vector<const char*>( extensions, extensions + extensionsCount );
 
-#if CYD_DEBUG
+#if CYD_DEBUG || CYD_PROFILING
    m_extensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
 #endif
 
@@ -51,7 +53,11 @@ bool Window::init( uint32_t width, uint32_t height, const char* title )
 
 bool Window::isRunning() const { return !glfwWindowShouldClose( m_glfwWindow ); }
 
-void Window::poll() const { glfwPollEvents(); }
+void Window::poll() const
+{
+   CYD_TRACE();
+   glfwPollEvents();
+}
 
 Window::~Window()
 {

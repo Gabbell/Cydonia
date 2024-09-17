@@ -23,6 +23,7 @@ CommandPoolManager::CommandPoolManager(
 CommandBuffer* CommandPoolManager::acquire(
     CYD::QueueUsageFlag usage,
     const std::string_view name,
+    bool async,
     bool presentable,
     const uint32_t currentFrame )
 {
@@ -43,8 +44,10 @@ CommandBuffer* CommandPoolManager::acquire(
    const auto poolIt = std::find_if(
        poolsPerQueueFamily.begin(),
        poolsPerQueueFamily.end(),
-       [usage, presentable]( const CommandBufferPool& pool )
-       { return ( usage & pool.getType() ) && !( presentable && !pool.supportsPresentation() ); } );
+       [usage, async, presentable]( const CommandBufferPool& pool ) {
+          return ( usage & pool.getType() ) && ( async == pool.isAsync() ) &&
+                 !( presentable && !pool.supportsPresentation() );
+       } );
 
    if( poolIt != poolsPerQueueFamily.end() )
    {
@@ -95,8 +98,9 @@ void CommandPoolManager::_initializePoolsForThread( const std::thread::id thread
       {
          const Device::QueueFamily& family = m_device.getQueueFamilyFromIndex( familyIdx );
 
+         const bool isAsync = familyIdx > 0;
          m_commandPools[threadId][imageIdx].emplace_back(
-             m_device, familyIdx, family.type, family.supportsPresent );
+             m_device, familyIdx, family.type, isAsync, family.supportsPresent );
       }
    }
 }

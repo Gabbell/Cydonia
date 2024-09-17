@@ -20,8 +20,7 @@ class DebugDrawComponent : public BaseComponent
    enum class Type
    {
       SPHERE,
-      NORMALS,
-      TEXTURE
+      FRUSTUM
    };
 
    // =============================================================================================
@@ -46,15 +45,7 @@ class DebugDrawComponent : public BaseComponent
 
    // =============================================================================================
    DebugDrawComponent() = default;
-   DebugDrawComponent(
-       DebugDrawComponent::Type drawType,
-       glm::vec4 color = glm::vec4( 1.0f ),
-       float radius    = 1.0f )
-       : type( drawType ), shaderParams( color )
-   {
-      CYD_ASSERT( drawType == Type::SPHERE );
-      params.sphere.radius = radius;
-   }
+   DebugDrawComponent( DebugDrawComponent::Type drawType ) : type( drawType ) {}
    COPIABLE( DebugDrawComponent );
    virtual ~DebugDrawComponent() = default;
 

@@ -1,28 +1,29 @@
 #version 450
 
-#include "ATMOS.h"
+#include "../ATMOS.h"
+#include "../COLOR.h"
+#include "../FILTERING.h"
+#include "../VIEW.h"
+#include "../LIGHTING.h"
 #include "../NOISE.h"
 
 layout( local_size_x = 16, local_size_y = 16 ) in;
 
 layout( push_constant ) uniform PUSH { AtmosphereParameters params; };
 
-layout( set = 0, binding = 0 ) uniform ViewInfo
-{
-   mat4 invProj;
-   mat4 invView;
-   vec4 viewPos;
-   vec4 lightDir;
-}
-viewInfo;
+layout( set = 0, binding = 0 ) uniform InverseViews { InverseView inverseViews[MAX_VIEWS]; };
+layout( set = 0, binding = 1 ) uniform Lights { Light lights[MAX_LIGHTS]; };
 
-layout( set = 0, binding = 1 ) uniform sampler2D transmittanceLUT;
-layout( set = 0, binding = 2 ) uniform sampler2D skyViewLUT;
-layout( set = 0, binding = 3 ) uniform sampler3D aerialPerspectiveLUT;
-layout( set = 0, binding = 4, rgba32f ) uniform image2D colorImage;
-layout( set = 0, binding = 5 ) uniform sampler2D depthSampler;
+layout( set = 0, binding = 2 ) uniform sampler2D depthSampler;
+layout( set = 0, binding = 3 ) uniform sampler2D transmittanceLUT;
+layout( set = 0, binding = 4 ) uniform sampler2D skyViewLUT;
+layout( set = 0, binding = 5 ) uniform sampler3D aerialPerspectiveLUT;
+layout( set = 0, binding = 6 ) uniform sampler2D shadowMask;
 
-NoiseParameters noiseParams = { 0.0, 1.0, 0.25, 0.003, 3.00, 1.0, false, false, 3 };
+layout( set = 0, binding = 7, rgba32f ) uniform image2D colorImage;
+
+// Height fog top feathering noise
+const NoiseParameters noiseParams = { 0.0, 1.0, 1.0, 0.25, 0.0004, 3.00, 1.0, false, false, 3 };
 
 vec3 GetSunCircle( AtmosphereParameters params, vec3 rayDir, vec3 sunDir, vec3 viewPosMM )
 {
@@ -33,64 +34,84 @@ vec3 GetSunCircle( AtmosphereParameters params, vec3 rayDir, vec3 sunDir, vec3 v
 
    const float cosThetaNoon = dot( sunDir, up );
    const float sunsetSize   = 0.9990;
-   const float noonSize     = 0.9999;
+   const float noonSize     = 0.9996;
    const float sunSize = mix( sunsetSize, noonSize, clamp( pow( cosThetaNoon, 0.3 ), 0.0, 1.0 ) );
 
    const float cosTheta  = dot( rayDir, sunDir );
    const float sunCircle = cosTheta > sunSize ? 1.0 : 0.0;
 
    const float x             = ( cosTheta - sunSize ) * 4000.0;
-   const float sunFeathering = clamp( pow( x, 2 ), 0.0, 1.0 );
-   const vec3 sunColor       = vec3( 2.0 );  // The sun is big and powerful
+   const float sunFeathering = clamp( pow( x, 8 ), 0.0, 1.0 );
+   const vec3 sunColor       = vec3( 50.0 );  // The sun is big and powerful
 
    // Sun circle
    return groundFactor * sunCircle * sunFeathering * sunColor;
 }
 
-vec3 GetHeightFog( AtmosphereParameters params, vec3 fogColor, vec3 worldPos, vec3 viewPos )
+float GetHeightFogAmount( 
+AtmosphereParameters params, 
+vec3 worldPos, 
+vec3 viewPos, 
+vec3 rayDir, 
+vec3 sunDir )
 {
    const vec3 camToFrag = worldPos - viewPos;
    const float distance = length( camToFrag );
    const vec3 viewDir   = camToFrag / distance;
 
-   float fogAmount = ( params.heightFog.x / params.heightFog.y ) *
-                     exp( -viewPos.y * params.heightFog.y ) *
-                     ( 1.0 - exp( -distance * viewDir.y * params.heightFog.y ) ) / viewDir.y;
+   // Density
+   const float fogDensity = ( params.heightFog.x / params.heightFog.y ) *
+                            exp( -viewPos.y * params.heightFog.y ) *
+                            ( 1.0 - exp( -distance * viewDir.y * params.heightFog.y ) ) / viewDir.y;
 
-   fogAmount *= SimplexFBM( worldPos.xz + ( params.time * 35.0 ), noiseParams );
-   fogAmount = clamp( fogAmount, 0.0, 1.0 );
+   // We apply a feathering to the less dense parts of the fog.
+   // As our previous calculated density decreases we want to increase the presence of this FBM
+   // noise. This is not physically based but is a convincing effect to imitate non-constant
+   // volumetric fog
+   const float topFeather    = SimplexFBM( worldPos.xz + ( params.time * 500.0 ), noiseParams );
+   const float featherFactor = mix( topFeather, 1.0, fogDensity );
 
-   return fogColor * fogAmount * params.heightFog.z;
+   const float sunAmount = pow(max( (dot( rayDir, sunDir ) + 1.0) / 2.0, 0.0 ), 2.0);
+
+   const float fogAmount = fogDensity * featherFactor * params.heightFog.z * sunAmount;
+
+   return clamp( fogAmount, 0.0, 1.0 );
 }
 
 // ================================================================================================
 void main()
 {
    const ivec2 ssCoord = ivec2( gl_GlobalInvocationID.xy );
-   const vec2 uv       = vec2( ssCoord + 0.5 ) / vec2( imageSize( colorImage ) );
-   const float depth   = texture( depthSampler, uv ).r;
+   const vec2 size     = imageSize( colorImage );
+   const vec2 uv       = vec2( ssCoord + 0.5 ) / size;
+
+   const float depth = texture( depthSampler, uv ).r;
+
+   const InverseView inverseMainView = inverseViews[0];
+   const Light sunLight              = lights[0];
+
+   const vec3 sunDir = -sunLight.direction.xyz;
 
    // Constructing camera ray direction and world position
    // =============================================================================================
    // Ideally do one mat3 inverse view matrix multiplication and then add translation to
    // get world position so we don't multiply the inverse view matrix twice
    const vec4 ndc    = vec4( uv * 2.0 - 1.0, depth, 1.0 );  // UV [0,1] to NDC [-1,1]
-   const vec4 rayEye = viewInfo.invProj * ndc;
-   vec4 worldPos     = viewInfo.invView * rayEye;
-   worldPos          = worldPos / worldPos.w;
-   const vec3 rayDir = normalize( mat3( viewInfo.invView ) * rayEye.xyz );
+   vec4 vsPos = inverseMainView.invProjMat * ndc;
+   vsPos /= vsPos.w;
+   const vec4 worldPos  = inverseMainView.invViewMat * vsPos;
+   const vec3 rayDir    = normalize( mat3( inverseMainView.invViewMat ) * vsPos.xyz );
 
-   vec3 skyView           = vec3( 0.0 );
-   vec3 aerialPerspective = vec3( 0.0 );
+   vec3 skyView       = vec3( 0.0 );
+   vec3 finalColor    = vec3( 0.0 );
 
    // Sky View
    // =============================================================================================
-   if( depth == 0.0 )
+   if( depth == 1.0 )
    {
       // We only apply the sky view LUT where there is no data in the depth buffer
-      const vec3 viewPosMM = getMMPosition( params.groundRadiusMM, viewInfo.viewPos.xyz );
+      const vec3 viewPosMM = getMMPosition( params.groundRadiusMM, inverseMainView.pos.xyz );
       const float height   = viewPosMM.y;
-      const vec3 sunDir    = -viewInfo.lightDir.xyz;
 
       const float beta =
           acos( sqrt( height * height - params.groundRadiusMM * params.groundRadiusMM ) / height );
@@ -101,11 +122,11 @@ void main()
       // Angle 0 has the sun in the positive Z direction (looking towards -Z)
       const float minusCosTheta = -dot( rayDir, right );
       const float cosTheta      = dot( rayDir, forward );
-      const float azimuthAngle  = atan( minusCosTheta, cosTheta ) + PI;
+      const float azimuthAngle  = atan( minusCosTheta, cosTheta );
 
       // Making UVs, Y uses non-linear mapping formula from the paper
       const vec2 lookupUV = vec2(
-          azimuthAngle / ( 2.0 * PI ),
+          1.0 - abs( azimuthAngle / PI ),
           0.5 + 0.5 * sign( altitudeAngle ) * sqrt( abs( altitudeAngle ) / ( PI * 0.5 ) ) );
 
       skyView += texture( skyViewLUT, lookupUV ).rgb;
@@ -125,29 +146,41 @@ void main()
       const float clipDistance = abs( params.farClip - params.nearClip );
 
       // Getting linear depth from depth buffer, then normalizing from 0 to 1
-      float normDepth = params.nearClip * params.farClip /
-                        ( params.farClip - depth * ( params.farClip - params.nearClip ) );
-      normDepth /= clipDistance;
+      float normDepth = clamp(vsPos.z / clipDistance, 0.0, 1.0);
 
-      const float w        = normDepth;  // Squared distribution
+      const float w        = sqrt( normDepth );  // Squared distribution
       const float slice    = DepthToSlice( normDepth, textureSize( aerialPerspectiveLUT, 0 ).z );
       const float nearFade = min( slice + 1.0, 1.0 );
       const vec4 APLookup  = texture( aerialPerspectiveLUT, vec3( uv, w ) );
 
-      aerialPerspective += nearFade * APLookup.rgb * APLookup.a;
+      const float volumeShadow     = texture( shadowMask, uv ).r;
+      const vec3 aerialPerspective = nearFade * APLookup.rgb;  // * APLookup.a;
 
-      aerialPerspective +=
-          GetHeightFog( params, aerialPerspective, worldPos.xyz, viewInfo.viewPos.xyz );
+      vec3 fog = aerialPerspective;
+      if( params.heightFog.z > 0.0 )
+      {
+         /*
+         The height fog is not physically accurate for two reasons
+         * In order to fake higher density, we simply multiply the aerial perspective color instead
+         of taking into consideration the actual extinction (scattering & absorption)
+         * For a similar reason, the fog color when looking in the same direction as the sun 
+         is incorrect as it doesn't consider the scattering that occurs inside the volume.
+         */
+
+         const float heightFogAmount =
+             GetHeightFogAmount( params, worldPos.xyz, inverseMainView.pos.xyz, rayDir, sunDir );
+
+         fog = mix( fog, fog + ( aerialPerspective * heightFogAmount ), heightFogAmount );
+      }
+
+      fog *= volumeShadow;
+
+      const vec3 inColor = imageLoad( colorImage, ssCoord ).rgb;
+      finalColor = mix(inColor, fog, normDepth);
    }
-
    // Compiling and adjusting luminance
    // =============================================================================================
-   vec3 white_point = vec3( 1.08241, 0.96756, 0.95003 );
-   float exposure   = 10.0;
-   vec3 luminance   = skyView + aerialPerspective;
-   luminance =
-       pow( vec3( 1.0 ) - exp( -luminance.rgb / white_point * exposure ), vec3( 1.0 / 2.2 ) );
+   vec3 luminance = skyView + finalColor;
 
-   const vec3 inColor = imageLoad( colorImage, ssCoord ).rgb;
-   imageStore( colorImage, ssCoord, vec4( inColor.rgb + luminance, 1.0 ) );
+   imageStore( colorImage, ssCoord, vec4( luminance, 1.0 ) );
 }

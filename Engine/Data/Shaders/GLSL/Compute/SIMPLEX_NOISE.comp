@@ -1,21 +1,27 @@
 #version 450
 
 #include "../NOISE.h"
+#include "../TERRAIN.h"
+#include "../INSTANCING.h"
 
-layout( local_size_x = 16, local_size_y = 16 ) in;
+layout( local_size_x = 16, local_size_y = 16, local_size_z = 1 ) in;
 
 layout( push_constant ) uniform PUSH { NoiseParameters params; };
 
-layout( set = 0, binding = 0 ) writeonly uniform image2D noiseImage;
+layout( set = 0, binding = 0 ) writeonly uniform image2DArray noiseImage;
 
 void main()
 {
-   vec2 dims = imageSize( noiseImage );
-   vec2 uv   = gl_GlobalInvocationID.xy / dims;
-   uv        = uv * vec2( dims.x / dims.y, 1.0 ) + params.seed;  // Aspect ratio corrected
+   vec2 size  = imageSize( noiseImage ).xy;
+   vec2 uv    = vec2( ( gl_GlobalInvocationID.xy + 0.5 ) / size ) + params.seed;
+   uint layer = gl_GlobalInvocationID.z;
+
+   // Cheap way of making it tile across instances
+   uv.x += layer % TERRAIN_TILING_X;
+   uv.y += layer / TERRAIN_TILING_Y;
 
    // Fractal Brownian Motion (FBM)
    float finalNoise = SimplexFBM( uv, params );
 
-   imageStore( noiseImage, ivec2( gl_GlobalInvocationID.xy ), vec4( vec3( finalNoise ), 1.0 ) );
+   imageStore( noiseImage, ivec3( gl_GlobalInvocationID.xyz ), vec4( vec3( finalNoise ), 1.0 ) );
 }

@@ -8,8 +8,8 @@ void MotionSystem::tick( double deltaS )
 {
    for( const auto& entityEntry : m_entities )
    {
-      TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const MotionComponent& motion = *std::get<MotionComponent*>( entityEntry.arch );
+      TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      const MotionComponent& motion = GetComponent<MotionComponent>( entityEntry );
 
       Transform::Translate( transform.position, motion.velocity * static_cast<float>( deltaS ) );
    }

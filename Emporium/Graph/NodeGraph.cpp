@@ -6,7 +6,7 @@ namespace EMP
 {
 void NodeGraph::reset() { m_nodes = {}; }
 
-NodeGraph::NodeHandle NodeGraph::_addNode( std::unique_ptr<Node>&& newNode )
+NodeGraph::NodeHandle NodeGraph::_addNode( Node&& newNode )
 {
    int foundHandle = -1;
 
@@ -14,7 +14,7 @@ NodeGraph::NodeHandle NodeGraph::_addNode( std::unique_ptr<Node>&& newNode )
    {
       auto& node = m_nodes[i];
 
-      if( node == nullptr )
+      if( node.active )
       {
          foundHandle = i;
          node        = std::move( newNode );
@@ -28,21 +28,21 @@ NodeGraph::NodeHandle NodeGraph::_addNode( std::unique_ptr<Node>&& newNode )
 
 void NodeGraph::_depthFirstSearch( NodeHandle root )
 {
-   const Node* rootNode = m_nodes[root].get();
+   const Node& rootNode = m_nodes[root];
 
-   if( !rootNode ) return;
+   if( !rootNode.active ) return;
 
    _interpretNode( root, rootNode );
 
-   for( uint32_t i = 0; i < rootNode->childrenCount; ++i )
+   for( uint32_t i = 0; i < rootNode.childrenCount; ++i )
    {
-      _depthFirstSearch( rootNode->children[i] );
+      _depthFirstSearch( rootNode.children[i] );
    }
 }
 
 void NodeGraph::_breathFirstSearch( NodeHandle /*root*/ ) {}
 
-void NodeGraph::_interpretNode( NodeHandle handle, const Node* /*node*/ )
+void NodeGraph::_interpretNode( NodeHandle handle, const Node& /*node*/ )
 {
    // Read data
    printf( "NodeGraph: Reading node%d\n", handle );

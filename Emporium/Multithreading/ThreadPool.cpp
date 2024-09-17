@@ -1,11 +1,15 @@
 #include <Multithreading/ThreadPool.h>
 
+#include <Common/Include.h>
+
 namespace EMP
 {
 ThreadPool::ThreadPool() : m_shutdown( false ) {}
 
 void ThreadPool::init( int numberOfThreads )
 {
+   m_mainThread = std::this_thread::get_id();
+
    m_threads.resize( numberOfThreads );
    for( int i = 0; i < m_threads.size(); i++ )
    {
@@ -30,8 +34,9 @@ void ThreadPool::shutdown()
 ThreadPool::~ThreadPool() { shutdown(); }
 
 ThreadPool::ThreadWorker::ThreadWorker( ThreadPool* threadPool, const int threadIdx )
-    : m_threadPool( threadPool ), m_threadIdx( threadIdx )
+    : m_threadIdx( threadIdx ), m_threadPool( threadPool )
 {
+   REF( m_threadIdx );
 }
 
 void ThreadPool::ThreadWorker::operator()()

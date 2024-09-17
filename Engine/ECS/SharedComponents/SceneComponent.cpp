@@ -9,12 +9,14 @@ namespace CYD
 SceneComponent::SceneComponent()
 {
    // Lights
-   lightsBuffer = GRIS::CreateUniformBuffer( sizeof( lights ), "SceneComponent Lights Buffer" );
+   lightsBuffer = GRIS::CreateUniformBuffer( sizeof( lights ), "Scene Lights Buffer" );
 
    // Views
-   viewsBuffer = GRIS::CreateUniformBuffer( sizeof( views ), "SceneComponent Views Buffer" );
+   viewsBuffer = GRIS::CreateUniformBuffer( sizeof( views ), "Scene Views Buffer" );
    inverseViewsBuffer =
-       GRIS::CreateUniformBuffer( sizeof( inverseViews ), "SceneComponent InverseViews Buffer" );
+       GRIS::CreateUniformBuffer( sizeof( inverseViews ), "Scene InverseViews Buffer" );
+   frustumsBuffer   = GRIS::CreateUniformBuffer( sizeof( frustums ), "Scene Frustums Buffer" );
+   shadowMapsBuffer = GRIS::CreateUniformBuffer( sizeof( shadowMaps ), "Scene Shadow Maps Buffer" );
 
 #if CYD_DEBUG
    debugParamsBuffer = GRIS::CreateUniformBuffer(
@@ -31,7 +33,10 @@ SceneComponent::~SceneComponent()
    GRIS::DestroyBuffer( lightsBuffer );
    GRIS::DestroyBuffer( viewsBuffer );
    GRIS::DestroyBuffer( inverseViewsBuffer );
-   GRIS::DestroyTexture( shadowMap );
+   GRIS::DestroyBuffer( frustumsBuffer );
+   GRIS::DestroyBuffer( shadowMapsBuffer );
+   GRIS::DestroyTexture( envMap );
+   GRIS::DestroyTexture( quarterResShadowMask );
    GRIS::DestroyTexture( mainColor );
    GRIS::DestroyTexture( mainDepth );
 }

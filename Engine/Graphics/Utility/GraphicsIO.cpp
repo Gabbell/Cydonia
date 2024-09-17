@@ -3,6 +3,10 @@
 #include <Common/Assert.h>
 
 #include <Graphics/VertexLayout.h>
+#include <Graphics/VertexList.h>
+#include <Graphics/VertexData.h>
+
+#include <Profiling.h>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include <tinyobjloader/tiny_obj_loader.h>
@@ -10,104 +14,177 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
+#include <algorithm>
 #include <unordered_map>
 
 namespace CYD
 {
-static const char MESH_PATH[] = "../Engine/Data/Meshes/";
-
 void GraphicsIO::LoadMesh(
     const std::string& path,
-    std::vector<Vertex>& vertices,
+    VertexList& vertices,
     std::vector<uint32_t>& indices )
 {
+   CYD_TRACE_S( path );
+
    tinyobj::attrib_t attrib;
    std::vector<tinyobj::shape_t> shapes;
    std::vector<tinyobj::material_t> materials;
    std::string warn, err;
 
-   bool res = tinyobj::LoadObj(
-       &attrib, &shapes, &materials, &warn, &err, ( MESH_PATH + path + ".obj" ).c_str() );
+   bool res =
+       tinyobj::LoadObj( &attrib, &shapes, &materials, &warn, &err, ( path + ".obj" ).c_str() );
    CYD_ASSERT( res && "Model loading failed" );
 
-   vertices.reserve( shapes[0].mesh.num_face_vertices.size() );
    indices.reserve( shapes[0].mesh.indices.size() );
 
-   std::unordered_map<Vertex, uint32_t> uniqueVertices = {};
+   std::vector<VertexData> tempVertices;
+   std::unordered_map<VertexData, uint32_t> uniqueVertices = {};
 
-   for( const auto& shape : shapes )
+   for( uint32_t s = 0; s < shapes.size(); ++s )
    {
-      for( const auto& index : shape.mesh.indices )
+      uint32_t indexOffset = 0;
+      for( uint32_t f = 0; f < shapes[s].mesh.num_face_vertices.size(); ++f )
       {
-         Vertex vertex = {};
+         const uint32_t fv = shapes[s].mesh.num_face_vertices[f];
+         CYD_ASSERT( fv == 3 && "Face did not have 3 vertices" );
 
-         vertex.pos = {
-             attrib.vertices[3 * index.vertex_index + 0],
-             attrib.vertices[3 * index.vertex_index + 1],
-             attrib.vertices[3 * index.vertex_index + 2] };
+         VertexData face[3];
 
-         if( !attrib.normals.empty() )
+         bool hasNormals = false;
+         for( uint32_t v = 0; v < fv; ++v )
          {
-            vertex.normal = {
-                attrib.normals[3 * index.normal_index + 0],
-                attrib.normals[3 * index.normal_index + 1],
-                attrib.normals[3 * index.normal_index + 2] };
+            VertexData& vertex = face[v];
+
+            const tinyobj::index_t& index = shapes[s].mesh.indices[indexOffset + v];
+
+            // Position
+            vertex.pos = glm::vec3(
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2] );
+
+            // UV (Texcoords)
+            if( index.texcoord_index >= 0 )
+            {
+               vertex.uv = glm::vec3(
+                   attrib.texcoords[2 * index.texcoord_index + 0],
+                   attrib.texcoords[2 * index.texcoord_index + 1],
+                   0.0f );
+            }
+
+            // Normal
+            if( index.normal_index >= 0 )
+            {
+               vertex.normal = glm::vec3(
+                   attrib.normals[3 * index.normal_index + 0],
+                   attrib.normals[3 * index.normal_index + 1],
+                   attrib.normals[3 * index.normal_index + 2] );
+
+               hasNormals = true;
+            }
          }
 
-         if( !attrib.texcoords.empty() )
+         if( hasNormals )
          {
-            vertex.uv = {
-                attrib.texcoords[2 * index.texcoord_index + 0],
-                1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
-                0.0f };
+            // Tangent
+            const glm::vec3 deltaPos0 = face[1].pos - face[0].pos;
+            const glm::vec3 deltaPos1 = face[2].pos - face[0].pos;
+            const glm::vec3 deltaUV0  = face[1].uv - face[0].uv;
+            const glm::vec3 deltaUV1  = face[2].uv - face[0].uv;
+
+            const float denom = 1.0f / ( deltaUV0.x * deltaUV1.y - deltaUV1.x * deltaUV0.y );
+
+            const glm::vec3 tangent(
+                denom * ( deltaUV1.y * deltaPos0.x - deltaUV0.y * deltaPos1.x ),
+                denom * ( deltaUV1.y * deltaPos0.y - deltaUV0.y * deltaPos1.y ),
+                denom * ( deltaUV1.y * deltaPos0.z - deltaUV0.y * deltaPos1.z ) );
+
+            face[0].tangent = tangent;
+            face[1].tangent = tangent;
+            face[2].tangent = tangent;
          }
 
-         vertex.col = { 1.0f, 1.0f, 1.0f, 1.0f };
-
-         if( uniqueVertices.count( vertex ) == 0 )
+         for( uint32_t v = 0; v < fv; ++v )
          {
-            uniqueVertices[vertex] = static_cast<uint32_t>( vertices.size() );
-            vertices.push_back( vertex );
+            const VertexData& vertex = face[v];
+            if( uniqueVertices.count( vertex ) == 0 )
+            {
+               uniqueVertices[vertex] = static_cast<uint32_t>( tempVertices.size() );
+               tempVertices.push_back( vertex );
+            }
+
+            indices.push_back( uniqueVertices[vertex] );
          }
 
-         indices.push_back( uniqueVertices[vertex] );
+         indexOffset += fv;
       }
+   }
+
+   vertices.allocate( tempVertices.size() );
+   for( uint32_t i = 0; i < tempVertices.size(); ++i )
+   {
+      const VertexData& vertex = tempVertices[i];
+      vertices.setValue<Vertex::Position>( i, vertex.pos );
+      vertices.setValue<Vertex::Texcoord>( i, vertex.uv );
+      vertices.setValue<Vertex::Normal>( i, vertex.normal );
+      vertices.setValue<Vertex::Tangent>( i, vertex.tangent );
    }
 }
 
 void* GraphicsIO::LoadImage(
     const std::string& path,
     PixelFormat format,
-    int& width,
-    int& height,
-    int& size )
+    uint32_t& width,
+    uint32_t& height,
+    uint32_t& size )
 {
+   CYD_TRACE_S( path );
+
    void* imageData = nullptr;
+   int intWidth    = 0;
+   int intHeight   = 0;
    int channels    = 0;
+
    switch( format )
    {
       case PixelFormat::RGBA32F:
-         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         imageData = stbi_loadf( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb_alpha );
+         break;
+      case PixelFormat::RGBA16F:
+         imageData = stbi_load_16( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb_alpha );
+         break;
+      case PixelFormat::RGBA8_UNORM:
+      case PixelFormat::RGBA8_SRGB:
+         imageData = stbi_load( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb_alpha );
          break;
       case PixelFormat::RGB32F:
-         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, STBI_rgb );
-         break;
-      case PixelFormat::RGBA8_SRGB:
-         imageData = stbi_load( path.c_str(), &width, &height, &channels, STBI_rgb_alpha );
+         imageData = stbi_loadf( path.c_str(), &intWidth, &intHeight, &channels, STBI_rgb );
          break;
       case PixelFormat::R32F:
-         imageData = stbi_loadf( path.c_str(), &width, &height, &channels, 0 );
+         imageData = stbi_loadf( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
+         break;
+      case PixelFormat::R8_UNORM:
+         imageData = stbi_load( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
+         break;
+      case PixelFormat::R16_UNORM:
+         imageData = stbi_load_16( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
+         break;
+      case PixelFormat::R32_UINT:
+         imageData = stbi_load( path.c_str(), &intWidth, &intHeight, &channels, STBI_grey );
          break;
       default:
          // TODO Format to pixel size function
          CYD_ASSERT( !"Not implemented" );
    }
 
-   size = width * height * GetPixelSizeInBytes( format );
+   width  = intWidth;
+   height = intHeight;
+   size   = width * height * GetPixelSizeInBytes( format );
 
    if( !imageData )
    {
       // Could not load image, returning nullptr
+      CYD_ASSERT( !"Could not load image" );
       return nullptr;
    }
 

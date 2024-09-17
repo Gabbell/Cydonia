@@ -16,21 +16,18 @@ namespace CYD
 {
 void TessellationUpdateSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "TessellationUpdateSystem" );
+   CYD_TRACE();
 
    const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
    for( const auto& entityEntry : m_entities )
    {
-      RenderableComponent& renderable   = *std::get<RenderableComponent*>( entityEntry.arch );
-      TessellatedComponent& tessellated = *std::get<TessellatedComponent*>( entityEntry.arch );
+      RenderableComponent& renderable   = GetComponent<RenderableComponent>( entityEntry );
+      TessellatedComponent& tessellated = GetComponent<TessellatedComponent>( entityEntry );
 
       renderable.isTessellated = true;
 
-      const Frustum& mainViewFrustum = scene.frustums[0];
-
       tessellated.params.viewportDims = glm::vec2( scene.viewport.width, scene.viewport.height );
-      mainViewFrustum.getPlanes( tessellated.params.frustumPlanes );
 
       // Creating GPU data
       const size_t bufferSize = sizeof( TessellatedComponent::ShaderParams );

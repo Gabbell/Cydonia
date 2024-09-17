@@ -7,6 +7,7 @@
 namespace CYD
 {
 struct PipelineInfo;
+struct SamplerInfo;
 
 namespace GRIS
 {
@@ -21,6 +22,13 @@ void NamedBufferBinding(
 void NamedTextureBinding(
     CmdListHandle cmdList,
     TextureHandle texture,
+    std::string_view name,
+    const PipelineInfo& pipInfo );
+
+void NamedTextureBinding(
+    CmdListHandle cmdList,
+    TextureHandle texture,
+    const SamplerInfo& sampler,
     std::string_view name,
     const PipelineInfo& pipInfo );
 

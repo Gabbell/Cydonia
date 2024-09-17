@@ -9,6 +9,8 @@ namespace d3d12
 {
 DeviceManager::DeviceManager( const Factory& factory ) : m_factory( factory )
 {
+   REF( m_factory );
+
    IDXGIAdapter1* adapter;
 
    for( UINT adapterIdx = 0;
@@ -24,7 +26,7 @@ DeviceManager::DeviceManager( const Factory& factory ) : m_factory( factory )
          continue;
       }
 
-     m_devices.emplace_back( std::make_unique<Device>( adapter ) );
+      m_devices.emplace_back( std::make_unique<Device>( adapter ) );
    }
 }
 

@@ -15,8 +15,21 @@ void TranslateLocal( glm::vec3& position, const glm::quat& rotation, const glm::
 glm::mat4
 GetModelMatrix( const glm::vec3& scaling, const glm::quat& rotation, const glm::vec3& position );
 
-glm::mat4 Ortho( float left, float right, float bottom, float top, float near, float far );
-glm::mat4 OrthoReverseZ( float left, float right, float bottom, float top, float near, float far );
-glm::mat4 Perspective( float fov, float width, float height, float near, float far );
-glm::mat4 PerspectiveReverseZ( float fov, float width, float height, float near, float far );
+glm::mat4 Ortho(
+    float left,
+    float right,
+    float bottom,
+    float top,
+    float near,
+    float far,
+    bool invertY  = false,
+    bool reverseZ = false );
+glm::mat4 Perspective(
+    float fov,
+    float width,
+    float height,
+    float near,
+    float far,
+    bool invertY  = false,
+    bool reverseZ = false );
 }

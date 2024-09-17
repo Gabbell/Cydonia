@@ -1,43 +1,144 @@
 #pragma once
 
 #include <Common/Include.h>
+#include <Common/ObjectPool.h>
 
+#include <Graphics/GraphicsTypes.h>
+#include <Graphics/VertexList.h>
 #include <Graphics/Handles/ResourceHandle.h>
-#include <Graphics/Scene/Mesh.h>
+#include <Graphics/Utility/MeshGeneration.h>
 
 #include <cstdint>
+#include <mutex>
 #include <string_view>
 #include <unordered_map>
 
+namespace EMP
+{
+class ThreadPool;
+}
+
 namespace CYD
 {
-class Vertex;
-
 // For read-only assets loaded from disk
 class MeshCache final
 {
   public:
-   MeshCache();
+   MeshCache( EMP::ThreadPool& threadPool );
    NON_COPIABLE( MeshCache );
-   virtual ~MeshCache() = default;
+   ~MeshCache() = default;
 
-   // TODO
-   // void cleanup();
+   enum class State
+   {
+      UNINITIALIZED,
+      LOADING_TO_RAM,
+      LOADED_TO_RAM,  // RAM Resident
+      LOADING_TO_VRAM,
+      LOADED_TO_VRAM  // VRAM Resident
+   };
 
-   const Mesh& getMesh( const std::string_view name );
+   struct DrawInfo
+   {
+      uint32_t vertexCount;
+      uint32_t indexCount;
+   };
 
-   bool loadMeshFromPath( CmdListHandle transferList, const std::string_view meshPath );
-   bool loadMesh(
-       CmdListHandle transferList,
-       const std::string_view name,
-       const std::vector<Vertex>& vertices,
-       const std::vector<uint32_t>& indices );
+   // Management
+   // ============================================================================================
+   MeshIndex findMesh( std::string_view name ) const;
+   MeshIndex addMesh( std::string_view name, const VertexLayout& layout );
+
+   template <typename MeshGenerationFunction, typename... Args>
+   MeshIndex loadMesh(
+       CmdListHandle cmdList,
+       std::string_view name,
+       const VertexLayout& layout,
+       MeshGenerationFunction genFunc,
+       Args&&... args )
+   {
+      const MeshIndex newMeshIdx = addMesh( name, layout );
+
+      Mesh& newMesh = *m_meshes[newMeshIdx];
+      newMesh.vertexList.setLayout( layout );
+      newMesh.generator = std::bind(
+          genFunc, std::ref( newMesh.vertexList ), std::ref( newMesh.indices ), args... );
+
+      newMesh.currentState = State::LOADING_TO_RAM;
+      _loadToRAM( newMesh );
+
+      newMesh.currentState = State::LOADING_TO_VRAM;
+      _loadToVRAM( cmdList, newMesh );
+
+      return newMeshIdx;
+   }
+
+   template <typename MeshGenerationFunction, typename... Args>
+   MeshIndex enqueueMesh(
+       std::string_view name,
+       const VertexLayout& layout,
+       MeshGenerationFunction genFunc,
+       Args&&... args )
+   {
+      const MeshIndex newMeshIdx = addMesh( name, layout );
+      Mesh* newMesh              = m_meshes[newMeshIdx];
+      newMesh->vertexList.setLayout( layout );
+      newMesh->generator = std::bind(
+          genFunc, std::ref( newMesh->vertexList ), std::ref( newMesh->indices ), args... );
+      return newMeshIdx;
+   }
+
+   // Loading
+   // ============================================================================================
+   State progressLoad( CmdListHandle cmdList, MeshIndex meshIdx );
+
+   // Binding
+   // ============================================================================================
+   void bind( CmdListHandle cmdList, MeshIndex index ) const;
+
+   // Drawing
+   // ============================================================================================
+   bool meshReady( MeshIndex meshIdx ) const;
+   DrawInfo getDrawInfo( MeshIndex meshIdx ) const;
 
   private:
-   void _initDefaultMeshes();
+   //  ============================================================================================
+   // Mesh Entry
+   /*
+    * This is a reference to a mesh
+    */
+
+   struct Mesh
+   {
+      Mesh() = default;
+      Mesh( std::string_view path, const VertexLayout& layout ) : path( path )
+      {
+         vertexList.setLayout( layout );
+      }
+      MOVABLE( Mesh );
+      ~Mesh();
+
+      VertexList vertexList;
+      std::vector<uint32_t> indices;  // TODO Turn into IndexList
+
+      std::string path;
+      MeshGeneration::Func generator;
+
+      VertexBufferHandle vertexBuffer;
+      IndexBufferHandle indexBuffer;
+
+      uint32_t vertexCount = 0;
+      uint32_t indexCount  = 0;
+
+      State currentState = State::UNINITIALIZED;
+   };
+
+   static void _loadToRAM( Mesh& mesh );
+   static void _loadToVRAM( CmdListHandle transferList, Mesh& mesh );
 
    static constexpr uint32_t INITIAL_AMOUNT_RESOURCES = 128;
 
-   std::unordered_map<std::string, Mesh> m_meshes;
+   EMP::ThreadPool& m_threadPool;
+   EMP::ObjectPool<Mesh> m_meshes;
+   std::unordered_map<std::string, MeshIndex> m_meshNames;
 };
 }

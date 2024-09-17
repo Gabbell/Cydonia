@@ -19,7 +19,7 @@ static void handleSDLError()
 
 bool CYD::Window::init( uint32_t width, uint32_t height, const std::string& title )
 {
-   m_extent = {width, height};
+   m_extent = { width, height };
 
    if( SDL_Init( SDL_INIT_VIDEO ) < 0 )
    {

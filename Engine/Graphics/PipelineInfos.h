@@ -12,6 +12,21 @@
 
 namespace CYD
 {
+enum class CullMode
+{
+   NONE,
+   BACK,
+   FRONT,
+   FRONT_AND_BACK
+};
+
+enum class PolygonMode
+{
+   FILL,
+   LINE,
+   POINT
+};
+
 struct PushConstantRange
 {
    bool operator==( const PushConstantRange& other ) const;
@@ -44,6 +59,13 @@ struct ShaderSetInfo
 
 struct RasterizerState
 {
+   bool operator==( const RasterizerState& other ) const;
+
+   DrawPrimitive drawPrim    = DrawPrimitive::TRIANGLES;
+   PolygonMode polyMode      = PolygonMode::FILL;
+   CullMode cullMode         = CullMode::BACK;
+   bool usePrimitiveRestart  = false;
+   bool useDepthClamp        = false;
    bool useDepthBias         = false;
    float depthBiasConstant   = 0.0f;
    float depthBiasSlopeScale = 0.0f;
@@ -51,6 +73,8 @@ struct RasterizerState
 
 struct DepthStencilState
 {
+   bool operator==( const DepthStencilState& other ) const;
+
    bool useDepthTest              = false;
    bool useStencilTest            = false;
    bool depthWrite                = false;
@@ -59,11 +83,15 @@ struct DepthStencilState
 
 struct BlendState
 {
+   bool operator==( const BlendState& other ) const;
+
    bool useBlend = false;
 };
 
 struct TessellationState
 {
+   bool operator==( const TessellationState& other ) const;
+
    bool enabled                = false;
    uint32_t patchControlPoints = 0;
 };
@@ -183,8 +211,6 @@ struct GraphicsPipelineInfo final : public PipelineInfo
    BlendState blendState;
    TessellationState tessState;
    RasterizerState rasterizer;
-   DrawPrimitive drawPrim;
-   PolygonMode polyMode;
    Extent2D extent;
 };
 
@@ -249,8 +275,12 @@ struct std::hash<CYD::GraphicsPipelineInfo>
       size_t seed = 0;
       hashCombine( seed, pipInfo.type );
       hashCombine( seed, pipInfo.pipLayout );
-      hashCombine( seed, pipInfo.drawPrim );
-      hashCombine( seed, pipInfo.polyMode );
+      hashCombine( seed, pipInfo.rasterizer.drawPrim );
+      hashCombine( seed, pipInfo.rasterizer.polyMode );
+      hashCombine( seed, pipInfo.rasterizer.cullMode );
+      hashCombine( seed, pipInfo.rasterizer.useDepthClamp );
+      hashCombine( seed, pipInfo.rasterizer.usePrimitiveRestart );
+      hashCombine( seed, pipInfo.rasterizer.useDepthBias );
       hashCombine( seed, pipInfo.extent );
       for( const auto& shader : pipInfo.shaders )
       {

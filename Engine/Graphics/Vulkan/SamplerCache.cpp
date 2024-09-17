@@ -18,22 +18,27 @@ const VkSampler SamplerCache::findOrCreate( const CYD::SamplerInfo& info )
       return it->second;
    }
 
-   VkSamplerCreateInfo samplerInfo = {};
-   samplerInfo.sType               = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-   samplerInfo.magFilter           = TypeConversions::cydToVkFilter( info.magFilter );
-   samplerInfo.minFilter           = TypeConversions::cydToVkFilter( info.minFilter );
+   const VkSamplerAddressMode addressMode = TypeConversions::cydToVkAddressMode( info.addressMode );
 
-   VkSamplerAddressMode addressMode    = TypeConversions::cydToVkAddressMode( info.addressMode );
+   VkSamplerCreateInfo samplerInfo;
+   samplerInfo.sType                   = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+   samplerInfo.pNext                   = nullptr;
+   samplerInfo.flags                   = 0;
+   samplerInfo.magFilter               = TypeConversions::cydToVkFilter( info.magFilter );
+   samplerInfo.minFilter               = TypeConversions::cydToVkFilter( info.minFilter );
    samplerInfo.addressModeU            = addressMode;
    samplerInfo.addressModeV            = addressMode;
    samplerInfo.addressModeW            = addressMode;
-   samplerInfo.anisotropyEnable        = info.useAnisotropy;
+   samplerInfo.anisotropyEnable        = info.maxAnisotropy > 0.999f;
    samplerInfo.maxAnisotropy           = info.maxAnisotropy;
    samplerInfo.borderColor             = TypeConversions::cydToVkBorderColor( info.borderColor );
    samplerInfo.unnormalizedCoordinates = VK_FALSE;
    samplerInfo.compareEnable           = info.useCompare;
    samplerInfo.compareOp               = TypeConversions::cydToVkCompareOp( info.compare );
    samplerInfo.mipmapMode              = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+   samplerInfo.minLod                  = info.minLod;
+   samplerInfo.maxLod                  = info.maxLod;
+   samplerInfo.mipLodBias              = 0.0f;
 
    VkSampler vkSampler;
    VkResult result = vkCreateSampler( m_device.getVKDevice(), &samplerInfo, nullptr, &vkSampler );

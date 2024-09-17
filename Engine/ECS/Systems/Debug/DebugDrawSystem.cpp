@@ -7,90 +7,91 @@
 #include <Graphics/Utility/Transforms.h>
 
 #include <ECS/EntityManager.h>
+#include <ECS/Entity.h>
+#include <ECS/Components/Scene/ViewComponent.h>
 #include <ECS/SharedComponents/SceneComponent.h>
 
 #include <Profiling.h>
 
 namespace CYD
 {
-void DebugDrawSystem::tick( double /*deltaS*/ )
-{
 #if CYD_DEBUG
-   CYD_TRACE( "DebugDrawSystem" );
+static bool s_initialized = false;
 
-   const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
+static void Initialize() { s_initialized = true; }
 
-   const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "MAIN" );
-   if( it == scene.viewNames.end() )
+static void DrawDebugSphere(
+    CmdListHandle cmdList,
+    const MeshCache& meshes,
+    const TransformComponent& transform,
+    const DebugDrawComponent::SphereParams& sphereParams )
+{
+   const PipelineIndex pipIdx = StaticPipelines::FindByName( "DEBUG" );
+   const MeshIndex sphereMesh = meshes.findMesh( "DEBUG_SPHERE" );
+   if( sphereMesh == INVALID_MESH_IDX || pipIdx == INVALID_PIPELINE_IDX )
    {
-      // TODO WARNING
-      CYD_ASSERT( !"Could not find main view, skipping render tick" );
       return;
    }
-   const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
-
-   // Start command list recording
-   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::DEBUG_DRAW );
-   CYD_SCOPED_GPUTRACE( cmdList, "DebugDrawSystem" );
-
-   // Dynamic state
-   GRIS::SetViewport( cmdList, scene.viewport );
-   GRIS::SetScissor( cmdList, scene.scissor );
-
-   GRIS::BeginRendering( cmdList, scene.mainFramebuffer );
-
-   PipelineIndex pipIdx = StaticPipelines::FindByName( "DEBUG" );
 
    GRIS::BindPipeline( cmdList, pipIdx );
 
-   GRIS::BindUniformBuffer(
-       cmdList,
-       scene.viewsBuffer,
-       0,
-       0,
-       viewIdx * sizeof( SceneComponent::ViewShaderParams ),
-       sizeof( SceneComponent::ViewShaderParams ) );
+   const glm::mat4 modelMatrix = Transform::GetModelMatrix(
+       glm::vec3( sphereParams.radius ), glm::quat(), transform.position );
+
+   GRIS::UpdateConstantBuffer(
+       cmdList, PipelineStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
+
+   meshes.bind( cmdList, sphereMesh );
+
+   const MeshCache::DrawInfo drawInfo = meshes.getDrawInfo( sphereMesh );
+   GRIS::DrawIndexed( cmdList, drawInfo.indexCount );
+}
+#endif
+
+void DebugDrawSystem::tick( double /*deltaS*/ )
+{
+   CYD_TRACE();
+
+#if CYD_DEBUG
+
+   if( !s_initialized )
+   {
+      Initialize();
+   }
+
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::DEBUG_DRAW );
+   CYD_SCOPED_GPUTRACE( cmdList, "DebugDrawSystem" );
+
+   SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
+
+   GRIS::BeginRendering( cmdList, scene.mainFramebuffer );
+
+   GRIS::SetViewport( cmdList, {} );
+   GRIS::SetScissor( cmdList, {} );
+
+   GRIS::BindUniformBuffer( cmdList, scene.viewsBuffer, 0 );
 
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const DebugDrawComponent& debug     = *std::get<DebugDrawComponent*>( entityEntry.arch );
+      const TransformComponent& transform = GetComponent<TransformComponent>( entityEntry );
+      const DebugDrawComponent& debug     = GetComponent<DebugDrawComponent>( entityEntry );
 
-      glm::mat4 modelMatrix( 1.0f );
-
-      const UploadToBufferInfo info = { 0, sizeof(debug.shaderParams) };
+      const UploadToBufferInfo info = { 0, sizeof( debug.shaderParams ) };
       GRIS::UploadToBuffer( scene.debugParamsBuffer, &debug.shaderParams, info );
+
+      GRIS::BindUniformBuffer( cmdList, scene.debugParamsBuffer, 1 );
 
       switch( debug.type )
       {
          case DebugDrawComponent::Type::SPHERE:
+            DrawDebugSphere( cmdList, m_meshes, transform, debug.params.sphere );
+            break;
+         case DebugDrawComponent::Type::FRUSTUM:
          {
-            const DebugDrawComponent::SphereParams& sphere = debug.params.sphere;
-
-            modelMatrix =
-                Transform::GetModelMatrix( transform.scaling, glm::quat(), transform.position );
-
-            // Update model transform push constant
-            GRIS::UpdateConstantBuffer(
-                cmdList, PipelineStage::VERTEX_STAGE, 0, sizeof( modelMatrix ), &modelMatrix );
-
-            GRIS::BindUniformBuffer( cmdList, scene.debugParamsBuffer, 1, 0 );
-
-            const Mesh& sphereMesh = m_meshes.getMesh( "DEBUG_SPHERE" );
-            GRIS::BindVertexBuffer<Vertex>( cmdList, sphereMesh.vertexBuffer );
-            GRIS::BindIndexBuffer<uint32_t>( cmdList, sphereMesh.indexBuffer );
-            GRIS::DrawIndexed( cmdList, sphereMesh.indexCount );
+            CYD_ASSERT( !"Unimplemented" );
+            break;
          }
-         break;
-         case DebugDrawComponent::Type::NORMALS:
-         {
-         }
-         break;
-         case DebugDrawComponent::Type::TEXTURE:
-         {
-         }
-         break;
       }
    }
 

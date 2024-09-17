@@ -16,7 +16,7 @@ DeviceManager::DeviceManager(
     const CYD::Window& window,
     const Instance& instance,
     const Surface& surface )
-    : m_instance( instance ), m_window( window ), m_surface( surface )
+    : m_window( window ), m_instance( instance ), m_surface( surface )
 {
    // Desired extensions to be used when creating logical devices
    m_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
@@ -32,6 +32,7 @@ DeviceManager::DeviceManager(
 
    CYD_ASSERT( !physicalDevices.empty() && "DeviceManager: No devices supporting Vulkan" );
 
+   bool deviceFound = false;
    // TODO Add support for multiple devices
    for( const auto& physDevice : physicalDevices )
    {
@@ -40,9 +41,12 @@ DeviceManager::DeviceManager(
          // Found suitable device, add it to the currently managed devices
          m_devices.emplace_back( std::make_unique<Device>(
              m_window, m_instance, m_surface, physDevice, m_extensions ) );
+         deviceFound = true;
          break;
       }
    }
+
+   CYD_ASSERT( deviceFound && "DeviceManager: No compatible device found" );
 }
 
 bool DeviceManager::_checkDevice( const Surface& surface, const VkPhysicalDevice& physDevice )

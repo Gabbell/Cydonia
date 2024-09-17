@@ -1,6 +1,8 @@
 #pragma once
 
-#include <glm/glm.hpp>
+#include <Graphics/Scene/BoudingBox.h>
+
+#include <Graphics/Handles/ResourceHandle.h>
 
 // ================================================================================================
 // Definition
@@ -10,7 +12,8 @@ namespace CYD
 class Frustum
 {
   public:
-   Frustum()  = default;
+   Frustum() = default;
+   Frustum( const glm::mat4& projMat, const glm::mat4& viewMat ) { update( projMat, viewMat ); }
    ~Frustum() = default;
 
    enum Plane
@@ -21,63 +24,34 @@ class Frustum
       TOP,
       NEAR,
       FAR,
-      COUNT
+      PLANE_COUNT
    };
 
-   void getPlanes( glm::vec4* destination ) const
+   enum Corner
    {
-      memcpy( destination, &m_planes, sizeof( m_planes ) );
-   }
+      NEAR_BOTTOM_LEFT,
+      NEAR_TOP_LEFT,
+      NEAR_TOP_RIGHT,
+      NEAR_BOTTOM_RIGHT,
+      FAR_BOTTOM_LEFT,
+      FAR_TOP_LEFT,
+      FAR_TOP_RIGHT,
+      FAR_BOTTOM_RIGHT,
+      CORNER_COUNT
+   };
 
-   void update( const glm::mat4& projMat, const glm::mat4& viewMat )
-   {
-      const glm::mat4 mvp = projMat * viewMat;
-      m_planes[LEFT].x    = mvp[0].w + mvp[0].x;
-      m_planes[LEFT].y    = mvp[1].w + mvp[1].x;
-      m_planes[LEFT].z    = mvp[2].w + mvp[2].x;
-      m_planes[LEFT].w    = mvp[3].w + mvp[3].x;
+   const glm::vec4& getPlane( Plane planeIndex ) const { return m_planes[planeIndex]; }
 
-      m_planes[RIGHT].x = mvp[0].w - mvp[0].x;
-      m_planes[RIGHT].y = mvp[1].w - mvp[1].x;
-      m_planes[RIGHT].z = mvp[2].w - mvp[2].x;
-      m_planes[RIGHT].w = mvp[3].w - mvp[3].x;
+   // In world space
+   const glm::vec3& getCorner( Corner cornerIndex ) const { return m_corners[cornerIndex]; }
 
-      m_planes[TOP].x = mvp[0].w - mvp[0].y;
-      m_planes[TOP].y = mvp[1].w - mvp[1].y;
-      m_planes[TOP].z = mvp[2].w - mvp[2].y;
-      m_planes[TOP].w = mvp[3].w - mvp[3].y;
+   BoundingBox getWorldAABB() const;
 
-      m_planes[BOTTOM].x = mvp[0].w + mvp[0].y;
-      m_planes[BOTTOM].y = mvp[1].w + mvp[1].y;
-      m_planes[BOTTOM].z = mvp[2].w + mvp[2].y;
-      m_planes[BOTTOM].w = mvp[3].w + mvp[3].y;
-
-      m_planes[NEAR].x = mvp[0].w + mvp[0].z;
-      m_planes[NEAR].y = mvp[1].w + mvp[1].z;
-      m_planes[NEAR].z = mvp[2].w + mvp[2].z;
-      m_planes[NEAR].w = mvp[3].w + mvp[3].z;
-
-      m_planes[FAR].x = mvp[0].w - mvp[0].z;
-      m_planes[FAR].y = mvp[1].w - mvp[1].z;
-      m_planes[FAR].z = mvp[2].w - mvp[2].z;
-      m_planes[FAR].w = mvp[3].w - mvp[3].z;
-
-      for( auto i = 0; i < Plane::COUNT; i++ )
-      {
-         float length = sqrtf(
-             m_planes[i].x * m_planes[i].x + m_planes[i].y * m_planes[i].y +
-             m_planes[i].z * m_planes[i].z );
-         m_planes[i] /= length;
-      }
-   }
+   void update( const glm::mat4& projMat, const glm::mat4& viewMat );
+   void draw( CmdListHandle cmdList ) const;
 
   private:
-   // 0: top plane
-   // 1: bottom plane
-   // 2: left plane
-   // 3: right plane
-   // 4: near plane
-   // 5: far plane
-   glm::vec4 m_planes[Plane::COUNT];
+   glm::vec4 m_planes[PLANE_COUNT];
+   glm::vec3 m_corners[CORNER_COUNT];
 };
 }

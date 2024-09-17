@@ -72,7 +72,7 @@ class ComponentPool final : public BaseComponentPool
       CYD_ASSERT( poolIdx >= 0 && "ComponentPool: Trying to release an invalid component" );
 
       m_components[poolIdx] = {};
-      m_slots[poolIdx] = false;  // Freeing slot
+      m_slots[poolIdx]      = false;  // Freeing slot
    }
 
   private:

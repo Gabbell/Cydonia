@@ -25,7 +25,7 @@ static void Initialize()
 // ================================================================================================
 void FogSystem::tick( double deltaS )
 {
-   CYD_TRACE( "FogSystem" );
+   CYD_TRACE();
 
    if( !s_initialized )
    {
@@ -37,45 +37,24 @@ void FogSystem::tick( double deltaS )
 
    const SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
 
-   const auto& it = std::find( scene.viewNames.begin(), scene.viewNames.end(), "MAIN" );
-   if( it == scene.viewNames.end() )
-   {
-      // TODO WARNING
-      CYD_ASSERT( !"Could not find main view, skipping render tick" );
-      return;
-   }
-   const uint32_t viewIdx = static_cast<uint32_t>( std::distance( scene.viewNames.begin(), it ) );
-   const SceneComponent::ViewShaderParams& view   = scene.views[viewIdx];
-   const SceneComponent::LightShaderParams& light = scene.lights[0];
-
    // Iterate through entities
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      if( !renderable.isVisible ) continue;
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      FogComponent& fog                     = GetComponent<FogComponent>( entityEntry );
 
-      FogComponent& fog = *std::get<FogComponent*>( entityEntry.arch );
-
-      if( !fog.viewInfoBuffer )
+      if( !renderable.desc.isVisible )
       {
-         fog.viewInfoBuffer =
-             GRIS::CreateUniformBuffer( sizeof( FogComponent::ViewInfo ), "Fog View Info" );
+         continue;
       }
-
-      fog.viewInfo.invProj  = glm::inverse( view.projMat );  // Maybe we can avoid this?
-      fog.viewInfo.invView  = glm::inverse( view.viewMat );
-      fog.viewInfo.viewPos  = view.position;
-      fog.viewInfo.lightDir = light.direction;
 
       fog.params.time += static_cast<float>( deltaS );
 
       GRIS::BindPipeline( cmdList, s_fogPipeline );
 
-      const UploadToBufferInfo info = { 0, sizeof( FogComponent::ViewInfo ) };
-      GRIS::UploadToBuffer( fog.viewInfoBuffer, &fog.viewInfo, info );
-
-      GRIS::BindUniformBuffer( cmdList, fog.viewInfoBuffer, 0 );
+      GRIS::BindUniformBuffer( cmdList, scene.inverseViewsBuffer, 0 );
+      GRIS::BindUniformBuffer( cmdList, scene.lightsBuffer, 1 );
       GRIS::BindImage( cmdList, scene.mainColor, 1 );
       GRIS::BindTexture( cmdList, scene.mainDepth, 2 );
 

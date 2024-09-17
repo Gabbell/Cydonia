@@ -2,11 +2,15 @@
 
 #include <Graphics/PipelineInfos.h>
 #include <Graphics/StaticPipelines.h>
-#include <Graphics/Scene/MaterialCache.h>
 #include <Graphics/GRIS/RenderInterface.h>
 #include <Graphics/GRIS/RenderGraph.h>
+#include <Graphics/GRIS/TextureCache.h>
 #include <Graphics/GRIS/RenderHelpers.h>
 #include <Graphics/Utility/Transforms.h>
+#include <Graphics/Utility/ShadowMapping.h>
+
+#include <Graphics/Scene/MeshCache.h>
+#include <Graphics/Scene/MaterialCache.h>
 
 #include <ECS/EntityManager.h>
 #include <ECS/Components/Scene/ViewComponent.h>
@@ -23,11 +27,14 @@ void GBufferSystem::sort()
 {
    auto deferredRenderSort = []( const EntityEntry& first, const EntityEntry& second )
    {
-      const RenderableComponent& firstRenderable  = *std::get<RenderableComponent*>( first.arch );
-      const RenderableComponent& secondRenderable = *std::get<RenderableComponent*>( second.arch );
+      const RenderableComponent& firstRenderable  = GetComponent<RenderableComponent>( first );
+      const RenderableComponent& secondRenderable = GetComponent<RenderableComponent>( second );
 
-      return firstRenderable.type == RenderableComponent::Type::DEFERRED ||
-             secondRenderable.type != RenderableComponent::Type::DEFERRED;
+      const bool firstIsDeferred = firstRenderable.desc.type == RenderableComponent::Type::DEFERRED;
+      const bool secondIsDeferred =
+          secondRenderable.desc.type == RenderableComponent::Type::DEFERRED;
+
+      return firstIsDeferred && !secondIsDeferred;
    };
 
    std::sort( m_entities.begin(), m_entities.end(), deferredRenderSort );
@@ -36,10 +43,10 @@ void GBufferSystem::sort()
 // ================================================================================================
 void GBufferSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "GBufferSystem" );
+   CYD_TRACE();
 
    // Start command list recording
-   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER );
+   const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::PRE_RENDER_P2 );
    CYD_SCOPED_GPUTRACE( cmdList, "GBufferSystem" );
 
    SceneComponent& scene = m_ecs->getSharedComponent<SceneComponent>();
@@ -47,18 +54,18 @@ void GBufferSystem::tick( double /*deltaS*/ )
    // Initialize/reset GBuffer
    if( scene.resolutionChanged )
    {
-      scene.gbuffer.setToClearAll( true );
+      ClearValue clearVal;
+      clearVal.depthStencil.depth   = 1.0f;
+      clearVal.depthStencil.stencil = 0;
+
       scene.gbuffer.resize( scene.extent.width, scene.extent.height );
       scene.gbuffer.replace(
-          GBuffer::DEPTH, scene.mainDepth, Access::DEPTH_STENCIL_ATTACHMENT_READ );
+          GBuffer::DEPTH, scene.mainDepth, Access::DEPTH_STENCIL_ATTACHMENT_READ, clearVal );
+      scene.gbuffer.setClearAll( true );
    }
 
-   // Finding main view
-   const uint32_t mainViewIdx = getViewIndex( scene, "MAIN" );
-   const uint32_t sunViewIdx  = getViewIndex( scene, "SUN" );
-
    // Tracking
-   std::string_view prevMesh;
+   MeshIndex prevMesh         = INVALID_MESH_IDX;
    PipelineIndex prevPipeline = INVALID_PIPELINE_IDX;
    MaterialIndex prevMaterial = INVALID_MATERIAL_IDX;
 
@@ -73,25 +80,31 @@ void GBufferSystem::tick( double /*deltaS*/ )
    for( const auto& entityEntry : m_entities )
    {
       // Read-only components
-      const RenderableComponent& renderable = *std::get<RenderableComponent*>( entityEntry.arch );
-      if( renderable.type != RenderableComponent::Type::DEFERRED )
+      const RenderableComponent& renderable = GetComponent<RenderableComponent>( entityEntry );
+      const TransformComponent& transform   = GetComponent<TransformComponent>( entityEntry );
+      const MaterialComponent& material     = GetComponent<MaterialComponent>( entityEntry );
+      const MeshComponent& mesh             = GetComponent<MeshComponent>( entityEntry );
+
+      if( renderable.desc.type != RenderableComponent::Type::DEFERRED )
       {
          // Deferred renderables only
          break;
       }
 
-      if( !renderable.isVisible ) continue;
+      if( !renderable.desc.isVisible || renderable.pipelineIdx == INVALID_PIPELINE_IDX ||
+          mesh.meshIdx == INVALID_MESH_IDX )
+      {
+         continue;
+      }
 
-      const TransformComponent& transform = *std::get<TransformComponent*>( entityEntry.arch );
-      const MaterialComponent& material   = *std::get<MaterialComponent*>( entityEntry.arch );
-      const MeshComponent& mesh           = *std::get<MeshComponent*>( entityEntry.arch );
+      CYD_SCOPED_GPUTRACE( cmdList, m_ecs->getEntity( entityEntry.handle )->getName().c_str() );
 
       // Pipeline
       // ==========================================================================================
       const PipelineInfo* curPipInfo = nullptr;
-      if( prevPipeline != material.pipelineIdx )
+      if( prevPipeline != renderable.pipelineIdx )
       {
-         curPipInfo = StaticPipelines::Get( material.pipelineIdx );
+         curPipInfo = StaticPipelines::Get( renderable.pipelineIdx );
          if( curPipInfo == nullptr )
          {
             // TODO WARNINGS
@@ -101,68 +114,71 @@ void GBufferSystem::tick( double /*deltaS*/ )
 
          GRIS::BindPipeline( cmdList, curPipInfo );
 
-         prevPipeline = material.pipelineIdx;
+         prevPipeline = renderable.pipelineIdx;
+      }
+
+      // Vertex and index buffers
+      // ==========================================================================================
+      if( prevMesh != mesh.meshIdx )
+      {
+         m_meshes.bind( cmdList, mesh.meshIdx );
+
+         prevMesh = mesh.meshIdx;
+      }
+
+      // Material
+      // ==========================================================================================
+      if( prevMaterial != material.materialIdx )
+      {
+         m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
+
+         prevMaterial = material.materialIdx;
       }
 
       // Optional Buffers
       // ==========================================================================================
-      GRIS::NamedBufferBinding(
-          cmdList, scene.viewsBuffer, "Views", *curPipInfo, 0, sizeof( scene.views ) );
+      const glm::mat4 modelMatrix =
+          Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
 
-      if( renderable.isShadowReceiving && scene.shadowMap )
+      GRIS::NamedUpdateConstantBuffer( cmdList, "MODEL", &modelMatrix, *curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.viewsBuffer, "VIEWS", *curPipInfo );
+      // GRIS::NamedBufferBinding( cmdList, scene.frustumsBuffer, "FRUSTUMS", *curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.lightsBuffer, "LIGHTS", *curPipInfo );
+      GRIS::NamedBufferBinding( cmdList, scene.shadowMapsBuffer, "SHADOWS", *curPipInfo );
+
+     if( renderable.desc.isShadowReceiving )
       {
-         SamplerInfo sampler;
-         sampler.useCompare  = true;  // For PCF
-         sampler.compare     = CompareOperator::GREATER_EQUAL;
-         sampler.addressMode = AddressMode::CLAMP_TO_BORDER;
-         sampler.borderColor = BorderColor::OPAQUE_BLACK;
-         GRIS::BindTexture( cmdList, scene.shadowMap, sampler, 1, 1 );
+         if( scene.shadowMapTextures[0] )
+         {
+            GRIS::NamedTextureBinding(
+                cmdList,
+                scene.shadowMapTextures[0],
+                ShadowMapping::GetSampler(),
+                "SHADOWMAP",
+                *curPipInfo );
+         }
+         else
+         {
+            GRIS::NamedTextureBinding(
+                cmdList,
+                GRIS::TextureCache::GetDepthTextureArray(),
+                ShadowMapping::GetSampler(),
+                "SHADOWMAP",
+                *curPipInfo );
+         }
       }
 
       if( renderable.isInstanced )
       {
          CYD_ASSERT( renderable.instancesBuffer && "Invalid instance buffer" );
-         GRIS::NamedBufferBinding(
-             cmdList, renderable.instancesBuffer, "InstancesData", *curPipInfo );
+         GRIS::NamedBufferBinding( cmdList, renderable.instancesBuffer, "INSTANCES", *curPipInfo );
       }
 
       if( renderable.isTessellated )
       {
-         CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation params buffer" );
+         CYD_ASSERT( renderable.tessellationBuffer && "Invalid tessellation buffer" );
          GRIS::NamedBufferBinding(
-             cmdList, renderable.tessellationBuffer, "TessellationParams", *curPipInfo );
-      }
-
-      // Push Constants
-      // ==========================================================================================
-      const glm::mat4 modelMatrix =
-          Transform::GetModelMatrix( transform.scaling, transform.rotation, transform.position );
-
-      GRIS::NamedUpdateConstantBuffer( cmdList, "Model", &modelMatrix, *curPipInfo );
-
-      // Material
-      // ==========================================================================================
-      if( material.materialIdx != INVALID_MATERIAL_IDX )
-      {
-         m_materials.bind( cmdList, material.materialIdx, 1 /*set*/ );
-         prevMaterial = material.materialIdx;
-      }
-
-      // Vertex and index buffers
-      // ==========================================================================================
-      if( prevMesh != mesh.asset )
-      {
-         if( mesh.vertexBuffer )
-         {
-            GRIS::BindVertexBuffer<Vertex>( cmdList, mesh.vertexBuffer );
-            if( mesh.indexBuffer )
-            {
-               // This renderable has an index buffer, use it to draw
-               GRIS::BindIndexBuffer<uint32_t>( cmdList, mesh.indexBuffer );
-            }
-         }
-
-         prevMesh = mesh.asset;
+             cmdList, renderable.tessellationBuffer, "TESSELLATION", *curPipInfo );
       }
 
       // Draw

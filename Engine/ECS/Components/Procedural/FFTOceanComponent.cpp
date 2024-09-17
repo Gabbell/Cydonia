@@ -31,5 +31,6 @@ FFTOceanComponent::~FFTOceanComponent()
    GRIS::DestroyTexture( pingpongTex );
 
    GRIS::DestroyTexture( displacementMap );
+   GRIS::DestroyTexture( normalMap );
 }
 }

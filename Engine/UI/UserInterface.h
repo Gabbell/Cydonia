@@ -12,8 +12,10 @@ class BaseComponent;
 class BaseSharedComponent;
 class TransformComponent;
 class RenderableComponent;
+class LightComponent;
+class ShadowMapComponent;
 class TessellatedComponent;
-class ProceduralDisplacementComponent;
+class DisplacementComponent;
 class AtmosphereComponent;
 class FFTOceanComponent;
 class FogComponent;
@@ -23,6 +25,8 @@ namespace UI
 {
 void Initialize();
 void Uninitialize();
+
+void Cleanup();
 
 // Main Menus
 void DrawMainMenuBar(
@@ -49,10 +53,12 @@ void DrawSharedComponentsMenu(
     const BaseSharedComponent* component );
 void DrawTransformComponentMenu( CmdListHandle cmdList, const TransformComponent& transform );
 void DrawRenderableComponentMenu( CmdListHandle cmdList, const RenderableComponent& renderable );
+void DrawLightComponentMenu( CmdListHandle cmdList, const LightComponent& light );
+void DrawShadowMapComponentMenu( CmdListHandle cmdList, const ShadowMapComponent& shadowMap );
 void DrawTessellatedComponentMenu( CmdListHandle cmdList, const TessellatedComponent& tessellated );
-void DrawProceduralDisplacementComponentMenu(
+void DrawDisplacementComponentMenu(
     CmdListHandle cmdList,
-    const ProceduralDisplacementComponent& displacement );
+    const DisplacementComponent& displacement );
 void DrawAtmosphereComponentMenu( CmdListHandle cmdList, const AtmosphereComponent& atmosphere );
 void DrawFFTOceanComponentMenu( CmdListHandle cmdList, const FFTOceanComponent& ocean );
 void DrawFogComponentMenu( CmdListHandle cmdList, const FogComponent& fog );

@@ -25,7 +25,8 @@ static bool s_drawStatsOverlay    = false;
 ImGuiSystem::ImGuiSystem( const EntityManager& entityManager ) : m_entityManager( entityManager )
 {
    // We initialize the UI here
-   // It needs to be after the WindowSystem is initialized because if we initialize it before, we override ImGui's GLFW callbacks
+   // It needs to be after the WindowSystem is initialized because if we initialize it before, we
+   // override ImGui's GLFW callbacks
    UI::Initialize();
 }
 
@@ -33,7 +34,7 @@ ImGuiSystem::~ImGuiSystem() { UI::Uninitialize(); }
 
 void ImGuiSystem::tick( double /*deltaS*/ )
 {
-   CYD_TRACE( "ImGuiSystem" );
+   CYD_TRACE();
 
    const CmdListHandle cmdList = RenderGraph::GetCommandList( RenderGraph::Pass::UI );
    CYD_SCOPED_GPUTRACE( cmdList, "ImGuiSystem" );

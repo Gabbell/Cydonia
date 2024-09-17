@@ -1,23 +1,8 @@
 #pragma once
 
 #include <Graphics/GraphicsTypes.h>
-
-// ================================================================================================
-// Forwards
-// ================================================================================================
-enum VkIndexType : int;
-enum VkFormat : int;
-enum VkColorSpaceKHR : int;
-enum VkCompareOp : int;
-enum VkAttachmentLoadOp : int;
-enum VkAttachmentStoreOp : int;
-enum VkPrimitiveTopology : int;
-enum VkPolygonMode : int;
-enum VkImageLayout : int;
-enum VkDescriptorType : int;
-enum VkFilter : int;
-enum VkBorderColor : int;
-enum VkSamplerAddressMode : int;
+#include <Graphics/PipelineInfos.h>
+#include <Graphics/Vulkan.h>
 
 // ================================================================================================
 // Definition
@@ -32,6 +17,7 @@ VkAttachmentLoadOp cydToVkOp( CYD::LoadOp op );
 VkAttachmentStoreOp cydToVkOp( CYD::StoreOp op );
 VkPrimitiveTopology cydToVkDrawPrim( CYD::DrawPrimitive prim );
 VkPolygonMode cydToVkPolyMode( CYD::PolygonMode polyMode );
+VkCullModeFlagBits cydToVkCullMode( CYD::CullMode cullMode );
 uint32_t cydToVkPipelineStages( CYD::PipelineStageFlag stages );
 uint32_t cydToVkShaderStages( CYD::PipelineStageFlag stages );
 VkDescriptorType cydToVkDescriptorType( CYD::ShaderResourceType type );

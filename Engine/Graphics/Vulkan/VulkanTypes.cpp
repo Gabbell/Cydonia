@@ -1,5 +1,3 @@
-#pragma once
-
 #include <Graphics/Vulkan/VulkanTypes.h>
 
 namespace vk

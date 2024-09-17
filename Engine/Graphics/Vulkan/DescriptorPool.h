@@ -38,8 +38,6 @@ class DescriptorPool final
   private:
    const Device& m_device;
 
-
-
    VkDescriptorPool m_vkDescPool = nullptr;
 };
 }

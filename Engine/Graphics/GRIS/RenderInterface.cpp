@@ -3,10 +3,14 @@
 #include <Common/Assert.h>
 
 #include <Graphics/PipelineInfos.h>
+#include <Graphics/Framebuffer.h>
 #include <Graphics/StaticPipelines.h>
 #include <Graphics/Utility/GraphicsIO.h>
 #include <Graphics/GRIS/Backends/VKRenderBackend.h>
 #include <Graphics/GRIS/Backends/D3D12RenderBackend.h>
+#include <Graphics/GRIS/TextureCache.h>
+
+#include <UI/UserInterface.h>
 
 #include <Profiling.h>
 
@@ -25,27 +29,37 @@ bool InitRenderBackend( API api, const Window& window )
 {
    delete b;
 
+   bool validAPI = false;
    switch( api )
    {
       case API::VK:
-         b = new VKRenderBackend( window );
-         return true;
+         b        = new VKRenderBackend( window );
+         validAPI = true;
       case API::D3D12:
          // b = new D3D12RenderBackend( window );
-         return true;
+         validAPI = true;
       case API::D3D11:
-         return false;
+         validAPI = false;
       case API::GL:
          // b = new GLRenderBackend( window );
-         return false;
+         validAPI = false;
       case API::MTL:
-         return false;
+         validAPI = false;
+      default:
+         validAPI = false;
    }
 
-   return false;
+   GRIS::TextureCache::Initialize();
+
+   return validAPI;
 }
 
-void UninitRenderBackend() { delete b; }
+void UninitRenderBackend()
+{
+   GRIS::TextureCache::Uninitialize();
+
+   delete b;
+}
 
 bool InitializeUIBackend()
 {
@@ -65,31 +79,37 @@ void UninitializeUIBackend()
 
 void DrawUI( CmdListHandle cmdList )
 {
-   CYD_TRACE( "Draw UI" );
+   CYD_TRACE();
    b->drawUI( cmdList );
 }
 
 void RenderBackendCleanup()
 {
-   CYD_TRACE( "Render Backend Cleanup" );
+   CYD_TRACE();
+   UI::Cleanup();
    b->cleanup();
 }
 
 void ReloadShaders()
 {
-   CYD_TRACE( "Reloading Shaders" );
+   CYD_TRACE();
+   printf( "Reloading Shaders\n" );
    b->reloadShaders();
 }
 
-void WaitUntilIdle() { b->waitUntilIdle(); }
+void WaitUntilIdle()
+{
+   CYD_TRACE();
+   b->waitUntilIdle();
+}
 
 // =================================================================================================
 // Command Buffers/Lists
 //
 CmdListHandle
-CreateCommandList( QueueUsageFlag usage, const std::string_view name, bool presentable )
+CreateCommandList( QueueUsageFlag usage, const std::string_view name, bool async, bool presentable )
 {
-   return b->createCommandList( usage, name, presentable );
+   return b->createCommandList( usage, name, async, presentable );
 }
 
 void SubmitCommandList( CmdListHandle cmdList ) { b->submitCommandList( cmdList ); }
@@ -107,26 +127,31 @@ void SyncToSwapchain( CmdListHandle cmdList ) { b->syncToSwapchain( cmdList ); }
 //
 void SetViewport( CmdListHandle cmdList, const Viewport& viewport )
 {
+   CYD_TRACE();
    b->setViewport( cmdList, viewport );
 }
 
 void SetScissor( CmdListHandle cmdList, const Rectangle& scissor )
 {
+   CYD_TRACE();
    b->setScissor( cmdList, scissor );
 }
 
 void BindPipeline( CmdListHandle cmdList, const GraphicsPipelineInfo& pipInfo )
 {
+   CYD_TRACE();
    b->bindPipeline( cmdList, pipInfo );
 }
 
 void BindPipeline( CmdListHandle cmdList, const ComputePipelineInfo& pipInfo )
 {
+   CYD_TRACE();
    b->bindPipeline( cmdList, pipInfo );
 }
 
 void BindPipeline( CmdListHandle cmdList, const PipelineInfo* pPipInfo )
 {
+   CYD_TRACE();
    if( pPipInfo )
    {
       switch( pPipInfo->type )
@@ -147,9 +172,9 @@ void BindPipeline( CmdListHandle cmdList, PipelineIndex index )
    BindPipeline( cmdList, pPipInfo );
 }
 
-template <>
-void BindVertexBuffer<Vertex>( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
+void BindVertexBuffer( CmdListHandle cmdList, VertexBufferHandle bufferHandle )
 {
+   CYD_TRACE();
    b->bindVertexBuffer( cmdList, bufferHandle );
 }
 
@@ -159,6 +184,7 @@ void BindIndexBuffer<uint16_t>(
     IndexBufferHandle bufferHandle,
     uint32_t offset )
 {
+   CYD_TRACE();
    b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT16, offset );
 }
 
@@ -168,11 +194,13 @@ void BindIndexBuffer<uint32_t>(
     IndexBufferHandle bufferHandle,
     uint32_t offset )
 {
+   CYD_TRACE();
    b->bindIndexBuffer( cmdList, bufferHandle, IndexType::UNSIGNED_INT32, offset );
 }
 
 void BindTexture( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
+   CYD_TRACE();
    b->bindTexture( cmdList, texHandle, binding, set );
 }
 
@@ -183,11 +211,13 @@ void BindTexture(
     uint32_t binding,
     uint32_t set )
 {
+   CYD_TRACE();
    b->bindTexture( cmdList, texHandle, sampler, binding, set );
 }
 
 void BindImage( CmdListHandle cmdList, TextureHandle texHandle, uint32_t binding, uint32_t set )
 {
+   CYD_TRACE();
    b->bindImage( cmdList, texHandle, binding, set );
 }
 
@@ -199,6 +229,7 @@ void BindBuffer(
     uint32_t offset,
     uint32_t range )
 {
+   CYD_TRACE();
    b->bindBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
@@ -210,6 +241,7 @@ void BindUniformBuffer(
     uint32_t offset,
     uint32_t range )
 {
+   CYD_TRACE();
    b->bindUniformBuffer( cmdList, bufferHandle, binding, set, offset, range );
 }
 
@@ -220,126 +252,49 @@ void UpdateConstantBuffer(
     size_t size,
     const void* pData )
 {
+   CYD_TRACE();
    b->updateConstantBuffer( cmdList, stages, offset, size, pData );
 }
 
 // =================================================================================================
 // Resources
 //
-TextureHandle CreateTexture( const TextureDescription& desc ) { return b->createTexture( desc ); }
-
-static TextureHandle LoadImageFromStorage(
-    CmdListHandle transferList,
-    const TextureDescription& inputDesc,
-    uint32_t layerCount,
-    const std::string* paths )
+TextureHandle CreateTexture( const TextureDescription& desc )
 {
-   CYD_ASSERT(
-       layerCount <= inputDesc.depth &&
-       "VKRenderBackend:: Number of textures could not fit in number of layers" );
-
-   CYD_ASSERT(
-       inputDesc.width == 0 && inputDesc.height == 0 &&
-       "VKRenderBackend: Created a texture with a path but specified dimensions" );
-
-   std::vector<void*> imageData;
-   int prevWidth     = 0;
-   int prevHeight    = 0;
-   int prevLayerSize = 0;
-   int width         = 0;
-   int height        = 0;
-   int layerSize     = 0;
-   int totalSize     = 0;
-
-   for( uint32_t i = 0; i < layerCount; ++i )
-   {
-      imageData.push_back(
-          GraphicsIO::LoadImage( paths[i], inputDesc.format, width, height, layerSize ) );
-
-      if( !imageData.back() )
-      {
-         return Handle();
-      }
-
-      // Sanity check
-      if( prevWidth == 0 ) prevWidth = width;
-      if( prevHeight == 0 ) prevHeight = height;
-      if( prevLayerSize == 0 ) prevLayerSize = layerSize;
-
-      CYD_ASSERT(
-          prevWidth == width && prevHeight == height && prevLayerSize == layerSize &&
-          "VKRenderBackend: Dimension mismatch" );
-
-      prevWidth     = width;
-      prevHeight    = height;
-      prevLayerSize = layerSize;
-
-      totalSize += layerSize;
-   }
-
-   // Description used to create the texture with the actual dimensions
-   TextureDescription newDesc = inputDesc;
-   newDesc.width              = width;
-   newDesc.height             = height;
-
-   TextureHandle texHandle = b->createTexture(
-       transferList, newDesc, static_cast<uint32_t>( imageData.size() ), imageData.data() );
-
-   for( uint32_t i = 0; i < imageData.size(); ++i )
-   {
-      GraphicsIO::FreeImage( imageData[i] );
-   }
-
-   return texHandle;
+   CYD_TRACE();
+   return b->createTexture( desc );
 }
 
 TextureHandle
-CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const std::string& path )
+CreateTexture( CmdListHandle cmdList, const TextureDescription& desc, const void* pTexels )
 {
-   return LoadImageFromStorage( transferList, desc, 1, &path );
+   CYD_TRACE();
+   return b->createTexture( cmdList, desc, pTexels );
 }
 
 TextureHandle CreateTexture(
-    CmdListHandle transferList,
-    const TextureDescription& desc,
-    const std::vector<std::string>& paths )
-{
-   return LoadImageFromStorage(
-       transferList, desc, static_cast<uint32_t>( paths.size() ), paths.data() );
-}
-
-TextureHandle
-CreateTexture( CmdListHandle transferList, const TextureDescription& desc, const void* pTexels )
-{
-   return b->createTexture( transferList, desc, pTexels );
-}
-
-TextureHandle CreateTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     const TextureDescription& desc,
     uint32_t layerCount,
     const void** ppTexels )
 {
-   return b->createTexture( transferList, desc, layerCount, ppTexels );
+   CYD_TRACE();
+   return b->createTexture( cmdList, desc, layerCount, ppTexels );
 }
 
-VertexBufferHandle CreateVertexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    uint32_t stride,
-    const void* pVertices,
-    const std::string_view name )
+void GenerateMipmaps( CmdListHandle cmdList, TextureHandle texHandle )
 {
-   return b->createVertexBuffer( transferList, count, stride, pVertices, name );
+   b->generateMipmaps( cmdList, texHandle );
 }
 
-IndexBufferHandle CreateIndexBuffer(
-    CmdListHandle transferList,
-    uint32_t count,
-    const void* pIndices,
-    const std::string_view name )
+VertexBufferHandle CreateVertexBuffer( size_t size, const std::string_view name )
 {
-   return b->createIndexBuffer( transferList, count, pIndices, name );
+   return b->createVertexBuffer( size, name );
+}
+
+IndexBufferHandle CreateIndexBuffer( size_t size, const std::string_view name )
+{
+   return b->createIndexBuffer( size, name );
 }
 
 BufferHandle CreateUniformBuffer( size_t size, const std::string_view name )
@@ -352,7 +307,10 @@ BufferHandle CreateBuffer( size_t size, const std::string_view name )
    return b->createBuffer( size, name );
 }
 
-void* AddDebugTexture( TextureHandle texture ) { return b->addDebugTexture( texture ); }
+void* AddDebugTexture( TextureHandle texture, uint32_t layer )
+{
+   return b->addDebugTexture( texture, layer );
+}
 void UpdateDebugTexture( CmdListHandle cmdList, TextureHandle textureHandle )
 {
    return b->updateDebugTexture( cmdList, textureHandle );
@@ -364,13 +322,30 @@ void UploadToBuffer( BufferHandle bufferHandle, const void* pData, const UploadT
    return b->uploadToBuffer( bufferHandle, pData, info );
 }
 
+void UploadToVertexBuffer(
+    CmdListHandle cmdList,
+    VertexBufferHandle bufferHandle,
+    const VertexList& vertices )
+{
+   b->uploadToVertexBuffer( cmdList, bufferHandle, vertices );
+}
+
+void UploadToIndexBuffer(
+    CmdListHandle cmdList,
+    IndexBufferHandle bufferHandle,
+    const void* pIndices,
+    const UploadToBufferInfo& info )
+{
+   b->uploadToIndexBuffer( cmdList, bufferHandle, pIndices, info );
+}
+
 void CopyTexture(
-    CmdListHandle transferList,
+    CmdListHandle cmdList,
     TextureHandle srcTexHandle,
     TextureHandle dstTexHandle,
     const TextureCopyInfo& info )
 {
-   return b->copyTexture( transferList, srcTexHandle, dstTexHandle, info );
+   return b->copyTexture( cmdList, srcTexHandle, dstTexHandle, info );
 }
 
 void DestroyTexture( TextureHandle texHandle ) { b->destroyTexture( texHandle ); }
@@ -389,28 +364,39 @@ void DestroyBuffer( BufferHandle bufferHandle ) { b->destroyBuffer( bufferHandle
 //
 void BeginFrame()
 {
-   CYD_TRACE( "Prepare Frame" );
+   CYD_TRACE();
    b->beginFrame();
 }
 
-void BeginRendering( CmdListHandle cmdList ) { b->beginRendering( cmdList ); }
-
-void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb )
+void BeginRendering( CmdListHandle cmdList )
 {
-   b->beginRendering( cmdList, fb );
+   CYD_TRACE();
+   b->beginRendering( cmdList );
+}
+
+void BeginRendering( CmdListHandle cmdList, const Framebuffer& fb, uint32_t layer )
+{
+   CYD_TRACE();
+   b->beginRendering( cmdList, fb, layer );
 }
 
 void NextPass( CmdListHandle cmdList ) { b->nextPass( cmdList ); }
 
-void EndRendering( CmdListHandle cmdList ) { b->endRendering( cmdList ); }
+void EndRendering( CmdListHandle cmdList )
+{
+   CYD_TRACE();
+   b->endRendering( cmdList );
+}
 
 void Draw( CmdListHandle cmdList, size_t vertexCount, size_t firstVertex )
 {
+   CYD_TRACE();
    b->draw( cmdList, vertexCount, firstVertex );
 }
 
 void DrawIndexed( CmdListHandle cmdList, size_t indexCount, size_t firstIndex )
 {
+   CYD_TRACE();
    b->drawIndexed( cmdList, indexCount, firstIndex );
 }
 
@@ -421,6 +407,7 @@ void DrawInstanced(
     size_t firstVertex,
     size_t firstInstance )
 {
+   CYD_TRACE();
    b->drawInstanced( cmdList, vertexCount, instanceCount, firstVertex, firstInstance );
 }
 
@@ -431,12 +418,19 @@ void DrawIndexedInstanced(
     size_t firstIndex,
     size_t firstInstance )
 {
+   CYD_TRACE();
    b->drawIndexedInstanced( cmdList, indexCount, instanceCount, firstIndex, firstInstance );
 }
 
 void Dispatch( CmdListHandle cmdList, uint32_t workX, uint32_t workY, uint32_t workZ )
 {
+   CYD_TRACE();
    b->dispatch( cmdList, workX, workY, workZ );
+}
+
+void ClearTexture( CmdListHandle cmdList, TextureHandle texHandle, const ClearValue& clearVal )
+{
+   b->clearTexture( cmdList, texHandle, clearVal );
 }
 
 void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
@@ -446,7 +440,7 @@ void CopyToSwapchain( CmdListHandle cmdList, TextureHandle texHandle )
 
 void PresentFrame()
 {
-   CYD_TRACE( "Present Frame" );
+   CYD_TRACE();
    b->presentFrame();
 }
 

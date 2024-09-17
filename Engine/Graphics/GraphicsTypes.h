@@ -12,11 +12,17 @@
 
 namespace CYD
 {
+using MeshIndex                             = size_t;
+static constexpr MeshIndex INVALID_MESH_IDX = std::numeric_limits<MeshIndex>::max();
+
 using MaterialIndex                                 = size_t;
 static constexpr MaterialIndex INVALID_MATERIAL_IDX = std::numeric_limits<MaterialIndex>::max();
 
 using PipelineIndex                                 = size_t;
 static constexpr PipelineIndex INVALID_PIPELINE_IDX = std::numeric_limits<PipelineIndex>::max();
+
+static constexpr uint32_t ALL_MIP_LEVELS   = 0xFFFFFFFF;
+static constexpr uint32_t ALL_ARRAY_LAYERS = 0xFFFFFFFF;
 
 // ================================================================================================
 // Flags
@@ -116,6 +122,7 @@ enum class PixelFormat : uint8_t
    R32F,
    R8_UNORM,
    R16_UNORM,
+   R32_UINT,
    D32_SFLOAT
 };
 
@@ -140,12 +147,15 @@ enum class Access
    VERTEX_SHADER_READ,
    FRAGMENT_SHADER_READ,
    COMPUTE_SHADER_READ,
+   ANY_SHADER_READ,
+   COLOR_ATTACHMENT_READ,
    DEPTH_STENCIL_ATTACHMENT_READ,
    TRANSFER_READ,
    HOST_READ,
    VERTEX_SHADER_WRITE,
    FRAGMENT_SHADER_WRITE,
    COMPUTE_SHADER_WRITE,
+   ANY_SHADER_WRITE,
    COLOR_ATTACHMENT_WRITE,
    DEPTH_STENCIL_ATTACHMENT_WRITE,
    TRANSFER_WRITE,
@@ -198,18 +208,14 @@ enum class DrawPrimitive
    PATCHES
 };
 
-enum class PolygonMode
-{
-   FILL,
-   LINE,
-   POINT
-};
-
 enum class ImageType
 {
    TEXTURE_1D,
    TEXTURE_2D,
-   TEXTURE_3D
+   TEXTURE_2D_ARRAY,
+   TEXTURE_3D,
+   TEXTURE_CUBE,
+   TEXTURE_CUBE_ARRAY
 };
 
 enum class ShaderResourceType
@@ -262,14 +268,21 @@ enum class CompareOperator
 // Basic structs
 struct TextureDescription
 {
-   uint32_t width           = 0;  // 2D Dimensions are optional when
-   uint32_t height          = 0;  // loading from storage
-   uint32_t depth           = 1;
+   // Dimensions
+   uint32_t width  = 0;  // 2D Dimensions are optional when
+   uint32_t height = 0;  // loading from storage
+   uint32_t depth  = 1;
+
+   //  Usage
    ImageType type           = ImageType::TEXTURE_2D;  // 1D, 2D, 3D...
    PixelFormat format       = PixelFormat::RGBA32F;   // The texture's pixel format
    ImageUsageFlag usage     = 0;                      // How this image will be used
    PipelineStageFlag stages = 0;                      // Stages where this texture is accessed
-   std::string_view name    = "Unknown Texture Name";
+
+   // Flags
+   bool generateMipmaps : 1 = false;
+
+   std::string_view name = "Unknown Texture Name";
 };
 
 struct Extent2D
@@ -338,9 +351,10 @@ struct SamplerInfo
    }
    bool operator==( const SamplerInfo& other ) const;
 
-   bool useAnisotropy      = true;
    bool useCompare         = false;
-   float maxAnisotropy     = 16.0f;
+   float maxAnisotropy     = 0.0f;
+   float minLod            = 0.0f;
+   float maxLod            = 0.0f;
    CompareOperator compare = CompareOperator::ALWAYS;
    Filter magFilter        = Filter::LINEAR;
    Filter minFilter        = Filter::LINEAR;
@@ -352,6 +366,7 @@ struct SamplerInfo
 // Helper functions
 bool IsColorFormat( PixelFormat format );
 uint32_t GetPixelSizeInBytes( PixelFormat format );
+uint32_t GetChannelsCount( PixelFormat format );
 
 // ================================================================================================
 // Transfer structs
@@ -409,7 +424,6 @@ struct std::hash<CYD::SamplerInfo>
    size_t operator()( const CYD::SamplerInfo& samplerInfo ) const noexcept
    {
       size_t seed = 0;
-      hashCombine( seed, samplerInfo.useAnisotropy );
       hashCombine( seed, samplerInfo.maxAnisotropy );
       hashCombine( seed, samplerInfo.magFilter );
       hashCombine( seed, samplerInfo.minFilter );

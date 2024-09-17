@@ -20,7 +20,10 @@ class ForwardRenderSystem final : public RenderSystem
 {
   public:
    ForwardRenderSystem() = delete;
-   ForwardRenderSystem( const MaterialCache& materials ) : RenderSystem( materials ) {}
+   ForwardRenderSystem( const MeshCache& meshes, const MaterialCache& materials )
+       : RenderSystem( meshes, materials )
+   {
+   }
    NON_COPIABLE( ForwardRenderSystem );
    virtual ~ForwardRenderSystem() = default;
 

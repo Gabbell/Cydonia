@@ -1,44 +1,150 @@
 {
-  "MATERIALS": [{
+  "MATERIALS": [
+    {
       "NAME": "NO_TEX"
     },
     {
-      "NAME": "SOLO_TEX_RGBA8",
-      "TEXTURES": [{
-        "NAME": "TEXTURE",
-        "FORMAT": "RGBA8_UNORM",
-        "TYPE": "TEXTURE2D"
-      }]
-    },
-    {
-      "NAME": "TERRAIN_DISPLACEMENT",
-      "TEXTURES": [{
-        "NAME": "TEXTURE",
-        "FORMAT": "R32F",
-        "TYPE": "TEXTURE2D"
-      }]
-    },
-    {
-      "NAME": "OCEAN",
-      "TEXTURES": [{
-          "NAME": "DISPLACEMENT_MAP",
-          "FORMAT": "R32F",
-          "TYPE": "TEXTURE2D"
-        },
+      "NAME": "TERRAIN",
+      "TEXTURES": [
         {
-          "NAME": "NORMAL_MAP",
-          "FORMAT": "RGBA32F",
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
           "TYPE": "TEXTURE2D"
         }
       ]
     },
     {
-      "NAME": "PLANET",
-      "TEXTURES": [{
-        "NAME": "TEXTURE",
-        "FORMAT": "R32F",
-        "TYPE": "TEXTURE2D"
-      }]
+      "NAME": "OCEAN",
+      "TEXTURES": [
+        {
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D"
+        }
+      ]
+    },
+    {
+      "NAME": "SWORD",
+      "TEXTURES": [
+        {
+          "SLOT": "ALBEDO",
+          "FORMAT": "RGBA8_SRGB",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Sword/albedo.png"
+        },
+        {
+          "SLOT": "NORMAL",
+          "FORMAT": "RGBA8_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Sword/normal.png"
+        },
+        {
+          "SLOT": "METALNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Sword/metalness.png"
+        },
+        {
+          "SLOT": "ROUGHNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Sword/roughness.png"
+        },
+        {
+          "SLOT": "AMBIENT_OCCLUSION",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Sword/ao.png"
+        },
+        {
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D",
+          "FALLBACK": "BLACK"
+        }
+      ]
+    },
+    {
+      "NAME": "SNOW",
+      "TEXTURES": [
+        {
+          "SLOT": "ALBEDO",
+          "FORMAT": "RGBA8_SRGB",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_color_4k.jpg"
+        },
+        {
+          "SLOT": "NORMAL",
+          "FORMAT": "RGBA8_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_normal_opengl_4k.png"
+        },
+        {
+          "SLOT": "METALNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "FALLBACK": "BLACK"
+        },
+        {
+          "SLOT": "ROUGHNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_roughness_4k.jpg"
+        },
+        {
+          "SLOT": "AMBIENT_OCCLUSION",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_ao_4k.jpg"
+        },
+        {
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0030_height_4k.png"
+        }
+      ]
+    },
+    {
+      "NAME": "GRASS",
+      "TEXTURES": [
+        {
+          "SLOT": "ALBEDO",
+          "FORMAT": "RGBA8_SRGB",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_color_4k.jpg"
+        },
+        {
+          "SLOT": "NORMAL",
+          "FORMAT": "RGBA8_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_normal_opengl_4k.png"
+        },
+        {
+          "SLOT": "METALNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "FALLBACK": "BLACK"
+        },
+        {
+          "SLOT": "ROUGHNESS",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Snow/ground_0009_roughness_4k.jpg"
+        },
+        {
+          "SLOT": "AMBIENT_OCCLUSION",
+          "FORMAT": "R16_UNORM",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_ao_4k.jpg"
+        },
+        {
+          "SLOT": "DISPLACEMENT",
+          "FORMAT": "R32F",
+          "TYPE": "TEXTURE2D",
+          "PATH": "Grass/ground_0009_height_4k.png"
+        }
+      ]
     }
   ]
 }

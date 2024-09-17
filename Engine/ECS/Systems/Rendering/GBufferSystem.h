@@ -20,7 +20,10 @@ class GBufferSystem final : public RenderSystem
 {
   public:
    GBufferSystem() = delete;
-   GBufferSystem( const MaterialCache& materials ) : RenderSystem( materials ) {}
+   GBufferSystem( const MeshCache& meshes, const MaterialCache& materials )
+       : RenderSystem( meshes, materials )
+   {
+   }
    NON_COPIABLE( GBufferSystem );
    virtual ~GBufferSystem() = default;
 

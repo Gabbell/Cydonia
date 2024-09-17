@@ -1,7 +1,7 @@
 #version 450
 #define PI 3.1415926535897932384626433832795
 
-#include "FFTOCEAN.h"
+#include "../FFTOCEAN.h"
 
 layout( local_size_x = 16, local_size_y = 16 ) in;
 
@@ -19,12 +19,6 @@ void main()
    const uint index    = int( mod( ( int( ssCoord.x + ssCoord.y ) ), 2 ) );
    const float perm    = perms[index];
 
-   // Wave vector or the direction of the wave (k)
-   const vec3 waveVector = vec3(
-       2.0 * PI * ssCoord.x / params.horizontalDimension,
-       0.0,
-       2.0 * PI * ssCoord.y / params.horizontalDimension );
-
    // The components we want to change
    const vec3 mask = vec3(
        params.horizontalScale * ( params.componentMask >> 2 & 0x1 ),
@@ -37,17 +31,17 @@ void main()
        ~( params.componentMask >> 1 ) & 0x1,
        ~( params.componentMask >> 0 ) & 0x1 );
 
-   vec2 h = vec2( 0.0 );
+   float h = 0.0;
    if( params.pingpong == 0 )
    {
-      h = imageLoad( pingpong0, ssCoord ).rg;
+      h = imageLoad( pingpong0, ssCoord ).r;
    }
    else if( params.pingpong == 1 )
    {
-      h = imageLoad( pingpong1, ssCoord ).rg;
+      h = imageLoad( pingpong1, ssCoord ).r;
    }
 
-   const float disp    = perm * ( h.x / float( params.resolution * params.resolution ) );
+   const float disp    = perm * ( h / float( params.resolution * params.resolution ) );
    const vec3 prevDisp = imageLoad( displacement, ssCoord ).xyz;
    const vec3 newDisp  = ( negMask * prevDisp ) + ( mask * disp );
 

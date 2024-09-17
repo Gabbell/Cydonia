@@ -4,6 +4,7 @@
 
 #include <Common/Include.h>
 
+#include <ECS/Components/Rendering/RenderableComponent.h>
 #include <ECS/Components/Rendering/MeshComponent.h>
 
 // ================================================================================================
@@ -13,7 +14,7 @@ namespace CYD
 {
 class MeshCache;
 
-class MeshLoaderSystem final : public CommonSystem<MeshComponent>
+class MeshLoaderSystem final : public CommonSystem<RenderableComponent, MeshComponent>
 {
   public:
    MeshLoaderSystem( MeshCache& meshCache ) : m_meshCache( meshCache ) {}

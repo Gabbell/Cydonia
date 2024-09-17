@@ -113,6 +113,7 @@ VkRenderPass RenderPassCache::findOrCreate( const RenderPassInfo& targetsInfo )
    VkSubpassDependency& dependency = dependencies.emplace_back();
    dependency.srcSubpass           = VK_SUBPASS_EXTERNAL;
    dependency.dstSubpass           = 0;
+   dependency.dependencyFlags      = VK_DEPENDENCY_BY_REGION_BIT;
    dependency.srcStageMask =
        VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
    dependency.dstStageMask =

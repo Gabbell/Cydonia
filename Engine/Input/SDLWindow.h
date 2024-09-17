@@ -46,6 +46,6 @@ class Window
    SDL_Window* m_sdlWindow = nullptr;
 
    // Dimensions
-   Extent2D m_extent = {0, 0};
+   Extent2D m_extent = { 0, 0 };
 };
 }

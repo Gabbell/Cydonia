@@ -4,78 +4,55 @@
 
 #include <Graphics/GraphicsTypes.h>
 
-#include <glm/glm.hpp>
-
 namespace CYD
 {
+// ================================================================================================
+// Layout Info
 class VertexLayout
 {
   public:
    VertexLayout() = default;
    COPIABLE( VertexLayout );
-   virtual ~VertexLayout() = default;
+   ~VertexLayout() = default;
 
-   struct Attribute
+   enum class Attribute
    {
-      // Not used as a pixel format but as a sizing factor for vector components
-      PixelFormat vecFormat = PixelFormat::RGBA32F;
-      uint32_t location     = 0;
-      uint32_t offset       = 0;
-      uint32_t binding      = 0;
+      UNKNOWN,
+      POSITION,
+      TEXCOORD,  // UV
+      NORMAL,
+      TANGENT,
+      BITANGENT,
+      COLOR
    };
 
-   void addAttribute(
-       PixelFormat vecFormat,
-       uint32_t location = 0,
-       uint32_t offset   = 0,
-       uint32_t binding  = 0 );
+   static constexpr uint32_t INVALID_LOCATION_OFFSET = 0xFFFFFFFF;
 
-   const std::vector<Attribute>& getAttributes() const { return m_attributes; }
+   struct AttributeInfo
+   {
+      bool operator==( const AttributeInfo& other ) const
+      {
+         return type == other.type && vecFormat == other.vecFormat && offset == other.offset;
+      }
+
+      Attribute type;
+      PixelFormat vecFormat;
+      uint32_t offset;
+   };
+
+   bool operator==( const VertexLayout& other ) const;
+
+   const std::vector<AttributeInfo>& getAttributes() const { return m_attributes; }
+   bool isEmpty() const { return m_attributes.empty(); }
+   uint32_t getStride() const { return m_stride; }
+   uint32_t getLocationOffset( Attribute type ) const;
+
+   // Location is implied by the order this is called.
+   // Therefore, location is the index in m_attributes
+   void addAttribute( Attribute type, PixelFormat vecFormat );
 
   private:
-   std::vector<Attribute> m_attributes;
-};
-
-// TODO More flexible vertex layouts
-class Vertex final
-{
-  public:
-   Vertex() = default;
-   explicit Vertex( const glm::vec3& position, const glm::vec3& normal )
-       : pos( position ), normal( normal )
-   {
-   }
-   COPIABLE( Vertex );
-   ~Vertex() = default;
-
-   bool operator==( const Vertex& other ) const
-   {
-      return pos == other.pos && col == other.col && normal == other.normal && uv == other.uv;
-   }
-
-   glm::vec3 pos;
-   glm::vec3 normal;
-   glm::vec3 uv;
-   glm::vec4 col = glm::vec4( 1.0f );
+   std::vector<AttributeInfo> m_attributes;
+   uint32_t m_stride = 0;
 };
 }
-
-template <>
-struct std::hash<CYD::Vertex>
-{
-   size_t operator()( const CYD::Vertex& vertex ) const noexcept
-   {
-      size_t seed = 0;
-      hashCombine( seed, vertex.pos.x );
-      hashCombine( seed, vertex.pos.y );
-      hashCombine( seed, vertex.pos.z );
-      hashCombine( seed, vertex.col.r );
-      hashCombine( seed, vertex.col.g );
-      hashCombine( seed, vertex.col.b );
-      hashCombine( seed, vertex.col.a );
-      hashCombine( seed, vertex.uv.x );
-      hashCombine( seed, vertex.uv.y );
-
-      return seed;
-   }
-};

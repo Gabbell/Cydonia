@@ -15,6 +15,8 @@
 #include <Graphics/Vulkan/Texture.h>
 #include <Graphics/Vulkan/DescriptorPool.h>
 
+#include <Profiling.h>
+
 #include <algorithm>
 
 static constexpr float DEFAULT_PRIORITY            = 1.0f;
@@ -109,6 +111,8 @@ void Device::_createLogicalDevice()
       queueInfos.push_back( std::move( queueInfo ) );
    }
 
+   m_queueCount = m_queueFamilies.size() * NUMBER_QUEUES_PER_FAMILY;
+
    // Create logical device
    VkPhysicalDeviceFeatures deviceFeatures = {};
    vkGetPhysicalDeviceFeatures( m_physDevice, &deviceFeatures );
@@ -152,9 +156,11 @@ void Device::_fetchQueues()
 CommandBuffer* Device::createCommandBuffer(
     CYD::QueueUsageFlag usage,
     const std::string_view name,
+    bool async,
     bool presentable )
 {
-   return m_commandPoolManager->acquire( usage, name, presentable, m_swapchain->getCurrentFrame() );
+   return m_commandPoolManager->acquire(
+       usage, name, async, presentable, m_swapchain->getCurrentFrame() );
 }
 
 // =================================================================================================
@@ -231,10 +237,9 @@ Buffer* Device::createBuffer( size_t size, const std::string_view name )
 Texture* Device::createTexture( const CYD::TextureDescription& desc )
 {
    // Check to see if we have a free spot for a texture.
-   auto it = std::find_if(
-       m_textures.rbegin(),
-       m_textures.rend(),
-       []( Texture& texture ) { return !texture.inUse(); } );
+   auto it = std::find_if( m_textures.rbegin(), m_textures.rend(), []( Texture& texture ) {
+      return !texture.inUse();
+   } );
 
    if( it != m_textures.rend() )
    {
@@ -298,6 +303,7 @@ void Device::clearPipelines() { m_pipelines->clear(); }
 void Device::waitUntilIdle() { vkDeviceWaitIdle( m_vkDevice ); }
 void Device::waitOnFrame( uint32_t currentFrame )
 {
+   CYD_TRACE();
    m_commandPoolManager->waitOnFrame( currentFrame );
 }
 

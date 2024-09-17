@@ -1,0 +1,6 @@
+#if !CONSTANTS_INCLUDED
+const float PI      = 3.141592653589793;
+const float EPSILON = 1.19209290E-07F;
+
+#define CONSTANTS_INCLUDED 1
+#endif

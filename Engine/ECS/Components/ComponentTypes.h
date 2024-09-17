@@ -4,6 +4,8 @@
 
 #include <Common/Include.h>
 
+#include <string_view>
+
 namespace CYD
 {
 // TODO Make these available at the game layer. Should be able to create custom components
@@ -21,20 +23,21 @@ enum class ComponentType : int16_t
    // Lighting
    // ==============================================================================================
    LIGHT,
+   SHADOW_MAP,
 
    // Rendering
    // ==============================================================================================
    MATERIAL,
    MESH,
    RENDERABLE,
-   FULLSCREEN,
+   POST_PROCESS_VOLUME,  // TODO
+   PARTICLES_VOLUME,     // TODO
    INSTANCED,
    TESSELLATED,
 
    // Procedural
    // ==============================================================================================
-   PROCEDURAL_DISPLACEMENT,
-   PROCEDURAL_MATERIAL,
+   DISPLACEMENT,
    OCEAN,
    FOG,
    ATMOSPHERE,
@@ -54,29 +57,5 @@ enum class ComponentType : int16_t
    COUNT  // Keep at the end
 };
 
-static const char* GetComponentName( ComponentType type )
-{
-   static constexpr char COMPONENT_NAMES[][32] = {
-       "Transform",
-       "View",
-       "Light",
-       "Material",
-       "Mesh",
-       "Renderable",
-       "Fullscreen",
-       "Instanced",
-       "Tessellated",
-       "Procedural Displacement",
-       "Procedural Material",
-       "Ocean",
-       "Fog",
-       "Atmosphere",
-       "Motion",
-       "Entity Follow",
-       "Debug Draw" };
-
-   static_assert( ARRSIZE( COMPONENT_NAMES ) == static_cast<uint32_t>( ComponentType::COUNT ) );
-
-   return COMPONENT_NAMES[static_cast<uint32_t>( type )];
-}
+std::string_view GetComponentName( ComponentType type );
 }
